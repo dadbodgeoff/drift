@@ -257,10 +257,18 @@ pub struct ScopeGap {
 }
 
 /// A side of [`drift_core::controls::FILTER_VALUE`] that says nothing of where the
-/// value comes from: what the lowering could not read, or a call it could not
-/// resolve. A filter by it may be the caller's.
+/// value comes from: what the lowering could not read, a call it could not
+/// resolve, what a call handed back that no reader proved (`call <callee>`; `call
+/// via` is read by [`crate::practices::side_is_callers`]), or an attribute of
+/// `self`, which whatever built the object set. A filter by it may be the
+/// caller's. (A `param` side is the request's only in the handler itself:
+/// [`scope_gaps`] holds one read in a body the handler reaches as unread too.)
 fn side_unread(side: &str) -> bool {
-    side.is_empty() || side == "unread" || side.contains("unresolved:")
+    side.is_empty()
+        || side == "unread"
+        || side.contains("unresolved:")
+        || side.starts_with("call ")
+        || side.starts_with("self.")
 }
 
 #[cfg(test)]
@@ -272,8 +280,13 @@ mod side_unread_tests {
         assert!(super::side_unread(""));
         assert!(super::side_unread("unread"));
         assert!(super::side_unread("call unresolved:getOrg"));
+        // F3: a result no reader proved, an attribute of `self`.
+        assert!(super::side_unread("call src/org.ts#loadOrg"));
+        assert!(super::side_unread("self.org_id"));
         assert!(!super::side_unread("param"));
         assert!(!super::side_unread("caller"));
+        assert!(!super::side_unread("request"));
+        assert!(!super::side_unread("literal"));
     }
 }
 
@@ -327,7 +340,9 @@ fn scope_gaps<'a>(
                 scoped: BTreeSet::new(),
                 unread: BTreeSet::new(),
             };
-            for node in index.reach_nodes((origin, s)) {
+            // The first node is the entry point's own handler: a parameter read
+            // anywhere else holds whatever its caller passed.
+            for (hop, node) in index.reach_nodes((origin, s)).into_iter().enumerate() {
                 let args = node.member.map_or(&node.symbol.args, |m| &m.args);
                 for a in args {
                     // `<callee>@<index>:<key path>`: a call given an object.
@@ -349,7 +364,7 @@ fn scope_gaps<'a>(
                     seen.queried.insert(r.to_string());
                     if crate::practices::side_is_callers(cx, side) {
                         seen.scoped.insert((r.to_string(), key.to_string()));
-                    } else if side_unread(side) {
+                    } else if side_unread(side) || (hop > 0 && side.starts_with("param ")) {
                         seen.unread.insert(r.to_string());
                     }
                 }
@@ -8861,10 +8876,15 @@ fn guard_name(guard: &str) -> &str {
 }
 
 /// `own` (a reference, normalised) is built on `target`: `target` is `own`, or what
-/// [`built_on`] reads `own` to rest on (the binding it derives from, what it is
-/// given by reference, its wrappers and bases, what it calls one call deep) reaches
-/// `target`'s definition; for a package's guard, what proves `own` a guard
-/// ([`authenticating_root`], [`proving_root`]) is `target`.
+/// `own` rests on for every request (the binding it derives from, what it is given
+/// by reference, its wrappers and bases, what it calls one call deep, as
+/// [`built_on`] reads them) reaches `target`'s definition; for a package's guard,
+/// what proves `own` a guard ([`authenticating_root`], [`proving_root`]) is
+/// `target`.
+///
+/// A call made for some requests only (`if (x) await requireUserId(req)`:
+/// [`for_some_requests`], in any language), or after the body hands control on, is
+/// not followed: a guard that runs the other guard on one branch does not have it.
 fn rests_on(ctx: &crate::context::RepoContext, own: &str, target: &str) -> bool {
     if own == target {
         return true;
@@ -8876,7 +8896,47 @@ fn rests_on(ctx: &crate::context::RepoContext, own: &str, target: &str) -> bool 
     let Some(t) = ctx.definition(target) else {
         return false;
     };
-    built_on(ctx, own.to_string(), false, false, &|s| std::ptr::eq(s, t)).is_some()
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut queue: VecDeque<(String, usize, bool)> =
+        VecDeque::from([(crate::mine::norm_ref(own).into_owned(), 0, false)]);
+    while let Some((r, hops, called)) = queue.pop_front() {
+        if seen.len() >= GUARD_NODES || !seen.insert(r.clone()) || external(&r) {
+            continue;
+        }
+        let Some(s) = ctx.definition(&r) else {
+            continue;
+        };
+        if std::ptr::eq(s, t) {
+            return true;
+        }
+        if hops >= GUARD_HOPS {
+            continue;
+        }
+        let mut next = |x: &str, called: bool| {
+            queue.push_back((crate::mine::norm_ref(x).into_owned(), hops + 1, called));
+        };
+        if !s.derives_from.is_empty() {
+            next(&s.derives_from, called);
+        }
+        for w in &s.wraps {
+            if matches!(w.kind, WrapKind::Call | WrapKind::Decorator | WrapKind::Extends) {
+                next(&w.wrapper, called);
+            }
+        }
+        for c in &s.calls {
+            if let Some(m) = c.strip_suffix("(ref)") {
+                next(m, called);
+            } else if !called
+                && !c.ends_with("(new)")
+                && !s.after_continuation.iter().any(|a| a == c)
+                && !for_some_requests(ctx, s, c)
+                && matches!(hand_back(ctx, s, c), None | Some(HandBack::Returned))
+            {
+                next(c, true);
+            }
+        }
+    }
+    false
 }
 
 /// [`guard_gaps_with`] for the inventory: a member has a guard when one of its own
@@ -9401,6 +9461,11 @@ pub fn render_at(
             let what = match w.kind.as_str() {
                 "untrusted_checkout" => {
                     "checks out the pull request's code where the repository's secrets are"
+                }
+                // The owner is read off this clone's remote: said, never a reason
+                // to leave the finding out ([`crate::workflows::WorkflowFinding::own_owner`]).
+                "unpinned_action" if w.own_owner => {
+                    "runs an action of the repository's own owner (as this clone's origin remote names it) by a name that owner can move, where it holds secrets or may write"
                 }
                 "unpinned_action" => {
                     "runs another owner's action by a name its owner can move, where it holds secrets or may write"
