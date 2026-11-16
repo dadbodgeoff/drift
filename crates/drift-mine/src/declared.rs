@@ -19,10 +19,15 @@
 //!
 //! What it never does:
 //!
-//! - guess. Only the configurations the scan reads as data are read (JSON; a JavaScript
-//!   or TypeScript configuration's scoped settings are not extracted by the scan, so they
-//!   give nothing here), and a configuration the scan could not parse is listed with no
-//!   settings, so it gives nothing. A restriction Drift cannot express exactly (an
+//! - guess. Only what the scan reads as written is read: the `overrides` of a JSON
+//!   configuration, and, apart from what mining reads (`drift_core::LintConfig::declared`),
+//!   each block of an ESLint JavaScript or TypeScript configuration that a literal
+//!   `files` scopes to a folder, and the Python linters' banned modules and import
+//!   contracts (ruff, flake8-tidy-imports, import-linter) ([`crate::declared_lint`]).
+//!   A configuration the scan could not parse is listed with no settings, so it gives
+//!   nothing; a setting the scan could not read whole (a block built by a call, one a
+//!   later unread part may change, one that leaves files out, a contract that forbids
+//!   indirect imports too) is listed with why and never proposed. A restriction Drift cannot express exactly (an
 //!   allow-list, one about some names of a module only, a pattern over many packages, a
 //!   package outside the repository, part of a layer) is listed with why, never
 //!   approximated by a wider or narrower rule.
@@ -58,7 +63,7 @@ use crate::unchecked::Unchecked;
 
 /// Repository text (a configuration's path, an option as written, a folder) as it is
 /// put in a line people or, once accepted, agents read: [`sanitize`]d.
-fn safe(s: &str) -> String {
+pub(crate) fn safe(s: &str) -> String {
     sanitize(s, MAX_PATH)
 }
 
@@ -73,7 +78,7 @@ fn safe_list(items: &[String], sep: &str) -> String {
 }
 
 /// What cannot be expressed, by (configuration, folder, why, words).
-type NotKey = (String, String, &'static str, String);
+pub(crate) type NotKey = (String, String, &'static str, String);
 
 /// [`Convention::from_map`] of a rule the repository declares ([`declared`]).
 pub const DECLARED: &str = "declared";
@@ -144,6 +149,10 @@ pub struct DeclaredEvidence {
     pub unseen: usize,
     /// A member that follows it, `path#(file)` (empty when none does).
     pub example: String,
+    /// Where each setting that declares it is written, `<file>:<line>`, sorted; empty
+    /// for a JSON configuration's `overrides`, whose lines the scan does not keep.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub at: Vec<String>,
 }
 
 /// A rule the repository declares, proposed.
@@ -209,15 +218,19 @@ pub struct Note {
 }
 
 /// One scoped import restriction of one configuration, for one folder.
-struct Entry<'r> {
-    config: &'r str,
-    level: &'r str,
-    dir: &'r str,
-    options: &'r [String],
+pub(crate) struct Entry<'r> {
+    pub(crate) config: &'r str,
+    pub(crate) level: &'r str,
+    pub(crate) dir: std::borrow::Cow<'r, str>,
+    pub(crate) options: &'r [String],
+    /// `<file>:<line>` of the setting, where the scan keeps its line.
+    pub(crate) at: Option<String>,
+    /// The options are Python modules, dotted.
+    pub(crate) python: bool,
 }
 
 /// What one option names.
-enum Target {
+pub(crate) enum Target {
     /// Not a module specifier (a message, an option key, a bare word that names no
     /// workspace package): no restriction to read.
     Ignore,
@@ -233,6 +246,7 @@ struct Group {
     configs: BTreeSet<String>,
     level: String,
     written: BTreeSet<String>,
+    at: BTreeSet<String>,
 }
 
 /// The repository's declared import restrictions, read from the facts and checked
@@ -242,8 +256,12 @@ struct Group {
 /// built).
 pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) -> Declared {
     let mut out = Declared::default();
-    let entries = entries(repo);
-    if entries.is_empty() {
+    let mut entries = entries(repo);
+    let mut not: BTreeMap<NotKey, BTreeSet<String>> = BTreeMap::new();
+    let listed = crate::declared_lint::listed(repo);
+    entries.extend(listed.entries);
+    not.extend(listed.not);
+    if entries.is_empty() && not.is_empty() {
         return out;
     }
     let units = crate::roles::units(repo, kinds);
@@ -263,11 +281,11 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
 
     // Restrictions, grouped by (folder, layer); what cannot be expressed, by what it is.
     let mut groups: BTreeMap<(String, String), Group> = BTreeMap::new();
-    let mut not: BTreeMap<NotKey, BTreeSet<String>> = BTreeMap::new();
     for e in &entries {
+        let label = e.at.as_deref().unwrap_or(e.config);
         if e.options.iter().any(|o| o.starts_with('!')) {
             let words = "it allows only the modules it lists and forbids the rest (an allow-list): Drift has no rule kind for \"imports only these\"".to_string();
-            not.entry((e.config.to_string(), e.dir.to_string(), "allow_list", words))
+            not.entry((label.to_string(), e.dir.to_string(), "allow_list", words))
                 .or_default()
                 .extend(specifiers(e.options));
             continue;
@@ -276,13 +294,18 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
             let words =
                 "it restricts only some names of a module, and Drift's rule is about whole layers"
                     .to_string();
-            not.entry((e.config.to_string(), e.dir.to_string(), "partial", words))
+            not.entry((label.to_string(), e.dir.to_string(), "partial", words))
                 .or_default()
                 .extend(specifiers(e.options));
             continue;
         }
         for o in e.options {
-            match target_of(repo, &areas, &files, e.dir, o) {
+            let target = if e.python {
+                crate::declared_lint::target_of(&areas, &files, e.config, e.dir.as_ref(), o)
+            } else {
+                target_of(repo, &areas, &files, e.dir.as_ref(), o)
+            };
+            match target {
                 Target::Ignore => {}
                 Target::Area(t) => {
                     let g = groups.entry((e.dir.to_string(), t)).or_default();
@@ -291,9 +314,10 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
                         g.level = e.level.to_string();
                     }
                     g.written.insert(o.clone());
+                    g.at.extend(e.at.clone());
                 }
                 Target::Not(why, words) => {
-                    not.entry((e.config.to_string(), e.dir.to_string(), why, words))
+                    not.entry((label.to_string(), e.dir.to_string(), why, words))
                         .or_default()
                         .insert(o.clone());
                 }
@@ -317,8 +341,15 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
     for ((scope, target), g) in groups {
         let configs: Vec<String> = g.configs.iter().cloned().collect();
         let written: Vec<String> = g.written.iter().cloned().collect();
+        let at: Vec<String> = g.at.iter().cloned().collect();
+        // Where a setting's line is known, a note names it there.
+        let labels: Vec<String> = if at.is_empty() {
+            configs.clone()
+        } else {
+            at.clone()
+        };
         let mut held = |why: &'static str, words: String| {
-            for c in &configs {
+            for c in &labels {
                 not.entry((c.clone(), scope.clone(), why, words.clone()))
                     .or_default()
                     .extend(written.iter().cloned());
@@ -427,6 +458,7 @@ pub fn declared(repo: &RepoFacts, kinds: &FileKinds, mined: &[MinedRule<'_>]) ->
             not_read,
             unseen,
             example: example.clone(),
+            at: at.clone(),
         };
 
         // Said already: by a mined convention, or by a layering proposal from the map.
@@ -572,7 +604,11 @@ fn declared_summary(
     )
 }
 
-/// The scoped import restrictions of every linter configuration, one per folder.
+/// The scoped import restrictions of every linter configuration, one per folder: a
+/// JSON configuration's `overrides` ([`drift_core::LintConfig::scoped`]), and the
+/// JavaScript import restrictions listed with their lines that the scan read whole
+/// ([`drift_core::LintConfig::declared`]; the Python ones are
+/// [`crate::declared_lint`]'s).
 fn entries(repo: &RepoFacts) -> Vec<Entry<'_>> {
     let mut out = Vec::new();
     for c in &repo.lint {
@@ -584,11 +620,27 @@ fn entries(repo: &RepoFacts) -> Vec<Entry<'_>> {
                     out.push(Entry {
                         config: &c.path,
                         level: &r.level,
-                        dir: d,
+                        dir: d.as_str().into(),
                         options: &r.options,
+                        at: None,
+                        python: false,
                     });
                 }
             }
+        }
+        for d in c.declared.iter().filter(|d| {
+            d.rule == drift_core::DECLARED_IMPORTS
+                && d.limits.is_empty()
+                && matches!(d.level.as_str(), "warn" | "error")
+        }) {
+            out.push(Entry {
+                config: &c.path,
+                level: &d.level,
+                dir: d.dir.as_str().into(),
+                options: &d.options,
+                at: Some(format!("{}:{}", c.path, d.line)),
+                python: false,
+            });
         }
     }
     out
@@ -666,6 +718,18 @@ fn target_of(
     } else {
         return Target::Ignore;
     };
+    area_target(areas, files, dir, option, path)
+}
+
+/// What the repository path `path`, read from `option` declared for the folder `dir`,
+/// names: a whole layer as Drift counts layers, or why not.
+pub(crate) fn area_target(
+    areas: &BTreeSet<String>,
+    files: &[&FileFacts],
+    dir: &str,
+    option: &str,
+    path: String,
+) -> Target {
     let layer = area(&format!("{path}/x"));
     if layer == path && areas.contains(&path) {
         return Target::Area(path);
@@ -854,7 +918,7 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
         "  [{}] {}: declared in {} ({}, `{}` for {}); of the {} files there Drift read, {} follow it, {} {} it today; {} could not be read (never reported)",
         c.id,
         c.summary,
-        safe_list(&e.configs, ", "),
+        safe_list(if e.at.is_empty() { &e.configs } else { &e.at }, ", "),
         e.level,
         safe_list(&e.written, "`, `"),
         safe(&e.scope),
@@ -891,6 +955,9 @@ pub fn proposal_lines(c: &Convention, e: &DeclaredEvidence) -> Vec<String> {
             safe(&e.scope)
         ));
     }
+    out.push(
+        "    the linter reports a break when it runs; accepted, Drift also tells an agent the rule before it writes the import".to_string(),
+    );
     out
 }
 

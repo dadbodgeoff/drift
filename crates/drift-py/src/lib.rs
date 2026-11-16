@@ -9,6 +9,7 @@ mod docs;
 mod index;
 pub mod kinds;
 pub mod link;
+pub mod lint;
 pub mod lower;
 pub mod packages;
 pub mod project;
@@ -88,6 +89,8 @@ struct Prepared {
     resolver: Resolver,
     stats: ScanStats,
     packages: Vec<PackageFacts>,
+    /// The Python linter configurations around the walk's files ([`lint::lint_of`]).
+    lint: Vec<drift_core::LintConfig>,
     declared: BTreeMap<String, Vec<drift_core::EntryPoint>>,
 }
 
@@ -178,6 +181,7 @@ fn prepare(
         }
     };
     let packages = packages_of(root, &py);
+    let lint = lint::lint_of(root, &py);
     let paths = walked_paths(root, &py);
     let cache = opts
         .cache_dir
@@ -233,6 +237,7 @@ fn prepare(
         resolver,
         stats,
         packages,
+        lint,
         declared,
     })
 }
@@ -350,8 +355,7 @@ fn scan_inner(
         skipped: p.skipped,
         models,
         packages: p.packages,
-        // Python lint configs (ruff, flake8) are not read yet.
-        lint: vec![],
+        lint: p.lint,
         context_files: vec![],
         key_files: vec![],
         integration_files: vec![],
@@ -598,6 +602,7 @@ fn scan_file_inner(
 ) -> anyhow::Result<Option<RepoFacts>> {
     let started = index::now_ns();
     let packages = packages_of(root, &py);
+    let lint = lint::lint_of(root, &py);
     let paths = walked_paths(root, &py);
     let known = index::classify(py.sources, Some(index), Some(cache), started);
     index::update(cache_dir, root, Some(index), &known);
@@ -854,6 +859,7 @@ fn scan_file_inner(
         files: vec![facts],
         models,
         packages,
+        lint,
         context_files,
         skipped: no_stack,
         integration_files,

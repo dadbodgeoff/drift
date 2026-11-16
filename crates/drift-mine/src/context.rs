@@ -2165,6 +2165,7 @@ mod tests {
                 })
                 .collect(),
             scoped: vec![],
+            declared: vec![],
         }
     }
 

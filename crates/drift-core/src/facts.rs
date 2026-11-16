@@ -2755,7 +2755,56 @@ pub struct LintConfig {
     /// way a layer edge goes). Sorted; not serialised when empty.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scoped: Vec<ScopedLintRules>,
+    /// Restrictions the configuration declares, each where it is written, for the
+    /// declared proposals of the practice map (`drift_mine::declared`) only: mining
+    /// never reads them, so what is newly read here (an ESLint flat config's block
+    /// scoped by `files`, a legacy `.eslintrc.js`'s `overrides`, the Python linters'
+    /// banned modules and import contracts) leaves mining as it was measured. Sorted;
+    /// not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub declared: Vec<DeclaredLint>,
 }
+
+/// One restriction a linter configuration declares ([`LintConfig::declared`]), as
+/// written and where.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct DeclaredLint {
+    /// The folder it covers, repo-relative (`""` for the repository root): the
+    /// literal part of a `files` glob, or the folder of the configuration.
+    pub dir: String,
+    /// What it restricts, in the linter's own terms: [`DECLARED_IMPORTS`] (module
+    /// specifiers as JavaScript imports them, a relative one read from `dir`),
+    /// [`DECLARED_MODULES`] (Python modules, dotted), [`DECLARED_RELATIVE`] (Python
+    /// relative imports).
+    pub rule: String,
+    /// `warn` or `error` (a setting of `off` is no restriction and is not kept).
+    pub level: String,
+    /// 1-based line of the setting in the configuration.
+    pub line: u32,
+    /// Python only: the modules (dotted) the restriction is for, where it names them
+    /// (an import-linter contract's source modules); empty: every file of `dir`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<String>,
+    /// The strings of the setting's options (the modules it forbids, messages and
+    /// option keys among them), sorted.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<String>,
+    /// What makes the setting mean more or less than "the files of `dir` (or of
+    /// `sources`) do not import these" (`ignores`: some of the files are left out;
+    /// `indirect`: indirect imports are forbidden too; `overridden`: a later setting
+    /// changes it for part of `dir`; `unread_after`: a later part of the configuration
+    /// was not read and may change it), sorted. Empty: it means exactly that.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub limits: Vec<String>,
+}
+
+/// [`DeclaredLint::rule`] of a JavaScript import restriction (`no-restricted-imports`).
+pub const DECLARED_IMPORTS: &str = "no-restricted-imports";
+/// [`DeclaredLint::rule`] of a restriction of Python modules (ruff and flake8
+/// `banned-api` / `banned-modules`, import-linter contracts).
+pub const DECLARED_MODULES: &str = "banned-modules";
+/// [`DeclaredLint::rule`] of a ban on Python relative imports (`ban-relative-imports`).
+pub const DECLARED_RELATIVE: &str = "ban-relative-imports";
 
 /// Lint settings an `overrides` entry applies to some directories only.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -3390,6 +3439,16 @@ impl RepoFacts {
                 sc.rules.sort();
             }
             c.scoped.sort();
+            for d in &mut c.declared {
+                d.sources.sort();
+                d.sources.dedup();
+                d.options.sort();
+                d.options.dedup();
+                d.limits.sort();
+                d.limits.dedup();
+            }
+            c.declared.sort();
+            c.declared.dedup();
         }
         self.lint.sort();
         for f in &mut self.context_files {
