@@ -1179,15 +1179,11 @@ pub fn misread_before_forms(c: &Convention) -> bool {
 /// directory of it. Such a Drift reads a practice's place from its role's package and
 /// directory only ([`crate::practices::promote::place_of`]), so it would check one
 /// file's or one route prefix's practice over the whole directory.
-//
-// PLACE STREAM HOOK: when `crate::practices::promote::Place` gains a kind (one file, a
-// route prefix), return true here for a place of that kind, read with
-// `crate::practices::promote::place_of(c)`, e.g.
-// `crate::practices::promote::place_of(c).is_some_and(|p| p.file.is_some())`. Nothing
-// else is needed: `written_version` and its tests (`tests/s18_versions.rs`) take it
-// from here.
-fn place_of_a_new_kind(_c: &Convention) -> bool {
-    false
+fn place_of_a_new_kind(c: &Convention) -> bool {
+    matches!(
+        &c.rule,
+        Rule::Practice { in_file, under_route, .. } if in_file.is_some() || under_route.is_some()
+    )
 }
 
 impl ConventionsFile {
