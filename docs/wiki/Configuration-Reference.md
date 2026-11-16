@@ -9,6 +9,7 @@ Every setting Drift reads, key by key, with its type, default and effect; the fo
 | `.drift/config.yaml` | Settings people choose: experimental features, where entry points are reachable from, packages, the agent brief, declared practices, and the record of `drift setup` answers. Every key is optional. | People, and `drift setup` for the keys it records. |
 | `.drift/conventions.yaml` | The conventions Drift mined and what people decided about each: status, mode, exceptions. | `drift init` (proposals), `drift review` and the Studio (decisions). |
 | `drift.lock` | Legacy violations that never block, one per line. | `drift init` and `drift review` (baselines); people remove lines by fixing code. |
+| `.drift/probation.lock` | Only with the experimental `probation`: per promoted practice on probation, `<id> rule <hash>` and one `<id> <path>#<symbol>` per unit of its place when it was put on probation (those never count towards block mode). Sorted. | `drift practices promote ... --block`; edit it only by promoting again. |
 
 Commit all three. The cache, session state, the review log and `.drift/verify-cache.json` (the experimental verifier's verdicts) under `.drift/` are local: see [Files Drift Writes](Files-Drift-Writes).
 
@@ -38,6 +39,7 @@ A list of feature names. A name Drift does not know is a warning that lists the 
 | `intra_package_layering` | Mines and checks layering between areas inside one workspace package. Off by default: on the build set its cards were not accepted under the fold rule. |
 | `test_roles` | Forms and mines roles of test code (selector version 4). |
 | `kind_roles` | Forms and mines roles of one structural kind across the repository: components, hooks, pydantic models, routers and so on (selector version 4). |
+| `probation` | A promoted practice whose history cannot be replayed (a shallow clone, no commits) earns block mode on the units added to its place afterwards: `drift practices promote ... --block` puts it on probation in advise mode and writes `.drift/probation.lock`; `drift check` counts the units added since, and once 15 can be told and all follow, prints `drift review --block <id>` for a person to run. Nothing blocks by itself. See [Practices Map](Practices-Map#probation-block-mode-without-history-experimental). |
 | `listed_entry_points` | Every command reads every entry point Drift lists, where mining and `check` read those of the last measured build: the routes `drift security` and the practice map read (registered in a function, by a file-convention router, by an unpacked `urlpatterns`) become members of the roles conventions are mined for and checked in. `drift census --listed` previews the same without the feature. The precision of what mining proposes over these entry points was not measured. |
 
 ```yaml

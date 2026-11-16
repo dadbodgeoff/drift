@@ -2458,6 +2458,50 @@ pub fn followers(report: &PracticesReport, c: &Convention) -> BTreeSet<(String, 
         .collect()
 }
 
+/// Every unit of its place (`path#symbol`) with what the promoted practice `c` says of
+/// it as [`check`] reads it: follows, breaks, or the map cannot tell. What
+/// [`super::probation`] counts. Empty for any other convention, or one of a concern
+/// `report` does not have. Sorted by unit.
+pub fn observed(
+    report: &PracticesReport,
+    c: &Convention,
+) -> Vec<(String, super::probation::Observed)> {
+    use super::probation::Observed;
+    let (
+        Rule::Practice {
+            concern,
+            any_of,
+            any_mechanism,
+            any_enforcing,
+            ..
+        },
+        Some(place),
+    ) = (&c.rule, place_of(c))
+    else {
+        return Vec::new();
+    };
+    let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
+        return Vec::new();
+    };
+    let r = Reading::new(cr);
+    let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
+    let mut out: Vec<(String, Observed)> = r
+        .judged(&place, &r.verdicts(&accepted))
+        .iter()
+        .map(|j| {
+            let seen = match j.verdict {
+                Verdict::Follows => Observed::Follows,
+                Verdict::Unknown => Observed::Unknown,
+                Verdict::Breaks => Observed::Breaks,
+            };
+            (j.key(), seen)
+        })
+        .collect();
+    // Each unit once already: its mounts are judged together, the worst deciding.
+    out.sort();
+    out
+}
+
 /// The units of `concern` in `place` as [`check`] reads a place's membership
 /// ([`Reading`]): each unit once (`path#symbol`), with its rows in the report (its
 /// mounts), and whether it is there only as a route Drift did not read to the end, so
@@ -2662,7 +2706,7 @@ pub fn condition(c: &Convention) -> Option<String> {
 }
 
 /// What one unit of a concern is called, `n` of them (`entry_point`: "entry points").
-fn units_word(unit: &str, n: usize) -> String {
+pub(crate) fn units_word(unit: &str, n: usize) -> String {
     let one = match unit {
         "entry_point" => "entry point".to_string(),
         "catch" => "catch clause".to_string(),

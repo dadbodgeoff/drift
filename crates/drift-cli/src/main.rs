@@ -12,6 +12,7 @@ mod lookup;
 mod mcp;
 mod pr;
 mod practices;
+mod probation;
 mod project;
 mod promote;
 mod review_log;
@@ -4419,6 +4420,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 (Some(s), Some(base)) => check_security_advice(cli, root, &facts, s, base),
                 _ => Vec::new(),
             };
+            // Promoted practices on probation (experimental `probation`): what the units
+            // added to their place since say. Said in every format, never part of the
+            // exit code; not for a check of named files (a hook's).
+            let on_probation: Vec<probation::Listed> = if only.is_some() {
+                Vec::new()
+            } else {
+                probation::counts(root, &policy, scope.as_ref(), map_of).unwrap_or_else(|e| {
+                    eprintln!("drift: practices on probation not counted: {e:#}");
+                    Vec::new()
+                })
+            };
             match format {
                 Format::Json => {
                     let mut stdout = std::io::stdout().lock();
@@ -4442,6 +4454,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             if !advice.is_empty() {
                                 v["security_advice"] = serde_json::to_value(&advice)?;
                             }
+                            if !on_probation.is_empty() {
+                                v["probation"] = serde_json::to_value(&on_probation)?;
+                            }
                             serde_json::to_writer_pretty(&mut stdout, &v)?;
                         }
                         None => serde_json::to_writer_pretty(
@@ -4451,6 +4466,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 conventions,
                                 practices,
                                 security: security.as_ref(),
+                                probation: &on_probation,
                             },
                         )?,
                     }
@@ -4530,6 +4546,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "message": { "text": line.trim_start_matches("drift: ") },
                         }));
                     }
+                    for p in &on_probation {
+                        notes.push(serde_json::json!({
+                            "level": "note",
+                            "message": { "text": p.message },
+                        }));
+                    }
                     // The security baseline's comparison: one writer for this and
                     // `drift security --format sarif` ([`sec_diff::sarif_ratchet`]).
                     if let Some(sec) = &security {
@@ -4568,6 +4590,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     // said, never part of the exit code.
                     for line in practices::practice_status_lines(&report, &policy) {
                         println!("{line}");
+                    }
+                    for p in &on_probation {
+                        println!("drift: {}", p.message);
                     }
                     print!("{}", drift_mine::practices::added_text(&added));
                     print!("{}", drift_mine::practices::departures_text(&departures));
@@ -4637,6 +4662,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     // readings fail: said once, in the log.
                     for line in security.iter().flat_map(security_said) {
                         println!("drift security: {line}");
+                    }
+                    for p in &on_probation {
+                        println!("drift: {}", p.message);
                     }
                     // Advice is said in the log, not as annotations: the practice
                     // notices above already point at new entry points.
@@ -5010,6 +5038,10 @@ struct CheckJson<'a> {
     /// the repository has no baseline, and where files are named.
     #[serde(skip_serializing_if = "Option::is_none")]
     security: Option<&'a drift_mine::ratchet::Ratchet>,
+    /// Promoted practices on probation, with their counts ([`probation::counts`]).
+    /// Omitted when none (probation off, or nothing on it).
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    probation: &'a [probation::Listed],
 }
 
 /// `drift check --format json` `practices`: what the practice map says of the files

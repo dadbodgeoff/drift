@@ -148,7 +148,18 @@ pub fn run(
     if args.list {
         let facts = facts()?;
         let report = crate::practices::report_units_kept(root, &facts, None);
-        return list_of(&report, policy.as_ref(), args.concern.as_deref(), args.json);
+        // With probation on, the practices on probation and their counts, listed after.
+        let on_probation = match &policy {
+            Some(p) => crate::probation::counts(root, p, None, || &report)?,
+            None => Vec::new(),
+        };
+        return list_of(
+            &report,
+            policy.as_ref(),
+            args.concern.as_deref(),
+            args.json,
+            &on_probation,
+        );
     }
     let req = match request(args) {
         Ok(r) => r,
@@ -228,12 +239,26 @@ pub fn run(
     // blocking only if the gate still lets it, else it advises (and says so).
     let kept_block = !args.block && conv.mode == Mode::Block;
     let mut block_dropped = None;
+    // With probation on: why it was put on probation instead of blocking, and its count
+    // when it was on probation already; or the count that let it block.
+    let mut probation: Option<(Option<String>, Option<crate::probation::Listed>)> = None;
     if args.block || kept_block {
         let gate = block_gate(root, &report, &conv, cand.forced, &first_added(root));
         replay = gate.replay;
+        let missing = gate.missing;
+        let count = gate.probation;
+        if gate.verdict.is_ok() && count.is_some() {
+            probation = Some((None, count.clone()));
+        }
         match gate.verdict {
+            // No history to replay: on probation instead, in advise mode.
+            Err(why) if args.block && missing.is_some() && crate::probation::on(root) => {
+                conv.mode = Mode::Advise;
+                probation = Some((Some(why), count));
+            }
             Err(why) if args.block => {
-                return block_refused(args.json, &conv, gate.replay, &cand.unit, &why);
+                let hint = missing.map(|m| crate::probation::hint(m, &cand.unit));
+                return block_refused(args.json, &conv, gate.replay, &cand.unit, &why, hint);
             }
             Err(why) => {
                 conv.mode = Mode::Advise;
@@ -260,6 +285,20 @@ pub fn run(
         policy.save(root)?;
         lock.save(root)?;
     }
+    // Put on probation: its record written (kept when it was on probation already
+    // under this rule), then counted as `drift check` will count it.
+    let mut probation_written = false;
+    if let Some((Some(_), count)) = &mut probation {
+        if write_it {
+            probation_written = crate::probation::put_on(root, &report, &policy, &conv)?;
+            *count = crate::probation::count_of(root, &report, &conv)?;
+        } else if count
+            .as_ref()
+            .is_none_or(|c| c.count.state == drift_mine::practices::probation::State::Void)
+        {
+            *count = Some(crate::probation::fresh(&report, &conv));
+        }
+    }
     let mut stdout = std::io::stdout().lock();
     if args.json {
         let out = json!({
@@ -274,6 +313,15 @@ pub fn run(
             "replaces": replaces.iter().map(Replaced::json).collect::<Vec<Value>>(),
             "preview": preview,
         });
+        let mut out = out;
+        if let Some((why, count)) = &probation {
+            out["probation"] = json!({
+                "on_probation": why.is_some(),
+                "why": why,
+                "written": probation_written,
+                "count": count,
+            });
+        }
         serde_json::to_writer_pretty(&mut stdout, &out)?;
         writeln!(stdout)?;
         return Ok(ExitCode::SUCCESS);
@@ -297,15 +345,39 @@ pub fn run(
             conv.id
         )?;
     }
-    if let Some(r) = replay {
-        writeln!(
+    match (&probation, replay) {
+        (Some((None, Some(count))), _) => writeln!(
+            stdout,
+            "Block: {}; so it blocks from now on (`drift review --advise {}` sets it back).",
+            count.message, conv.id
+        )?,
+        (Some((Some(why), count)), _) => {
+            writeln!(
+                stdout,
+                "Not set to block: {why}. On probation instead (experimental `probation`): it advises, and `drift check` counts the {} added to {} from now on; once {} of them can be told and all follow it, the check says so and prints the command that sets it to block. Nothing blocks by itself.",
+                units(&cand.unit),
+                drift_mine::report::sanitize(&cand.place.shown(), 160),
+                drift_mine::practices::probation::PROBATION_UNITS
+            )?;
+            if let Some(c) = count {
+                writeln!(stdout, "Probation: {}.", c.message)?;
+            }
+        }
+        (_, Some(r)) => writeln!(
             stdout,
             "Block: {}, so it blocks from now on (`drift review --advise {}` sets it back).",
             r.sentence(&cand.unit),
             conv.id
-        )?;
+        )?,
+        _ => {}
     }
-    if write_it {
+    if write_it && probation_written {
+        writeln!(
+            stdout,
+            "Wrote {CONVENTIONS_FILE}, {LOCK_FILE} and {}.",
+            drift_mine::practices::probation::PROBATION_FILE
+        )?;
+    } else if write_it {
         writeln!(stdout, "Wrote {CONVENTIONS_FILE} and {LOCK_FILE}.")?;
     } else {
         writeln!(stdout, "Dry run: nothing was written.")?;
@@ -684,21 +756,29 @@ fn block_refused(
     replay: Option<Replay>,
     unit: &str,
     why: &str,
+    hint: Option<String>,
 ) -> anyhow::Result<ExitCode> {
     let message = format!(
         "{}: not set to block: {why}. Nothing was written. Advise mode needs no history: run it again without --block.",
         c.id
     );
     if json {
-        let out = json!({
+        let mut out = json!({
             "refused": { "code": "block_refused", "id": c.id, "replay": replay },
             "message": message,
         });
+        // Only where there is no history to replay: the setting that stands in for it.
+        if let Some(h) = &hint {
+            out["hint"] = json!(h);
+        }
         println!("{}", serde_json::to_string_pretty(&out)?);
     } else {
         eprintln!("drift: {message}");
         if let Some(r) = replay {
             eprintln!("Replay: {}.", r.sentence(unit));
+        }
+        if let Some(h) = &hint {
+            eprintln!("{h}");
         }
     }
     Ok(ExitCode::from(2))
@@ -1047,6 +1127,7 @@ fn list_of(
     policy: Option<&ConventionsFile>,
     concern: Option<&str>,
     json: bool,
+    on_probation: &[crate::probation::Listed],
 ) -> anyhow::Result<ExitCode> {
     if let Some(id) = concern
         && !report.concerns.iter().any(|c| c.id == id)
@@ -1074,12 +1155,15 @@ fn list_of(
                 "candidate": r.candidate,
             })
         };
-        let out = json!({
+        let mut out = json!({
             "candidates": ranked.active.iter().map(&entry).collect::<Vec<Value>>(),
             "passive": ranked.passive.iter().map(&entry).collect::<Vec<Value>>(),
             "declined": open.declined,
             "promoted": open.promoted,
         });
+        if !on_probation.is_empty() {
+            out["probation"] = serde_json::to_value(on_probation)?;
+        }
         serde_json::to_writer_pretty(&mut stdout, &out)?;
         writeln!(stdout)?;
         return Ok(ExitCode::SUCCESS);
@@ -1136,6 +1220,9 @@ fn list_of(
             open.declined
         )?;
     }
+    for p in on_probation {
+        writeln!(stdout, "Probation: {}.", p.message)?;
+    }
     Ok(ExitCode::SUCCESS)
 }
 
@@ -1148,6 +1235,10 @@ pub enum NoHistory {
     Shallow,
     NoCommits,
     Failed,
+    /// The history is there, but it dates fewer units of the place than the replay
+    /// reads (files not committed yet, lines git cannot blame): the gate's own finding,
+    /// never [`first_added`]'s.
+    Undated,
 }
 
 impl NoHistory {
@@ -1159,6 +1250,7 @@ impl NoHistory {
             }
             NoHistory::NoCommits => "the repository has no commits",
             NoHistory::Failed => "git could not read the history",
+            NoHistory::Undated => "the history dates too few of the units of its place",
         }
     }
 }
@@ -1188,7 +1280,7 @@ fn git_cmd(root: &Path, args: &[&str]) -> Command {
     cmd
 }
 
-fn git_line(root: &Path, args: &[&str]) -> Option<String> {
+pub(crate) fn git_line(root: &Path, args: &[&str]) -> Option<String> {
     crate::history::run_bounded(git_cmd(root, args), crate::history::GIT_TIMEOUT, 1 << 20)
         .ok()
         .map(|o| String::from_utf8_lossy(&o).trim().to_string())
@@ -1295,6 +1387,13 @@ fn parse_blame(text: &str) -> BTreeMap<u32, i64> {
 pub struct Gate {
     pub replay: Option<Replay>,
     pub verdict: Result<(), String>,
+    /// Refused because there is no history to replay, and why: what probation stands
+    /// in for ([`crate::probation`]). `None` when it may block, or is refused for
+    /// anything else (forced, Python, a replay that ran and did not follow it).
+    pub missing: Option<NoHistory>,
+    /// With probation on, the count of the practice on probation: when it is eligible
+    /// the gate lets it block ([`crate::probation::count_of`]).
+    pub probation: Option<crate::probation::Listed>,
 }
 
 /// Whether the promoted practice `c` was promoted below the share its place needs (on a
@@ -1335,6 +1434,8 @@ pub fn block_gate(
     let no = |why: String| Gate {
         replay: None,
         verdict: Err(why),
+        missing: None,
+        probation: None,
     };
     if forced {
         return no(
@@ -1348,12 +1449,16 @@ pub fn block_gate(
     let added = match added {
         Ok(a) => a,
         Err(e) => {
-            return no(format!(
-                "blocking needs a replay of the last {} {} added to its place, by the commit that first added each file, and Drift could not read when they were added: {}",
-                promote::REPLAY_UNITS,
-                units(&unit_of(report, c)),
-                e.why()
-            ));
+            let gate = Gate {
+                missing: Some(*e),
+                ..no(format!(
+                    "blocking needs a replay of the last {} {} added to its place, by the commit that first added each file, and Drift could not read when they were added: {}",
+                    promote::REPLAY_UNITS,
+                    units(&unit_of(report, c)),
+                    e.why()
+                ))
+            };
+            return on_probation(root, report, c, gate);
         }
     };
     let file = promote::place_of(c).and_then(|p| p.file);
@@ -1370,10 +1475,42 @@ pub fn block_gate(
         }
         None => promote::replay(report, c, &|path: &str| added.get(path).copied()),
     };
-    Gate {
+    let verdict = r.allows_block();
+    // The place holds enough units to replay, and the history dates too few of them.
+    let undated =
+        verdict.is_err() && r.readable >= promote::REPLAY_UNITS && r.recent < promote::REPLAY_UNITS;
+    let gate = Gate {
         replay: Some(r),
-        verdict: r.allows_block(),
+        verdict,
+        missing: undated.then_some(NoHistory::Undated),
+        probation: None,
+    };
+    on_probation(root, report, c, gate)
+}
+
+/// `gate` with probation read in, where it stands in for a missing history: the count
+/// of `c` when it is on probation, and block mode allowed when that count is eligible.
+/// Probation off, or `c` refused for anything but history: `gate` as it is.
+fn on_probation(root: &Path, report: &PracticesReport, c: &Convention, mut gate: Gate) -> Gate {
+    if gate.missing.is_none() || gate.verdict.is_ok() {
+        return gate;
     }
+    match crate::probation::count_of(root, report, c) {
+        Ok(Some(listed)) => {
+            if listed.count.eligible() {
+                gate.verdict = Ok(());
+            }
+            gate.probation = Some(listed);
+        }
+        Ok(None) => {}
+        // A record that cannot be read allows nothing.
+        Err(e) => {
+            if let Err(why) = &mut gate.verdict {
+                why.push_str(&format!("; {e:#}"));
+            }
+        }
+    }
+    gate
 }
 
 /// `drift review --block` on promoted practices: each goes through the gate (`--force`
@@ -1404,10 +1541,11 @@ pub fn review_block(
     for c in wanted {
         let unit = unit_of(&report, c);
         let gate = block_gate(root, &report, c, forced(c), &added);
-        let seen = gate
-            .replay
-            .map(|r| format!(" (replay: {})", r.sentence(&unit)))
-            .unwrap_or_default();
+        let seen = match (&gate.probation, gate.replay) {
+            (Some(p), _) => format!(" (probation: {})", p.message),
+            (None, Some(r)) => format!(" (replay: {})", r.sentence(&unit)),
+            (None, None) => String::new(),
+        };
         match gate.verdict {
             Ok(()) => evidence.push(format!("{}: may block{seen}", c.id)),
             Err(why) => refusals.push(format!("{}: {why}{seen}", c.id)),

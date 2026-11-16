@@ -83,6 +83,14 @@ main branch.
   own reason, and shows what a promotion replaces. Each practice on the May be
   promoted tab opens it pre-filled. The funnel and promotion fixtures are now
   written by the real binary (`apps/studio/scripts/make-promote-fixtures.mjs`).
+- **Probation (experimental, `experimental: [probation]` in `.drift/config.yaml`):**
+  `drift practices promote ... --block` where the history cannot be replayed (a
+  shallow clone, no commits) accepts the practice in advise mode on probation and
+  writes `.drift/probation.lock`; `drift check` and `drift practices promote --list`
+  count the units added to its place since (`probation` in `--json`), and once 15 can
+  be told and all follow, print `drift review --block <id>` for a person to run.
+  Without the setting, a `--block` refused for want of history adds one line naming
+  it, and in a shallow clone how to read the history (`fetch-depth: 0` in CI).
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise
