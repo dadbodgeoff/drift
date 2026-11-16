@@ -3387,7 +3387,15 @@ impl<'s> Lowerer<'s> {
                                     if kind == SymbolKind::Const {
                                         self.record_trpc_binding(&name, init);
                                     }
-                                    self.lower_value_symbol(&name, init, kind, d.span.start)
+                                    self.lower_value_symbol(&name, init, kind, d.span.start);
+                                    // `const Dao = function (db) { this.find = ... }`: a
+                                    // constructor function written as a value, read as
+                                    // one declared is.
+                                    if kind == SymbolKind::Const
+                                        && let Expression::FunctionExpression(f) = unwrap_expr(init)
+                                    {
+                                        self.lower_this_methods(&name, f.body.as_deref());
+                                    }
                                 }
                                 None => self.push_symbol(RawSymbol::empty(
                                     &name,
@@ -6118,6 +6126,10 @@ struct Practice {
     initialised: HashSet<SymbolId>,
     /// Locals bound to request input (`const body = await req.json()`).
     input_vars: HashSet<SymbolId>,
+    /// Of those, the ones bound to what a call gave back for the input (`const user
+    /// = await prisma.user.findFirst({ where: { username: params.username } })`): a
+    /// row, not what the request sent ([`Collector::hands_input`]).
+    call_results: HashSet<SymbolId>,
     /// Locals bound to an object built with an env-derived secret
     /// (`const wh = new Webhook(process.env.SVIX_SECRET)`).
     env_secrets: HashSet<SymbolId>,
@@ -12243,6 +12255,71 @@ impl Collector<'_, '_> {
         }
     }
 
+    /// The expression is what the request sent ([`Self::mentions_input`]), not what a
+    /// call of a package or of the repository gave back for it: `prisma.user.findFirst
+    /// ({ where: { username: params.username } })` is a row, and so is a local bound
+    /// to it ([`Practice::call_results`]). A call on the input itself
+    /// (`request.formData()`, `body.trim()`) and a built-in's (`JSON.parse(text)`,
+    /// `Number(params.id)`) hand on what they were given. For the listed reading of
+    /// [`drift_core::controls::INPUT_HANDED`] only.
+    fn hands_input(&self, e: &Expression, depth: usize) -> bool {
+        if depth > 4 {
+            return false;
+        }
+        match peel(e) {
+            Expression::Identifier(id)
+                if self
+                    .symbol_of(id)
+                    .is_some_and(|s| self.p.call_results.contains(&s)) =>
+            {
+                false
+            }
+            Expression::StaticMemberExpression(m) => {
+                let mut root = peel(&m.object);
+                while let Expression::StaticMemberExpression(o) = root {
+                    root = peel(&o.object);
+                }
+                match root {
+                    Expression::Identifier(id)
+                        if self
+                            .symbol_of(id)
+                            .is_some_and(|s| self.p.call_results.contains(&s)) =>
+                    {
+                        false
+                    }
+                    Expression::CallExpression(c) if self.gives_back(c) => false,
+                    _ => self.mentions_input(e, depth),
+                }
+            }
+            Expression::CallExpression(c) => {
+                !self.gives_back(c)
+                    && (self.mentions_input(&c.callee, depth + 1)
+                        || c.arguments
+                            .iter()
+                            .filter_map(|a| a.as_expression())
+                            .any(|a| self.hands_input(a, depth + 1)))
+            }
+            Expression::ObjectExpression(o) => o.properties.iter().any(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) => self.hands_input(&p.value, depth + 1),
+                ObjectPropertyKind::SpreadProperty(s) => self.hands_input(&s.argument, depth + 1),
+            }),
+            x => self.mentions_input(x, depth),
+        }
+    }
+
+    /// A call whose result is its own, not what it was handed ([`Self::hands_input`]):
+    /// of a package or of the repository (any callee not a built-in), made on
+    /// something other than the input.
+    fn gives_back(&self, c: &CallExpression) -> bool {
+        !matches!(
+            self.l.canon_callee(&c.callee),
+            Some(RawRef {
+                base: RawBase::Global(_),
+                ..
+            })
+        ) && !self.mentions_input(&c.callee, 0)
+    }
+
     /// Schemas request input is validated into: `Schema.parse(await req.json())`,
     /// valibot `parse(Schema, body)`, class-transformer `plainToInstance(Dto, body)`,
     /// next-safe-action `.schema(S).action(fn)` / `.inputSchema(S)`.
@@ -12340,9 +12417,16 @@ impl Collector<'_, '_> {
         // What the request sent is handed to it, schema or not: what the call does
         // with it is for a reader to say ([`drift_core::controls::INPUT_HANDED`]).
         // Past the cap the callee is not kept: unknown, not "nothing validates it".
-        if self.p.handed.len() < MAX_PARSED {
+        // What a call of a package or of the repository handed the input gave back
+        // (a row a query found by `params.username`) is not what the request sent
+        // ([`Collector::hands_input`]).
+        let hands = it.arguments.iter().any(|a| match a {
+            Argument::SpreadElement(s) => self.hands_input(&s.argument, 0),
+            _ => a.as_expression().is_some_and(|x| self.hands_input(x, 0)),
+        });
+        if hands && self.p.handed.len() < MAX_PARSED {
             self.p.handed.insert(callee.clone());
-        } else if !self.p.handed.contains(&callee) {
+        } else if hands && !self.p.handed.contains(&callee) {
             self.p.handed_unread = true;
         }
         for (x, input) in parts.iter().zip(&given) {
@@ -12516,6 +12600,9 @@ impl Collector<'_, '_> {
             }
         }
         let input = self.mentions_input(init, 0);
+        // What a call gave back for the input is no input of its own
+        // ([`Practice::call_results`]).
+        let result = input && !self.hands_input(init, 0);
         // The answer of a constant-time compare is what the compare says, not the
         // secret it was given (`const ok = timingSafeEqual(given, secret)`).
         let compare = matches!(peel(init), Expression::CallExpression(c)
@@ -12538,6 +12625,9 @@ impl Collector<'_, '_> {
                 self.p.initialised.insert(s);
                 if input {
                     self.p.input_vars.insert(s);
+                }
+                if result {
+                    self.p.call_results.insert(s);
                 }
                 if let Expression::NewExpression(n) = peel(init)
                     && n.arguments
@@ -12564,6 +12654,9 @@ impl Collector<'_, '_> {
                     let Some(s) = b.symbol_id.get() else { continue };
                     if input {
                         self.p.input_vars.insert(s);
+                    }
+                    if result {
+                        self.p.call_results.insert(s);
                     }
                     if !p.computed
                         && let Some(k) = key_name(&p.key)

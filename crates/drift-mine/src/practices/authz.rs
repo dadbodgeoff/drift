@@ -5179,14 +5179,14 @@ fn same_value(source: &str, compares: &str) -> bool {
 /// ([`drift_core::BodyCheck::compares_path`]); where neither says the caller, the
 /// comparison is of the row and the request, or of two things the request sent, and
 /// a caller of any tenant passes it by sending the value it is compared with.
-fn caller_side(c: &drift_core::BodyCheck) -> bool {
+pub(super) fn caller_side(c: &drift_core::BodyCheck) -> bool {
     whose(&c.source, &c.reads) == Whose::Caller
         || whose(&c.compares, &c.compares_path) == Whose::Caller
 }
 
 /// Whose a value is, by what it is read from and the path read ([`whose`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Whose {
+pub(super) enum Whose {
     /// Read off the caller: a session, a user, a token.
     Caller,
     /// What the request sent: a body, a query, a path parameter, a header.
@@ -5208,7 +5208,7 @@ enum Whose {
 /// The last member is the value itself, and names nothing (`req.body.userId`). What
 /// the request sent: a header, and a member that holds input (`req.query.orgId`,
 /// `params.orgId`). A literal and a value that could not be read are neither.
-fn whose(root: &str, path: &str) -> Whose {
+pub(super) fn whose(root: &str, path: &str) -> Whose {
     /// Members that hold what the request sent.
     const SENT: &[&str] = &[
         "body",

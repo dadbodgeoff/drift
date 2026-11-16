@@ -513,6 +513,16 @@ main branch.
   id, path and member taken from the repository as one shell word (`drift review
   --show` cards, `--exempt` hints, stale-rule lines, `drift practices promote`
   lines, `drift setup` and `drift findings` messages).
+- **Three readings of this release that were wrong on real repositories are put
+  right.** A check that answers 401 signs the caller in, in the practice map, only
+  where what it tests can be the caller's: one on what the request sent (an empty
+  new password, a CAPTCHA answer and the stored answer it must match) is input
+  validation, and leaves the route unknown rather than signed in.
+  What a query found by a route parameter is no longer taken for the input handed
+  to a package's call, so such a loader reads "reads input, nothing validates it"
+  again. In `drift security`, a route whose handler is one function a constructor
+  function assigns on `this` reaches what that function calls, and a call through
+  an instance it builds reaches the method called, not every method of the object.
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a
