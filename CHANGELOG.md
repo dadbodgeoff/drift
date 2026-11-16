@@ -16,12 +16,13 @@ line under `Unreleased` in the same pull request. See
 
 ## [Unreleased]: 0.1.0
 
-> **Not yet released; not yet built or measured.** No version of Drift has been
-> published. The lines below describe the code on the main branch. Much of it was
-> written in parallel and has not yet been compiled, tested or run on real
-> repositories as a whole, so a line here says what the code is written to do,
-> not what was measured. Accuracy figures are in [docs/ACCURACY.md](docs/ACCURACY.md);
-> none of them covers the changes below.
+> **Not yet released; not yet measured.** No version of Drift has been
+> published. The lines below describe the code on the branch `map-to-enforcement`,
+> which is not merged yet. It compiles and `cargo test --all` passes (2,461 tests),
+> and what mining proposes was proved byte-identical to commit `a0779066` on seven
+> real repositories; nothing in it has been measured for accuracy yet, so a line
+> here says what the code does, not how often it is right. Accuracy figures are in
+> [docs/ACCURACY.md](docs/ACCURACY.md); none of them covers the changes below.
 
 0.1.0 is the first version. What it does as a whole (mining and review,
 `drift check`, the practice map, the security inventory, the agent hooks and MCP
@@ -312,3 +313,11 @@ main branch.
   the tenant and owner keys a repository scopes by are learned from its own
   queries. Each of these can change what `drift practices`, `drift security` and
   a promoted practice report on the same code.
+- **The wiki matches the code again, and a test keeps it so.** The Command
+  Reference documents `drift upgrade`, exit codes 3 and 141, the guided
+  `drift setup` (`--guided`, `--yes-to`, `--no-to`, `--no-from-map`) and
+  `drift investigate --routes`; the Configuration Reference, policy version 3,
+  the `from_map` field and `DRIFT_NO_FROM_MAP`; the Hooks and MCP pages, the ten
+  read-only tools the hook approves; and the lowering versions are current. A
+  test (`gap_docs_sync`) fails when a command or flag `--help` prints, an exit
+  code, a version constant or the read-only tool list is missing from the pages.

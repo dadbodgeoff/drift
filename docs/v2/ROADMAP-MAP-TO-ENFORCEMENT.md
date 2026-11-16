@@ -1,6 +1,6 @@
 # Roadmap: from the map to enforcement, and to a beta
 
-Status, 2026-11-16: **sprint 1 is being written; nothing in it is built or measured yet.** This document is the working list for getting Drift to a beta. An independent pass checked it item by item against the audits (283 items; the 107 it found missing or wrong are now in). It is built from nine audits of the code and of Drift's output on seven real repositories (epic-stack, juice-shop, cal.com, NodeGoat, full-stack-fastapi-template, plane, pygoat), from the state of `main` and the open pull requests, and from the bars `PLAN.md` already set. Every number is measured unless it is marked as a target.
+Status, 2026-11-16: **sprint 1 is written on the branch `map-to-enforcement` (pull request 148), which is not merged and not released. It compiles and `cargo test --all` passes (2,461 tests), and what mining proposes was proved byte-identical to commit `a0779066` on seven real repositories; nothing in it has been measured for accuracy yet.** This document is the working list for getting Drift to a beta. An independent pass checked it item by item against the audits (283 items; the 107 it found missing or wrong are now in). It is built from nine audits of the code and of Drift's output on seven real repositories (epic-stack, juice-shop, cal.com, NodeGoat, full-stack-fastapi-template, plane, pygoat), from the state of `main` and the open pull requests, and from the bars `PLAN.md` already set. Every number is measured unless it is marked as a target.
 
 ## 1. The short version
 
