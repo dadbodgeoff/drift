@@ -44,6 +44,14 @@ pub const MAX_PRACTICES: usize = 8;
 /// [`Convention::from_map`] of a practice proposed from the map.
 pub const PRACTICE: &str = "practice";
 
+/// [`Convention::from_map`] of a rule a lint configuration of the repository declares
+/// ([`drift_mine::declared`]).
+pub const DECLARED: &str = from_map::DECLARED;
+
+/// The channel of wiring regularities ([`drift_mine::wiring_proposals`]): listed by
+/// `census --from-map` as information, never written.
+pub const WIRING: &str = from_map::WIRING;
+
 /// The heading of the section `init` and `census --from-map` print.
 const HEADING: &str = "From the map (not mined: these did not go through the miner's measured gates; each advises only once you accept it)";
 
@@ -122,6 +130,10 @@ pub enum Basis {
         /// Files of the layer Drift could not read.
         unknown: usize,
     },
+    /// A rule a lint configuration of the repository declares, checked against the code.
+    Declared {
+        evidence: drift_mine::declared::DeclaredEvidence,
+    },
 }
 
 /// One proposal from the map.
@@ -147,6 +159,10 @@ pub struct Held {
 pub struct Collected {
     pub proposals: Vec<FromMap>,
     pub held: Vec<Held>,
+    /// Information from the map that is no proposal and is never written: declared
+    /// restrictions another convention states or Drift cannot express, wiring
+    /// regularities, instruction files ([`drift_mine::declared::Note`]).
+    pub notes: Vec<drift_mine::declared::Note>,
 }
 
 /// A rule Drift already has: a convention of the policy (neither a practice nor from
@@ -228,6 +244,7 @@ pub fn collect(
     let mut out = Collected::default();
     practices_into(report, known, policy, python_on, &mut out);
     layering_into(repo, kinds, known, policy, python_on, &mut out);
+    declared_into(repo, kinds, known, policy, python_on, &mut out);
     out.held.sort();
     out
 }
@@ -494,6 +511,125 @@ fn layering_into(
     }
 }
 
+/// Rules a lint configuration of the repository declares ([`drift_mine::declared`]):
+/// each Drift can check is proposed ([`Basis::Declared`]) unless a person decided its
+/// id, and held as layering proposals are (Python proposals off, the show policy, more
+/// than [`from_map::MAX_OFFERED`]); the rest are notes (another convention already says
+/// it, or Drift cannot express it, with why).
+fn declared_into(
+    repo: &RepoFacts,
+    kinds: &FileKinds,
+    known: &[Known<'_>],
+    policy: Option<&ConventionsFile>,
+    python_on: bool,
+    out: &mut Collected,
+) {
+    let rules: Vec<MinedRule<'_>> = known
+        .iter()
+        .map(|k| MinedRule {
+            id: k.id,
+            role: k.role,
+            rule: k.rule,
+        })
+        .collect();
+    let decided = |id: &str| {
+        policy.is_some_and(|p| {
+            p.conventions
+                .iter()
+                .any(|c| c.id == id && c.status != Status::Proposed)
+        })
+    };
+    let d = drift_mine::declared::declared(repo, kinds, &rules);
+    out.notes.extend(drift_mine::declared::notes(&d));
+    let mut offered = 0usize;
+    for p in d.proposals {
+        if decided(&p.convention.id) {
+            continue;
+        }
+        let reason = if !python_on && p.convention.language() == Lang::Python {
+            Some(Reason::PythonOff)
+        } else if !drift_mine::show::convention_kept(&p.convention) {
+            Some(Reason::NotShown)
+        } else if offered >= from_map::MAX_OFFERED {
+            Some(Reason::OverCap)
+        } else {
+            None
+        };
+        match reason {
+            Some(reason) => out.held.push(Held {
+                id: p.convention.id.clone(),
+                kind: DECLARED,
+                summary: p.convention.summary.clone(),
+                reason,
+            }),
+            None => {
+                offered += 1;
+                out.proposals.push(FromMap {
+                    convention: p.convention,
+                    basis: Basis::Declared {
+                        evidence: p.declared,
+                    },
+                    twins: Vec::new(),
+                });
+            }
+        }
+    }
+}
+
+/// What `census --from-map` lists besides the proposals: the wiring regularities the
+/// map computes ([`drift_mine::wiring_proposals`]) and the instruction files of the
+/// repository, with which of these proposals an export would add to them. Information
+/// only: nothing of it is written.
+fn census_notes(
+    root: &Path,
+    repo: &RepoFacts,
+    kinds: &FileKinds,
+    known: &[Known<'_>],
+    c: &mut Collected,
+) {
+    let rules: Vec<MinedRule<'_>> = known
+        .iter()
+        .map(|k| MinedRule {
+            id: k.id,
+            role: k.role,
+            rule: k.rule,
+        })
+        .collect();
+    let wiring = drift_mine::wiring_proposals::wiring(repo, kinds, &rules);
+    c.notes
+        .extend(drift_mine::wiring_proposals::notes(&wiring));
+    let proposed: Vec<&Convention> = c.proposals.iter().map(|p| &p.convention).collect();
+    let instructions = drift_mine::declared::instruction_notes(root, &proposed);
+    c.notes.extend(instructions);
+}
+
+/// Accept the proposed declared rule `id` ([`DECLARED`]): accepted, advising, and the
+/// files that break it today recorded in `lock` as `drift init` records a new
+/// convention's, so only a new import against it is reported. Returns how many lines
+/// were added.
+fn accept_declared(
+    repo: &RepoFacts,
+    policy: &mut ConventionsFile,
+    lock: &mut Lock,
+    id: &str,
+) -> usize {
+    let Some(c) = policy.get_mut(id) else {
+        return 0;
+    };
+    c.status = Status::Accepted;
+    c.mode = Mode::Advise;
+    let mut only = policy.clone();
+    only.conventions.retain(|x| x.id == id);
+    let new: Vec<(String, String)> = drift_mine::check::baseline(repo, &only)
+        .entries
+        .into_iter()
+        .filter(|(i, key)| !lock.contains(i, key))
+        .collect();
+    let n = new.len();
+    lock.entries.extend(new);
+    n
+}
+
 // ---------- drift init ----------
 
 /// Write the proposals of `c` into `policy`: the ones nobody decided are replaced by
@@ -558,6 +694,9 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
                 unknown
             ));
         }
+        Basis::Declared { evidence } => {
+            out.extend(drift_mine::declared::proposal_lines(c, evidence));
+        }
     }
     for t in &p.twins {
         out.push(format!(
@@ -593,6 +732,12 @@ pub fn init_lines(c: &Collected) -> Vec<String> {
         "  Also seen, not proposed: {} (`drift census --from-map` lists each, with why).",
         c.held.len()
     ));
+    if !c.notes.is_empty() {
+        out.push(format!(
+            "  Also from the repository's own statements: {} note(s), none proposed (`drift census --from-map` lists each).",
+            c.notes.len()
+        ));
+    }
     out
 }
 
@@ -607,6 +752,26 @@ pub fn census_text(c: &Collected) -> String {
     }
     for p in &c.proposals {
         lines.extend(proposal_lines(p));
+    }
+    for (kind, heading) in [
+        (
+            DECLARED,
+            "  Declared by the repository, not proposed here (information, never written):",
+        ),
+        (
+            WIRING,
+            "  Wiring regularities (information: listed, never written, nothing checks them):",
+        ),
+    ] {
+        let of: Vec<&drift_mine::declared::Note> =
+            c.notes.iter().filter(|n| n.kind == kind).collect();
+        if of.is_empty() {
+            continue;
+        }
+        lines.push(heading.to_string());
+        for n in of {
+            lines.extend(n.lines.iter().cloned());
+        }
     }
     lines.push(format!("  Also seen, not proposed: {}", c.held.len()));
     for h in &c.held {
@@ -653,6 +818,12 @@ pub fn census_json(c: &Collected) -> Value {
                 v["differ"] = json!(0);
                 v["unknown"] = json!(unknown);
             }
+            Basis::Declared { evidence } => {
+                v["declared"] = json!(evidence);
+                v["follows"] = json!(evidence.follows);
+                v["differ"] = json!(evidence.breaks);
+                v["unknown"] = json!(evidence.not_read);
+            }
         }
         out.push(v);
     }
@@ -665,6 +836,9 @@ pub fn census_json(c: &Collected) -> Value {
             "reason": h.reason.code(),
             "why": h.reason.words(),
         }));
+    }
+    for n in &c.notes {
+        out.push(n.json.clone());
     }
     Value::Array(out)
 }
@@ -680,14 +854,16 @@ pub fn for_census(
     let policy = ConventionsFile::load(root).ok().flatten();
     let report = crate::practices::report_units_kept(root, repo, None);
     let known = known(policy.as_ref(), &mined.candidates);
-    collect(
+    let mut c = collect(
         repo,
         &report,
         &mined.kinds,
         &known,
         policy.as_ref(),
         python_on,
-    )
+    );
+    census_notes(root, repo, &mined.kinds, &known, &mut c);
+    c
 }
 
 /// What `drift init` writes and prints from the map: the proposals for `policy` as it
@@ -846,6 +1022,9 @@ fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option
                 cand.exceptions.len()
             ));
         }
+        Some(DECLARED) => {
+            out.extend(drift_mine::declared::card_lines(c));
+        }
         _ => {
             out.push(format!(
                 "  {} of the {} files there that import code of this repository follow it, 0 differ",
@@ -923,6 +1102,9 @@ pub fn review_step(
                             continue;
                         }
                     }
+                } else if conv.from_map.as_deref() == Some(DECLARED) {
+                    let n = accept_declared(repo, policy, &mut lock, &id);
+                    println!("  accepted: {id}, advise ({n} recorded in {LOCK_FILE})");
                 } else if let Some(c) = policy.get_mut(&id) {
                     c.status = Status::Accepted;
                     println!("  accepted: {id}, advise");
