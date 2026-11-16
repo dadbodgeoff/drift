@@ -1,0 +1,12 @@
+{
+ "//": "test spec",
+ "repositories": [
+  "example-org/gadgets",
+  "example-org/widgets"
+ ],
+ "tasks_per_repo": 3,
+ "total_tasks": 7,
+ "reserves_per_repo": 1,
+ "merged_after": "2025-01-01T00:00:00Z",
+ "merged_before": "2026-11-01T00:00:00Z"
+}
