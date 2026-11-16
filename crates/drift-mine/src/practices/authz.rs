@@ -476,11 +476,19 @@ fn read_unit<'a>(
             // `adminProcedure`), it is found by its name, not proven.
             if common::external(g) || role_guard_proven(cx, g) || role_lookup_guard(cx, g) {
                 ev.add("role_guard", g, VariantSource::Usage);
-            } else if membership_guard(cx, g) {
-                // Read from its body, whatever its name says it is for.
-                ev.add("membership_guard", g, VariantSource::Usage);
             } else {
-                ev.by_name("role_guard", g);
+                match membership_guard(cx, g, entry) {
+                    // Read from its body, whatever its name says it is for.
+                    Membership::Proven => ev.add("membership_guard", g, VariantSource::Usage),
+                    Membership::Beside => ev.find(
+                        "membership_guard",
+                        g,
+                        obligation::SIDES_NOT_CALLER_AND_RESOURCE,
+                        "",
+                        false,
+                    ),
+                    Membership::No => ev.by_name("role_guard", g),
+                }
             }
         }
         for g in &positions.roles {
@@ -496,7 +504,7 @@ fn read_unit<'a>(
         let mut bodies = common::bodies(cx, s);
         let object_checked = object_check_runs(cx, sfile, s, &bodies);
         for w in &around {
-            permission_class(cx, &w.wrapper, object_checked, &mut ev);
+            permission_class(cx, &w.wrapper, entry, object_checked, &mut ev);
         }
         let lazy = common::lazy_handlers(cx, sfile, s);
         let unlinked =
@@ -3070,13 +3078,34 @@ fn built<'a>(cx: &Cx<'a>, from: Node<'a>, class: &str, d: &'a Symbol) -> Callee<
 /// A permission class or guard wrapper by what it is for: named for a tenant
 /// (`HasOrgContext`) or a role, and either proven to reject ([`security::authenticates`])
 /// or a DRF permission class (DRF answers 403 when `has_permission` is false).
-fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidence) {
+fn permission_class(
+    cx: &Cx<'_>,
+    w: &str,
+    entry: &drift_core::EntryPoint,
+    object_checked: bool,
+    ev: &mut Evidence,
+) {
     let ctx = cx.context();
     // What lets a request through only where the caller is found in what the
-    // request names is that check, whatever it is called ([`membership_guard`]).
-    if membership_guard(cx, w) {
-        ev.add("membership_guard", w, VariantSource::Usage);
-        return;
+    // request names is that check, whatever it is called ([`membership_guard`]);
+    // one that finds the caller in a value the route does not name is found, not
+    // proven, and read no further.
+    match membership_guard(cx, w, entry) {
+        Membership::Proven => {
+            ev.add("membership_guard", w, VariantSource::Usage);
+            return;
+        }
+        Membership::Beside => {
+            ev.find(
+                "membership_guard",
+                w,
+                obligation::SIDES_NOT_CALLER_AND_RESOURCE,
+                "",
+                false,
+            );
+            return;
+        }
+        Membership::No => {}
     }
     // And what lets one through only where the caller is found among rows a
     // literal picks is a role, read the same way ([`role_lookup_guard`]).
@@ -3151,8 +3180,38 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
 /// requests, the view called under no test) is no such body, nor is one whose
 /// query the caller is no part of, or that names nothing of the request (any row
 /// of the caller's anywhere).
-fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
-    passes_by(cx, facts, prefix, false)
+fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str, named: Named<'_>) -> bool {
+    passes_by_naming(cx, facts, prefix, false, named)
+}
+
+/// What a guard's lookup may take a value of the request from, for it to be the
+/// object the route is about ([`membership_guard`]).
+#[derive(Debug, Clone, Copy)]
+enum Named<'r> {
+    /// A parameter of the guard, or what is read off one, or a value read off the
+    /// request: as the guard is read alone, wherever it runs.
+    Request,
+    /// Only a parameter of the guard the route names among its path parameters
+    /// (these). A FastAPI dependency is handed, under a parameter the path declares,
+    /// that segment of the URL, and under any other parameter a query, body or
+    /// header value the caller sends beside the URL (FastAPI's documented reading
+    /// of a function's parameters, dependencies included). A value read off the
+    /// request object itself may be either, and so may whatever a lookup read off
+    /// a model's rows was asked by ([`drift_core::controls::ROWS_ASKED`] names no
+    /// parameter): the facts do not say which, so neither is one.
+    Path(&'r [&'r str]),
+}
+
+impl Named<'_> {
+    fn holds(self, side: &str) -> bool {
+        match self {
+            Named::Request => side.starts_with("param") || side == "request",
+            Named::Path(segments) => side
+                .strip_prefix("param ")
+                .and_then(|p| p.split(' ').next())
+                .is_some_and(|p| segments.contains(&p)),
+        }
+    }
 }
 
 /// [`passes_by_lookup`], or (`fixed`) a body that lets a request through only where
@@ -3162,6 +3221,17 @@ fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
 /// model and the keys are called. A lookup of the caller under no other key (any
 /// row of the caller's) says only that the caller has one.
 fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
+    passes_by_naming(cx, facts, prefix, fixed, Named::Request)
+}
+
+/// [`passes_by`], with what of the request a lookup may name read as `named` says.
+fn passes_by_naming(
+    cx: &Cx<'_>,
+    facts: &[String],
+    prefix: &str,
+    fixed: bool,
+    named: Named<'_>,
+) -> bool {
     let mut sites = facts
         .iter()
         .filter_map(|f| f.strip_prefix(prefix))
@@ -3173,7 +3243,7 @@ fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
     let queries: Vec<(&str, Vec<(&str, &str)>)> = arg_calls(facts.iter())
         .filter(|(_, given)| !given.is_empty())
         .collect();
-    let requested = |side: &str| side.starts_with("param") || side == "request";
+    let requested = |side: &str| named.holds(side);
     // The result of a query that narrows by what it is given (not one that leaves
     // out what matches), every call of which looks the caller up in what the
     // request names.
@@ -3181,10 +3251,14 @@ fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
     let lookup = |result: &str| {
         // A lookup the lowering read off the rows of a model
         // ([`drift_core::controls::LOOKUP_OF`]): every statement of the body that
-        // reads that model is one, by a caller the facts prove.
+        // reads that model is one, by a caller the facts prove. What of the request
+        // such a statement also filters by is not recorded
+        // ([`drift_core::controls::ROWS_ASKED`]), so where only a value the route
+        // names will do ([`Named::Path`]) it cannot be told: not one.
         if let Some(model) = result.strip_suffix(drift_core::controls::LOOKUP_OF) {
             let mut reads = census.iter().filter(|(m, _)| *m == model).peekable();
             return !fixed
+                && matches!(named, Named::Request)
                 && reads.peek().is_some()
                 && reads.all(|(_, by)| {
                     matches!(by, RowsBy::Own(_, side, true) if side_is_caller_self(cx, side))
@@ -3288,7 +3362,46 @@ fn role_lookup_guard(cx: &Cx<'_>, g: &str) -> bool {
 /// whatever it is called: a decorator's wrapper, wherever it calls the view; a
 /// function that refuses, wherever it returns without refusing; a DRF permission
 /// class, wherever its `has_permission` may answer true.
-fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
+///
+/// Of the unit `entry`: where the framework says which of the guard's parameters
+/// hold the URL's values ([`Named::Path`], a FastAPI dependency), the lookup must be
+/// of one of those. A guard that finds the caller in what a query or body value names,
+/// beside a route about the object its path names (`/workspaces/{slug}` behind
+/// `def allow(workspace: str)`), checks the caller against an object the caller
+/// chose: a caller of any workspace passes it by naming their own. Such a guard is
+/// [`Membership::Beside`], found and not proven, never known.
+fn membership_guard(cx: &Cx<'_>, g: &str, entry: &drift_core::EntryPoint) -> Membership {
+    if !membership_lookup(cx, g, Named::Request) {
+        return Membership::No;
+    }
+    if entry.adapter != "fastapi" {
+        return Membership::Proven;
+    }
+    let route = entry.route.as_deref().unwrap_or_default();
+    let segments: Vec<&str> = route.split('/').filter_map(segment_param).collect();
+    if membership_lookup(cx, g, Named::Path(&segments)) {
+        Membership::Proven
+    } else {
+        Membership::Beside
+    }
+}
+
+/// What [`membership_guard`] reads of a guard at a unit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Membership {
+    /// It lets the request through only after the caller is found in what the
+    /// route names.
+    Proven,
+    /// It would be, but what it finds the caller in is a value the route does not
+    /// name: found, not proven ([`obligation::SIDES_NOT_CALLER_AND_RESOURCE`]).
+    Beside,
+    /// No such body.
+    No,
+}
+
+/// Whether the guard's body lets a request through only after a lookup of the caller
+/// in what `named` says the request names ([`passes_by_lookup`]).
+fn membership_lookup(cx: &Cx<'_>, g: &str, named: Named<'_>) -> bool {
     use drift_core::controls::{HANDED_AFTER, LEAVES_AFTER, TRUE_AFTER};
     let ctx = cx.context();
     if common::external(g) || !ctx.since_measured() {
@@ -3299,14 +3412,14 @@ fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
     };
     match d.kind {
         SymbolKind::Function => {
-            passes_by_lookup(cx, &d.controls, HANDED_AFTER)
-                || passes_by_lookup(cx, &d.controls, LEAVES_AFTER)
+            passes_by_lookup(cx, &d.controls, HANDED_AFTER, named)
+                || passes_by_lookup(cx, &d.controls, LEAVES_AFTER, named)
         }
         SymbolKind::Class => d
             .members
             .iter()
             .find(|m| m.name == "has_permission")
-            .is_some_and(|m| passes_by_lookup(cx, &m.unread, TRUE_AFTER)),
+            .is_some_and(|m| passes_by_lookup(cx, &m.unread, TRUE_AFTER, named)),
         _ => false,
     }
 }
@@ -7946,12 +8059,13 @@ mod tests {
     /// taken as the URL's. A guard with a way through where nothing held ties nothing
     /// either (sibling case), and that unit stays a check found and not proven.
     ///
-    /// The first guard is still read as a membership guard by its own body (it lets
-    /// the request through only after a lookup of the caller in what the request
-    /// names, [`membership_guard`], unchanged since before the sprint and read the
-    /// same by the pre-sprint binary on the same FastAPI code): that unit is known by
-    /// that guard alone, not by a tie. (Fix wave 1: the test first said `unknown`
-    /// here, which the code never did.)
+    /// The first guard's own body lets the request through only after a lookup of
+    /// the caller in what the request names, but what it names is `workspace`, a
+    /// query or body value beside the URL's `slug`: a caller of any workspace passes
+    /// it by naming their own. So it is found, not proven ([`membership_guard`],
+    /// [`Membership::Beside`]), and the unit is unknown (gap promote-membership,
+    /// hole 2). Before, the unit was known by that guard alone, read the same by the
+    /// pre-sprint binary.
     #[test]
     fn a_guard_tied_by_a_value_beside_the_url_ties_nothing() {
         const MEMBERS: &str = "svc/models.py#Member.objects.filter";
@@ -7986,7 +8100,14 @@ mod tests {
                 vec![
                     guard("by_query", "workspace", &[held.as_str()]),
                     guard("one_way", "slug", &[held.as_str(), ""]),
+                    guard("by_path", "slug", &[held.as_str()]),
                 ],
+            ),
+            route(
+                "path",
+                "/workspaces/{slug}/path",
+                &[USER, DB, "svc/perm.py#by_path"],
+                handler("ws_path"),
             ),
             route(
                 "query",
@@ -8001,12 +8122,18 @@ mod tests {
                 handler("ws_branch"),
             ),
         ]);
-        assert_eq!(authz_of(&r, "ws_query"), "known");
+        assert_eq!(authz_of(&r, "ws_query"), "unknown");
         assert_eq!(
-            unit_row(&r, "ws_query").key.as_deref(),
-            Some("membership_guard:svc/perm.py#by_query")
+            unit_row(&r, "ws_query").reason,
+            Some(UnknownReason::CheckNotProven)
         );
         assert_eq!(authz_of(&r, "ws_branch"), "unknown");
+        // The same lookup of the value the URL names is the check.
+        assert_eq!(authz_of(&r, "ws_path"), "known");
+        assert_eq!(
+            unit_row(&r, "ws_path").key.as_deref(),
+            Some("membership_guard:svc/perm.py#by_path")
+        );
     }
 
     /// Pins (review R5, row 4): a method the constructor function does not assign

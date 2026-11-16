@@ -71,6 +71,13 @@ pub const REPLAY_UNITS: usize = crate::mine::MIN_BLOCK_ROLE_SIZE;
 /// place, and the practice map says which units are in it.
 pub const PRACTICE_FILE: &str = "(practice)";
 
+/// The mechanisms the readings credit to a unit only through the route it is served
+/// at: `middleware`, which sign-in gives where a Next.js middleware's matcher covers
+/// the route, or an application or a mount runs a middleware before the handler
+/// ([`super::authn`]). A unit served at no route is never credited one, so a practice
+/// that accepts nothing else cannot be followed by it ([`Accepts::needs_a_route`]).
+const BY_ROUTE: &[&str] = &["middleware"];
+
 /// Exceptions named in a preview before "and N more".
 const NAMED: usize = 3;
 
@@ -1025,6 +1032,22 @@ impl Accepts {
         }
     }
 
+    /// Whether only a unit served at a route can follow it: it accepts something, not
+    /// any enforcing way, and every way and mechanism it accepts holds a use of a
+    /// mechanism the readings credit only through a route ([`BY_ROUTE`]). A unit served
+    /// at no route (a server action) can never do it so, whatever guards it: under
+    /// such a practice it is not checked, never "does it another way".
+    fn needs_a_route(&self) -> bool {
+        let by_route = |k: &str| BY_ROUTE.contains(&mechanism_of(k));
+        !self.enforcing
+            && !(self.keys.is_empty() && self.mechanisms.is_empty())
+            && self.mechanisms.iter().all(|m| by_route(m))
+            && self
+                .keys
+                .iter()
+                .all(|k| use_keys(k).iter().any(|u| by_route(u)))
+    }
+
     /// A stored rule read against the map's `variants`: a key that is a folded
     /// policy's own (`any_of(a|b|c)`, as practices promoted before a fold's
     /// alternatives were stored kept it) accepts its alternatives' keys too, which are
@@ -1143,6 +1166,11 @@ struct Reading<'a> {
     /// Whether the row is counted at all: not a background job of a concern about the
     /// caller ([`Concern::needs_a_caller`]).
     counted: Vec<bool>,
+    /// Each row: an entry point of a kind none of whose units Drift read a route for
+    /// ([`routed_kinds`]: a server action, a resolver, a job). Of a practice only a
+    /// unit served at a route can follow ([`Accepts::needs_a_route`]), such a unit is
+    /// not checked.
+    routeless: Vec<bool>,
     /// The counted rows of each place a row is in: its package and directories, its
     /// file, and (of a concern of entry points) every prefix of a route Drift read to
     /// the end as a literal. The one reading of membership that `candidate_for`,
@@ -1217,6 +1245,11 @@ impl<'a> Reading<'a> {
         let mut pending: Vec<(usize, Vec<String>)> = Vec::new();
         let entries = c.unit == "entry_point";
         let routed = routed_kinds(c);
+        let routeless: Vec<bool> = c
+            .units
+            .iter()
+            .map(|u| entries && u.kind.as_deref().is_some_and(|k| !routed.contains(k)))
+            .collect();
         for (i, u) in c.units.iter().enumerate() {
             let mut of = places_of(&u.package, &u.path);
             of.extend(Place::file_of(&u.package, &u.path));
@@ -1269,6 +1302,7 @@ impl<'a> Reading<'a> {
             uses,
             enforces,
             counted,
+            routeless,
             places,
             unread,
             jobs,
@@ -1338,14 +1372,18 @@ impl<'a> Reading<'a> {
         self.counted[i] && self.c.units[i].assignment == "known" && self.follows(i, acc)
     }
 
-    /// Each row's verdict against `acc`.
+    /// Each row's verdict against `acc`. A unit served at no route, of a practice only
+    /// a unit served at a route can follow, is not checked: what guards it is not what
+    /// the practice could ever see ([`Accepts::needs_a_route`]).
     fn verdicts(&self, acc: &Accepts) -> Vec<Verdict> {
+        let by_route = acc.needs_a_route();
         (0..self.c.units.len())
             .map(
                 |i| match (self.c.units[i].assignment.as_str(), self.own[i]) {
                     ("unknown", _) => Verdict::Unknown,
                     ("known", None) => Verdict::Unknown,
                     ("known", Some(_)) if self.follows(i, acc) => Verdict::Follows,
+                    _ if by_route && self.routeless[i] => Verdict::Unknown,
                     _ => Verdict::Breaks,
                 },
             )
@@ -2468,23 +2506,41 @@ pub fn covers(
 /// By kind of place (cheap: it reads the file's facts alone):
 /// - a directory: a file of the package in the directory or below it;
 /// - one file: that file only;
-/// - a route prefix: every file of its package that declares a unit of the concern.
-///   A file's own facts cannot rule one out: the routes a router file records are
-///   relative to where it is mounted, which the file alone does not show, so a file
-///   that registers or mounts a route under the prefix, and one Drift cannot rule out,
-///   are both covered.
+/// - a route prefix: every file of its package that declares an entry point of the
+///   concern served at some route ([`served_at_a_route`]). A file's own facts cannot
+///   rule one out: the routes a router file records are relative to where it is
+///   mounted, which the file alone does not show, so a file that registers or mounts
+///   a route under the prefix, and one Drift cannot rule out, are both covered. A file
+///   whose entry points are all served at no route (a module of Next.js server
+///   actions, a middleware, a command) is not: the check never counts such a unit as
+///   a member of a route place ([`Reading`]), so the rule says nothing of the file,
+///   and showing it there told an agent the route's guard held for code it never
+///   reaches. The unit's departure is still said as a fact ([`covers_unit`]).
 pub fn covers_file(c: &Convention, f: &FileFacts) -> bool {
     let caller = match &c.rule {
         Rule::Practice { concern, .. } => needs_a_caller(concern),
         _ => false,
     };
+    let route_place = place_of(c).is_some_and(|p| p.route.is_some());
     covers(c, &f.package, &f.path, |unit| {
-        if caller && unit == "entry_point" {
+        if route_place && unit == "entry_point" {
+            f.listed_entry_points().iter().any(served_at_a_route)
+        } else if caller && unit == "entry_point" {
             f.listed_entry_points().iter().any(|e| e.kind != JOB)
         } else {
             declares_unit(unit, f)
         }
     })
+}
+
+/// Whether an entry point of a file may be served under a route prefix, as far as the
+/// file's own facts say: it is no background job, and the adapter recorded a route for
+/// it, read or not (a path, one relative to a mount, `?`). One with no route at all
+/// (a server action, a middleware, a command) is served at no path, and every adapter
+/// records a route for each request handler it lists. What [`covers_file`] reads of a
+/// route place; [`Reading`] reads the same of the whole map ([`routed_kinds`]).
+fn served_at_a_route(e: &drift_core::EntryPoint) -> bool {
+    e.kind != JOB && e.route.is_some()
 }
 
 /// Whether the unit `symbol` of the file `f` is one the check of the promoted practice
@@ -4881,5 +4937,216 @@ mod tests {
             *under_route = Some("/api/*".into());
         }
         assert_eq!(checked(&r, &conv).stale.len(), 1);
+    }
+
+    // ---------- a unit served at no route (gap promote-membership) ----------
+
+    const MW: &str = "middleware:middleware.ts#middleware";
+
+    /// 60 `/api` handlers wrapped in `withAuth`, one signed in by `getUser`, two
+    /// behind the middleware, and a module of 10 server actions beside them in
+    /// `app/api/actions/a.ts`: 8 wrapped in `withAuth`, 1 with nothing, 1 the map
+    /// cannot tell. A server action is served at no route.
+    fn api_actions_and_middleware() -> PracticesReport {
+        let http = |i: usize, variant: &str| {
+            served(
+                &format!("app/api/r{i:02}/route.ts"),
+                "GET",
+                "http",
+                Some(format!("/api/r{i:02}").as_str()),
+                variant,
+            )
+        };
+        let mut units: Vec<UnitRow> = (0..60).map(|i| http(i, "P-auth")).collect();
+        units.push(http(60, "P-user"));
+        units.extend((61..63).map(|i| http(i, "P-mw")));
+        for (i, variant) in ["P-auth"; 8].into_iter().chain(["P-none", ""]).enumerate() {
+            units.push(served(
+                "app/api/actions/a.ts",
+                &format!("save{i}"),
+                "server_action",
+                None,
+                variant,
+            ));
+        }
+        let mut vs = signin_variants();
+        vs.push(variant("P-mw", MW, "middleware", VariantKind::Known));
+        report_of(AUTHN, "entry_point", vs, units)
+    }
+
+    /// Of the server actions: how many follow `conv`, how many it reports, and how
+    /// many units it says it did not check (all of them: only the actions are ever
+    /// unknown in [`api_actions_and_middleware`]).
+    fn actions_under(r: &PracticesReport, conv: &Convention) -> (usize, usize, usize) {
+        let action = |p: &str| p == "app/api/actions/a.ts";
+        let follows = followers(r, conv).iter().filter(|(p, _)| action(p)).count();
+        let now = checked(r, conv);
+        let reported = now.violations.iter().filter(|v| action(&v.path)).count();
+        let unknown = now.not_checked.iter().map(|n| n.units).sum();
+        (follows, reported, unknown)
+    }
+
+    /// Pins (gap promote-membership, hole 1) every promote form against a member
+    /// served at no route, in each kind of place:
+    /// - a route place holds no server action: none follows, none is reported, none
+    ///   is counted (as review item 1 of area 2 decided: no route could place one
+    ///   under a prefix);
+    /// - a directory or file place holds them, each read by its own reading: one
+    ///   wrapped in `withAuth` follows the named way, `--with`, the mechanism and any
+    ///   enforcing way, as its own guard does it; one with nothing is reported; one
+    ///   the map cannot tell is not checked;
+    /// - a practice only a unit served at a route can follow (`--mechanism
+    ///   middleware`, or the middleware way named) never reports a server action as
+    ///   doing it another way: the middleware is never credited to a unit with no
+    ///   route, so each is not checked, counted. Before, the 9 the map could read
+    ///   were reported, the 8 wrapped ones included. Held to the module alone, where
+    ///   no unit could follow it, it is stale.
+    #[test]
+    fn a_member_served_at_no_route_never_follows_a_way_it_cannot_take() {
+        let r = api_actions_and_middleware();
+        let dir = at("", "app/api");
+        let file = Place::parse("app/api/actions/a.ts", &r).unwrap();
+        assert_eq!(file.kind(), Kind::File);
+        let route = Place::parse(".:/api", &r).unwrap();
+        let named = Request {
+            ways: vec!["P-auth".into()],
+            ..Request::default()
+        };
+        let with = Request {
+            with: vec!["P-user".into()],
+            ..named.clone()
+        };
+        let wrap = Request {
+            concern: AUTHN.into(),
+            mechanisms: vec!["wrap".into()],
+            ..Request::default()
+        };
+        let enforcing = Request {
+            concern: AUTHN.into(),
+            any_enforcing: true,
+            ..Request::default()
+        };
+        for (form, req) in [
+            ("named", &named),
+            ("with", &with),
+            ("mechanism", &wrap),
+            ("any enforcing", &enforcing),
+        ] {
+            for (place, want) in [(&dir, (8, 1, 1)), (&file, (8, 1, 1)), (&route, (0, 0, 0))] {
+                let c = candidate_for(&r, Some(place), req)
+                    .unwrap_or_else(|e| panic!("{form} in {place:?}: {e:?}"));
+                assert_eq!(
+                    actions_under(&r, &convention(&c)),
+                    want,
+                    "{form} in {place:?}"
+                );
+            }
+        }
+        // Only through a route: below the share, on a person's word.
+        let middleware = Request {
+            concern: AUTHN.into(),
+            mechanisms: vec!["middleware".into()],
+            force: true,
+            ..Request::default()
+        };
+        let mw_way = Request {
+            ways: vec!["P-mw".into()],
+            force: true,
+            ..Request::default()
+        };
+        for (form, req) in [("mechanism middleware", &middleware), ("way P-mw", &mw_way)] {
+            let c = candidate_for(&r, Some(&dir), req).unwrap_or_else(|e| panic!("{form}: {e:?}"));
+            assert_eq!((c.unknown, c.follows), (10, 2), "{form}");
+            assert!(
+                c.exceptions
+                    .iter()
+                    .all(|e| e.path != "app/api/actions/a.ts"),
+                "{form}: {:?}",
+                c.exceptions
+            );
+            let conv = convention(&c);
+            assert_eq!(
+                actions_under(&r, &conv),
+                (0, 0, 10),
+                "{form} in the directory"
+            );
+            // The same rule held to the module alone.
+            let mut one = conv.clone();
+            one.role.dir = "app/api/actions".into();
+            if let Rule::Practice { in_file, .. } = &mut one.rule {
+                *in_file = Some("app/api/actions/a.ts".into());
+            }
+            assert_eq!(place_of(&one), Some(file.clone()));
+            // There nothing could ever follow it: stale, it fires on nothing.
+            assert_eq!(actions_under(&r, &one), (0, 0, 0), "{form} in the file");
+            assert_eq!(checked(&r, &one).stale.len(), 1, "{form} in the file");
+            // Under a prefix the actions are in no place at all.
+            let c = candidate_for(&r, Some(&route), req).unwrap();
+            assert_eq!(actions_under(&r, &convention(&c)), (0, 0, 0), "{form}");
+        }
+        // Any enforcing way is no route mechanism, nor is one way among others that
+        // a unit with no route can take.
+        assert!(!Accepts::of_rule(&[], &[], true).needs_a_route());
+        assert!(!Accepts::of_rule(&[MW.into(), AUTH.into()], &[], false).needs_a_route());
+        assert!(Accepts::of_rule(&[format!("{MW}+{AUTH}")], &[], false).needs_a_route());
+        assert!(!Accepts::default().needs_a_route());
+    }
+
+    /// Pins (gap promote-membership, hole 1) which files a route practice is shown
+    /// for ([`covers_file`]): one with an entry point served at a route, read or not,
+    /// is covered; one whose entry points are all served at no route (a module of
+    /// server actions, a middleware) is not, though it is a file of the package. A
+    /// directory practice still covers the module of server actions, whose units it
+    /// checks. Before, every file of the package with an entry point was covered, so
+    /// an agent about to edit `app/api/actions/a.ts` was told the `/api` routes' rule.
+    #[test]
+    fn a_route_practice_is_shown_for_no_file_served_at_no_route() {
+        let r = api_actions_and_middleware();
+        let route = Place::parse(".:/api", &r).unwrap();
+        let by_route = convention(&candidate(&r, "P-auth", Some(&route), &[], false).unwrap());
+        let by_dir =
+            convention(&candidate(&r, "P-auth", Some(&at("", "app/api")), &[], false).unwrap());
+        let entry = |symbol: &str, kind: &str, route: Option<&str>| drift_core::EntryPoint {
+            symbol: symbol.into(),
+            kind: kind.into(),
+            method: None,
+            route: route.map(str::to_string),
+            adapter: "nextjs".into(),
+        };
+        let file = |path: &str, entries: Vec<drift_core::EntryPoint>| FileFacts {
+            path: path.into(),
+            entry_points: entries,
+            ..FileFacts::default()
+        };
+        let actions = file(
+            "app/api/actions/a.ts",
+            vec![
+                entry("save0", "server_action", None),
+                entry("save1", "server_action", None),
+            ],
+        );
+        assert!(!covers_file(&by_route, &actions));
+        assert!(!covers_unit(&by_route, &actions, "save0"));
+        assert!(covers_file(&by_dir, &actions));
+        assert!(covers_unit(&by_dir, &actions, "save0"));
+        let middleware = file(
+            "middleware.ts",
+            vec![entry("middleware", "middleware", None)],
+        );
+        assert!(!covers_file(&by_route, &middleware));
+        for served in [Some("/api/r70"), Some("/r70"), Some("?")] {
+            let f = file("app/api/r70/route.ts", vec![entry("GET", "http", served)]);
+            assert!(covers_file(&by_route, &f), "{served:?}");
+        }
+        let both = file(
+            "app/api/both.ts",
+            vec![
+                entry("save", "server_action", None),
+                entry("GET", "http", Some("/api/both")),
+            ],
+        );
+        assert!(covers_file(&by_route, &both));
+        assert!(!covers_unit(&by_route, &both, "save"));
+        assert!(covers_unit(&by_route, &both, "GET"));
     }
 }
