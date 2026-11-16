@@ -44,7 +44,7 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
 }
 
 #[test]
-fn an_older_baseline_fails_nothing_a_wider_reading_finds_touched_or_not() {
+fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check() {
     let b = parse_baseline(OLDER);
     assert_eq!(b.version, 1);
     let now = found(&[
@@ -62,11 +62,10 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_touched_or_not() {
             ".github/workflows/ci.yml:7",
         ),
     ]);
-    // A whole-tree check, and one against a diff that touched every file: a touched
-    // file may hold what only the wider reading sees.
-    let all = |_: &str| true;
-    for touched in [None, Some(&all as &dyn Fn(&str) -> bool)] {
-        let r = compare_with(&now, &b, touched);
+    // A whole-tree check: nothing says what a change did. (Against a diff, a
+    // touched file fails as before: `against_a_diff_*` below, F10.)
+    {
+        let r = compare_with(&now, &b, None);
         assert_eq!(r.kept, 1);
         for kind in ["unguarded-reaching", "risky", "guard-gap"] {
             assert_eq!(r.new_in_drift.get(kind).map(Vec::len), Some(1), "{kind}: {r:?}");
@@ -111,4 +110,43 @@ fn a_scope_gap_outside_the_change_fails_nothing() {
     let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
     assert_eq!(r.added["scope-gap"][0].at, "b.ts:4");
     assert_eq!(r.outside_change["scope-gap"][0].at, "a.ts:3");
+}
+
+/// F10 (review R10 F-1): before, against a baseline older than a kind's reading,
+/// every finding of the kind went to `new_in_drift`, also one in a file the diff
+/// touched, so after an upgrade a change's new unguarded route failed nothing.
+/// Pins: against a diff, a newer-reading finding in a touched file fails as the
+/// kind did before; one in an untouched file is held as new in this Drift.
+#[test]
+fn against_a_diff_a_new_unguarded_route_fails_an_unstamped_baseline() {
+    let b = parse_baseline(OLDER);
+    assert_eq!(b.version, 1);
+    let now = found(&[
+        ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
+        ("no-guard", "routes/new.ts#GET /n GET /n", "routes/new.ts:2"),
+        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
+    ]);
+    let touched = |p: &str| p == "routes/new.ts";
+    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    assert_eq!(r.kept, 1);
+    assert_eq!(
+        r.added.get("no-guard").map(|rows| rows[0].at.as_str()),
+        Some("routes/new.ts:2"),
+        "{r:?}"
+    );
+    assert!(!r.new_in_drift.contains_key("no-guard"), "{r:?}");
+}
+
+#[test]
+fn against_a_diff_an_old_finding_in_an_untouched_file_fails_nothing() {
+    let b = parse_baseline(OLDER);
+    let now = found(&[
+        ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
+        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
+    ]);
+    let touched = |p: &str| p == "routes/new.ts";
+    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    assert!(r.added.is_empty(), "{r:?}");
+    assert_eq!(r.new_in_drift.get("risky").map(Vec::len), Some(1), "{r:?}");
+    assert!(newer_readings_line(&r).is_some());
 }

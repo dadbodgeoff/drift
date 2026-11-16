@@ -4562,6 +4562,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         print!("\n{}", drift_mine::ratchet::render(sec, 20));
                     }
                     print!("{}", drift_mine::ratchet::render_advice(&advice));
+                    // After an upgrade (findings held as new in this Drift, or a policy
+                    // another Drift's `drift init` wrote): where to read what changed.
+                    if security.as_ref().is_some_and(|s| !s.new_in_drift.is_empty())
+                        || (!policy.engine.is_empty() && policy.engine != engine())
+                    {
+                        println!(
+                            "\ndrift: `drift upgrade` shows what this Drift reads differently from the one that wrote these files; it changes nothing by itself (only `drift upgrade --apply` writes)"
+                        );
+                    }
                 }
                 Format::Github => {
                     // Annotations name files from the git top level ([`project::at_git_top`]).

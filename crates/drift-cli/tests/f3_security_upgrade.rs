@@ -96,6 +96,9 @@ fn an_older_baseline_lists_what_a_wider_reading_finds_and_fails_nothing() {
     assert!(out.contains("  server.ts#GET /open GET /open  (server.ts:"), "{out}");
     // Said once.
     assert_eq!(out.matches("readings newer than this baseline").count(), 1, "{out}");
+    // F10 (review R10 F-6): and where to read what changed. Before, nothing in
+    // `drift check` named `drift upgrade`.
+    assert!(out.contains("drift: `drift upgrade` shows what this Drift reads differently from the one that wrote these files; it changes nothing by itself"), "{out}");
     let (code, out, _) = drift(r, &["security", "--ratchet"]);
     assert_eq!(code, 0, "{out}");
     let (code, json, _) = drift(r, &["check", "--format", "json"]);
@@ -127,6 +130,7 @@ fn a_baseline_written_now_fails_on_a_new_finding() {
     assert_eq!(code, 1, "{out}");
     assert!(out.contains("[no-guard]\n  server.ts#GET /more GET /more  (server.ts:"), "{out}");
     assert!(!out.contains("readings newer than this baseline"), "{out}");
+    assert!(!out.contains("`drift upgrade` shows"), "{out}");
 }
 
 #[test]
