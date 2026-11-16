@@ -1505,9 +1505,11 @@ export interface EntryRow {
    */
   descriptions?: { compose: string; exposure: Exposure; boundary: string }[];
   /**
-   * The exposure rests on a Terraform tie (`security.terraform`): a person said which target group forwards to this
-   * code and that nothing else of that Terraform lets a request in, and the listener rules read for the route say
-   * what `exposure` says. What else Terraform opens to the code is not read (newer drift; absent when false).
+   * The exposure rests on a Terraform tie (`security.terraform`): a person said which target (a target group, a
+   * Lambda function, an API Gateway integration, a GCP backend service, a Cloud Run service) runs this code and that
+   * nothing else of that Terraform lets a request in, and what forwards to that target (listener rules and default
+   * actions, API Gateway methods and routes, function URLs, URL maps, Cloud Run ingress) says what `exposure` says.
+   * What else Terraform opens to the code is not read (newer drift; absent when false).
    */
   tied?: boolean;
   /**
@@ -1558,7 +1560,8 @@ export interface Boundaries {
    * Deployment descriptions Drift recognises and does not read (Terraform, Kubernetes, Helm, ...), by kind, with the
    * first five files and the count: while one is there and is not left out (`security.not_deployed`), nothing it may
    * route to is said to be internal (newer drift; absent when none). Terraform stays listed with a tie
-   * (`security.terraform`): its listener rules are then read for the tied code directories only (`EntryRow.tied`).
+   * (`security.terraform`): what forwards to the tied target is then read for the tied code directories only
+   * (`EntryRow.tied`).
    */
   unread?: { kind: string; files: string[]; count: number }[];
   /**

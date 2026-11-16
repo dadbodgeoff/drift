@@ -419,6 +419,21 @@ main branch.
   outside the repository, a contract that forbids indirect imports too, a block
   built by code Drift does not read, one a later setting changes). Mining reads
   none of it.
+- **More of Terraform read for a tie:** a `security.terraform` tie may now name a Lambda
+  function or alias, an API Gateway integration, a GCP backend service or a Cloud Run
+  service (`target: <module>#<kind>.<name>`), and what forwards to the tied target is
+  read for its code: `aws_lb_listener` default actions and internal load balancers
+  (inside only unless something that can reach a private load balancer names it), API
+  Gateway REST methods and HTTP API routes by path and method (authorization said as a
+  fact, never counted as a guard), Lambda function URLs, GCP URL maps from their
+  forwarding rules, and Cloud Run ingress with an `allUsers` invoker grant. `locals`,
+  variable defaults no `.tfvars`, `module` call or Terragrunt `inputs` sets again, and
+  `count` / `for_each` over those are worked out; anything else stays unknown with the
+  expression named. `drift setup` offers these targets too. A route that read unknown
+  under an existing tie because a listener forwarded by default may now read
+  internet-facing, and a module-only tie also covers the module's other targets. No
+  finding kind changes: a baseline written before stays as it was. Security groups,
+  IAM policies, CloudFront behaviours and Azure are not read.
 - **Exposure from Kubernetes manifests:** `drift security` reads an `Ingress`, a
   Gateway API route, an OpenShift `Route` or a `LoadBalancer`/`NodePort` Service
   through its Service's selector to a workload, and a route of the code that

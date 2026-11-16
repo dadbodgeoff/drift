@@ -1432,7 +1432,7 @@ impl Boundaries {
                     })
                     .collect();
                 b.warnings.push(format!(
-                    "Terraform in the repository is not read ({}): what it routes to a service is not known, so nothing {}is said to be internal; code a target group forwards to can be tied to it under security.terraform in {} ({{target: <module dir>[#aws_lb_target_group.<name>], code: <dir>}}), and its listener rules are then read for that code",
+                    "Terraform in the repository is not read ({}): what it routes to a service is not known, so nothing {}is said to be internal; code a target group, a Lambda function, a backend service or a Cloud Run service runs can be tied to it under security.terraform in {} ({{target: <module dir>[#<kind>.<name>], code: <dir>}}), and what forwards to it is then read for that code",
                     u.shown(),
                     match tied.as_slice() {
                         [] => String::new(),
@@ -2336,7 +2336,10 @@ impl Boundaries {
             let composes: Vec<Exposure> = said.iter().map(|(_, (x, _))| *x).collect();
             // The tie is one more description: what the listener rules of the
             // repository's Terraform say of the route, named by the module.
-            let tie = tied.map(|t| (t.tie.module.as_str(), t.verdict(&route, shown)));
+            let tie = tied.map(|t| {
+                let verdict = t.verdict(&route, shown, e.method.as_deref());
+                (t.tie.module.as_str(), verdict)
+            });
             let of_tie = tie.as_ref().map(|(_, (x, _))| *x);
             said.extend(tie);
             said.sort_by(|a, b| (a.1.0, a.0).cmp(&(b.1.0, b.0)));
@@ -9699,7 +9702,7 @@ pub fn render_at(
         if entries.iter().any(|e| e.tied) {
             let _ = writeln!(
                 out,
-                "  of which {} internet-facing, {} internal and {} unknown rest on a Terraform tie (security.terraform in {}): the listener rules are read, what else Terraform opens to the code is not, nor whether another published application relays to it",
+                "  of which {} internet-facing, {} internal and {} unknown rest on a Terraform tie (security.terraform in {}): what forwards to the tied target is read, what else Terraform opens to the code is not, nor whether another published application relays to it",
                 tied(Exposure::Public),
                 tied(Exposure::Internal),
                 tied(Exposure::Unknown),
