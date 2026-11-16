@@ -8,15 +8,17 @@
 // - source reads are limited to files the last scan listed, inside the repo;
 // - transcripts are read only from Claude Code's projects directory, by the
 //   session ids the last listing returned;
-// - the only writes to a repository are `drift review`, `drift init` and
+// - the only writes to a repository are `drift review`, `drift init`,
 //   `drift practices promote` (the `promote` channel; `promotePreview` always
-//   runs it with `--dry-run`), `drift upgrade --apply` (`upgradeApply`) and
-//   `drift feedback mark` (`feedbackMark`, a git-ignored local file). ops.ts
+//   runs it with `--dry-run`), `drift upgrade --apply` (`upgradeApply`),
+//   `drift feedback mark` (`feedbackMark`, a git-ignored local file) and
+//   `drift security --write-baseline` (the `securityBaseline` channel). ops.ts
 //   `writesRepository` is the list; a new write is added there, and here, on purpose.
 import { existsSync, lstatSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RepoFacts } from "../src/shared/contract/drift";
 import { slimFacts } from "../src/shared/contract/slim";
+import { baselineCommand } from "../src/shared/lib/baseline";
 import type { AuditEntry, Decision, LogEntry, PromoteRequest, Provenance, RepoRef, Snapshot } from "../src/shared/ipc/contract";
 import { DriftError, resolveDrift, runDrift } from "./drift";
 import { gitInfo } from "./git";
@@ -54,6 +56,9 @@ export const NO_PRACTICES = "this drift binary has no `practices` command: the p
 export const NO_FUNNEL = "this drift binary has no `census --why`: what mining dropped needs a newer Drift (choose one in Settings)";
 /** A Drift from before the promote list has no `practices promote --list` (or no `practices` at all). */
 export const NO_PROMOTE_LIST = "this drift binary has no `practices promote --list`: the list of practices that may be promoted needs a newer Drift (choose one in Settings)";
+
+/** A Drift from before the ranked summary has no `security --top`. */
+export const NO_TOP = "this drift binary has no `security --top`: the findings to look at first need a newer Drift (choose one in Settings)";
 
 /** Read-only drift commands that print one JSON document on stdout. */
 type JsonOp = "census" | "check" | "security" | "practices" | "map" | "funnel" | "promoteList" | "fromMap" | "upgrade";
@@ -272,6 +277,25 @@ export class StudioMain {
     return this.json(r, "security", id, opts?.base ?? null);
   }
 
+  /** `drift security --top N --json`: the inventory with `top`, the findings to look at first (0: all of them). Read-only; exit 0. */
+  async securityTop(r: RepoRef, n: number, requestId?: string) {
+    const root = this.repo(r);
+    let res: Awaited<ReturnType<StudioMain["run"]>>;
+    try {
+      res = await this.run(root, { op: "securityTop", n }, requestId);
+    } catch (e) {
+      if (e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_TOP);
+      throw e;
+    }
+    let data: unknown;
+    try {
+      data = JSON.parse(res.stdout);
+    } catch {
+      throw new DriftError("drift security --top did not print JSON (is this binary too old for --top with --json?)");
+    }
+    return { data, at: Date.now(), cached: false, ms: res.ms, provenance: this.provenance(root) };
+  }
+
   /** `drift practices --json`: what the codebase does for each concern (facts, not rules; exit 0). */
   practices(r: RepoRef, id?: string) {
     return this.json(r, "practices", id);
@@ -373,7 +397,7 @@ export class StudioMain {
         return null;
       }
     };
-    return { conventions: read(".drift/conventions.yaml"), lock: read("drift.lock") };
+    return { conventions: read(".drift/conventions.yaml"), lock: read("drift.lock"), securityLock: read(".drift/security.lock") };
   }
 
   // ---------- writes (explicit person actions) ----------
@@ -491,6 +515,27 @@ export class StudioMain {
       entry = { at: Date.now(), user: this.d.user, decision: a, ids: [cid], command, ok: true, output: `${res.stdout}${res.stderr}`.trim().slice(0, 4000) };
     } catch (e) {
       entry = { at: Date.now(), user: this.d.user, decision: a, ids: [cid], command, ok: false, output: (e as Error).message.slice(0, 4000) };
+    }
+    const dir = this.repoDir(root);
+    const h = this.d.store.history(dir);
+    this.d.store.saveHistory(dir, { ...h, audit: [...h.audit, entry] });
+    return entry;
+  }
+
+  /**
+   * The security baseline: `drift security --write-baseline` writes `.drift/security.lock` with every finding the
+   * inventory holds now, accepted as it is; while it exists `drift check` fails on a finding not in it. Audited like a
+   * decision (no convention id), with what Drift printed.
+   */
+  async securityBaseline(r: RepoRef): Promise<AuditEntry> {
+    const root = this.repo(r);
+    const command = baselineCommand(root);
+    let entry: AuditEntry;
+    try {
+      const res = await this.run(root, { op: "securityBaseline" });
+      entry = { at: Date.now(), user: this.d.user, decision: "security-baseline", ids: [], command, ok: true, output: `${res.stdout}${res.stderr}`.trim().slice(0, 4000) };
+    } catch (e) {
+      entry = { at: Date.now(), user: this.d.user, decision: "security-baseline", ids: [], command, ok: false, output: (e as Error).message.slice(0, 4000) };
     }
     const dir = this.repoDir(root);
     const h = this.d.store.history(dir);

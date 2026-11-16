@@ -15,6 +15,8 @@ export const CHANNEL_NAMES = [
   "census",
   "check",
   "security",
+  "securityTop",
+  "securityBaseline",
   "practices",
   "map",
   "funnel",

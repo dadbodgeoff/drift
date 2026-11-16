@@ -71,7 +71,7 @@ The Studio is an Electron desktop app over the same CLI. You run it from a check
 
 - **Network:** its content security policy is `default-src 'self'; ... connect-src 'self'; frame-src 'none'; object-src 'none'`, so the renderer cannot load or connect to anything outside the app. Its settings page states: "Nothing is sent anywhere: no telemetry, no network access except what you ask for." (The development server allows local `ws:` and `http://localhost:*` connections, for development only.)
 - **Processes:** it runs the `drift` binary with `execFile`, never through a shell, and does not run `git` (it reads `.git` files directly for provenance).
-- **Files:** it reads the repository, `.drift/`, and Claude Code transcripts under `~/.claude/projects/`; it writes through `drift review` (so the same files as the CLI) and its own settings under the application's user-data directory.
+- **Files:** it reads the repository, `.drift/`, and Claude Code transcripts under `~/.claude/projects/`; it writes through `drift review` and, when you confirm it in the Security view, `drift security --write-baseline` (`.drift/security.lock`), so the same files as the CLI, and its own settings under the application's user-data directory.
 
 ## Permissions
 

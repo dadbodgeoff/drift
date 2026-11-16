@@ -121,6 +121,7 @@ Fixtures (`fixtures/`) are produced by the real binary:
 ```sh
 node scripts/make-fixtures.mjs --drift <drift> --work <scratch>          # acme: committed (step 1 from scripts/acme-seed)
 node scripts/make-round11-fixtures.mjs --drift <drift> --work <scratch>  # beacon, quiet, broken: committed
+node scripts/make-harbor-fixtures.mjs --drift <drift> --work <scratch>    # harbor: committed (standing, advice, --top, unreached, guard unknown, the baseline)
 node scripts/make-study-fixtures.mjs [--drift <drift> --eval-repos <dir> --work <scratch>]
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <dir> --work <scratch>  # twenty, dub: git-ignored
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <scratch copies> --work <scratch> --policy <names>  # also policy and check
@@ -178,8 +179,9 @@ renderer (React, sandboxed)  ──named channels──▶  preload  ──▶  
   limited to files the last scan listed, resolved inside the repository (no
   symlinks out), 2 MB at most; transcripts only from `~/.claude/projects` by a
   listed session id; session state only from `.drift/cache/sessions/`.
-- Writing: only `drift review` (with a 5 s undo window, block and block --force confirmed) and
-  `drift init` (confirmed) touch a repository. Exports go to a path the person
+- Writing: only `drift review` (with a 5 s undo window, block and block --force confirmed),
+  `drift init` (confirmed) and `drift security --write-baseline` (confirmed, recorded in the audit
+  trail) touch a repository. Exports go to a path the person
   chooses.
 - Untrusted text: repository and transcript content is rendered as React text
   nodes; code is tokenized into plain tokens (no HTML); Markdown exports put it

@@ -34,15 +34,17 @@ import { navigate } from "@/shared/lib/router";
 import { useOpenCode } from "@/shared/ui/code";
 import { Loading } from "@/shared/ui/QueryState";
 import { SecurityChanges } from "./SecurityChanges";
+import { BaselineBar, FirstTab, Unreached } from "./SecurityFindings";
 
-type Tab = "entries" | "gaps" | "sinks" | "leaks" | "env";
-const TABS: Tab[] = ["entries", "gaps", "sinks", "leaks", "env"];
+type Tab = "entries" | "first" | "gaps" | "sinks" | "leaks" | "unreached" | "env";
+const TABS: Tab[] = ["entries", "first", "gaps", "sinks", "leaks", "unreached", "env"];
 
 /** Guard name -> the accepted conventions that require it (wrapper or decorator rules). */
 const GuardLinks = createContext<Map<string, ConventionRow[]>>(new Map());
 
 export function SecurityView({ tab }: { tab: string | null }) {
   const { repo } = useRepo();
+  const openCode = useOpenCode();
   const sec = useSecurity(repo);
   const conv = useConventions(repo);
   const [postureFilter, setPostureFilter] = useState<Posture | null>(null);
@@ -114,6 +116,7 @@ export function SecurityView({ tab }: { tab: string | null }) {
           ) : null}
         </div>
         {scopeBar}
+        <BaselineBar />
         <div className="sc-ledger" role="group" aria-label="Entry points by protection">
           {postures.map((p) => (
             <button key={p} type="button" className={`ck-key is-${POSTURE[p].tone}`} aria-pressed={postureFilter === p} onClick={() => (setPostureFilter(postureFilter === p ? null : p), navigate("security", "entries"))}>
@@ -133,9 +136,11 @@ export function SecurityView({ tab }: { tab: string | null }) {
         onValueChange={(v) => navigate("security", v)}
         items={[
           { value: "entries", label: "Entry points", count: h.entryPoints },
+          { value: "first", label: "Look at these first" },
           { value: "gaps", label: "Shared guards", count: gaps.length },
           { value: "sinks", label: "Risky operations", count: h.sinks },
           { value: "leaks", label: "Client leaks", count: h.leakGroups },
+          { value: "unreached", label: "Nothing reaches", count: inv.unreached?.length ?? 0 },
           { value: "env", label: "Environment", count: h.envVars },
         ]}
       />
@@ -144,6 +149,8 @@ export function SecurityView({ tab }: { tab: string | null }) {
         {current === "gaps" && <Gaps gaps={gaps} />}
         {current === "sinks" && <Sinks inv={inv} />}
         {current === "leaks" && <Leaks inv={inv} />}
+        {current === "first" && <div className="st-scroll st-fill"><FirstTab /></div>}
+        {current === "unreached" && <div className="st-scroll st-fill"><Unreached inv={inv} onOpen={openCode} /></div>}
         {current === "env" && <Env inv={inv} />}
       </TabPanel>
     </div>

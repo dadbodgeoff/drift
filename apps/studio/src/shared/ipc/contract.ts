@@ -111,7 +111,8 @@ export const MarkWhy = z
     return t.length > 0 && [...t].length <= 300 && !hasControl(r);
   }, "a reason of 1 to 300 characters");
 
-export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable() });
+/** The files Drift writes that the Studio reads as text: `.drift/conventions.yaml`, `drift.lock`, and `.drift/security.lock` (the security baseline; absent from an older main process). */
+export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable(), securityLock: z.string().nullable().optional() });
 export type PolicyFiles = z.infer<typeof PolicyFiles>;
 
 export const SessionSummary = z.object({
@@ -162,8 +163,12 @@ export type Decision = z.infer<typeof Decision>;
 export const Answer = z.enum(["same", "different", "not-a-convention"]);
 export type Answer = z.infer<typeof Answer>;
 
-/** What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed (`unexempt`), a block candidate's answer, or a practice made a convention (`promote`). */
-export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options, "promote"]);
+/**
+ * What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed
+ * (`unexempt`), a block candidate's answer, a practice made a convention (`promote`), or the security baseline written
+ * (`security-baseline`, `drift security --write-baseline`: no convention id).
+ */
+export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options, "promote", "security-baseline"]);
 export type AuditDecision = z.infer<typeof AuditDecision>;
 
 /** A practice-map variant id (`drift practices --json` `concerns[].variants[].id`): `P-` and 6 hex digits. */
@@ -334,6 +339,10 @@ export const channels = {
   check: { req: z.union([z.tuple([RepoRef]), z.tuple([RepoRef, CheckOpts])]), res: loaded(CheckEnvelope) },
   /** With `{ base }`, `--diff-base <base>`: the diff payload instead of the inventory. */
   security: { req: z.union([z.tuple([RepoRef]), z.tuple([RepoRef, CheckOpts])]), res: loaded(z.union([SecurityEnvelope, SecurityDiffEnvelope])) },
+  /** `drift security --top N --json` (0: every ranked finding): the inventory with `top`, the findings to look at first. Read-only. */
+  securityTop: { req: z.tuple([RepoRef, z.number().int().min(0).max(1000)]), res: loaded(SecurityEnvelope) },
+  /** `drift security --write-baseline`: an explicit write (`.drift/security.lock`), audited; Drift's output in the entry. */
+  securityBaseline: { req: z.tuple([RepoRef]), res: AuditEntry },
   /** `drift practices --json`: the practice map (facts, not rules; read-only). */
   practices: { req: z.tuple([RepoRef]), res: loaded(PracticesEnvelope) },
   /** `drift map --json`: the structural map (read-only); the Map view reads each package's dependencies. */

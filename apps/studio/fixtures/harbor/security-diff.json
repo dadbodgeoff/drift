@@ -1,0 +1,89 @@
+{
+ "guard_gaps": [],
+ "unguarded_reaching": [
+  {
+   "path": "app/api/refunds/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/refunds",
+   "guards": [],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/refunds/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown",
+   "basis": {
+    "bodies": 2,
+    "followed": [
+     "lib/db.ts#find"
+    ],
+    "not_read": []
+   }
+  }
+ ],
+ "sinks": [],
+ "leaks": [],
+ "now_public": [],
+ "added_without_guard": [],
+ "guard_unknown": [
+  {
+   "path": "app/api/ledger/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/ledger",
+   "guards": [],
+   "opaque": [
+    "withTeam"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/payouts/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/payouts",
+   "guards": [],
+   "opaque": [
+    "requireMember"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/payouts/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  }
+ ],
+ "diff": {
+  "base": "main",
+  "merge_base": "7227d79c7316b81934c1d5bf4316a4715c0879d9",
+  "files": 3
+ }
+}

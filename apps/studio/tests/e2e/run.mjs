@@ -1825,6 +1825,82 @@ await test("funnel: what mining dropped, gate by gate, with each gate's origin a
 });
 
 await (await import("./screens.mjs")).default({ test, newPage, open, axe, expect, REPO, app });
+await test("check and security on harbor: what each rule rests on, the promote hint, security advice, look at these first, nothing reaches, guard unknown, and writing the baseline; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?${REPO("harbor")}#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    // Check, whole repository: each accepted mined rule's members, and the command a departure's place could be promoted with.
+    await open(page, "check", REPO("harbor"));
+    await page.waitForSelector("#ck-standing");
+    const standing = await page.textContent("#ck-standing");
+    expect(standing.includes("1 stale, 2 some members break it"), `standing counts: ${standing}`);
+    expect(standing.includes("it is wrapped in withTeam, which does not resolve to code Drift read (1)"), `not checked, with why: ${standing}`);
+    expect(standing.includes("mined rule is stale: its role has 7 member(s) now, under the 8 a mined rule needs") && standing.includes("drift review --advise D-6ff644"), `stale: ${standing}`);
+    expect((await page.locator("#ck-security-advice").count()) === 0, "no security advice outside PR mode");
+    const promote = await page.locator("#ck-practices .ck-promote__cmd").first().textContent();
+    expect(promote === "drift practices promote P-7f5143 --in app/api", `promote hint: ${promote}`);
+    await page.click("#ck-standing button:has-text('D-b941d4')");
+    await page.waitForFunction(() => location.hash.startsWith("#/conventions/D-b941d4"));
+    await open(page, "check", REPO("harbor"));
+    await page.waitForSelector("#ck-standing");
+    await axe(page, `check harbor ${scheme}`);
+    // PR mode: what the change adds, as advice (no baseline), with its location opening the code.
+    await page.fill(".ck-scope__ref input, input.ck-scope__ref", "main");
+    await page.click(".ck-scope button:has-text('Compare')");
+    await page.waitForSelector("#ck-security-advice");
+    const advice = await page.textContent("#ck-security-advice");
+    expect(advice.includes("New entry points where Drift found no guard, reaching an operation fed by the request (1)") && advice.includes("app/api/refunds/route.ts:3") && advice.includes("this does not fail the check"), `advice: ${advice}`);
+    await axe(page, `check harbor diff ${scheme}`);
+    await page.click("#ck-security-advice button:has-text('app/api/refunds/route.ts:3')");
+    await page.waitForSelector(".dui-drawer .dui-code__line.is-focus");
+    await page.keyboard.press("Escape");
+    await page.click(".ck-scope button:has-text('Whole repository')");
+    await page.waitForSelector("#ck-standing");
+    // Security: no baseline yet; look at these first; nothing reaches.
+    await open(page, "security", REPO("harbor"));
+    await page.waitForSelector(".sc-baseline");
+    expect((await page.textContent(".sc-baseline")).includes("No security baseline"), "no baseline yet");
+    await page.click("[role=tab]:has-text('Look at these first')");
+    await page.waitForSelector(".sc-first__item");
+    const first = await page.textContent(".sc-first");
+    expect((await page.locator(".sc-first__item").count()) === 2, "two ranked findings");
+    expect(first.includes("A caller Drift found no guard for can send a value that is written into the text of an SQL query (sql_string_interpolation): GET /api/refunds"), `first: ${first}`);
+    expect(first.includes("Not ranked: 1 where Drift could not read the guard.") && first.includes("its guard is unknown"), `not ranked: ${first}`);
+    await axe(page, `security first ${scheme}`);
+    await page.click("[role=tab]:has-text('Nothing reaches')");
+    await page.waitForSelector("[aria-label='Files nothing reaches']");
+    const unreached = await page.textContent("[aria-label='Files nothing reaches']");
+    expect(unreached.includes("tools/sweep/sweep.ts") && unreached.includes("eval()"), `unreached: ${unreached}`);
+    await axe(page, `security unreached ${scheme}`);
+    // Writing the baseline: confirmed, with the exact command; recorded; the bar then says what the file holds.
+    await page.click(".sc-baseline button:has-text('Write the baseline')");
+    await page.waitForSelector("[role=alertdialog]");
+    expect((await page.textContent("[role=alertdialog] .st-cmd")).trim() === "drift --root /work/harbor security --write-baseline", "the command shown is the one run");
+    await axe(page, `security baseline confirm ${scheme}`);
+    await page.keyboard.press("Escape");
+    expect((await page.locator("[role=alertdialog]").count()) === 0, "Escape cancels");
+    expect((await page.textContent(".sc-baseline")).includes("No security baseline"), "nothing written on cancel");
+    await page.click(".sc-baseline button:has-text('Write the baseline')");
+    await page.click("[role=alertdialog] button:has-text('Write the baseline')");
+    await page.waitForSelector(".dui-toast:has-text('Security baseline written')");
+    await page.waitForSelector(".sc-baseline:has-text('holds')");
+    const bar = await page.textContent(".sc-baseline");
+    expect(/holds \d+ findings? \(inventory version \d+\)/.test(bar) && bar.includes("Last written from the Studio") && bar.includes("Write it again"), `baseline bar: ${bar}`);
+    // Diff mode: the entry points the change adds whose guard Drift could not read, said as unknown.
+    await page.fill(".ck-scope__ref input, input.ck-scope__ref", "main");
+    await page.click(".ck-scope button:has-text('Compare')");
+    await page.waitForSelector("#sc-guard-unknown");
+    const unknown = await page.textContent("#sc-guard-unknown");
+    expect(unknown.includes("New entry points whose guard is unknown (2)") && unknown.includes("app/api/payouts/route.ts") && unknown.includes("it could not read: requireMember") && !unknown.includes("no guard found"), `guard unknown: ${unknown}`);
+    await axe(page, `security diff harbor ${scheme}`);
+    await page.click(".ck-scope button:has-text('Whole repository')");
+    // Back on the tab that was open: the address keeps it.
+    await page.waitForSelector("[aria-label='Files nothing reaches']");
+    expect(page.problems.length === 0, `console problems (${scheme}):\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+});
 
 if (SCREENS) {
   await test("screenshots for docs (deviceScaleFactor 2)", async () => {

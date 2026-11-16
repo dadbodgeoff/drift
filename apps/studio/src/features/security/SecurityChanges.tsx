@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Badge, EmptyState, ErrorState, Icon, Panel, Tag } from "@drift/ui";
 import { useRepo } from "@/entities/repo";
 import { useSecurityDiff } from "@/entities/drift";
-import { NOT_COVERED, diffCounts, exposureText, guardText, isUnguarded, placeOf, sinkLabel } from "@/entities/security";
+import { NOT_COVERED, addedHas, diffCounts, exposureText, guardText, isUnguarded, placeOf, sinkLabel } from "@/entities/security";
 import type { EntryRef, EntryRow, SecurityDiff } from "@/shared/contract/drift";
 import { num } from "@/shared/lib/format";
 import { navigate } from "@/shared/lib/router";
@@ -60,8 +60,9 @@ export function Changes({ d, scopeBar }: { d: SecurityDiff; scopeBar: ReactNode 
       </header>
 
       {c.total === 0 && (
-        <EmptyState icon="ok" title="This change introduces none of the five">
-          No entry point lacking a guard its siblings share, no entry point where Drift found no guard reaching a risky operation, no new risky operation, no new client leak, and nothing made internet-facing.
+        <EmptyState icon="ok" title={`This change introduces none of the ${d.added_without_guard ? "six" : "five"}`}>
+          No entry point lacking a guard its siblings share, no entry point where Drift found no guard reaching a risky operation, no new risky operation, no new client leak, {d.added_without_guard ? "nothing made internet-facing, and no new request entry point where Drift found no guard." : "and nothing made internet-facing."}
+          {c.guardUnknown > 0 && ` ${num(c.guardUnknown)} new ${c.guardUnknown === 1 ? "entry point whose guard is" : "entry points whose guard is"} unknown ${c.guardUnknown === 1 ? "is" : "are"} listed below: unknown, not a finding.`}
         </EmptyState>
       )}
 
@@ -165,8 +166,50 @@ export function Changes({ d, scopeBar }: { d: SecurityDiff; scopeBar: ReactNode 
         ))}
       </Section>
 
+      {d.added_without_guard && <AddedEntries d={d} open={open} />}
+
       <p className="t-muted t-caption">{NOT_COVERED}</p>
     </div>
+  );
+}
+
+/**
+ * The entry points the change adds where Drift found no guard (newer drift), and apart from them those whose guard it
+ * could not read: unknown, said as unknown with what it could not read, never as "no guard" and never counted as a fact
+ * the change introduces.
+ */
+function AddedEntries({ d, open }: { d: SecurityDiff; open: (t: CodeTarget) => () => void }) {
+  const added = d.added_without_guard ?? [];
+  const unknown = d.guard_unknown ?? [];
+  const row = (e: EntryRow, tone: "warning" | "info") => (
+    <li key={`${e.path}#${e.symbol}:${e.line}`}>
+      <button type="button" className="st-pathlink" onClick={open({ path: e.path, line: e.line, context: { title: `${e.kind} ${what(e)}`, detail: addedHas(e), tone } })}>
+        <span className="dui-mono t-truncate">
+          {e.path}:{e.line}
+        </span>
+        <span className="dui-mono">{what(e)}</span>
+        <Tag tone="info">{e.kind}</Tag>
+      </button>
+      <div className="t-body-sm sc-change__why st-row st-wrap">
+        {tone === "info" && (
+          <Badge tone="info" variant="outline">
+            guard unknown
+          </Badge>
+        )}
+        <span className={tone === "info" ? undefined : "t-muted"}>{addedHas(e)}</span>
+        {tone === "warning" && <span className="t-muted">{exposureOf(e)}</span>}
+      </div>
+    </li>
+  );
+  return (
+    <>
+      <Section id="sc-new-unguarded" title="New entry points where Drift found no guard" count={added.length} hint="Request entry points (http, server actions, GraphQL, RPC) the change adds where Drift found no guard in what it read, whatever their siblings do. Those listed above are not repeated, and one open on purpose (a probe, AllowAny, a checked webhook signature) is not listed.">
+        {added.map((e) => row(e, "warning"))}
+      </Section>
+      <Section id="sc-guard-unknown" title="New entry points whose guard is unknown" count={unknown.length} hint="Drift could not read what may be their guard (a wrapper or a call it does not hold the code of), so it cannot tell whether they require sign-in. Not findings, and not counted above: read the code, or add what Drift could not read.">
+        {unknown.map((e) => row(e, "info"))}
+      </Section>
+    </>
   );
 }
 

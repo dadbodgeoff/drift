@@ -1,0 +1,623 @@
+{
+ "entry_points": [
+  {
+   "path": "app/api/accounts/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/accounts",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/accounts/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/alerts/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/alerts",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/alerts/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/audit/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/audit",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/audit/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/billing/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/billing",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/billing/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/budgets/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/budgets",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/budgets/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/channels/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/channels",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/channels/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/comments/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/comments",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/comments/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/domains/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/domains",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/domains/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/events/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/events",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/events/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/exports/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/exports",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/exports/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/files/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/files",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/files/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/groups/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/groups",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/groups/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/health/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 1,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/health",
+   "guards": [],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown",
+   "basis": {
+    "bodies": 1,
+    "not_read": []
+   }
+  },
+  {
+   "path": "app/api/invoices/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/invoices",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/invoices/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/labels/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/labels",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/labels/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/ledger/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/ledger",
+   "guards": [],
+   "opaque": [
+    "withTeam"
+   ],
+   "validates": false,
+   "reaches": [],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/members/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/members",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/members/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/notes/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/notes",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/notes/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/orders/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/orders",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/orders/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/payouts/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/payouts",
+   "guards": [],
+   "opaque": [
+    "requireMember"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/payouts/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/plans/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/plans",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/plans/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/projects/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/projects",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/projects/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  },
+  {
+   "path": "app/api/refunds/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 3,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/refunds",
+   "guards": [],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/refunds/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown",
+   "basis": {
+    "bodies": 2,
+    "followed": [
+     "lib/db.ts#find"
+    ],
+    "not_read": []
+   }
+  },
+  {
+   "path": "app/api/reports/route.ts",
+   "package": "",
+   "symbol": "GET",
+   "line": 4,
+   "kind": "http",
+   "method": "GET",
+   "route": "/api/reports",
+   "guards": [
+    "withSession"
+   ],
+   "validates": false,
+   "reaches": [
+    {
+     "kind": "sql_string_interpolation",
+     "via": [
+      "app/api/reports/route.ts#GET",
+      "lib/db.ts#find"
+     ],
+     "fed": true
+    }
+   ],
+   "reads": [],
+   "exposure": "unknown"
+  }
+ ],
+ "guard_gaps": [],
+ "boundaries": {
+  "rules": []
+ },
+ "sinks": [
+  {
+   "kind": "sql_string_interpolation",
+   "path": "lib/db.ts",
+   "symbol": "find",
+   "line": 5,
+   "fed": true
+  }
+ ],
+ "client_leaks": [],
+ "env": {},
+ "left_out": {
+  "files": 0,
+  "dirs": []
+ },
+ "unreached": [
+  {
+   "path": "tools/sweep/sweep.ts",
+   "parsed": true,
+   "sinks": [
+    "eval"
+   ]
+  }
+ ]
+}

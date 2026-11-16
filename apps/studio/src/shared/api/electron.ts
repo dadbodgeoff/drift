@@ -72,6 +72,12 @@ export class ElectronApi implements StudioApi {
   async map(repo: RepoRef, opts?: { signal?: AbortSignal }) {
     return (await this.call("map", [repo], opts?.signal)) as unknown as Loaded<{ schema: number; packages: MapPackage[] }>;
   }
+  async securityTop(repo: RepoRef, n: number, opts?: { signal?: AbortSignal }) {
+    return (await this.call("securityTop", [repo, n], opts?.signal)) as unknown as Loaded<Inventory>;
+  }
+  securityBaseline(repo: RepoRef) {
+    return this.call("securityBaseline", [repo]);
+  }
   async funnel(repo: RepoRef, opts?: { signal?: AbortSignal }) {
     return (await this.call("funnel", [repo], opts?.signal)) as unknown as Loaded<CensusWhy>;
   }

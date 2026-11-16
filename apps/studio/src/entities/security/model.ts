@@ -230,10 +230,22 @@ export function placeOf(pkg: string, dir: string): string {
 export const NOT_COVERED =
   "Not covered: checks inside handler bodies other than sign-in checks (a 401, a sign-in redirect, a call of a proven guard), whether the caller may act on the record it asks for, rate limits, and anything applied outside this repository (gateways, proxies, platform settings). A shared guard is what this repository does, not a verdict on its exceptions.";
 
-/** Counts per section of `drift security --diff-base`, as its `--github` line counts them (leak groups, not clients). */
+/**
+ * Counts per section of `drift security --diff-base`, as its `--github` line counts them (leak groups, not clients).
+ * Entry points whose guard is unknown are counted apart and not in `total`: unknown is not a finding.
+ */
 export function diffCounts(d: SecurityDiff) {
-  const c = { guardGaps: d.guard_gaps.length, unguardedReaching: d.unguarded_reaching.length, sinks: d.sinks.length, leaks: d.leaks.length, nowPublic: d.now_public.length };
-  return { ...c, total: c.guardGaps + c.unguardedReaching + c.sinks + c.leaks + c.nowPublic };
+  const c = { guardGaps: d.guard_gaps.length, unguardedReaching: d.unguarded_reaching.length, sinks: d.sinks.length, leaks: d.leaks.length, nowPublic: d.now_public.length, addedWithoutGuard: d.added_without_guard?.length ?? 0 };
+  return { ...c, guardUnknown: d.guard_unknown?.length ?? 0, total: c.guardGaps + c.unguardedReaching + c.sinks + c.leaks + c.nowPublic + c.addedWithoutGuard };
+}
+
+/**
+ * What is said of an entry point a change adds (security.rs `added_has`): what Drift read of its guard, or, when it
+ * could not read what may be one, that its guard is unknown, naming it. Never "no guard" for an unread one.
+ */
+export function addedHas(e: Pick<EntryRow, "guards" | "opaque" | "local" | "kind" | "basis">): string {
+  if (e.opaque?.length) return `guard unknown, Drift cannot tell whether it requires sign-in (it could not read: ${e.opaque.join(" > ")})`;
+  return guardText(e);
 }
 
 // ---------- one file, as `drift card <path>` prints it (crates/drift-mine/src/card.rs) ----------

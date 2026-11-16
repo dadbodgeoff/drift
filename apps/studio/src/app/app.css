@@ -3630,3 +3630,103 @@ button.ss-tick.is-exempt {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* ---------- Check: what each rule rests on, security advice, promote hint (standing[], security_advice[], promote) ---------- */
+.ck-standing__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ck-standing__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ck-standing__row + .ck-standing__row {
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+/* Five counts in a row, each a number over its word; they wrap on a narrow pane. */
+.ck-standing__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+}
+.ck-standing__counts > div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.ck-standing__counts dt {
+  font-size: var(--type-caption-size);
+  color: var(--color-text-muted);
+}
+.ck-standing__counts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ck-standing__why {
+  margin: 2px 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.ck-advice__heading {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+.ck-advice__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.ck-promote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.ck-promote__cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Security: the baseline bar, "Look at these first" ---------- */
+.sc-baseline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 0;
+}
+.sc-baseline__text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.sc-first {
+  max-width: 1100px;
+}
+.sc-first__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sc-first__item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.sc-first__rank {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+.sc-first__body p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

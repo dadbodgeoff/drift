@@ -102,7 +102,7 @@ describe("security --diff-base: contract and IPC", () => {
 
 describe("security --diff-base: the Changes view", () => {
   it("counts each section as the --github line does", () => {
-    expect(diffCounts(full)).toEqual({ guardGaps: 1, unguardedReaching: 1, sinks: 1, leaks: 1, nowPublic: 1, total: 5 });
+    expect(diffCounts(full)).toEqual({ guardGaps: 1, unguardedReaching: 1, sinks: 1, leaks: 1, nowPublic: 1, addedWithoutGuard: 0, guardUnknown: 0, total: 5 });
     expect(diffCounts(json<SecurityDiff>("acme/security-diff.json"))).toMatchObject({ guardGaps: 2, total: 2 });
     expect(placeOf("", "")).toBe("the repository");
     expect(placeOf("apps/web", "")).toBe("package apps/web");

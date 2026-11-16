@@ -21,7 +21,7 @@ describe("fixtures from the F11 binary", () => {
     for (const id of ["acme", "beacon", "quiet", "broken"]) expect(json<{ version: string }>(`${id}/version.json`).version, id).toBe("drift 0.1.0-dev");
     expect(json<{ neighbourGate?: string }>("beacon/version.json").neighbourGate).toBe("on");
     expect(json<{ neighbourGate?: string }>("quiet/version.json").neighbourGate).toBe("off");
-    expect(json<{ repos: { id: string }[] }>("index.json").repos.map((r) => r.id)).toEqual(["acme", "beacon", "quiet", "broken"]);
+    expect(json<{ repos: { id: string }[] }>("index.json").repos.map((r) => r.id)).toEqual(["acme", "beacon", "quiet", "broken", "harbor"]);
   });
 });
 

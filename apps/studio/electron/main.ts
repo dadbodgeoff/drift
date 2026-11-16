@@ -95,6 +95,10 @@ function dispatch(c: Channel, args: unknown[], requestId: string | undefined): u
       return s.check(args[0] as never, args[1] as never, requestId);
     case "security":
       return s.security(args[0] as never, args[1] as never, requestId);
+    case "securityTop":
+      return s.securityTop(args[0] as never, args[1] as number, requestId);
+    case "securityBaseline":
+      return s.securityBaseline(args[0] as never);
     case "practices":
       return s.practices(args[0] as never, requestId);
     case "map":
