@@ -10,6 +10,9 @@
 
 use super::*;
 
+#[path = "servers.rs"]
+mod servers;
+
 const NEST_HTTP: &[(&str, &str)] = &[
     ("Get", "GET"),
     ("Post", "POST"),

@@ -1,5 +1,6 @@
 //! File-convention routers other than Next.js: React Router and Remix route
-//! modules, SvelteKit endpoints and server pages, and Nuxt (Nitro) server routes.
+//! modules, SvelteKit endpoints and server pages, Nuxt (Nitro) server routes and
+//! Astro endpoints.
 //! Execution facts only: which exports serve requests, and under which path. It
 //! never produces conventions.
 //!
@@ -21,6 +22,12 @@
 //! (a router some file of it binds: its middleware runs first) or a route module
 //! exports a middleware ([`exports_middleware`]); then what the mount adds is
 //! unread, as above.
+//!
+//! An Astro endpoint (`src/pages/**/*.ts` exporting `GET`, `POST`, ... or `ALL`) runs
+//! after the package's middleware only (`onRequest` of `src/middleware.ts`, or of
+//! `src/middleware/index.ts`): where there is one, it is what runs before every
+//! endpoint, read as any middleware is ([`astro_middleware`]); where there is
+//! none, the endpoint's own body decides.
 
 use drift_core::{EntryPoint, FileFacts};
 
@@ -34,6 +41,8 @@ pub enum Framework {
     SvelteKit,
     /// Nuxt, or Nitro on its own.
     Nitro,
+    /// Astro's endpoints.
+    Astro,
 }
 
 impl Framework {
@@ -42,6 +51,7 @@ impl Framework {
             Framework::ReactRouter => "react-router",
             Framework::SvelteKit => "sveltekit",
             Framework::Nitro => "nitro",
+            Framework::Astro => "astro",
         }
     }
 }
@@ -60,7 +70,7 @@ impl Framework {
     pub fn hands_requests(self, spec: &str) -> bool {
         match self {
             Framework::ReactRouter => react_router_package(spec),
-            Framework::SvelteKit | Framework::Nitro => false,
+            Framework::SvelteKit | Framework::Nitro | Framework::Astro => false,
         }
     }
 }
@@ -76,6 +86,7 @@ fn framework_in(json: &serde_json::Value) -> Option<Framework> {
             let f = match name.as_str() {
                 "@sveltejs/kit" => Framework::SvelteKit,
                 "nuxt" | "nitropack" | "nitro" => Framework::Nitro,
+                "astro" => Framework::Astro,
                 n if react_router_package(n) => Framework::ReactRouter,
                 _ => continue,
             };
@@ -129,6 +140,30 @@ pub fn candidate(path: &str, exports: &[&str]) -> bool {
         || file.starts_with("+layout.server.")
         || ((under("routes/") || stem_of(file) == "root") && (has("loader") || has("action")))
         || ((under("server/api/") || under("server/routes/")) && has("default"))
+        || (under("src/pages/")
+            && script(file)
+            && (HTTP_METHODS.iter().any(|m| has(m)) || has("ALL")))
+        || astro_middleware(path, exports)
+}
+
+/// A file Astro's server can load as a module: not a page or a component, which
+/// the reader does not parse.
+fn script(file: &str) -> bool {
+    [".ts", ".js", ".mts", ".mjs"]
+        .iter()
+        .any(|ext| file.ends_with(ext))
+}
+
+/// An Astro middleware: `onRequest` exported by `src/middleware.ts` or
+/// `src/middleware/index.ts` (any script extension).
+pub fn astro_middleware(path: &str, exports: &[&str]) -> bool {
+    let file = path.rsplit('/').next().unwrap_or(path);
+    let dir = &path[..path.len() - file.len()];
+    let at = |d: &str| dir == d || dir.ends_with(&format!("/{d}"));
+    script(file)
+        && exports.contains(&"onRequest")
+        && ((stem_of(file) == "middleware" && at("src/"))
+            || (stem_of(file) == "index" && at("src/middleware/")))
 }
 
 /// A path template from the segments of a file-convention route: `[id]` and `$id`
@@ -260,6 +295,24 @@ pub fn entry_points(facts: &FileFacts, framework: Framework) -> Vec<EntryPoint> 
             parts.push(name);
             entry("default", &method, template(&parts));
         }
+        Framework::Astro => {
+            // `src/pages/api/users/[id].ts` -> /api/users/:id; `src/pages/index.ts`
+            // -> /; `src/pages/feed.xml.ts` -> /feed.xml.
+            let Some(at) = dirs.windows(2).rposition(|w| w == ["src", "pages"]) else {
+                return out;
+            };
+            if !script(file) {
+                return out;
+            }
+            let mut parts: Vec<&str> = dirs[at + 2..].to_vec();
+            parts.push(stem_of(file));
+            let route = template(&parts);
+            for m in HTTP_METHODS.iter().chain(&["ALL"]) {
+                if exports_named(facts, m) {
+                    entry(m, m, route.clone());
+                }
+            }
+        }
     }
     out
 }
@@ -360,6 +413,37 @@ mod tests {
             ["default ANY /health"]
         );
         assert!(listed("server/utils/db.ts", &["default"], N).is_empty());
+    }
+
+    #[test]
+    fn astro_endpoints() {
+        use Framework::Astro as A;
+        assert_eq!(
+            listed(
+                "src/pages/api/users/[id].ts",
+                &["GET", "DELETE", "prerender"],
+                A
+            ),
+            ["GET GET /api/users/:id", "DELETE DELETE /api/users/:id"]
+        );
+        assert_eq!(listed("src/pages/index.ts", &["ALL"], A), ["ALL ALL /"]);
+        assert_eq!(
+            listed("apps/web/src/pages/files/[...path].js", &["GET"], A),
+            ["GET GET /files/*"]
+        );
+        assert_eq!(
+            listed("src/pages/feed.xml.ts", &["GET"], A),
+            ["GET GET /feed.xml"]
+        );
+        assert!(listed("src/lib/api.ts", &["GET"], A).is_empty());
+        assert!(candidate("src/pages/api/x.ts", &["POST"]));
+        assert!(!candidate("src/pages/about.astro", &["GET"]));
+        assert!(astro_middleware("src/middleware.ts", &["onRequest"]));
+        assert!(astro_middleware(
+            "web/src/middleware/index.js",
+            &["onRequest"]
+        ));
+        assert!(!astro_middleware("src/lib/middleware.ts", &["onRequest"]));
     }
 
     #[test]

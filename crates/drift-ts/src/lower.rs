@@ -1283,7 +1283,9 @@ fn lower_semantic(
         let exported: Vec<&str> = out.exports.iter().map(|e| e.name.as_str()).collect();
         out.file_routes =
             crate::filerouters::candidate(rel_path, &exported) && !routes::unmeasured_listing();
-        out.route_middleware = out.file_routes && crate::filerouters::exports_middleware(&exported);
+        out.route_middleware = out.file_routes
+            && (crate::filerouters::exports_middleware(&exported)
+                || crate::filerouters::astro_middleware(rel_path, &exported));
     }
     // That a function hands back a value is said only where the file may hold a
     // route of a file-convention router, whose answer it is
@@ -2851,6 +2853,8 @@ impl<'s> Lowerer<'s> {
         self.lower_nest_global_guards(program);
         self.lower_nest_metadata(program);
         self.out.unlisted_routes = routes::UnlistedRoutes::of(self, program);
+        // Elysia, hapi, Restify and h3 servers, listed only.
+        self.lower_servers(program);
         for sym in &mut self.out.symbols {
             if let Some(o) = self.builders.get(&sym.name) {
                 sym.refusal_builder = Some(*o);

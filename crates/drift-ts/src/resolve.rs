@@ -773,7 +773,22 @@ pub(crate) fn all_specs(f: &LoweredFile) -> BTreeSet<&str> {
     let mut out: BTreeSet<&str> = f.raw.imports.iter().map(|i| i.spec.as_str()).collect();
     out.extend(export_specs(f));
     out.extend(practice_specs(f));
+    out.extend(wrap_specs(f));
     out
+}
+
+/// Specifiers the wraps of the file's symbols name. An adapter can name a package's
+/// API that the file does not import: the authentication a hapi plugin's route asks
+/// for comes from the server the plugin is handed, not from an import.
+fn wrap_specs(f: &LoweredFile) -> impl Iterator<Item = &str> {
+    f.raw
+        .symbols
+        .iter()
+        .flat_map(|s| &s.wraps)
+        .filter_map(|(r, _)| match &r.base {
+            RawBase::Import { spec, .. } => Some(spec.as_str()),
+            _ => None,
+        })
 }
 
 /// Specifiers the practice facts name: modules mocked and route modules a test calls.
@@ -3354,7 +3369,12 @@ impl<'r> Linker<'r> {
 
         let route_symbols: BTreeSet<&str> = raw_entry_points
             .iter()
-            .filter(|e| matches!(e.adapter.as_str(), "express" | "hono" | "fastify"))
+            .filter(|e| {
+                matches!(
+                    e.adapter.as_str(),
+                    "express" | "hono" | "fastify" | "elysia" | "hapi" | "restify" | "h3"
+                )
+            })
             .map(|e| e.symbol.as_str())
             .collect();
         // Each route with the chains it is served through. What every chain gives it
@@ -3869,17 +3889,29 @@ impl<'r> Linker<'r> {
                 [(h, c)] if !c.opaque && !route_middleware => Some((*h, c)),
                 _ => None,
             };
+            // An Astro endpoint runs after the package's middleware only: its
+            // `onRequest`, read as any middleware is.
+            let astro = framework == crate::filerouters::Framework::Astro;
             let unread_before = through.is_none()
-                && (framework != crate::filerouters::Framework::ReactRouter
+                && ((framework != crate::filerouters::Framework::ReactRouter && !astro)
                     || self.routers.iter().any(|r| within(r))
-                    || route_middleware);
+                    || (route_middleware && !astro));
+            let astro_hooks: Vec<String> = match astro {
+                true => self
+                    .route_middleware
+                    .iter()
+                    .filter(|f| within(f))
+                    .map(|f| format!("{f}#onRequest"))
+                    .collect(),
+                false => Vec::new(),
+            };
             for e in crate::filerouters::entry_points(&facts, framework) {
                 if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
                     continue;
                 }
                 let route = e.route.clone().unwrap_or_default();
                 let mut wraps = Vec::new();
-                let mut app_middleware = Vec::new();
+                let mut app_middleware = astro_hooks.clone();
                 if let Some((h, c)) = through {
                     wraps.extend(c.middleware.iter().map(|w| Wrap {
                         wrapper: w.clone(),
