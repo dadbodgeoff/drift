@@ -102,6 +102,8 @@ const en = {
       enforcing: "any way that enforces it",
       or: ", or ",
       mechanismOr: " or ",
+      inFile: ", in {file} only",
+      underRoute: ", for routes under {route}",
     },
   },
   check: {
@@ -144,7 +146,7 @@ const en = {
       cause: "All {n} not checked share one cause outside them: {reason} ({instrument}).",
       causeHint: "This line in .drift/config.yaml would let Drift read it:",
       causeNoHint: "No .drift/config.yaml line names it: once Drift reads that call, they can be told.",
-      noCommand: "Drift prints no command for this one: drift practices promote takes variant ids.",
+      noCommand: "This drift binary prints no command for this one: its drift practices promote takes variant ids only (a newer Drift prints one with --concern).",
       passiveTitle: "Followed by doing nothing",
       passiveBody: "What these accept is what code does by doing nothing (errors left to the framework, logs to the language's own output): new code follows them without trying, so as rules they hold code to little. Listed apart, after the others.",
       noActive: "No candidate that holds code to more than doing nothing.",

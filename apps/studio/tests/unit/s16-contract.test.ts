@@ -61,11 +61,11 @@ describe("Convention.from_map (policy.rs): a proposal from Drift's map of the co
     expect(row?.fromMap).toBe("layering");
     expect(hiddenByShowPolicy(policy.conventions.find((x) => x.id === "D-5e0a71")!, census(), check())).toBe(false);
     expect(rows.filter((r) => r.id !== "D-5e0a71").every((r) => r.fromMap === null)).toBe(true);
-    // A census proposal from the map, not yet in the policy (newer drift): its row says so too.
+    // census --json `proposals` are the miner's (a proposal from the map is never among them): a row only census has is mined.
     const c = census();
-    const p: CensusProposal = { ...c.proposals[0]!, id: "D-0a0a0a", from_map: "manifest" };
+    const p: CensusProposal = { ...c.proposals[0]!, id: "D-0a0a0a" };
     const fromCensus = conventionRows(null, { ...c, proposals: [...c.proposals, p] }).find((r) => r.id === "D-0a0a0a");
-    expect(fromCensus?.fromMap).toBe("manifest");
+    expect(fromCensus?.fromMap).toBeNull();
     expect(conventionRows(null, c).every((r) => r.fromMap === null)).toBe(true);
   });
 
@@ -108,17 +108,21 @@ describe("drift practices promote --list --json (promote.rs Candidate)", () => {
 
   it("reads every candidate of the fixture, in Drift's order, with the fields a newer Drift adds", () => {
     expect(PromoteListEnvelope.safeParse(raw).success).toBe(true);
+    // Ranked by the departures each would settle, then by the units it reads; the passive one (listed apart) last.
     expect(list.candidates.map((x) => `${x.candidate.concern} ${x.place}`)).toEqual([
       "authn apps/api",
       "authn apps/web/app/api/admin",
-      "authn apps/web/app/api/workspaces/[id]",
       "authn apps/web/lib/actions",
       "authn apps/web/lib/actions",
-      "errors apps/api",
       "data_access apps/web",
+      "authn apps/web/app/api/workspaces/[id]",
+      "errors apps/api",
     ]);
-    const [api, , ws, , mech, errors, data] = list.candidates.map((x) => x.candidate);
+    expect(list.candidates.map((x) => x.departures)).toEqual([2, 1, 1, 1, 0, 0, 0]);
+    const [api, , , mech, data, ws, errors] = list.candidates.map((x) => x.candidate);
     expect(api!.jobs).toBe(3);
+    // A folded policy's way names its alternatives (`Way.alternatives`).
+    expect(api!.ways[0]!.alternatives).toEqual(["decorator:apps/api/src/common/auth.guard.ts#AuthGuard", "wrap:apps/web/lib/auth.ts#withWorkspace"]);
     expect(ws!.any_enforcing).toBe(true);
     expect(ws!.ways).toEqual([]);
     expect(mech!.mechanisms).toEqual(["wrap"]);
@@ -151,6 +155,14 @@ describe("drift practices promote --list --json (promote.rs Candidate)", () => {
     expect(readCandidate({ concern: "authn" })).toBeNull();
     expect(readCandidate("x")).toBeNull();
     expect(readPromoteList({})).toEqual({ candidates: [], declined: 0, promoted: [] });
+    // A file or route place (newer drift) keeps what it is; a route place's unread routes are kept when there are any.
+    const routed = readCandidate({ ...old, place: { package: "apps/api", dir: "", route: "/api/workspaces/[*]" }, unread_routes: 3 })!;
+    expect(routed.place).toEqual({ package: "apps/api", dir: "", route: "/api/workspaces/[*]" });
+    expect(routed.unread_routes).toBe(3);
+    expect(readCandidate({ ...old, place: { package: "apps/api", dir: "src", file: "apps/api/src/r.ts" } })!.place.file).toBe("apps/api/src/r.ts");
+    // An older Drift listed the passive candidates among the others, marked; a newer one apart, under `passive`: read the same.
+    const item = { place: "app/api", command: "drift practices promote P-0f0acb --in app/api", candidate: { ...old, passive: true } };
+    expect(readPromoteList({ candidates: [], passive: [item], declined: 0, promoted: [] }).candidates).toEqual(readPromoteList({ candidates: [item], declined: 0, promoted: [] }).candidates);
   });
 
   it("leaves out, in fixture mode, what this tab promoted, and names the convention that covers it", () => {
@@ -244,7 +256,9 @@ describe("the two read-only channels", () => {
     try {
       const acme = { path: "/work/acme", name: "acme" };
       expect(readCensusWhy((await api.funnel(acme)).data).dropped).toHaveLength(5);
-      expect((await api.promoteList(acme)).data.candidates).toHaveLength(7);
+      const served = (await api.promoteList(acme)).data;
+      expect([served.candidates.length, served.passive?.length]).toEqual([6, 1]);
+      expect(readPromoteList(served).candidates).toHaveLength(7);
       expect(readCensusWhy((await api.funnel({ path: "/work/quiet", name: "quiet" })).data).dropped).toEqual([]);
       await expect(api.funnel({ path: "/work/beacon", name: "beacon" })).rejects.toThrow("drift census --why failed: fixture mode has no funnel.json for beacon");
       await expect(api.promoteList({ path: "/work/quiet", name: "quiet" })).rejects.toThrow("drift practices promote --list failed");

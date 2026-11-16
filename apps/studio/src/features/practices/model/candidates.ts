@@ -95,13 +95,15 @@ export function unknownCauseText(cause: PromoteUnknownCause): { what: string; hi
 
 /** The cause a refusal for units Drift could not read names (`too_unknown` `cause`, newer drift); null otherwise. */
 export function refusalCause(r: PromoteRefused["refused"]): PromoteUnknownCause | null {
-  return r.code === "too_unknown" && r.cause !== undefined ? readUnknownCause(r.cause) : null;
+  // `refused` may be a code this Studio does not type (`{ code: string }`), which comparing `code` does not narrow away:
+  // `in` reaches `cause` on either, and the reader checks what it is.
+  return r.code === "too_unknown" && "cause" in r ? readUnknownCause(r.cause) : null;
 }
 
 /**
- * The command Drift prints for a candidate, when it promotes it: a candidate of no named way (a mechanism or any
- * enforcing way) gets `drift practices promote  --in <place>` from a Drift whose command takes variant ids only,
- * which promotes nothing, so it is not shown.
+ * The command Drift prints for a candidate, as it prints it (drift-cli promote.rs `command`: a candidate of no named
+ * way says `--concern <id>` in place of a variant id). An older Drift printed `drift practices promote  --in <place>`
+ * for one, with no id, which promotes nothing: that one is not shown.
  */
 export function commandShown(item: Pick<PromoteListItem, "command">): string | null {
   const cmd = item.command.trim();

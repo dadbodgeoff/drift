@@ -167,11 +167,14 @@ export function fixtureConvention(res: PromoteResult): Convention {
 export function fixtureListOpen(list: PromoteList, promoted: readonly string[]): PromoteList {
   const ids = new Set(promoted);
   const covered = new Set<string>();
-  const candidates = list.candidates.filter((x) => {
+  const open = (x: PromoteList["candidates"][number]) => {
     const id = fixtureId(x.candidate.concern, x.place);
     if (!ids.has(id)) return true;
     covered.add(id);
     return false;
-  });
-  return { ...list, candidates, promoted: [...new Set([...list.promoted, ...covered])].sort() };
+  };
+  const candidates = list.candidates.filter(open);
+  // A newer Drift lists the candidates followed by doing nothing apart (`passive`).
+  const passive = list.passive?.filter(open);
+  return { ...list, candidates, ...(passive ? { passive } : {}), promoted: [...new Set([...list.promoted, ...covered])].sort() };
 }

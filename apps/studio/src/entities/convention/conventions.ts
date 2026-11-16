@@ -85,7 +85,7 @@ export interface ConventionRow {
   differentKind: PolicyDifferentKind[];
   /** A practice a person promoted from the practice map (conventions.yaml `promoted_from_practice`): the variant id it came from; null for every other convention. */
   promotedFromPractice: string | null;
-  /** Proposed from Drift's map of the code (conventions.yaml or census `from_map`), not by the miner: it did not pass through the miner's measured gates. Null for a mined convention. */
+  /** Proposed from Drift's map of the code (conventions.yaml `from_map`; census `proposals` never carry it), not by the miner: it did not pass through the miner's measured gates. Null for a mined convention. */
   fromMap: FromMap | null;
 }
 
@@ -407,7 +407,7 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       exceptions: c.exceptions ?? [],
       differentKind: c.different_kind ?? [],
       promotedFromPractice: c.promoted_from_practice ?? null,
-      fromMap: fromMapOf(c.from_map ?? p?.from_map),
+      fromMap: fromMapOf(c.from_map),
     });
     seen.add(c.id);
   }
@@ -447,7 +447,8 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       exceptions: [],
       differentKind: [],
       promotedFromPractice: null,
-      fromMap: fromMapOf(p.from_map),
+      // census --json `proposals` are the miner's: a proposal from the map is read from the policy file only.
+      fromMap: null,
     });
   }
   return rows;

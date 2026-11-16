@@ -8,7 +8,7 @@ import { RULE_KIND_FAMILY, ruleFamily } from "@/entities/convention";
 import { SKIP_REASON, failsClosed, overview } from "@/entities/facts";
 import { DRIFT_OPENINGS, NO_STACK, classifyDrift, splitDriftMessages } from "@/entities/session";
 import { COMMANDS, MCP_TOOLS, RULE_KINDS_ALLOWED, SKIP_REASONS_ALLOWED } from "@/shared/contract/coverage";
-import type { CheckExemption, PracticeNotChecked, PromoteCandidate, PromotePlace, PromoteRefusal, PromoteResult, PromoteWay, Rule, StalePractice } from "@/shared/contract/drift";
+import type { CheckExemption, PracticeNotChecked, PromoteCandidate, PromotePlace, PromoteRefusal, PromoteResult, PromoteUnknownCause, PromoteWay, Rule, StalePractice } from "@/shared/contract/drift";
 
 const src = (p: string) => readFileSync(new URL(`../../../../${p}`, import.meta.url), "utf8");
 const kebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
@@ -139,20 +139,40 @@ describe("the Studio handles every Drift surface", () => {
       return [...body.matchAll(/^ {4}pub (\w+):/gm)].map((m) => m[1]).sort();
     };
     // Object literals of the TypeScript types: the compiler rejects a field the type lacks.
-    const place: PromotePlace = { package: "", dir: "" };
+    const place: PromotePlace = { package: "", dir: "", file: "", route: "" };
     const way: PromoteWay = { id: "", key: "", label: "", members: 0, alternatives: [] };
-    const candidate: PromoteCandidate = { concern: "", unit: "", place, ways: [], other_ways: [], follows: 0, exceptions: [], unknown: 0, total: 0, example: null, forced: false };
+    const cause: PromoteUnknownCause = { reason: "unparsed", instrument: "", units: 0, hint: "" };
+    const candidate: PromoteCandidate = {
+      concern: "",
+      unit: "",
+      place,
+      ways: [],
+      other_ways: [],
+      follows: 0,
+      exceptions: [],
+      unknown: 0,
+      total: 0,
+      example: null,
+      forced: false,
+      mechanisms: [],
+      any_enforcing: false,
+      passive: false,
+      jobs: 0,
+      unknown_cause: cause,
+      unread_routes: 0,
+    };
     const stale: StalePractice = { id: "", summary: "", units: 0 };
     const notChecked: PracticeNotChecked = { id: "", units: 0 };
     const replay: NonNullable<PromoteResult["replay"]> = { recent: 0, followed: 0 };
     expect(fields("Place")).toEqual(Object.keys(place).sort());
     expect(fields("Way")).toEqual(Object.keys(way).sort());
     expect(fields("Candidate")).toEqual(Object.keys(candidate).sort());
+    expect(fields("UnknownCause")).toEqual(Object.keys(cause).sort());
     expect(fields("Stale")).toEqual(Object.keys(stale).sort());
     expect(fields("NotChecked")).toEqual(Object.keys(notChecked).sort());
     expect(fields("Replay")).toEqual(Object.keys(replay).sort());
     // Refusal is serde-tagged by `code`, snake_case: every variant is a code the Studio types.
-    const codes: PromoteRefusal["code"][] = ["unknown_variant", "not_a_way", "other_concern", "no_such_place", "no_place", "too_small", "below_share", "too_unknown"];
+    const codes: PromoteRefusal["code"][] = ["unknown_variant", "not_a_way", "other_concern", "no_such_place", "no_place", "too_small", "below_share", "too_unknown", "nothing_accepted", "unknown_concern", "not_a_mechanism", "no_enforcing"];
     expect(rs).toMatch(/#\[serde\(tag = "code", rename_all = "snake_case"\)\]\npub enum Refusal/);
     // serde's snake_case splits before every capital: `NotAWay` -> `not_a_way`.
     const serdeSnake = (s: string) => s.replace(/[A-Z]/g, (m: string, i: number) => (i ? `_${m}` : m)).toLowerCase();
