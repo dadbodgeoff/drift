@@ -133,8 +133,18 @@ impl Reading {
         {
             self.partly = Some(c);
         }
-        self.role_guards.extend(own.role_guards);
-        self.role_only.extend(own.role_only);
+        // A base read through a derived builder may be one already read on the way
+        // here (`auditedAdmin = admin.use(isAuthed)`): one guard is named once.
+        for g in own.role_guards {
+            if !self.role_guards.contains(&g) {
+                self.role_guards.push(g);
+            }
+        }
+        for o in own.role_only {
+            if !self.role_only.iter().any(|x| x.0 == o.0 && x.1 == o.1) {
+                self.role_only.push(o);
+            }
+        }
         self.found_guard |= own.found_guard;
     }
 

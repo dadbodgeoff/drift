@@ -345,7 +345,11 @@ fn an_old_security_baseline_keeps_working() {
     // compare with, nothing would be held apart.
     let shown = Since {
         commit: "c0ffee".into(),
-        found: now.keys().filter(|(k, _)| k != "workflow").cloned().collect(),
+        found: now
+            .keys()
+            .filter(|(k, _)| k != "workflow")
+            .cloned()
+            .collect(),
         ..Since::default()
     };
     let r = compare_with(&now, &b, Some(&shown));

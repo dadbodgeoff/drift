@@ -146,7 +146,10 @@ fn with_no_diff_a_new_unguarded_route_fails_an_unstamped_baseline() {
         out.contains("`drift upgrade --apply --security-baseline` run on the default branch"),
         "{out}"
     );
-    assert!(!out.contains("readings newer than this baseline; they are listed and do not fail"), "{out}");
+    assert!(
+        !out.contains("readings newer than this baseline; they are listed and do not fail"),
+        "{out}"
+    );
 
     // With git: the baseline's commit has the app and not the route.
     let dir = tempfile::tempdir().unwrap();
@@ -199,7 +202,10 @@ fn a_guard_taken_off_a_mount_elsewhere_is_the_changes() {
     write(
         r,
         "app.ts",
-        &APP.replace("app.use(\"/api\", requireAuth, items);", "app.use(\"/api\", items);"),
+        &APP.replace(
+            "app.use(\"/api\", requireAuth, items);",
+            "app.use(\"/api\", items);",
+        ),
     );
     git(r, &["add", "-A"]);
     git(r, &["commit", "-qm", "open"]);
@@ -211,7 +217,10 @@ fn a_guard_taken_off_a_mount_elsewhere_is_the_changes() {
         added.iter().any(|k| k.starts_with("routes/items.ts#")),
         "{v:#}"
     );
-    assert!(keys(&v["security"], "new_in_drift", "no-guard").is_empty(), "{v:#}");
+    assert!(
+        keys(&v["security"], "new_in_drift", "no-guard").is_empty(),
+        "{v:#}"
+    );
 }
 
 /// Item 4: the change empties `# fail:` and adds an unguarded route; the merge base's
@@ -287,11 +296,16 @@ fn a_new_route_whose_guard_cannot_be_read_is_shown_not_checked() {
         .unwrap_or_else(|| panic!("{v:#}"));
     assert_eq!(unknown.len(), 1, "{v:#}");
     assert!(
-        unknown[0]["key"].as_str().unwrap().starts_with("routes/admin.ts#"),
+        unknown[0]["key"]
+            .as_str()
+            .unwrap()
+            .starts_with("routes/admin.ts#"),
         "{v:#}"
     );
     assert!(
-        !v["security"]["added"].to_string().contains("routes/admin.ts"),
+        !v["security"]["added"]
+            .to_string()
+            .contains("routes/admin.ts"),
         "{v:#}"
     );
     let (_, text, _) = drift(r, &["check", "--diff-base", "main"]);

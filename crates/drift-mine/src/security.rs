@@ -8146,12 +8146,17 @@ pub fn regressions(
     // An entry point's guards come through every file its guard chain passes (a
     // mount, a router's middleware, an app hook): one in a file the change did not
     // touch whose guards read differently at the base lost them through the change.
-    let base_guards: BTreeMap<(String, Option<String>, Option<String>), &Vec<String>> = base
+    type EntryKey = (String, Option<String>, Option<String>);
+    let base_guards: BTreeMap<EntryKey, &Vec<String>> = base
         .entry_points
         .iter()
         .map(|e| {
             (
-                (base_key(&e.path, &e.symbol), e.method.clone(), e.route.clone()),
+                (
+                    base_key(&e.path, &e.symbol),
+                    e.method.clone(),
+                    e.route.clone(),
+                ),
                 &e.guards,
             )
         })

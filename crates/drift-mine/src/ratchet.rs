@@ -861,8 +861,7 @@ pub fn compare_with(found: &Findings, baseline: &Baseline, since: Option<&Since>
         // Old code read anew: there at the commit, in a file unchanged since. A
         // newer reading's finding in a changed file fails as its kind did before the
         // reading widened (keys do not say what in a unit changed).
-        let shown_old =
-            since.is_some_and(|s| s.found.contains(&k) && !s.touched.contains(path));
+        let shown_old = since.is_some_and(|s| s.found.contains(&k) && !s.touched.contains(path));
         let to = if newer && shown_old {
             &mut out.new_in_drift
         } else if since.is_some_and(|s| s.outside.contains(&k)) {
@@ -1299,7 +1298,10 @@ mod tests {
         r.unshown_why = Some("the baseline is in no commit".into());
         let line = unshown_line(&r).unwrap();
         assert!(line.contains("the baseline is in no commit"), "{line}");
-        assert!(line.contains("`drift upgrade --apply --security-baseline` run on the default branch"), "{line}");
+        assert!(
+            line.contains("`drift upgrade --apply --security-baseline` run on the default branch"),
+            "{line}"
+        );
         assert!(render(&r, 20).contains(&line));
 
         // At the commit that wrote the baseline, this Drift finds `old.ts`'s route
@@ -1414,7 +1416,10 @@ mod tests {
         let touched = |p: &str| p == "app.ts";
         // At the commit it had the guard, through the router `app.ts` mounted.
         let base = Inventory {
-            entry_points: vec![row("admin/users.ts", &["requireAdmin (middleware)"]), example.clone()],
+            entry_points: vec![
+                row("admin/users.ts", &["requireAdmin (middleware)"]),
+                example.clone(),
+            ],
             ..Inventory::default()
         };
         let since = Since {

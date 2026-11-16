@@ -2989,6 +2989,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 // never baselined again, not even once every line of its old debt is
                 // fixed: a violation written since is new, not legacy. A line it already
                 // has gains its fingerprint, so that debt follows a move from now on.
+                // (Owned: the lock's lines are rewritten below where debt moved; the
+                // ids stay.)
+                let lock_ids: BTreeSet<String> =
+                    lock.entries.iter().map(|(id, _)| id.clone()).collect();
                 let known: BTreeSet<&str> = known_ids
                     .iter()
                     .map(String::as_str)
@@ -2996,7 +3000,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     // A convention the lock already has lines for was baselined before
                     // (one the policy dropped, as wiring rules are while wiring is off):
                     // coming back, it is not baselined again.
-                    .chain(lock.entries.iter().map(|(id, _)| id.as_str()))
+                    .chain(lock_ids.iter().map(String::as_str))
                     .collect();
                 // Legacy debt that moved and is held by its fingerprint only: its lines
                 // name where it is now, so a later edit of it keeps it legacy.
@@ -4899,7 +4903,10 @@ fn security_baseline_checked(
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
         Err(e) => return Err(e).with_context(|| format!("reading {SECURITY_LOCK}")),
     };
-    let mut said: Vec<String> = text.as_deref().map(ratchet::header_problems).unwrap_or_default();
+    let mut said: Vec<String> = text
+        .as_deref()
+        .map(ratchet::header_problems)
+        .unwrap_or_default();
     let head = text.as_deref().map(ratchet::parse_baseline);
     let baseline = match scope {
         Some(s) => {
@@ -4930,7 +4937,10 @@ fn security_baseline_checked(
                         .and_then(|c| pr::file_at(root, &format!("{c}^"), SECURITY_LOCK)),
                 };
                 if let Some(was) = was {
-                    said.extend(ratchet::header_weakened(&ratchet::parse_baseline(&was), now));
+                    said.extend(ratchet::header_weakened(
+                        &ratchet::parse_baseline(&was),
+                        now,
+                    ));
                 }
             }
             head

@@ -271,7 +271,7 @@ fn an_older_stamp_is_left_to_do() {
     let r = dir.path();
     write(r, "package.json", "{ \"name\": \"t\" }");
     write(r, "lib/a.ts", "export function a() {\n  return 1;\n}\n");
-    assert!(INVENTORY_VERSION > 1);
+    const { assert!(INVENTORY_VERSION > 1) };
     write(
         r,
         ".drift/security.lock",
