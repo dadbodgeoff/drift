@@ -24,6 +24,8 @@ const MAX_DEPTH: usize = 32;
 const MAX_ALTERNATIVES: usize = 64;
 /// The longest word of a Caddyfile that is read.
 const MAX_WORD: usize = 512;
+/// How many directives the snippets imported into one file may come to.
+const MAX_EXPANDED: usize = 4096;
 
 // ---------- Traefik ----------
 
@@ -36,18 +38,18 @@ pub struct Labelled<'a> {
 
 /// One alternative of a rule expression: what a request must be for it to match.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-struct Alternative {
-    host: Option<String>,
+pub(crate) struct Alternative {
+    pub(crate) host: Option<String>,
     /// (path, exact).
-    path: Option<(String, bool)>,
+    pub(crate) path: Option<(String, bool)>,
     /// A condition Drift does not evaluate (a method, a header, a regular expression).
-    conditional: bool,
+    pub(crate) conditional: bool,
 }
 
 /// The alternatives of a Traefik rule (`Host(`a`) && (PathPrefix(`/x`) ||
 /// Path(`/y`))`), each a conjunction; none when the expression is outside what is
 /// read (a negation, a matcher Drift does not know, more alternatives than are kept).
-fn traefik_rule(text: &str) -> Option<Vec<Alternative>> {
+pub(crate) fn traefik_rule(text: &str) -> Option<Vec<Alternative>> {
     #[derive(Debug, Clone, PartialEq)]
     enum Tok {
         Name(String),
@@ -240,6 +242,19 @@ pub fn traefik(
     stock: bool,
     services: &[Labelled],
 ) -> Gateway {
+    let (rules, unread) = traefik_rules(name, said, config, stock, services);
+    Gateway::of_rules(name, vec![file.to_string()], "router", rules, unread)
+}
+
+/// The rules and what is not read of [`traefik`], so that the routers of its file
+/// provider can be read beside them ([`crate::gateway_configs::traefik_file`]).
+pub(crate) fn traefik_rules(
+    name: &str,
+    said: &str,
+    config: &[String],
+    stock: bool,
+    services: &[Labelled],
+) -> (Vec<Rule>, Vec<String>) {
     let mut unread: Vec<String> = Vec::new();
     let said = said.to_lowercase().replace('_', ".");
     if !stock {
@@ -422,7 +437,7 @@ pub fn traefik(
             }
         }
     }
-    Gateway::of_rules(name, vec![file.to_string()], "router", rules, unread)
+    (rules, unread)
 }
 
 // ---------- Caddy ----------
@@ -582,11 +597,45 @@ const CADDY_INERT: &[&str] = &[
     "push",
 ];
 
+/// `ds` with each `import` of a snippet with no arguments replaced by the snippet's
+/// directives, as Caddy reads it; an import inside a snippet too, as deep as blocks
+/// nest, while `left` (the directives one reader may still import, [`MAX_EXPANDED`])
+/// lasts: a snippet that imports itself costs a fixed amount of work. Any other
+/// `import` is left, and recorded where it stands.
+fn expand(
+    snippets: &BTreeMap<String, Vec<Directive>>,
+    ds: &[Directive],
+    depth: usize,
+    left: &mut usize,
+) -> Vec<Directive> {
+    let mut out = Vec::new();
+    for d in ds {
+        match snippets.get(d.args.first().map_or("", String::as_str)) {
+            Some(body)
+                if d.name == "import"
+                    && d.args.len() == 1
+                    && depth < MAX_DEPTH
+                    && *left >= body.len() =>
+            {
+                *left -= body.len();
+                out.extend(expand(snippets, body, depth + 1, left));
+            }
+            _ => out.push(d.clone()),
+        }
+    }
+    out
+}
+
 struct CaddyReader<'a> {
     file: &'a str,
     resolve: &'a dyn Fn(&str) -> Target,
     rules: Vec<Rule>,
     unread: Vec<String>,
+    /// The snippets of every file (`(name) { ... }`), by name: an `import` of one
+    /// with no arguments is its directives, written in its place.
+    snippets: &'a BTreeMap<String, Vec<Directive>>,
+    /// What is left of [`MAX_EXPANDED`] to this reader.
+    left: usize,
 }
 
 impl CaddyReader<'_> {
@@ -623,6 +672,8 @@ impl CaddyReader<'_> {
         opaque: bool,
         depth: usize,
     ) {
+        let expanded = expand(self.snippets, ds, depth, &mut self.left);
+        let ds = expanded.as_slice();
         // The named matchers of this block, and what changes the path in it.
         let mut named: BTreeMap<&str, Matcher> = BTreeMap::new();
         let (mut strip, mut opaque) = (strip, opaque);
@@ -828,13 +879,26 @@ pub fn caddy(
 ) -> Result<Gateway, String> {
     let mut rules = Vec::new();
     let mut unread = Vec::new();
+    let mut parsed = Vec::new();
     for (file, text) in files {
-        let ds = caddyfile(text).map_err(|e| format!("{file}: {e}"))?;
+        parsed.push((file, caddyfile(text).map_err(|e| format!("{file}: {e}"))?));
+    }
+    let snippets: BTreeMap<String, Vec<Directive>> = parsed
+        .iter()
+        .flat_map(|(_, ds)| ds)
+        .filter_map(|d| {
+            let name = d.name.strip_prefix('(')?.strip_suffix(')')?;
+            Some((name.to_string(), d.block.clone()?))
+        })
+        .collect();
+    for (file, ds) in parsed {
         let mut reader = CaddyReader {
             file,
             resolve,
             rules: Vec::new(),
             unread: Vec::new(),
+            snippets: &snippets,
+            left: MAX_EXPANDED,
         };
         // Global options and snippets first; a file whose first site has no block is
         // one site, its address on the first line.
@@ -842,9 +906,8 @@ pub fn caddy(
             .iter()
             .filter(|d| !d.name.is_empty() && !d.name.starts_with('('))
             .collect();
-        for d in ds.iter().filter(|d| d.name.starts_with('(')) {
-            reader.unread(d, "is a snippet, and what imports it is not followed");
-        }
+        // A snippet is read where it is imported ([`CaddyReader::expand`]); an
+        // argument placeholder left in it is a word Drift does not resolve.
         if sites.iter().all(|d| d.block.is_some()) {
             for site in sites {
                 // One site for each address: a request names one host.

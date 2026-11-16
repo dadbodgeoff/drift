@@ -33,6 +33,14 @@ main branch.
 
 ### Added
 
+- **Exposure behind HAProxy, Envoy, Kong, Apache httpd and Traefik's file
+  provider.** A compose service running one of them, with its configuration
+  mounted or copied in from the repository, now decides each route behind it as
+  nginx does: internet-facing where a rule provably carries it, internal where no
+  rule can and everything was read, unknown otherwise, with the reason. Caddy
+  snippets imported in the Caddyfile are read, and an nginx regular-expression
+  location that is a plain anchored prefix (`~ ^/api/`) is evaluated. Before,
+  every route behind these read unknown.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

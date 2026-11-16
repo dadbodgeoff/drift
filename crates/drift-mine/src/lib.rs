@@ -15,6 +15,7 @@ pub mod from_map;
 pub mod funnel;
 pub mod gate_candidates;
 pub mod gateway;
+pub mod gateway_configs;
 pub mod guard_position;
 pub mod image;
 pub mod introduced;

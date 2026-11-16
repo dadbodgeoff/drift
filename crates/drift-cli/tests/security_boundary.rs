@@ -351,9 +351,10 @@ fn what_a_gateway_may_route_is_unknown_never_internal() {
         ),
         (
             "",
-            "  location ~ ^/int { proxy_pass http://api:8000; }\n",
+            // A plain anchored prefix (`~ ^/int`) is evaluated; this one is not.
+            "  location ~ ^/(int|ext) { proxy_pass http://api:8000; }\n",
             "FastAPI()",
-            format!("unknown|{gw} may route /internal/v1/jobs/lease to api: location ~ ^/int is a regular expression, which Drift does not evaluate"),
+            format!("unknown|{gw} may route /internal/v1/jobs/lease to api: location ~ ^/(int|ext) is a regular expression, which Drift does not evaluate"),
         ),
         (
             "",

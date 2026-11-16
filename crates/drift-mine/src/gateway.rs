@@ -109,6 +109,10 @@ enum Pick {
     /// order): a request is known to go where a rule sends it only when every rule
     /// that matches it sends it to the same place.
     Agreed,
+    /// In the order written, the first that matches wins (HAProxy's `use_backend`,
+    /// Envoy's routes, httpd's `ProxyPass`): a request is known to go where a rule
+    /// sends it when every rule before it that matches it sends it to the same place.
+    First,
 }
 
 /// One rule of a gateway that is not nginx ([`Gateway::of_rules`]): a Traefik router,
@@ -146,6 +150,13 @@ struct Location {
     /// What is passed on starts with a `/`, added when taking the prefix off left none
     /// (a stripped prefix, [`Rule::strip`]).
     slash: bool,
+    /// nginx `^~`: a request this prefix is the longest match of is not looked up
+    /// among the regular-expression locations.
+    stop: bool,
+    /// A regular-expression location that is a plain anchored prefix (`~ ^/api/`),
+    /// which `path` then holds: evaluated, with or without regard to case (`~*`).
+    /// None for any other regular expression, which is not evaluated.
+    literal: Option<bool>,
 }
 
 impl Location {
@@ -266,6 +277,8 @@ impl Gateway {
                 uri: r.strip.then(String::new),
                 rewrites: Vec::new(),
                 slash: r.strip,
+                stop: false,
+                literal: None,
             })
             .collect();
         Gateway {
@@ -276,6 +289,13 @@ impl Gateway {
             pick: Pick::Agreed,
             noun,
         }
+    }
+
+    /// The same gateway, its rules taken in the order written: the first that
+    /// matches a request wins ([`Pick::First`]).
+    pub fn first_match(mut self) -> Gateway {
+        self.pick = Pick::First;
+        self
     }
 
     /// `gateway edge (deploy/nginx.conf)`.
@@ -324,7 +344,12 @@ impl Gateway {
         let loc = &self.locations[i];
         match self.pick {
             Pick::Nginx => self.select(loc.server, e) == Some(i),
-            Pick::Agreed => {
+            Pick::Agreed | Pick::First => {
+                // Under the first match, only the rules written before it compete.
+                let rivals_of = match self.pick {
+                    Pick::First => &self.locations[..i],
+                    _ => &self.locations[..],
+                };
                 let matches = |l: &Location| match l.kind {
                     Match::Exact => l.path == e,
                     Match::Prefix => e.starts_with(&l.path),
@@ -335,7 +360,7 @@ impl Gateway {
                     _ => None,
                 };
                 matches(loc)
-                    && self.locations.iter().all(|other| {
+                    && rivals_of.iter().all(|other| {
                         // A rule for a host competes with that host's and with those
                         // for any host. One for any host is asked with a host no
                         // other rule names, where only its like compete.
@@ -352,14 +377,27 @@ impl Gateway {
 
     /// The locations to `service` that deliver none of `routes`: the service answers
     /// there on a path that is not among them, so they are not all its paths.
+    /// One directive read as several locations (an httpd `ProxyPass /v1` is the exact
+    /// `/v1` and the prefix `/v1/`) is judged as one: it is unexplained only when none
+    /// of its locations delivers a route.
     pub fn unexplained(&self, service: &str, routes: &[Route]) -> Vec<&str> {
-        let found: Vec<&str> = self
-            .to(service)
-            .into_iter()
-            .filter(|i| self.locations[*i].kind != Match::Regex)
-            .filter(|i| !spent() && !routes.iter().any(|r| self.delivers(*i, r)))
-            .map(|i| self.locations[i].label.as_str())
+        let to = self.to(service);
+        let delivering = |i: usize| !spent() && routes.iter().any(|r| self.delivers(i, r));
+        let explained: BTreeSet<&str> = to
+            .iter()
+            .filter(|i| delivering(**i))
+            .map(|i| self.locations[*i].label.as_str())
             .collect();
+        let mut found: Vec<&str> = to
+            .into_iter()
+            .filter(|i| {
+                let l = &self.locations[*i];
+                l.kind != Match::Regex || l.literal.is_some()
+            })
+            .map(|i| self.locations[i].label.as_str())
+            .filter(|label| !spent() && !explained.contains(label))
+            .collect();
+        found.dedup();
         // Not all compared: nothing is known to deliver none ([`Gateway::may_carry`]
         // says that the run was too short).
         if spent() { Vec::new() } else { found }
@@ -391,13 +429,13 @@ impl Gateway {
             } else {
                 ""
             };
-            if l.kind == Match::Regex {
+            if l.kind == Match::Regex && l.literal.is_none() {
                 return Some(match self.pick {
                     Pick::Nginx => format!(
                         "location {}{to} is a regular expression, which Drift does not evaluate",
                         l.label
                     ),
-                    Pick::Agreed => {
+                    Pick::Agreed | Pick::First => {
                         format!("{} {}{to} is not one Drift evaluates", self.noun, l.label)
                     }
                 });
@@ -418,7 +456,10 @@ impl Gateway {
     }
 
     /// The location of `server` nginx gives `path` to: an exact match, else the longest
-    /// matching prefix. Regular-expression locations are not evaluated.
+    /// matching prefix, unless it is `^~` and a regular-expression location that is a
+    /// plain anchored prefix matches first, in the order written. Other regular
+    /// expressions are not evaluated: one written before such a prefix leaves the
+    /// longest prefix chosen, as when there is none.
     fn select(&self, server: usize, path: &str) -> Option<usize> {
         let of_server = || {
             self.locations
@@ -426,14 +467,25 @@ impl Gateway {
                 .enumerate()
                 .filter(move |(_, l)| l.server == server)
         };
-        of_server()
-            .find(|(_, l)| l.kind == Match::Exact && l.path == path)
-            .or_else(|| {
-                of_server()
-                    .filter(|(_, l)| l.kind == Match::Prefix && path.starts_with(&l.path))
-                    .max_by_key(|(_, l)| l.path.len())
-            })
-            .map(|(i, _)| i)
+        if let Some((i, _)) = of_server().find(|(_, l)| l.kind == Match::Exact && l.path == path) {
+            return Some(i);
+        }
+        let prefix = of_server()
+            .filter(|(_, l)| l.kind == Match::Prefix && path.starts_with(&l.path))
+            .max_by_key(|(_, l)| l.path.len());
+        if prefix.is_some_and(|(_, l)| l.stop) {
+            return prefix.map(|(i, _)| i);
+        }
+        let regex = of_server()
+            .filter(|(_, l)| l.kind == Match::Regex)
+            .take_while(|(_, l)| l.literal.is_some())
+            .find(|(_, l)| {
+                let fold = l.literal == Some(true);
+                path.get(..l.path.len()).is_some_and(|head| {
+                    head == l.path || (fold && head.eq_ignore_ascii_case(&l.path))
+                })
+            });
+        regex.or(prefix).map(|(i, _)| i)
     }
 }
 
@@ -459,6 +511,7 @@ fn candidates(loc: &Location, route: &Route) -> Vec<String> {
             }
         }
         Match::Exact => out.push(loc.path.clone()),
+        Match::Regex if loc.literal.is_some() => out.extend(route.fit(&loc.path, true, false)),
         Match::Regex => {}
     }
     for r in &loc.rewrites {
@@ -1392,6 +1445,8 @@ impl Reader<'_> {
             uri: None,
             rewrites: Vec::new(),
             slash: false,
+            stop: d.args.first().is_some_and(|a| a.starts_with("^~")),
+            literal: None,
         };
         let has = |name: &str| body.iter().any(|x| x.name == name);
         // `return` answers before anything is proxied, unless a `rewrite ... break`
@@ -1447,6 +1502,15 @@ impl Reader<'_> {
                 _ => self.unread(file, x, "is not read"),
             }
         }
+        // A plain anchored prefix is evaluated; nginx refuses a URI part in
+        // `proxy_pass` there, so one that has it is left as written.
+        if kind == Match::Regex
+            && loc.uri.is_none()
+            && let Some(prefix) = literal_prefix(path)
+        {
+            loc.path = prefix;
+            loc.literal = Some(d.args.iter().any(|a| a.starts_with("~*")));
+        }
         self.gateway.locations.push(loc);
     }
 
@@ -1473,6 +1537,29 @@ impl Reader<'_> {
     }
 }
 
+/// The prefix a regular expression matches when it is one: `^` and then only
+/// characters that stand for themselves (letters, digits, `/`, `-`, `_`, and
+/// punctuation escaped with a backslash), so it matches exactly the paths that start
+/// with them. None for anything else.
+fn literal_prefix(re: &str) -> Option<String> {
+    let c: Vec<char> = re.strip_prefix('^')?.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        match c[i] {
+            '\\' if c.get(i + 1).is_some_and(|n| n.is_ascii_punctuation()) => {
+                out.push(c[i + 1]);
+                i += 2;
+                continue;
+            }
+            x if x.is_ascii_alphanumeric() || "/-_".contains(x) => out.push(x),
+            _ => return None,
+        }
+        i += 1;
+    }
+    out.starts_with('/').then_some(out)
+}
+
 // ---------- a gateway built from a Dockerfile ----------
 
 /// What the last stage of a Dockerfile makes of a gateway image.
@@ -1482,6 +1569,10 @@ pub struct Built {
     pub base: String,
     /// What it copies under `/etc/nginx` from the build context: (source, destination).
     pub copies: Vec<(String, String)>,
+    /// Everything it copies from the build context to an absolute path, nginx's
+    /// configuration too: (source, destination). Where another gateway's
+    /// configuration is found ([`crate::gateway_configs`]).
+    pub files: Vec<(String, String)>,
     /// A step that may write configuration Drift does not read.
     pub unread: Option<String>,
 }
@@ -1542,6 +1633,14 @@ pub fn dockerfile(text: &str) -> Option<Built> {
                     .filter(|a| !a.starts_with("--"))
                     .copied()
                     .collect();
+                if let Some((dst, srcs)) = paths.split_last()
+                    && dst.starts_with('/')
+                    && !from_stage
+                    && !srcs.iter().any(|s| s.contains(['*', '?', '[']))
+                {
+                    b.files
+                        .extend(srcs.iter().map(|s| (s.to_string(), dst.to_string())));
+                }
                 match paths.split_last() {
                     Some((dst, srcs)) if nginx_path(dst) => {
                         let read = !from_stage && !srcs.iter().any(|s| s.contains(['*', '?', '[']));
