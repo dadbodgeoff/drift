@@ -16,9 +16,9 @@ use crate::roles::{NonProduction, is_test_path};
 use crate::vocab::grant;
 use crate::vocab::refuse::names_access_control;
 
-pub mod platforms;
 /// The Kubernetes manifests, read as a deployment of the repository's code.
 mod cluster;
+pub mod platforms;
 pub use cluster::{PATH_ANNOTATIONS, Workload};
 
 /// Suffix of a guard that is a hook the whole app runs.

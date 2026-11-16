@@ -78,6 +78,49 @@ pub(super) fn object_prop<'b, 'a>(
     })
 }
 
+/// What a registration on a Koa application or `@koa/router` router is given, as
+/// the Express reading takes it: `child.routes()` and `child.middleware()` mount
+/// the router `child`; `child.allowedMethods()` answers only what no route matched
+/// (an `OPTIONS`, a method a path does not serve) and stands before no route; a
+/// named route (`router.get("user", "/users/:id", ...)`) is at its second
+/// argument. Gives the routers a `use` mounts.
+fn koa_arguments<'b, 'a>(method: &str, exprs: &mut Vec<&'b Expression<'a>>) -> Vec<oxc_span::Span> {
+    // `<router>.<name>()`: the router and the name.
+    fn called<'b, 'a>(e: &'b Expression<'a>) -> Option<(&'b Expression<'a>, &'b str)> {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return None;
+        };
+        let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee) else {
+            return None;
+        };
+        let object = unwrap_expr(&m.object);
+        (c.arguments.is_empty()
+            && matches!(
+                object,
+                Expression::Identifier(_) | Expression::StaticMemberExpression(_)
+            ))
+        .then_some((object, m.property.name.as_str()))
+    }
+    let mut mounted = Vec::new();
+    if method == "use" {
+        exprs.retain(|e| called(e).is_none_or(|(_, name)| name != "allowedMethods"));
+        for e in exprs.iter_mut() {
+            let cur: &'b Expression<'a> = e;
+            if let Some((router, "routes" | "middleware")) = called(cur) {
+                *e = router;
+                mounted.push(router.span());
+            }
+        }
+    } else if exprs.len() >= 3
+        && exprs[..2]
+            .iter()
+            .all(|e| matches!(unwrap_expr(e), Expression::StringLiteral(_)))
+    {
+        exprs.remove(0);
+    }
+    mounted
+}
+
 /// Call arguments as expressions, with spreads (`...protectedMiddleware`) unwrapped.
 fn arg_exprs<'b, 'a>(args: &'b oxc_allocator::Vec<'a, Argument<'a>>) -> Vec<&'b Expression<'a>> {
     args.iter()
@@ -214,9 +257,11 @@ impl Lowerer<'_> {
             ("hono", "Hono", "", true) | ("@hono/zod-openapi", "OpenAPIHono", "", true) => {
                 Some("hono")
             }
-            // `new Router()` of `@koa/router`: its routes are listed since the
-            // measured build, and what a Koa middleware does is not read.
-            ("@koa/router" | "koa-router", "default", "", true) if !unmeasured_listing() => {
+            // `new Router()` of `@koa/router` and `new Koa()`: their routes and
+            // what runs before them are listed since the measured build.
+            ("@koa/router" | "koa-router" | "koa", "default", "", true)
+                if !unmeasured_listing() =>
+            {
                 Some("koa")
             }
             _ => None,
@@ -1970,7 +2015,13 @@ impl Lowerer<'_> {
             .unwrap_or("express");
         let line = self.line_of(e.span().start);
         for (method, args) in regs {
-            let exprs: Vec<&Expression> = arg_exprs(args);
+            let mut exprs: Vec<&Expression> = arg_exprs(args);
+            // The routers a Koa `use` mounts (`router.routes()`): mounted, never a
+            // middleware of what is registered after them.
+            let mounted = match adapter {
+                "koa" => koa_arguments(&method, &mut exprs),
+                _ => Vec::new(),
+            };
             // Under a condition, only the routes are read: what is registered beside
             // them there runs for no route that is proven.
             if self.scope_conditional
@@ -2263,9 +2314,15 @@ impl Lowerer<'_> {
                             calls.extend(before.calls);
                             hooks.extend(before.unread.iter().map(|how| Self::unread_hook(how)));
                             hooks.extend(before.members.into_iter().map(|(_, member)| member));
+                            // A Koa router mounts what it is given under its own
+                            // prefix.
+                            let prefix = match adapter {
+                                "koa" => base_of.clone().unwrap_or_default(),
+                                _ => String::new(),
+                            };
                             if self.scope == 0 || self.closure_routers.contains(&receiver) {
                                 self.out.mounts.push(RawMount {
-                                    prefix: String::new(),
+                                    prefix,
                                     target,
                                     middleware,
                                     parent: receiver.clone(),
@@ -2278,7 +2335,7 @@ impl Lowerer<'_> {
                         }
                         // Router-level middleware guards every route registered after it.
                         let mut mws = Vec::new();
-                        for x in &exprs {
+                        for x in exprs.iter().filter(|x| !mounted.contains(&x.span())) {
                             self.collect_middleware(x, &mut mws);
                             // What has no name where it is given may be the guard of
                             // the routes that follow, whatever it is.
@@ -2541,12 +2598,6 @@ impl Lowerer<'_> {
                                 .flatten()
                                 .cloned(),
                         );
-                        // Koa: a middleware answers by setting `ctx.status` or by
-                        // `ctx.throw`, which the reading of a guard does not follow.
-                        if adapter == "koa" {
-                            unread
-                                .push("what a Koa middleware does, which is not read".to_string());
-                        }
                         // A route the module registers itself, on a router a
                         // function or a condition registers a middleware on: whether
                         // that runs before the route is not read. The measured build
@@ -3648,6 +3699,56 @@ pub(super) fn base_path(init: &Expression) -> Option<String> {
         Some(outer) => join_path(&[&outer, &own]),
         None => own,
     })
+}
+
+/// The prefix a `@koa/router` router is made with (`new Router({ prefix: "/api"
+/// })`): `?` where it is given no literal.
+pub(super) fn koa_prefix(init: &Expression) -> Option<String> {
+    let Expression::NewExpression(n) = unwrap_expr(init) else {
+        return None;
+    };
+    let Expression::ObjectExpression(o) = n.arguments.first()?.as_expression().map(unwrap_expr)?
+    else {
+        return None;
+    };
+    let given = object_prop(o, "prefix")?;
+    Some(route_text(given).unwrap_or_else(|| "?".to_string()))
+}
+
+impl Lowerer<'_> {
+    /// `router.prefix("/api")` at the top level of the module, for a `@koa/router`
+    /// router of it: every route of the router is under it, those registered
+    /// before the call too. `?` where it is given no literal, or given twice.
+    pub(super) fn koa_prefixes(&mut self, program: &Program) {
+        for st in &program.body {
+            let Statement::ExpressionStatement(x) = st else {
+                continue;
+            };
+            let Expression::CallExpression(c) = unwrap_expr(&x.expression) else {
+                continue;
+            };
+            let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee) else {
+                continue;
+            };
+            let Expression::Identifier(id) = unwrap_expr(&m.object) else {
+                continue;
+            };
+            let router = id.name.as_str();
+            if m.property.name != "prefix" || self.router_adapter.get(router) != Some(&"koa") {
+                continue;
+            }
+            let given = c
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .and_then(route_text);
+            let base = match (self.base_paths.contains_key(router), given) {
+                (false, Some(p)) => p,
+                _ => "?".to_string(),
+            };
+            self.base_paths.insert(router.to_string(), base);
+        }
+    }
 }
 
 /// The paths a registration is given: one for a literal, each for an array of

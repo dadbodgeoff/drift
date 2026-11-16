@@ -172,6 +172,16 @@ main branch.
   (`@tornado.web.authenticated`, `@falcon.before`); Django management commands
   as `cli`; Django Channels websocket routes; Huey and arq tasks as `job` and
   `cron`. Listed only: mining and `drift check` read none of it.
+- **Guards before Koa, SvelteKit and Nitro routes are read:** `drift security`
+  and the practice map now say guarded or no guard found for these routes
+  instead of always unknown. Koa: `app.use`, `router.use`, `router.routes()`
+  mounts and prefixes, `ctx.throw(401)` and `ctx.status = 401`. SvelteKit:
+  `hooks.server` `handle` and `sequence(...)`, path tests with `startsWith`,
+  and `+layout.server` loads for page loads only (never endpoints or form
+  actions). Nitro: `server/middleware/` files and a route's `onRequest` hooks
+  (a Nitro route no hook guards stays unknown).
+  A hook Drift cannot read leaves the routes it may cover unknown. Mining is
+  unchanged.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

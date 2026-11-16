@@ -20,6 +20,9 @@ use crate::lower::registries::{RawList, RawSlot};
 mod graphql_link;
 use crate::lower::{RawBase, RawExportTarget, RawFile, RawOperand, RawRef};
 
+#[path = "serverhooks_link.rs"]
+mod serverhooks_link;
+
 const NODE_BUILTINS: &[&str] = &[
     "assert",
     "async_hooks",
@@ -1063,6 +1066,12 @@ pub struct Linker<'r> {
     /// The files that export a middleware of a file-convention route
     /// ([`crate::lower::RawFile::route_middleware`]).
     route_middleware: BTreeSet<String>,
+    /// The files that say what SvelteKit or Nitro runs before its routes, by path
+    /// ([`crate::lower::RawFile::server_hooks`]).
+    server_hooks: BTreeMap<String, crate::lower::serverhooks::RawServerHooks>,
+    /// SvelteKit's `+layout.server` files, by path, with whether each exports a
+    /// `load` ([`serverhooks_link`]).
+    layout_servers: BTreeMap<String, bool>,
     /// What [`Linker::origin`] answered, per module and name.
     origins: OriginMemo,
     /// The middleware applied to the routes of each Nest application beside them
@@ -1432,6 +1441,24 @@ impl<'r> Linker<'r> {
                 .iter()
                 .filter(|f| f.raw.route_middleware)
                 .map(|f| f.rel_path.clone())
+                .collect(),
+            server_hooks: files
+                .iter()
+                .filter(|f| !f.raw.server_hooks.kind.is_empty())
+                .map(|f| (f.rel_path.clone(), f.raw.server_hooks.clone()))
+                .collect(),
+            layout_servers: files
+                .iter()
+                .filter(|f| {
+                    f.rel_path
+                        .rsplit('/')
+                        .next()
+                        .is_some_and(|n| n.starts_with("+layout.server."))
+                })
+                .map(|f| {
+                    let load = f.raw.exports.iter().any(|e| e.name == "load");
+                    (f.rel_path.clone(), load)
+                })
                 .collect(),
             origins: OriginMemo::default(),
             nest: Vec::new(),
@@ -3369,10 +3396,11 @@ impl<'r> Linker<'r> {
 
         let route_symbols: BTreeSet<&str> = raw_entry_points
             .iter()
+            // Koa's routers are listed only where the listed reading is made.
             .filter(|e| {
                 matches!(
                     e.adapter.as_str(),
-                    "express" | "hono" | "fastify" | "elysia" | "hapi" | "restify" | "h3"
+                    "express" | "hono" | "fastify" | "koa" | "elysia" | "hapi" | "restify" | "h3"
                 )
             })
             .map(|e| e.symbol.as_str())
@@ -3890,12 +3918,12 @@ impl<'r> Linker<'r> {
                 _ => None,
             };
             // An Astro endpoint runs after the package's middleware only: its
-            // `onRequest`, read as any middleware is.
+            // `onRequest`, read as any middleware is. SvelteKit's and Nitro's own
+            // hooks are read below ([`serverhooks_link`]); a server of the package's
+            // own is not.
             let astro = framework == crate::filerouters::Framework::Astro;
             let unread_before = through.is_none()
-                && ((framework != crate::filerouters::Framework::ReactRouter && !astro)
-                    || self.routers.iter().any(|r| within(r))
-                    || (route_middleware && !astro));
+                && (self.routers.iter().any(|r| within(r)) || (route_middleware && !astro));
             let astro_hooks: Vec<String> = match astro {
                 true => self
                     .route_middleware
@@ -3931,6 +3959,7 @@ impl<'r> Linker<'r> {
                         }
                     }
                 }
+                app_middleware.extend(self.server_hooks_before(f, framework, &e.symbol, &route));
                 facts.mounts.push(drift_core::MountFacts {
                     symbol: e.symbol.clone(),
                     route,
