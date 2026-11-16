@@ -353,6 +353,29 @@ What the replay measures, and what it does not:
 
 Advise mode needs no history and always works. `drift review --advise <id>` returns a promoted practice to advise mode, as for any convention.
 
+Where `--block` is refused for want of history, the refusal says which it is (not a git repository, no commits, a shallow clone, or a history that dates too few of the place's units) and adds one line. In a shallow clone, a full clone is the simpler fix: `git fetch --unshallow`, or `fetch-depth: 0` with actions/checkout in CI (`git fetch --deepen` leaves the clone shallow, so the replay still cannot run).
+
+### Probation: block mode without history (experimental)
+
+Where the history cannot be replayed and cannot be fetched (a squashed import, a CI that only ever sees one commit), turn on probation in `.drift/config.yaml`:
+
+```yaml
+experimental: [probation]
+```
+
+Then `drift practices promote ... --block` with no history to replay does not dead-end. It accepts the practice in advise mode, **on probation**, and writes `.drift/probation.lock`: the rule it holds and every unit of its place at that moment. Commit it with the other two files. From then on:
+
+- `drift check` (the whole tree and `--diff-base`) and `drift practices promote --list` count the units of the place that are not in that record, the units added since. A unit Drift cannot tell counts for neither side, and is said apart.
+- Once 15 of them can be told and all follow the practice, both say it may block and print the command, `drift review --block <id>`. A person runs it; nothing starts blocking by itself.
+- One added since that breaks it makes it not eligible while it does, and is named.
+- Promoting again with `--block` keeps the record, so the count goes on. A record of another rule (the ways or the place changed after) counts nothing until it is put on probation again.
+
+The count is read from the code each time, never stored: the record is written once, a reviewer sees it in that change, and each unit counted later is code in the change that added it. Two branches never write the same counter.
+
+A change cannot promote its own rule. Against a diff, when the change also edits `.drift/probation.lock`, the record at the merge base judges (dropping units from it gains nothing) and no unit in a file the change touches counts. Without a diff, the same holds against `HEAD` for an edit not committed yet. A change that edits the record and is merged without `--diff-base` ever checking it is not caught afterwards: run `drift check --diff-base` in CI, and review edits of the record as you review edits of `drift.lock`.
+
+What probation asks is an owner's decision not taken yet: 15 units, the replay's number, and all 15 must follow, where the replay lets 3 of its 15 differ (12 of 15, 80%). Units are keyed by path and symbol, so a file moved into the place counts as new.
+
 ### Python advises only
 
 A place whose units are Python advises only, as every Python convention does (decision D7; see [Conventions and Review](Conventions-and-Review#tiers)). It can be promoted, in advise mode; `--block` does not make it block.

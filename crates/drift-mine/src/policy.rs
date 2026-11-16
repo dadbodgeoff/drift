@@ -90,7 +90,22 @@ pub const KNOWN_FEATURES: &[&str] = &[
     TEST_ROLES_FEATURE,
     KIND_ROLES_FEATURE,
     LISTED_ENTRY_POINTS_FEATURE,
+    PROBATION_FEATURE,
 ];
+
+/// The experimental feature that lets a promoted practice earn block mode without git
+/// history ([`crate::practices::probation`]): `--block` with no history to replay puts
+/// it on probation in advise mode, and `drift check` counts the units added to its place
+/// since. Off by default: how many units it takes is the owner's decision.
+pub const PROBATION_FEATURE: &str = "probation";
+
+/// Whether probation is on for the repository at `root` ([`PROBATION_FEATURE`]): in the
+/// config's `experimental` list or in [`EXPERIMENTAL_ENV`]. Off by default, and off when
+/// the config cannot be read [STRICT], so a Drift that cannot read the setting does
+/// what it did before.
+pub fn probation(root: &Path) -> bool {
+    DriftConfig::load(root).is_ok_and(|c| c.enabled(PROBATION_FEATURE))
+}
 
 /// Whether every command reads the listed entry points of the repository at `root`
 /// ([`LISTED_ENTRY_POINTS_FEATURE`]): in the config's `experimental` list or in

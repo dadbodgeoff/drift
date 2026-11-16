@@ -1235,6 +1235,8 @@ export interface CheckReport {
   standing?: CheckStanding[];
   /** With `--diff-base` and no security baseline: what the change adds that a baseline would hold, as advice (ratchet.rs `Advice`). Never part of the exit code; absent when none. */
   security_advice?: SecurityAdvice[];
+  /** With the experimental `probation`: the promoted practices on probation and their counts (absent when none, and where files are named). Never part of the exit code. */
+  probation?: ProbationCount[];
 }
 
 /** What `drift check` read of one accepted mined rule's members (crates/drift-mine/src/check.rs `Standing`). */
@@ -2226,6 +2228,8 @@ export interface PromoteList {
   declined: number;
   /** The promoted conventions that left candidates out, sorted. */
   promoted: string[];
+  /** With the experimental `probation`: the promoted practices on probation, by id (absent when none). */
+  probation?: ProbationCount[];
 }
 
 export interface PromoteListItem {
@@ -2257,6 +2261,40 @@ export interface PromoteResult {
   same_way?: string[];
   /** The text `drift practices promote` prints before it writes. */
   preview: string;
+  /**
+   * With the experimental `probation` and `--block`: `on_probation` true when there was no history to replay and it
+   * was accepted in advise mode on probation instead (`why`: the refusal of the replay; `written`: `.drift/probation.lock`
+   * was written now, false when it was on probation already), false when its count let it block. Absent otherwise.
+   */
+  probation?: { on_probation: boolean; why: string | null; written: boolean; count: ProbationCount | null };
+}
+
+/**
+ * One promoted practice on probation (crates/drift-cli/src/probation.rs `Listed`, drift-mine practices/probation.rs
+ * `Count`): what the units added to its place since it was put on probation say. Never part of an exit code.
+ */
+export interface ProbationCount {
+  /** The convention's id (`D-…`). */
+  id: string;
+  /** `void`: its rule or place changed after it was put on probation, so nothing counts. */
+  state: "waiting" | "eligible" | "broken" | "void";
+  /** How many must be told, all following, before it may block (15). */
+  of: number;
+  /** Units added since that Drift can tell and that count. */
+  counted: number;
+  followed: number;
+  /** Those that break it (`path#symbol`, sorted). */
+  broke: string[];
+  /** Units added since that Drift cannot tell: counted for neither side. */
+  unknown: number;
+  /** Units in files touched by a change that also edits `.drift/probation.lock`: not counted. */
+  held_back: number;
+  /** Units there when it was put on probation (never counted). */
+  at_start: number;
+  /** The sentence a person reads. */
+  message: string;
+  /** When `eligible`: the command a person runs to set it to block (`drift review --block <id>`). */
+  command?: string;
 }
 
 /** Why a practice cannot be promoted (`promote::Refusal`, serde-tagged by `code`). */
@@ -2279,6 +2317,8 @@ export interface PromoteRefused {
   /** Typed by the codes this Studio knows; another code (block refused for want of a replay, ...) still has its `message`. */
   refused: PromoteRefusal | { code: string };
   message: string;
+  /** A `block_refused` for want of history: the line that names the experimental `probation` (and, in a shallow clone, how to read the history). Absent otherwise. */
+  hint?: string;
 }
 
 /** What one `drift practices promote --json` run gives: what it records (or would), or why it refuses. */
