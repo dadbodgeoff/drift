@@ -112,6 +112,21 @@ fn a_version_1_file_loads_and_round_trips_byte_for_byte() {
     assert_eq!(saved(r, &back), first);
 }
 
+/// Pins (F10, review R10 F-8): a practice of one file or one route prefix is written
+/// as version 3, so an older Drift refuses it instead of checking it over its whole
+/// directory. Nothing pinned it before.
+#[test]
+fn a_file_or_route_practice_raises_the_version() {
+    for extra in ["    in_file: app/api/a/route.ts\n", "    under_route: /api/a\n"] {
+        let dir = tempfile::tempdir().unwrap();
+        let r = dir.path();
+        write(r, CONVENTIONS_FILE, &with_rule_lines(extra));
+        let f = load(r);
+        assert_eq!(written_version(&f), POLICY_VERSION_FORMS, "{extra}");
+        assert!(saved(r, &f).contains("\nversion: 3\n"), "{extra}");
+    }
+}
+
 /// Pins: a practice that accepts a mechanism whole is written as version 3, which a
 /// Drift that reads up to 2 refuses ("written by a newer Drift") instead of checking
 /// `any_of` alone and reporting every unit that uses another instrument of the
@@ -243,7 +258,9 @@ fn an_old_lock_and_a_fingerprinted_one_load() {
     lock.save(r).unwrap();
     assert_eq!(std::fs::read_to_string(r.join(LOCK_FILE)).unwrap(), old);
 
-    let new = format!("{old}D-aaaaaa ~0123456789abcdef app/api/a/route.ts#GET\n");
+    // The form this build writes (F10, review R10 F-11: the `<id> ~<hex>` form was
+    // never released).
+    let new = format!("{old}#~ D-aaaaaa 0123456789abcdef app/api/a/route.ts#GET\n");
     write(r, LOCK_FILE, &new);
     let lock = Lock::load(r).unwrap();
     assert_eq!(lock.members(), 2, "a fingerprint line is no second violation");

@@ -68,8 +68,10 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 /// not hold what the wider reading finds, and a finding of the kind cannot be told
 /// apart from one a change added, since both are keyed the same. So against an
 /// older baseline every finding of the kind it does not hold is new in Drift
-/// ([`Ratchet::new_in_drift`]), in the files a change touched too (a touched file
-/// may hold what only the wider reading sees), until the baseline is written again.
+/// ([`Ratchet::new_in_drift`]) until the baseline is written again, except, against
+/// a diff, in a file the change touched: there it fails as the kind did before
+/// (a touched file may hold what only the wider reading sees, but holding it apart
+/// would let every finding a change adds through after an upgrade).
 ///
 /// 2:
 /// - `no-guard`, `unguarded-reaching`: entry points read through a wrapper a call
@@ -503,7 +505,8 @@ pub struct Ratchet {
     pub advised: BTreeMap<String, Vec<Added>>,
     /// Found now and not in the baseline, of a kind, a detector or a reading newer
     /// than the inventory that wrote it ([`found_since`]): what this version of
-    /// Drift reads, which the baseline could not hold, whatever the change did.
+    /// Drift reads, which the baseline could not hold. Against a diff, only those in
+    /// files the change did not touch (in a touched file they fail as before).
     /// They fail nothing until the baseline is written again. Omitted when empty
     /// (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -580,7 +583,13 @@ pub fn compare_with(
         // A gap is a share of siblings: an untouched entry point turns into an
         // exception when others gain what it lacks.
         let relative = kind == "guard-gap" || kind == "scope-gap";
-        let to = if found_since(kind, key) > baseline.version {
+        // Against a diff, a newer reading's finding in a file the change touched
+        // fails as its kind did before the reading widened: held apart, a baseline an
+        // older Drift wrote (unstamped) would let a change's own unguarded route
+        // through. Only what lies in untouched files, or a check of no diff, is held.
+        let to = if found_since(kind, key) > baseline.version
+            && !touched.is_some_and(|t| t(path))
+        {
             &mut out.new_in_drift
         } else if relative && touched.is_some_and(|t| !t(path)) {
             &mut out.outside_change
