@@ -10,6 +10,7 @@
 //! accepted (or, for a `n` in interactive review, rejected so it is not asked again), the
 //! lock extended and never pruned.
 
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, Write};
 use std::path::Path;
@@ -23,7 +24,7 @@ use drift_mine::policy::{
     CONVENTIONS_FILE, Convention, ConventionsFile, LOCK_FILE, Lock, Mode, Status,
 };
 use drift_mine::practices::PracticesReport;
-use drift_mine::practices::promote::{self, Candidate, Place, Refusal, Replay};
+use drift_mine::practices::promote::{self, Candidate, Place, Refusal, Replay, Request};
 use serde_json::{Value, json};
 
 /// `drift practices promote`'s examples.
@@ -34,14 +35,23 @@ pub const PROMOTE_HELP: &str = "Examples:
   drift practices promote P-0f0acb --in app/api         an accepted convention in advise mode, the units
                                                         that differ today recorded in drift.lock
   drift practices promote P-0f0acb --with P-3b91d2      two ways accepted as one rule
+  drift practices promote --concern authz --mechanism membership_guard --in app/api
+                                                        one mechanism accepted whole, whichever
+                                                        instrument a unit names
+  drift practices promote --concern authn --any-enforcing --in app/api
+                                                        any way Drift reads as turning an unsigned
+                                                        caller away (a route opened on purpose is not)
   drift practices promote P-0f0acb --in app/api --block
                                                         block mode, when the last 15 units added there
                                                         (git history) mostly follow it
   drift practices promote P-0f0acb --in app/api --json
+  drift practices promote --list --concern authn        what may be promoted for one concern
 
 A place qualifies with at least 8 units of the concern, the accepted ways holding 80% of
 the units Drift could read, and at most 20% it could not read. Units Drift cannot read are
-never reported. Promoting again in the same place updates the same convention. Run
+never reported. --concern is needed when no variant is named (`drift practices --json`
+lists the concern ids, `concerns[].id`, and each unit's uses, whose part before the `:` is
+its mechanism). Promoting again in the same place updates the same convention. Run
 `drift init` first; commit .drift/conventions.yaml and drift.lock afterwards.";
 
 /// The arguments of `drift practices promote`.
@@ -49,8 +59,25 @@ never reported. Promoting again in the same place updates the same convention. R
 pub struct PromoteArgs {
     /// The variant to promote (`P-…`), as `drift practices --all` prints it or
     /// `concerns[].variants[].id` in `drift practices --json`.
-    #[arg(value_name = "P-ID", required_unless_present = "list")]
+    /// Optional with --concern and --mechanism or --any-enforcing.
+    #[arg(value_name = "P-ID")]
     pub id: Option<String>,
+    /// The concern (`authn`, `authz`, `errors`, ...): needed when no variant is named,
+    /// to accept a mechanism (--mechanism) or any enforcing way (--any-enforcing). With
+    /// --list, only that concern's practices are listed.
+    #[arg(long, value_name = "ID")]
+    pub concern: Option<String>,
+    /// A mechanism accepted whole, in the map's own words (`dependency`, `wrap`,
+    /// `membership_guard`, ...: the part before the `:` of a unit's uses in `drift
+    /// practices --units --json`): a unit that does the concern by it follows, whichever
+    /// instrument it names (comma-separated or repeated).
+    #[arg(long = "mechanism", value_name = "NAME", value_delimiter = ',')]
+    pub mechanisms: Vec<String>,
+    /// Accept any way Drift reads as enforcing the concern (sign-in: any way that turns
+    /// an unsigned caller away; permissions: any check Drift proved compares the caller
+    /// with what is asked for). A way that opens a route on purpose is not one.
+    #[arg(long)]
+    pub any_enforcing: bool,
     /// The place: a path from the repository root, a package directory or a directory
     /// inside one (`.` the root package). Default: the variant's broadest place that
     /// qualifies.
@@ -75,8 +102,35 @@ pub struct PromoteArgs {
     #[arg(long)]
     pub json: bool,
     /// List every practice that may be promoted now, each with its command. Writes nothing.
-    #[arg(long, conflicts_with_all = ["id", "place", "with", "block", "force", "dry_run"])]
+    #[arg(long, conflicts_with_all = ["id", "place", "with", "block", "force", "dry_run", "mechanisms", "any_enforcing"])]
     pub list: bool,
+}
+
+/// What `args` ask to promote, as the engine reads it ([`Request`]); `Err`: the code and
+/// sentence of a refusal of the command line's own, before anything is read.
+fn request(args: &PromoteArgs) -> Result<Request, (&'static str, String)> {
+    let concern = args.concern.clone().unwrap_or_default();
+    let named = args.id.is_some() || !args.with.is_empty();
+    if !named && concern.is_empty() {
+        if !args.mechanisms.is_empty() || args.any_enforcing {
+            return Err((
+                "no_concern",
+                "--mechanism and --any-enforcing need --concern <id> when no variant is named: the concern says which units Drift reads (`drift practices --json` lists the ids, `concerns[].id`); nothing was written".to_string(),
+            ));
+        }
+        return Err((
+            "no_variant",
+            "name the variant to promote (`drift practices --all` prints the ids), or a concern with --mechanism or --any-enforcing (`--concern authn --any-enforcing`), or use --list; nothing was written".to_string(),
+        ));
+    }
+    Ok(Request {
+        concern,
+        ways: args.id.iter().cloned().collect(),
+        with: args.with.clone(),
+        mechanisms: args.mechanisms.clone(),
+        any_enforcing: args.any_enforcing,
+        force: args.force,
+    })
 }
 
 /// `drift practices promote`. `facts` is read only once the arguments and the policy
@@ -90,14 +144,11 @@ pub fn run(
     if args.list {
         let facts = facts()?;
         let report = crate::practices::report_units_kept(root, &facts, None);
-        return list(&report, policy.as_ref(), args.json);
+        return list_of(&report, policy.as_ref(), args.concern.as_deref(), args.json);
     }
-    let Some(id) = args.id.as_deref() else {
-        return usage(
-            args.json,
-            "no_variant",
-            "name the variant to promote (`drift practices --all` prints the ids) or use --list; nothing was written",
-        );
+    let req = match request(args) {
+        Ok(r) => r,
+        Err((code, message)) => return usage(args.json, code, &message),
     };
     if args.block && args.force {
         return usage(
@@ -124,8 +175,9 @@ pub fn run(
         Some(text) => match Place::parse(text, &report) {
             Some(p) => Some(p),
             None => {
-                return refused(
+                return refused_in(
                     args.json,
+                    &report,
                     &Refusal::NoSuchPlace {
                         place: text.to_string(),
                     },
@@ -133,9 +185,9 @@ pub fn run(
             }
         },
     };
-    let cand = match promote::candidate(&report, id, place.as_ref(), &args.with, args.force) {
+    let cand = match promote::candidate_for(&report, place.as_ref(), &req) {
         Ok(c) => c,
-        Err(r) => return refused(args.json, &r),
+        Err(r) => return refused_in(args.json, &report, &r),
     };
     let mut conv = written(&policy, &cand);
     let mut replay = None;
@@ -286,6 +338,8 @@ fn convention_json(c: &Convention) -> Value {
 }
 
 /// A refusal of the engine's: its sentence on stderr (or the JSON on stdout), exit 2.
+/// [`refused_in`] says more where the map is in hand; kept for a refusal made without it.
+#[allow(dead_code)]
 fn refused(json: bool, r: &Refusal) -> anyhow::Result<ExitCode> {
     if json {
         let out = json!({ "refused": r, "message": r.to_string() });
@@ -295,6 +349,138 @@ fn refused(json: bool, r: &Refusal) -> anyhow::Result<ExitCode> {
         eprintln!("Nothing was written.");
     }
     Ok(ExitCode::from(2))
+}
+
+/// [`refused`] with the sentence [`refusal_message`] makes of `r` for `report`: what
+/// Drift read and what the person can do, beside the engine's reason.
+fn refused_in(json: bool, report: &PracticesReport, r: &Refusal) -> anyhow::Result<ExitCode> {
+    let message = refusal_message(report, r);
+    if json {
+        let out = json!({ "refused": r, "message": message });
+        println!("{}", serde_json::to_string_pretty(&out)?);
+    } else {
+        eprintln!("drift: {message}");
+        eprintln!("Nothing was written.");
+    }
+    Ok(ExitCode::from(2))
+}
+
+/// The sentence a person reads for a refusal: the engine's ([`Refusal`]'s `Display`),
+/// and for the refusals of what to accept, what Drift read in `report` that the person
+/// can name instead (the concerns, a concern's mechanisms, the concerns with a reading of
+/// what enforces them) and the command forms. Deterministic: lists are sorted.
+pub fn refusal_message(report: &PracticesReport, r: &Refusal) -> String {
+    let base = r.to_string();
+    match r {
+        Refusal::NothingAccepted => format!(
+            "{base} The forms: `drift practices promote <P-id> --in <place>` (a variant id, as `drift practices --all` prints it), `--concern <id> --mechanism <name> --in <place>`, or `--concern <id> --any-enforcing --in <place>`. `drift practices promote --list` prints a command for each practice that may be promoted now."
+        ),
+        Refusal::UnknownConcern { .. } => {
+            let ids: Vec<&str> = report.concerns.iter().map(|c| c.id.as_str()).collect();
+            if ids.is_empty() {
+                format!("{base} Drift read no concern in this repository.")
+            } else {
+                format!("{base} The concerns Drift read here: {}.", ids.join(", "))
+            }
+        }
+        Refusal::NotAMechanism { concern, .. } => {
+            let read = mechanisms_read(report, concern);
+            if read.is_empty() {
+                format!(
+                    "{base} Drift could tell how no unit of it does it here, so there is no mechanism to name."
+                )
+            } else {
+                let named: Vec<String> = read
+                    .iter()
+                    .take(MECHANISMS_NAMED)
+                    .map(|(m, n)| format!("{m} ({n} {})", if *n == 1 { "unit" } else { "units" }))
+                    .collect();
+                let more = match read.len().saturating_sub(MECHANISMS_NAMED) {
+                    0 => String::new(),
+                    n => format!(", and {n} more"),
+                };
+                format!(
+                    "{base} The mechanisms Drift read for it here: {}{more} (`--mechanism <name>`; `drift practices --units --json` lists each unit's uses).",
+                    named.join(", ")
+                )
+            }
+        }
+        Refusal::NoEnforcing { concern } => {
+            let with = enforcing_concerns();
+            let others = if with.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    " Drift has that reading for {} (`--concern <id> --any-enforcing`).",
+                    with.join(", ")
+                )
+            };
+            format!(
+                "{base}{others} For this one, name its ways (`drift practices --concern {} --all` lists them) or a mechanism (`--mechanism <name>`).",
+                drift_mine::report::sanitize(concern, 40)
+            )
+        }
+        Refusal::TooUnknown { unknown, total, .. } => format!(
+            "{base} Drift read how the other {} do it; --force does not lift this.",
+            total.saturating_sub(*unknown)
+        ),
+        _ => base,
+    }
+}
+
+/// Mechanisms a refusal names before "and N more".
+const MECHANISMS_NAMED: usize = 8;
+
+/// The mechanisms the units of `concern` that Drift could tell use, each with how many
+/// units use it (a unit once per mechanism), most used first, then by name. A unit's uses
+/// are its own (`UnitRow::uses`), else read from its key; a key that stands for several
+/// ways names none.
+fn mechanisms_read(report: &PracticesReport, concern: &str) -> Vec<(String, usize)> {
+    let Some(c) = report.concerns.iter().find(|c| c.id == concern) else {
+        return Vec::new();
+    };
+    let mut by: BTreeMap<&str, BTreeSet<(&str, &str)>> = BTreeMap::new();
+    for u in c.units.iter().filter(|u| u.assignment == "known") {
+        let key = u
+            .key
+            .as_deref()
+            .or_else(|| c.variants.iter().find(|v| v.id == u.variant).map(|v| v.key.as_str()))
+            .unwrap_or("");
+        let uses: Vec<&str> = if !u.uses.is_empty() {
+            u.uses.iter().map(String::as_str).collect()
+        } else if key.is_empty() || key.starts_with("any_of(") || !key.contains(':') {
+            Vec::new()
+        } else {
+            key.split('+').collect()
+        };
+        for k in uses {
+            by.entry(drift_mine::practices::mechanism_of(k))
+                .or_default()
+                .insert((u.path.as_str(), u.symbol.as_str()));
+        }
+    }
+    let mut out: Vec<(String, usize)> = by
+        .into_iter()
+        .map(|(m, units)| (m.to_string(), units.len()))
+        .collect();
+    out.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    out
+}
+
+/// The concerns whose classifier has a reading of which ways enforce them
+/// ([`drift_mine::practices::Concern::enforces`]), in the map's concern order.
+fn enforcing_concerns() -> Vec<&'static str> {
+    use drift_mine::practices::Concern;
+    let registered = drift_mine::practices::registry();
+    drift_mine::practices::CONCERNS
+        .iter()
+        .map(|(id, _)| *id)
+        .filter(|id| {
+            registered
+                .iter()
+                .any(|c| c.id() == *id && c.enforces(&[]).is_some())
+        })
+        .collect()
 }
 
 /// A refusal of the command line's own (`code` names it in the JSON), exit 2.
@@ -431,17 +617,229 @@ fn overlaps(a: &Place, b: &Place) -> bool {
     a.package == b.package && (below(&a.dir, &b.dir) || below(&b.dir, &a.dir))
 }
 
-/// The command that promotes `c` as listed.
+/// The command that promotes `c` as listed: its first way, `--in` its place, `--with`
+/// each other way, `--mechanism` each mechanism accepted whole and `--any-enforcing`;
+/// `--concern` in place of a way when it names none (a mechanism or any-enforcing
+/// candidate). Each word is quoted for a shell where it needs to be (a place such as
+/// `app/(auth)/api`).
 pub fn command(c: &Candidate) -> String {
-    let mut s = format!(
-        "drift practices promote {} --in {}",
-        c.ways.first().map_or("", |w| w.id.as_str()),
-        c.place.shown()
-    );
+    let mut s = String::from("drift practices promote");
+    match c.ways.first() {
+        Some(w) => {
+            s.push(' ');
+            s.push_str(&shell_word(&w.id));
+        }
+        None => {
+            s.push_str(" --concern ");
+            s.push_str(&shell_word(&c.concern));
+        }
+    }
+    s.push_str(" --in ");
+    s.push_str(&shell_word(&c.place.shown()));
     for w in c.ways.iter().skip(1) {
-        s.push_str(&format!(" --with {}", w.id));
+        s.push_str(" --with ");
+        s.push_str(&shell_word(&w.id));
+    }
+    for m in &c.mechanisms {
+        s.push_str(" --mechanism ");
+        s.push_str(&shell_word(m));
+    }
+    if c.any_enforcing {
+        s.push_str(" --any-enforcing");
     }
     s
+}
+
+/// `w` as one shell word: as it is when it holds only characters no shell reads
+/// specially, else in single quotes.
+fn shell_word(w: &str) -> String {
+    let plain = !w.is_empty()
+        && w.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c));
+    if plain {
+        w.to_string()
+    } else {
+        format!("'{}'", w.replace('\'', "'\\''"))
+    }
+}
+
+/// The request that asks for `c` again ([`promote::candidate_for`]): its concern, its
+/// ways (the first, then the others as `with`), its mechanisms, any enforcing way, and
+/// `force` when it was promoted below the share.
+pub fn request_of(c: &Candidate) -> Request {
+    Request {
+        concern: c.concern.clone(),
+        ways: c.ways.first().map(|w| vec![w.id.clone()]).unwrap_or_default(),
+        with: c.ways.iter().skip(1).map(|w| w.id.clone()).collect(),
+        mechanisms: c.mechanisms.clone(),
+        any_enforcing: c.any_enforcing,
+        force: c.forced,
+    }
+}
+
+/// The command that promotes `c` in its place, only when `drift practices promote` would
+/// take it as `report` stands: the engine is asked ([`promote::candidate_for`]) and its
+/// refusal is returned otherwise. A surface that prints a promote command asks this first,
+/// so it never prints one the command then refuses.
+pub fn checked_command(report: &PracticesReport, c: &Candidate) -> Result<String, Refusal> {
+    promote::candidate_for(report, Some(&c.place), &request_of(c)).map(|x| command(&x))
+}
+
+/// Takes the offer to promote off every variant of `shown` that `drift practices promote
+/// <id> --in <place>` would refuse as the code stands, read in `full` (the map of every
+/// unit, [`crate::practices::report_units_kept`]). A view of one file (`drift practices
+/// --path`) reads only that file's units, so a way all of them use looks promotable in a
+/// package where it is rare (pygoat: two such commands, both refused). Returns how many
+/// offers it took off.
+pub fn keep_offers_that_qualify(full: &PracticesReport, shown: &mut PracticesReport) -> usize {
+    let mut dropped = 0;
+    for c in &mut shown.concerns {
+        for v in &mut c.variants {
+            dropped += keep_offer(full, v);
+            for a in &mut v.alternatives {
+                dropped += keep_offer(full, a);
+            }
+        }
+    }
+    dropped
+}
+
+/// [`keep_offers_that_qualify`] of one variant: 1 when its offer was taken off.
+fn keep_offer(full: &PracticesReport, v: &mut drift_mine::practices::Variant) -> usize {
+    let holds = v.promotable.as_ref().map(|p| {
+        let place = match p.place.as_deref() {
+            Some(text) => match Place::parse(text, full) {
+                Some(place) => Some(place),
+                None => return false,
+            },
+            None => None,
+        };
+        let req = Request {
+            ways: vec![v.id.clone()],
+            ..Request::default()
+        };
+        promote::candidate_for(full, place.as_ref(), &req).is_ok()
+    });
+    if holds == Some(false) {
+        v.promotable = None;
+        1
+    } else {
+        0
+    }
+}
+
+/// Clears the promote command ([`drift_mine::practices::Departure::promote`]) of every
+/// departure whose place a person already decided on for its concern: a promoted practice
+/// (not rejected) whose place holds or is held by the departure's, or a rejected one of
+/// that very place. `report` is the map the departures were read from. Not wired yet:
+/// `crate::practices::check_departures` is where it goes, with the policy.
+pub fn drop_decided_departures(
+    report: &PracticesReport,
+    policy: &ConventionsFile,
+    deps: &mut [drift_mine::practices::Departure],
+) {
+    for d in deps.iter_mut().filter(|d| d.promote.is_some()) {
+        let shown = match (d.package.is_empty(), d.dir.is_empty()) {
+            (true, true) => ".".to_string(),
+            (false, true) => d.package.clone(),
+            _ => d.dir.clone(),
+        };
+        let Some(place) = Place::parse(&shown, report) else {
+            continue;
+        };
+        let id = promote::convention_id(&place, &d.concern);
+        let decided = policy.conventions.iter().any(|x| match &x.rule {
+            Rule::Practice { concern, .. } if *concern == d.concern => {
+                if x.status == Status::Rejected {
+                    x.id == id
+                } else {
+                    promote::place_of(x).is_some_and(|p| overlaps(&p, &place))
+                }
+            }
+            _ => false,
+        });
+        if decided {
+            d.promote = None;
+        }
+    }
+}
+
+/// A candidate of `--list` with how many of the units that differ from it are
+/// departures `drift check` points out today ([`drift_mine::practices::departures`]):
+/// what promoting it would turn from a fact into a checked rule.
+#[derive(Debug, Clone)]
+pub struct RankedCandidate {
+    pub candidate: Candidate,
+    pub departures: usize,
+}
+
+/// `--list`'s candidates in their order: the ones that hold code to something, then
+/// apart those code follows by doing nothing ([`Candidate::passive`]), never first.
+#[derive(Debug, Clone, Default)]
+pub struct Ranked {
+    pub active: Vec<RankedCandidate>,
+    pub passive: Vec<RankedCandidate>,
+}
+
+/// `candidates` ranked for `--list` (audit 3 G3): by how many current departures each
+/// would settle (its units that differ and that a departure names, outside tests), then
+/// by how many units it reads (that follow or differ), then in the engine's order
+/// ([`promote::candidates`]: concern, place, breadth, first way), which the stable sort
+/// keeps. Passive candidates are ranked the same way, in their own list.
+pub fn ranked(report: &PracticesReport, candidates: Vec<Candidate>) -> Ranked {
+    let deps = drift_mine::practices::departures(report, None);
+    let departing: BTreeSet<(&str, &str, &str)> = deps
+        .iter()
+        .filter(|d| !drift_mine::roles::is_test_path(&d.path))
+        .flat_map(|d| {
+            d.units
+                .iter()
+                .map(move |u| (d.concern.as_str(), d.path.as_str(), u.symbol.as_str()))
+        })
+        .collect();
+    let mut out = Ranked::default();
+    for c in candidates {
+        let departures = c
+            .exceptions
+            .iter()
+            .filter(|e| departing.contains(&(c.concern.as_str(), e.path.as_str(), e.symbol.as_str())))
+            .count();
+        let r = RankedCandidate {
+            candidate: c,
+            departures,
+        };
+        if r.candidate.passive {
+            out.passive.push(r);
+        } else {
+            out.active.push(r);
+        }
+    }
+    let key = |r: &RankedCandidate| {
+        (
+            Reverse(r.departures),
+            Reverse(r.candidate.follows + r.candidate.exceptions.len()),
+        )
+    };
+    out.active.sort_by_key(&key);
+    out.passive.sort_by_key(&key);
+    out
+}
+
+/// What `c` accepts, as a person reads it: its ways in the first run's words
+/// ([`drift_mine::practices::plain_way`]), each mechanism whole, any enforcing way.
+fn accepted(c: &Candidate) -> String {
+    let mut parts: Vec<String> = c
+        .ways
+        .iter()
+        .map(|w| drift_mine::practices::plain_way(&w.label))
+        .collect();
+    for m in &c.mechanisms {
+        parts.push(format!("by any {}", m.replace('_', " ")));
+    }
+    if c.any_enforcing {
+        parts.push("any way Drift reads as enforcing it".to_string());
+    }
+    parts.join(", or ")
 }
 
 /// What one unit is, plural, as a person reads it (`entry_point` → `entry points`).
@@ -454,19 +852,22 @@ fn percent(share: f64) -> u32 {
     (share * 100.0).round() as u32
 }
 
-/// One candidate's line, and its command on the next.
-fn candidate_lines(c: &Candidate) -> [String; 2] {
-    let ways: Vec<String> = c
-        .ways
-        .iter()
-        .map(|w| drift_mine::practices::plain_way(&w.label))
-        .collect();
+/// One candidate's line, and its command on the next. `departures`: how many of the units
+/// that differ are departures `drift check` points out today.
+fn candidate_lines(c: &Candidate, departures: usize) -> [String; 2] {
+    let of_them = match departures {
+        0 => String::new(),
+        n => format!(
+            " ({n} of them {} `drift check` points out today)",
+            if n == 1 { "a departure" } else { "departures" }
+        ),
+    };
     [
         format!(
-            "  {} in {}: {} in {} of {} {}; {} {}, {} could not be read",
+            "  {} in {}: {} in {} of {} {}; {} {}{of_them}, {} could not be read",
             drift_mine::practices::plain_concern(&c.concern),
             c.place.shown(),
-            ways.join(", or "),
+            accepted(c),
             c.follows,
             c.total,
             units(&c.unit),
@@ -482,29 +883,45 @@ fn candidate_lines(c: &Candidate) -> [String; 2] {
     ]
 }
 
-/// `drift practices promote --list`. A promoted practice is not listed again: the note
-/// names the conventions that cover what would have been, and how many a person declined.
-fn list(
+/// `drift practices promote --list` (of `concern` only, when named): the candidates
+/// ranked ([`ranked`]), those code follows by doing nothing apart and last. A promoted
+/// practice is not listed again: the note names the conventions that cover what would
+/// have been, and how many a person declined.
+fn list_of(
     report: &PracticesReport,
     policy: Option<&ConventionsFile>,
+    concern: Option<&str>,
     json: bool,
 ) -> anyhow::Result<ExitCode> {
-    let open = open_candidates(report, policy);
+    if let Some(id) = concern
+        && !report.concerns.iter().any(|c| c.id == id)
+    {
+        return refused_in(
+            json,
+            report,
+            &Refusal::UnknownConcern {
+                concern: id.to_string(),
+            },
+        );
+    }
+    let mut open = open_candidates(report, policy);
+    if let Some(id) = concern {
+        open.candidates.retain(|c| c.concern == id);
+    }
+    let ranked = ranked(report, std::mem::take(&mut open.candidates));
     let mut stdout = std::io::stdout().lock();
     if json {
-        let candidates: Vec<Value> = open
-            .candidates
-            .iter()
-            .map(|c| {
-                json!({
-                    "place": c.place.shown(),
-                    "command": command(c),
-                    "candidate": c,
-                })
+        let entry = |r: &RankedCandidate| {
+            json!({
+                "place": r.candidate.place.shown(),
+                "command": command(&r.candidate),
+                "departures": r.departures,
+                "candidate": r.candidate,
             })
-            .collect();
+        };
         let out = json!({
-            "candidates": candidates,
+            "candidates": ranked.active.iter().map(&entry).collect::<Vec<Value>>(),
+            "passive": ranked.passive.iter().map(&entry).collect::<Vec<Value>>(),
             "declined": open.declined,
             "promoted": open.promoted,
         });
@@ -512,7 +929,7 @@ fn list(
         writeln!(stdout)?;
         return Ok(ExitCode::SUCCESS);
     }
-    if open.candidates.is_empty() {
+    if ranked.active.is_empty() && ranked.passive.is_empty() {
         writeln!(
             stdout,
             "No practice may be promoted now. A package or directory qualifies where Drift could read how something is done at least {MIN_ROLE_SIZE} times, one way holds {}% of those, and at most {}% could not be read (`drift practices --all` shows each way's share).",
@@ -520,14 +937,33 @@ fn list(
             percent(promote::MAX_UNKNOWN_SHARE)
         )?;
     } else {
-        writeln!(
-            stdout,
-            "{} practice(s) may be promoted now. Each becomes an accepted convention in advise mode, with the code that differs today recorded in {LOCK_FILE}; the command prints what it records (--dry-run writes nothing):",
-            open.candidates.len()
-        )?;
-        for c in &open.candidates {
-            for line in candidate_lines(c) {
-                writeln!(stdout, "{line}")?;
+        if ranked.active.is_empty() {
+            writeln!(
+                stdout,
+                "No practice that holds new code to something may be promoted now; only what code here does by doing nothing, below."
+            )?;
+        } else {
+            writeln!(
+                stdout,
+                "{} practice(s) may be promoted now, those that would turn the most departures `drift check` points out today into a checked rule first. Each becomes an accepted convention in advise mode, with the code that differs today recorded in {LOCK_FILE}; the command prints what it records (--dry-run writes nothing):",
+                ranked.active.len()
+            )?;
+            for r in &ranked.active {
+                for line in candidate_lines(&r.candidate, r.departures) {
+                    writeln!(stdout, "{line}")?;
+                }
+            }
+        }
+        if !ranked.passive.is_empty() {
+            writeln!(
+                stdout,
+                "{} more that code here follows by doing nothing (errors left to the framework, logs to the language's own output): new code follows them without trying, so as a rule each holds it to little. Listed apart:",
+                ranked.passive.len()
+            )?;
+            for r in &ranked.passive {
+                for line in candidate_lines(&r.candidate, r.departures) {
+                    writeln!(stdout, "{line}")?;
+                }
             }
         }
     }
@@ -941,6 +1377,126 @@ mod tests {
         assert!(overlaps(&p("", "app/api"), &p("", "app")));
         assert!(!overlaps(&p("", "app/api"), &p("", "app/apix")));
         assert!(!overlaps(&p("a", ""), &p("b", "")));
+    }
+
+    /// A candidate of `concern` in `place` with these ways, mechanisms and any enforcing way.
+    fn cand(concern: &str, place: &str, ways: &[&str], mechanisms: &[&str], enforcing: bool) -> Candidate {
+        Candidate {
+            concern: concern.into(),
+            place: Place::parse(place, &PracticesReport::default()).unwrap(),
+            ways: ways
+                .iter()
+                .map(|id| promote::Way {
+                    id: id.to_string(),
+                    ..promote::Way::default()
+                })
+                .collect(),
+            mechanisms: mechanisms.iter().map(|m| m.to_string()).collect(),
+            any_enforcing: enforcing,
+            ..Candidate::default()
+        }
+    }
+
+    /// Pins S17 item 2: every kind of candidate prints a command the CLI parses, never
+    /// `promote  --in` (before: a mechanism or any-enforcing candidate, which has no way,
+    /// printed an empty id).
+    #[test]
+    fn the_command_of_every_kind_of_candidate() {
+        let cases = [
+            (cand("authn", "app/api", &["P-a"], &[], false), "drift practices promote P-a --in app/api"),
+            (
+                cand("authn", "app/api", &["P-a", "P-b", "P-c"], &[], false),
+                "drift practices promote P-a --in app/api --with P-b --with P-c",
+            ),
+            (
+                cand("authz", "app/api", &[], &["membership_guard"], false),
+                "drift practices promote --concern authz --in app/api --mechanism membership_guard",
+            ),
+            (
+                cand("authz", ".", &[], &["dependency", "wrap"], false),
+                "drift practices promote --concern authz --in . --mechanism dependency --mechanism wrap",
+            ),
+            (
+                cand("authn", "svc", &[], &[], true),
+                "drift practices promote --concern authn --in svc --any-enforcing",
+            ),
+            (
+                cand("authn", "svc", &["P-a"], &["wrap"], true),
+                "drift practices promote P-a --in svc --mechanism wrap --any-enforcing",
+            ),
+            (
+                cand("authn", "app/(auth)/api", &["P-a"], &[], false),
+                "drift practices promote P-a --in 'app/(auth)/api'",
+            ),
+        ];
+        for (c, want) in cases {
+            let got = command(&c);
+            assert_eq!(got, want);
+            assert!(!got.contains("promote  "), "{got}");
+            // The request it stands for asks for the same candidate again.
+            let r = request_of(&c);
+            assert_eq!(r.concern, c.concern);
+            assert_eq!(
+                r.ways.iter().chain(&r.with).cloned().collect::<Vec<_>>(),
+                c.ways.iter().map(|w| w.id.clone()).collect::<Vec<_>>()
+            );
+            assert_eq!(r.mechanisms, c.mechanisms);
+            assert_eq!(r.any_enforcing, c.any_enforcing);
+        }
+    }
+
+    #[test]
+    fn a_word_a_shell_reads_specially_is_quoted() {
+        assert_eq!(shell_word("app/api"), "app/api");
+        assert_eq!(shell_word("app/[id]"), "'app/[id]'");
+        assert_eq!(shell_word("it's"), "'it'\\''s'");
+        assert_eq!(shell_word(""), "''");
+    }
+
+    /// The new refusals say what Drift read: the concerns there are, a concern's
+    /// mechanisms with their counts, the concerns with a reading of enforcing.
+    #[test]
+    fn a_refusal_of_what_to_accept_says_what_drift_read() {
+        use drift_mine::practices::{ConcernReport, UnitRow};
+        let row = |path: &str, uses: &[&str]| UnitRow {
+            path: path.into(),
+            symbol: "GET".into(),
+            assignment: "known".into(),
+            uses: uses.iter().map(|u| u.to_string()).collect(),
+            ..UnitRow::default()
+        };
+        let report = PracticesReport {
+            concerns: vec![ConcernReport {
+                id: "authz".into(),
+                units: vec![
+                    row("a.ts", &["membership_guard:lib/a.ts#can"]),
+                    row("b.ts", &["membership_guard:lib/a.ts#can", "dependency:x"]),
+                    UnitRow {
+                        assignment: "unknown".into(),
+                        ..row("c.ts", &["wrap:y"])
+                    },
+                ],
+                ..ConcernReport::default()
+            }],
+            ..PracticesReport::default()
+        };
+        let m = refusal_message(
+            &report,
+            &Refusal::NotAMechanism {
+                concern: "authz".into(),
+                mechanism: "wrap".into(),
+            },
+        );
+        assert!(
+            m.contains("The mechanisms Drift read for it here: membership_guard (2 units), dependency (1 unit)"),
+            "{m}"
+        );
+        let m = refusal_message(&report, &Refusal::UnknownConcern { concern: "auth".into() });
+        assert!(m.contains("The concerns Drift read here: authz."), "{m}");
+        let m = refusal_message(&report, &Refusal::NoEnforcing { concern: "errors".into() });
+        assert!(m.contains("authn, authz"), "{m}");
+        let m = refusal_message(&report, &Refusal::NothingAccepted);
+        assert!(m.contains("--any-enforcing"), "{m}");
     }
 
     #[test]
