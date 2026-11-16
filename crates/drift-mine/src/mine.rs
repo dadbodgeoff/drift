@@ -114,6 +114,42 @@ const NON_CONVENTION_CONTROLS: &[&str] = &[
     // (`practices::authz`).
     drift_core::controls::RETURNS_EARLY_FOR_OWN,
 ];
+/// Control facts added for the listed reading only (the practice map, the security
+/// inventory, promoted practices) since the study pre-registered what mining reads.
+/// The linkers keep them out of the measured copy that mining reads; this list is a
+/// second line of defence, so that a linker that fails to strip one (a skipped
+/// relink) still cannot turn it into a mined convention.
+///
+/// Why it cannot change what is mined where the measured filter works: no control
+/// with one of these values, or starting with one of the prefixes in
+/// [`LISTED_ONLY_CONTROL_PREFIXES`], existed when the study's binary was built (none of
+/// the strings occurs in it), and the measured copy holds none of them. So the filter
+/// only removes what should already be absent.
+const LISTED_ONLY_CONTROLS: &[&str] = &[
+    drift_core::controls::INPUT_TYPED,
+    drift_core::controls::NO_RESPONSE_MODEL,
+    drift_core::controls::RETURNS_VALUE,
+    drift_core::controls::ANSWERS_BY_RETURN,
+    drift_core::controls::INPUT_UNREAD,
+    // A `Member::unread` value; listed here in case one is ever written as a control.
+    drift_core::CATCH_RESPONDS,
+];
+/// The prefix forms of [`LISTED_ONLY_CONTROLS`] (`refusal_status:403`,
+/// `parses_input:<callee>\t<binding>`, ...). The three `*_at:` prefixes of the same kind
+/// are left out in [`features`] next to the others of their stream.
+const LISTED_ONLY_CONTROL_PREFIXES: &[&str] = &[
+    drift_core::controls::REFUSAL_STATUS,
+    drift_core::controls::PARSES_INPUT,
+    drift_core::controls::PIPES_INPUT,
+    drift_core::controls::REFUSES_SECRET,
+    drift_core::controls::INPUT_HANDED,
+];
+
+/// Whether a control is one of the listed reading's only ([`LISTED_ONLY_CONTROLS`]).
+fn listed_only_control(c: &str) -> bool {
+    LISTED_ONLY_CONTROLS.contains(&c)
+        || LISTED_ONLY_CONTROL_PREFIXES.iter().any(|p| c.starts_with(*p))
+}
 /// Rules in one role whose holder sets overlap this much are reported once.
 const NEAR_DUPLICATE: f64 = 0.9;
 
@@ -3491,6 +3527,7 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::SINK_FED_AT)
                     && !c.starts_with(drift_core::controls::PASSES_AT)
                     && !c.starts_with(drift_core::controls::PASSES_MADE_AT)
+                    && !listed_only_control(c)
                     && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
                     && !c.starts_with(drift_core::controls::REFUSES_WITHOUT)
                     && c != drift_core::controls::RETURNS_CREDENTIAL
@@ -9830,6 +9867,46 @@ mod tests {
                 any_of: vec!["app/auth.py#require_scope".into()],
             }]
         );
+    }
+
+    /// Pins the second line of defence ([`LISTED_ONLY_CONTROLS`]): a unit that carries a
+    /// control of the listed reading only, as a measured copy that a linker failed to
+    /// strip would, yields no `Rule::Control` for it. Before the list, each of these
+    /// became a feature. A control of no such kind still does.
+    #[test]
+    fn listed_only_controls_are_not_features() {
+        use drift_core::controls as c;
+        let listed: Vec<String> = vec![
+            c::INPUT_TYPED.to_string(),
+            c::NO_RESPONSE_MODEL.to_string(),
+            c::RETURNS_VALUE.to_string(),
+            c::ANSWERS_BY_RETURN.to_string(),
+            c::INPUT_UNREAD.to_string(),
+            drift_core::CATCH_RESPONDS.to_string(),
+            format!("{}403", c::REFUSAL_STATUS),
+            format!("{}pkg:zod#parse\tsrc/schema.ts#Login", c::PARSES_INPUT),
+            format!("{}pkg:@nestjs/common#ParseIntPipe", c::PIPES_INPUT),
+            format!("{}authorization", c::REFUSES_SECRET),
+            format!("{}src/svc.ts#save", c::INPUT_HANDED),
+        ];
+        let file = FileFacts::default();
+        let mut controls = listed.clone();
+        controls.push("team_control".into());
+        let s = drift_core::Symbol {
+            controls,
+            ..Default::default()
+        };
+        let values: Vec<String> = features(&View::Symbol(&file, &s), &RepoContext::default())
+            .into_iter()
+            .filter_map(|r| match r {
+                Rule::Control { value } => Some(value),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(values, ["team_control".to_string()]);
+        for v in &listed {
+            assert!(listed_only_control(v), "{v}");
+        }
     }
 
     #[test]

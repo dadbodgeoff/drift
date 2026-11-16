@@ -316,7 +316,9 @@ function checkout(repo) {
 
 function run(a) {
   const t = Date.now();
-  const r = spawnSync(drift, a, { encoding: "utf8", maxBuffer: 1 << 30 });
+  // DRIFT_NO_FROM_MAP: the study pre-registered mined proposals only, so `init` writes no
+  // "from the map" ones (a binary from before the variable ignores it and writes none).
+  const r = spawnSync(drift, a, { encoding: "utf8", maxBuffer: 1 << 30, env: { ...process.env, DRIFT_NO_FROM_MAP: "1" } });
   if (r.status !== 0) throw new Error(`drift ${a.join(" ")} failed (${r.status}): ${(r.stderr || "").slice(0, 400)}`);
   return { out: r.stdout, err: r.stderr, ms: Date.now() - t };
 }
