@@ -752,11 +752,9 @@ fn sanitized(v: &Value) -> Value {
     match v {
         Value::String(s) => Value::String(crate::report::sanitize(s, 240)),
         Value::Array(a) => Value::Array(a.iter().map(sanitized).collect()),
-        Value::Object(o) => Value::Object(
-            o.iter()
-                .map(|(k, v)| (k.clone(), sanitized(v)))
-                .collect(),
-        ),
+        Value::Object(o) => {
+            Value::Object(o.iter().map(|(k, v)| (k.clone(), sanitized(v))).collect())
+        }
         other => other.clone(),
     }
 }

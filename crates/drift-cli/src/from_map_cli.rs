@@ -1030,9 +1030,10 @@ pub fn recompute(report: &PracticesReport, c: &Convention) -> Option<Candidate> 
         return None;
     };
     let place = promote::place_of(c)?;
-    if let Some(found) = promote::candidates(report).into_iter().find(|x| {
-        x.place == place && promote::convention(x).rule == c.rule
-    }) {
+    if let Some(found) = promote::candidates(report)
+        .into_iter()
+        .find(|x| x.place == place && promote::convention(x).rule == c.rule)
+    {
         return Some(found);
     }
     let req = Request {

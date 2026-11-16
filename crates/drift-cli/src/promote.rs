@@ -378,7 +378,7 @@ fn written(policy: &ConventionsFile, cand: &Candidate) -> Convention {
 fn previous<'a>(policy: &'a ConventionsFile, cand: &Candidate) -> Option<&'a Convention> {
     let id = promote::candidate_id(cand);
     let form = cand.form();
-    let same = |x: &&Convention| promote::is_practice_of(*x, &cand.place, &cand.concern, form);
+    let same = |x: &&Convention| promote::is_practice_of(x, &cand.place, &cand.concern, form);
     policy
         .conventions
         .iter()
@@ -800,7 +800,7 @@ fn covering_except<'a>(
         x.status == Status::Accepted
             && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == c.concern)
             && promote::place_of(x).is_some_and(|p| overlaps(&p, &c.place))
-            && !skip(*x)
+            && !skip(x)
     })
 }
 
@@ -1995,15 +1995,27 @@ mod tests {
             "{:?}",
             open.candidates
         );
-        assert!(open.candidates.iter().all(|c| c.form() != promote::Form::Ways));
+        assert!(
+            open.candidates
+                .iter()
+                .all(|c| c.form() != promote::Form::Ways)
+        );
         // The mechanism declined under the old shared id: the named way is still open.
         let mut old_no = promote::convention(&mech);
         old_no.id = promote::convention_id(&mech.place, &mech.concern);
         old_no.status = Status::Rejected;
         let open = open_candidates(&report, Some(&policy_of(vec![old_no])));
         assert_eq!(open.declined, 1);
-        assert!(open.candidates.iter().any(|c| c.form() == promote::Form::Ways));
-        assert!(open.candidates.iter().all(|c| c.form() != promote::Form::Mechanism));
+        assert!(
+            open.candidates
+                .iter()
+                .any(|c| c.form() == promote::Form::Ways)
+        );
+        assert!(
+            open.candidates
+                .iter()
+                .all(|c| c.form() != promote::Form::Mechanism)
+        );
     }
 
     /// Pins review item 2 (area 2): promoting the named way where the mechanism is
@@ -2031,8 +2043,14 @@ mod tests {
                 .collect::<Vec<_>>()
         );
         let text = r.sentence(false);
-        assert!(text.contains(&format!("would replace {}", accepted.id)), "{text}");
-        assert!(text.contains("4 units that follow it do not follow this one"), "{text}");
+        assert!(
+            text.contains(&format!("would replace {}", accepted.id)),
+            "{text}"
+        );
+        assert!(
+            text.contains("4 units that follow it do not follow this one"),
+            "{text}"
+        );
         assert!(text.contains("app/api/r32/route.ts#GET"), "{text}");
         let conv = written(&policy, &named);
         assert_ne!(conv.id, accepted.id);
@@ -2064,7 +2082,9 @@ mod tests {
         let policy = policy_of(vec![this.clone(), other]);
         let found = covering_except(&policy, &named, |x| x.id == this.id);
         assert_eq!(found.map(|x| x.id.as_str()), Some("D-000001"));
-        assert!(covering_except(&policy_of(vec![this.clone()]), &named, |x| x.id == this.id).is_none());
+        assert!(
+            covering_except(&policy_of(vec![this.clone()]), &named, |x| x.id == this.id).is_none()
+        );
     }
 
     /// Pins review item 7 (area 2): a promoted practice of a mechanism or of any
@@ -2076,7 +2096,10 @@ mod tests {
         let (_, mech) = named_and_mechanism(&report);
         let m = origin(&promote::convention(&mech)).unwrap();
         assert!(m.contains("by any wrap"), "{m}");
-        assert!(!m.contains("written by hand") && !m.contains("ways: )"), "{m}");
+        assert!(
+            !m.contains("written by hand") && !m.contains("ways: )"),
+            "{m}"
+        );
         let any = promote::candidate_for(
             &report,
             Some(&mech.place),
@@ -2088,7 +2111,10 @@ mod tests {
         )
         .unwrap();
         let a = origin(&promote::convention(&any)).unwrap();
-        assert!(a.contains("any way that turns an unsigned caller away"), "{a}");
+        assert!(
+            a.contains("any way that turns an unsigned caller away"),
+            "{a}"
+        );
         let line = listed(&policy_of(vec![promote::convention(&mech)])).join("\n");
         assert!(line.contains("by any wrap"), "{line}");
     }
@@ -2104,6 +2130,9 @@ mod tests {
              {sha_b} 9 3 1\nauthor y\ncommitter-time 300\nfilename f.ts\n\tline three\n"
         );
         let got = parse_blame(&text);
-        assert_eq!(got.into_iter().collect::<Vec<_>>(), [(1, 100), (2, 100), (3, 300)]);
+        assert_eq!(
+            got.into_iter().collect::<Vec<_>>(),
+            [(1, 100), (2, 100), (3, 300)]
+        );
     }
 }

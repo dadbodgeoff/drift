@@ -178,7 +178,7 @@ pub fn observe(
                 if *not_read || u.assignment == "unknown" {
                     Observed::Unknown
                 } else {
-                    judge(*u)
+                    judge(u)
                 }
             })
             .max();

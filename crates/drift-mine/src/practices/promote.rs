@@ -4538,7 +4538,13 @@ mod tests {
         let api = Place::parse(".:/api", &r).unwrap();
         let c = candidate(&r, "P-auth", Some(&api), &[], false).unwrap();
         assert_eq!(
-            (c.follows, c.exceptions.len(), c.unknown, c.total, c.unread_routes),
+            (
+                c.follows,
+                c.exceptions.len(),
+                c.unknown,
+                c.total,
+                c.unread_routes
+            ),
             (40, 0, 0, 40, 0)
         );
         // Offered: the directories hold the actions too (40 of 51, below the share).
@@ -4695,7 +4701,11 @@ mod tests {
                     "app/api/router.ts",
                     &format!("h{i:02}"),
                     i as u32 + 1,
-                    if i + breaking >= n { "P-none" } else { "P-auth" },
+                    if i + breaking >= n {
+                        "P-none"
+                    } else {
+                        "P-auth"
+                    },
                 )
             })
             .collect();
@@ -4742,7 +4752,10 @@ mod tests {
             .allows_block()
             .unwrap_err();
         assert!(why.contains("its place holds only 10"), "{why}");
-        assert!(why.contains("cannot block until the place holds 15"), "{why}");
+        assert!(
+            why.contains("cannot block until the place holds 15"),
+            "{why}"
+        );
         let text = preview(&c, &conv);
         assert!(text.contains("It cannot block"), "{text}");
         assert!(text.contains("Drift can read only 10 here"), "{text}");
@@ -4757,7 +4770,10 @@ mod tests {
         assert_eq!(canonical_route("/api/v2/").as_deref(), Some("/api/v2"));
         assert_eq!(canonical_route("/api/:id").as_deref(), Some("/api/[*]"));
         assert_eq!(canonical_route("api/{id}/x").as_deref(), Some("/api/[*]/x"));
-        assert_eq!(canonical_route("/api/<int:id>").as_deref(), Some("/api/[*]"));
+        assert_eq!(
+            canonical_route("/api/<int:id>").as_deref(),
+            Some("/api/[*]")
+        );
         assert_eq!(canonical_route("/api/*"), None);
         assert_eq!(canonical_route("/"), None);
         let units: Vec<UnitRow> = (0..10)

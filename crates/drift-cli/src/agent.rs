@@ -1905,13 +1905,14 @@ fn new_file_recipe(state: &mut SessionState, rel: &str) -> Option<String> {
     }
     // The recipe names the repository's files and guards: said as data, on the lines
     // after the opening the Studio reads the hint by.
+    let recipe = format!(
+        "\n{FACTS_DATA_LABEL}{}",
+        sanitize(&r.text, drift_mine::practices::AGENT_CHARS)
+    );
     let mut line = format!(
         "drift: practices for {} (facts, not rules): {}",
         sanitize(rel, 160),
-        format!(
-            "\n{FACTS_DATA_LABEL}{}",
-            sanitize(&r.text, drift_mine::practices::AGENT_CHARS)
-        )
+        recipe
     );
     if !r.preview.is_empty() {
         line.push_str("; ");
@@ -4951,22 +4952,31 @@ mod tests {
         let mined = rv_conv("D-aaaaaa", wrapped(&["lib/auth.ts#withAuth"]), 0.80);
         let looser = rv_conv(
             "P-bbbbbb",
-            practice_of(&["wrap:lib/auth.ts#withAuth", "call:lib/session.ts#requireSession"]),
+            practice_of(&[
+                "wrap:lib/auth.ts#withAuth",
+                "call:lib/session.ts#requireSession",
+            ]),
             0.90,
         );
-        let (kept, folded) = worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
+        let (kept, folded) =
+            worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
         assert_eq!(kept_ids(&kept), vec!["P-bbbbbb", "D-aaaaaa"]);
         assert!(folded.is_empty());
         // The other way round, the looser one is folded into the stricter line kept, but
         // its own content was not given: never recorded as given.
         let mined = rv_conv("D-aaaaaa", wrapped(&["lib/auth.ts#withAuth"]), 0.95);
-        let (kept, folded) = worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
+        let (kept, folded) =
+            worst_first(vec![((), &mined), ((), &looser)], &|_: &Convention| false);
         assert_eq!(kept_ids(&kept), vec!["D-aaaaaa"]);
         assert_eq!((folded[0].id.as_str(), folded[0].same), ("P-bbbbbb", false));
         let (said, cut, _) = folded_outcome(folded, &["D-aaaaaa".to_string()]);
         assert_eq!((said, cut), (Vec::<String>::new(), 0));
         // The same ways: folded, and given with the line said.
-        let same = rv_conv("P-cccccc", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.90);
+        let same = rv_conv(
+            "P-cccccc",
+            practice_of(&["wrap:lib/auth.ts#withAuth"]),
+            0.90,
+        );
         let (kept, folded) = worst_first(vec![((), &mined), ((), &same)], &|_: &Convention| false);
         assert_eq!(kept_ids(&kept), vec!["D-aaaaaa"]);
         let (said, _, _) = folded_outcome(folded, &["D-aaaaaa".to_string()]);
@@ -4979,7 +4989,8 @@ mod tests {
         );
         assert!(!accepts_every_way_of(&both, &mined));
         assert!(accepts_every_way_of(&mined, &both));
-        let mut by_mechanism = rv_conv("P-eeeeee", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.9);
+        let mut by_mechanism =
+            rv_conv("P-eeeeee", practice_of(&["wrap:lib/auth.ts#withAuth"]), 0.9);
         if let Rule::Practice { any_mechanism, .. } = &mut by_mechanism.rule {
             any_mechanism.push("wrap".into());
         }
@@ -5022,7 +5033,10 @@ mod tests {
         .collect();
         let (picked, left) = pick_primed(items);
         let ids: Vec<&str> = picked.iter().map(|b| b.2).collect();
-        assert_eq!((ids, left), (vec!["D-000005", "D-000006", "D-000001", "D-000002"], 2));
+        assert_eq!(
+            (ids, left),
+            (vec!["D-000005", "D-000006", "D-000001", "D-000002"], 2)
+        );
     }
 
     /// Pins review item 6 (area 4): before a new file, a rule folded into one that was cut
@@ -5086,7 +5100,11 @@ mod tests {
         stop.edited.clear();
         save_state(&path, &stop);
         let now = load_state(&path).unwrap();
-        assert_eq!(now.edited, BTreeSet::from(["app/b.ts".to_string()]), "{now:?}");
+        assert_eq!(
+            now.edited,
+            BTreeSet::from(["app/b.ts".to_string()]),
+            "{now:?}"
+        );
         // No lock is left behind.
         assert!(!dir.path().join("sessions").join(".s.json.lock").exists());
     }
