@@ -194,6 +194,15 @@ main branch.
   baseline's inventory is 3: a risky operation in a component is new in Drift
   against an older `.drift/security.lock`, not a change's finding, where the file
   did not change.
+- **Python GraphQL resolvers are entry points** (strawberry, graphene,
+  ariadne): each root field of a schema Drift ties to its `Query`, `Mutation`
+  and `Subscription` types is listed by `drift security` as kind `graphql`,
+  `MUTATION Mutation.create_user`, with the field's permission classes (named,
+  verdict unknown), the resolver's decorators and what the Django route serving
+  the schema runs. A schema served by a route Drift does not read has every
+  field's guard unknown. A schema whose roots cannot be tied lists nothing.
+  Listed reading only; mined conventions are unchanged. Baselines in an older
+  `drift.lock` hold the findings these entry points add.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

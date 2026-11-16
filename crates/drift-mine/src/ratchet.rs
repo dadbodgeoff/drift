@@ -47,7 +47,8 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 /// `workflow-hardening` and `image-hardening` ([`crate::hardening`]); `workflow`
 /// findings of CI systems other than GitHub Actions ([`crate::ci`]); the entry
 /// points a deployment file names ([`crate::serverless`]); the scripts of
-/// single-file components (`.vue`, `.svelte`, `.astro`) read ([`READ_SINCE`]).
+/// single-file components (`.vue`, `.svelte`, `.astro`) read; the resolvers of a
+/// Python GraphQL schema's root fields listed as entry points ([`READ_SINCE`]).
 pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
@@ -106,6 +107,12 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///   Pipelines and a `Jenkinsfile` ([`crate::ci`]). A baseline stamped 2 holds none
 ///   of them, and a repository with one must not start failing because Drift learned
 ///   to read its CI.
+/// - `no-guard`, `unguarded-reaching`, `guard-gap`, `scope-gap`,
+///   `no-authorization`, `unscoped-key`, `whole-row`: the resolvers of a Python
+///   GraphQL schema's root fields (strawberry, graphene, ariadne) are entry points
+///   (kind `graphql`), so each kind an entry point or its body is found for finds
+///   more. (A risky operation in a resolver was found before, by its function or
+///   its class's method, under the same key.)
 ///
 /// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.

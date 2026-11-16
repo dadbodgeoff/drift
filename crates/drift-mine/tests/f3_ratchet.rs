@@ -42,6 +42,7 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     // Widened by version 3: a tRPC procedure keyed by its dotted path, and the entry
     // points a deployment file names (more entry points, so more of every kind read
     // off one).
+    // Python GraphQL resolvers are entry points too.
     for kind in [
         "guard-gap",
         "no-authorization",

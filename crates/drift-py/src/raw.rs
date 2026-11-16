@@ -1438,6 +1438,154 @@ pub struct RawFile {
         skip_serializing_if = "crate::lower::servers::RawServers::is_empty"
     )]
     pub servers: crate::lower::servers::RawServers,
+    /// What the file says of GraphQL schemas and their resolvers ([`RawGraphql`]):
+    /// read by the listed reading only. Python lowering 75; omitted when empty.
+    #[serde(default, skip_serializing_if = "RawGraphql::is_empty")]
+    pub graphql: RawGraphql,
+}
+
+/// What a file says of GraphQL (strawberry, graphene and graphene-django, ariadne),
+/// before resolution: the schemas it builds, the object types it defines, the
+/// ariadne objects it binds resolvers to, and the views it hands a schema to. Every
+/// resolver of a root field (Query, Mutation, Subscription) of a schema Drift ties
+/// to its root types is an entry point of kind `graphql`; the linker decides which
+/// those are. Recorded only in a file that imports one of the libraries.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawGraphql {
+    pub schemas: Vec<RawGqlSchema>,
+    pub types: Vec<RawGqlType>,
+    /// ariadne: `query = QueryType()`, `ObjectType("Mutation")`.
+    pub bindables: Vec<RawGqlBindable>,
+    /// ariadne: `@query.field("name")`, `query.set_field("name", resolver)`.
+    pub binds: Vec<RawGqlBind>,
+    /// `View.as_view(schema=schema)`: the view a schema is served by.
+    pub served: Vec<RawGqlServed>,
+    /// The methods of the file's classes that may resolve a field (decorated with
+    /// one of strawberry's field decorators; graphene's `resolve_<field>`, `mutate`,
+    /// `mutate_and_get_payload`, `get_queryset`), as symbols named `Class.method`:
+    /// a symbol of the listed reading where an entry point names it, of no other.
+    pub methods: Vec<RawSymbol>,
+}
+
+impl RawGraphql {
+    pub fn is_empty(&self) -> bool {
+        self.schemas.is_empty()
+            && self.types.is_empty()
+            && self.bindables.is_empty()
+            && self.binds.is_empty()
+            && self.served.is_empty()
+            && self.methods.is_empty()
+    }
+}
+
+/// A schema built in the file: `strawberry.Schema(query=Query, mutation=Mutation)`,
+/// `graphene.Schema(...)`, ariadne's `make_executable_schema(type_defs, query, ...)`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlSchema {
+    /// `strawberry`, `graphene` or `ariadne`.
+    pub library: String,
+    pub line: u32,
+    /// The module-level name it is bound to (`schema = strawberry.Schema(...)`).
+    pub name: Option<String>,
+    /// Each root given: the operation (`QUERY`, `MUTATION`, `SUBSCRIPTION`) and the
+    /// root type.
+    pub roots: Vec<(String, RawGqlRoot)>,
+    /// ariadne: the bindables given, by reference.
+    pub bindables: Vec<RawRef>,
+    /// What was given that is not read (`query=make_query()`, `*bindables`), in
+    /// the code's words: what it holds is not listed.
+    pub unread: Vec<String>,
+}
+
+/// A root type as a schema is given it.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawGqlRoot {
+    /// A class by name.
+    Ref(RawRef),
+    /// strawberry's `merge_types("Query", (A, B))` written in place: the type's
+    /// name and the classes merged.
+    Merged(String, Vec<RawRef>),
+}
+
+/// A module-level class of a file that imports a GraphQL library, with what makes
+/// a field of it.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlType {
+    pub name: String,
+    pub line: u32,
+    /// The bases as written (a strawberry type's fields include those of the types
+    /// it is built on, a graphene one's those of its mixins); for
+    /// `Query = merge_types("Query", (A, B))`, the classes merged.
+    pub bases: Vec<RawRef>,
+    pub fields: Vec<RawGqlField>,
+    /// The methods of [`RawGraphql::methods`] that are this class's, by name.
+    pub methods: Vec<String>,
+    /// graphene: the types of the class's `Arguments` (or `Input`) attributes, the
+    /// input of the mutation it is.
+    pub args: Vec<RawRef>,
+}
+
+/// A field of an object type.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlField {
+    /// The Python name (strawberry and graphene name the GraphQL field after it).
+    pub name: String,
+    pub line: u32,
+    pub resolver: RawGqlResolver,
+    /// strawberry's `permission_classes=[...]`, and the permissions of a
+    /// `PermissionExtension` (or any other extension) given in `extensions=[...]`.
+    pub permissions: Vec<RawRef>,
+    /// A permission list or an extension that is not read, by its words.
+    pub unread: Vec<String>,
+    /// graphene: the types of the field's arguments (`graphene.Field(User,
+    /// data=UserInput())`).
+    pub args: Vec<RawRef>,
+}
+
+/// What resolves a field.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawGqlResolver {
+    /// A method of the class (`@strawberry.field def user(self, ...)`).
+    Method(String),
+    /// A function given (`strawberry.field(resolver=get_user)`).
+    Function(RawRef),
+    /// graphene: a mutation class mounted (`create_user = CreateUser.Field()`).
+    Mounted(RawRef),
+    /// graphene-django: a connection field of a node type
+    /// (`DjangoFilterConnectionField(UserNode)`).
+    Connection(RawRef),
+    /// Declared only (`user = graphene.Field(User)`): graphene resolves it with the
+    /// type's `resolve_<name>`, where there is one.
+    Declared,
+}
+
+/// ariadne: a module-level object resolvers are bound to (`query = QueryType()`).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlBindable {
+    pub name: String,
+    /// The GraphQL type it binds (`Query`).
+    pub type_name: String,
+    pub line: u32,
+}
+
+/// ariadne: a resolver bound to a field of a bindable.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlBind {
+    pub bindable: RawRef,
+    pub field: String,
+    pub resolver: RawRef,
+    pub line: u32,
+    /// The decorators that are no wrap of the resolver where a decorator binds it:
+    /// the binding decorator itself and those above it, which wrap what it hands
+    /// back, not what it registered.
+    pub unwraps: Vec<RawRef>,
+}
+
+/// A schema handed to a view: `GraphQLView.as_view(schema=schema)`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlServed {
+    pub view: RawRef,
+    pub schema: RawRef,
 }
 
 /// One entry of a [`RawRefList`].

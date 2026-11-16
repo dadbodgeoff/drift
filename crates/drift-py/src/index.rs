@@ -71,7 +71,8 @@ struct Entry {
 /// passing their app to helpers (see [`AppPasses`]), `request.urlconf` assignments, Celery beat entries
 /// (`cron` entry points of the tasks' files), error handlers registered by call
 /// (`add_exception_handler`) or by DRF's `EXCEPTION_HANDLER` (what the handlers' files
-/// handle), and Django's entry scripts and settings
+/// handle), GraphQL schemas (`graphql` entry points of the files of their root
+/// types and resolvers), and Django's entry scripts and settings
 /// files (the settings modules: URL roots and global guards). Settings modules named
 /// elsewhere and the modules they star-import are found by lookup.
 pub(crate) fn is_global(rel: &str, raw: &RawFile) -> bool {
@@ -83,6 +84,8 @@ pub(crate) fn is_global(rel: &str, raw: &RawFile) -> bool {
         || !raw.dependency_overrides.is_empty()
         || !raw.beats.is_empty()
         || !raw.error_handlers.is_empty()
+        // A GraphQL schema: the entry points of its root types' files.
+        || !raw.graphql.schemas.is_empty()
         || raw
             .settings
             .drf

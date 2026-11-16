@@ -59,6 +59,8 @@ pub const KWARG_INDEX: u32 = 99;
 pub(crate) mod adapters;
 #[path = "env_libs.rs"]
 pub(crate) mod env_libs;
+#[path = "graphql.rs"]
+pub(crate) mod graphql;
 #[path = "guard_paths.rs"]
 pub(crate) mod guard_paths;
 #[path = "held.rs"]
@@ -122,6 +124,7 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.lower_adapters_anywhere(&module.body);
     l.lower_frameworks(&module.body);
     l.lower_servers(&module.body);
+    l.lower_graphql(&module.body);
     l.lower_settings(&module.body);
     l.lower_error_handlers(&module.body);
     l.lower_main_guard(&module.body);
@@ -569,7 +572,14 @@ impl<'t> Lowerer<'t> {
         {
             self.out.symbols.push(m);
         }
-        for s in &mut self.out.symbols {
+        // (The resolver methods of a GraphQL type are symbols too: of the listed
+        // reading only.)
+        for s in self
+            .out
+            .symbols
+            .iter_mut()
+            .chain(self.out.graphql.methods.iter_mut())
+        {
             s.calls.sort();
             s.calls.dedup();
             s.args.sort();
