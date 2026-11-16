@@ -508,21 +508,38 @@ pub fn agents_word(text: &str, v: &serde_json::Value, not_deployed: &[String]) -
     out
 }
 
-/// One entry of `security.terraform`: `{target: <module dir>[#aws_lb_target_group.<name>],
-/// code: <dir>}`. A person's statement that the target group (every target group of the
-/// module when none is named) forwards to the code in `code`, and that requests from
-/// outside reach that code, in what this Terraform deploys, only through load-balancer
-/// rules that forward to that target. Drift then reads the listener rules of the
-/// repository's Terraform for the routes of `code` ([`crate::terraform`]).
+/// One entry of `security.terraform`: `{target: <module dir>[#<kind>.<name>], code:
+/// <dir>}`. A person's statement that the target (an `aws_lb_target_group`, a Lambda
+/// function, an API Gateway integration, a GCP backend service, a Cloud Run service:
+/// [`crate::terraform::TARGET_KINDS`]; every one of the module when none is named)
+/// runs the code in `code`, and that requests from outside reach that code, in what
+/// this Terraform deploys, only through what forwards to that target. Drift then
+/// reads what forwards in the repository's Terraform for the routes of `code`
+/// ([`crate::terraform`]).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerraformTie {
     /// The directory of the Terraform module, repo-relative.
     pub module: String,
-    /// The `aws_lb_target_group` resource of the module, when one is named.
+    /// The name of the target resource of the module, when one is named.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
+    /// The kind of the named target where it is not an `aws_lb_target_group` (which a
+    /// tie written before other kinds were read names): none for a target group.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
     /// The code directory, repo-relative; "" is the whole repository.
     pub code: String,
+}
+
+impl TerraformTie {
+    /// The tie's `target` as `.drift/config.yaml` writes it.
+    pub fn target(&self) -> String {
+        match (&self.group, &self.kind) {
+            (Some(g), Some(k)) => format!("{}#{k}.{g}", self.module),
+            (Some(g), None) => format!("{}#aws_lb_target_group.{g}", self.module),
+            (None, _) => self.module.clone(),
+        }
+    }
 }
 
 /// One entry of `security.platforms`: `{file: <platform file>[#<service>], code: <dir>}`.
@@ -670,7 +687,8 @@ impl SecuritySettings {
     fn ties(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<TerraformTie> {
         let mut out = Vec::new();
         let shape = format!(
-            "{CONFIG_FILE}: `security.terraform` must be a list of `{{target: <module dir>[#aws_lb_target_group.<name>], code: <dir>}}`"
+            "{CONFIG_FILE}: `security.terraform` must be a list of `{{target: <module dir>[#<kind>.<name>], code: <dir>}}`, the kind one of {}",
+            crate::terraform::TARGET_KINDS.join(", ")
         );
         let Some(items) = v.as_array() else {
             warnings.push(format!("{shape} (ignored)"));
@@ -689,23 +707,31 @@ impl SecuritySettings {
                 Some((module, resource)) => (module, Some(resource)),
                 None => (target, None),
             };
-            // A named resource is a target group, by its name alone.
-            let group = match group.map(|g| g.trim().strip_prefix("aws_lb_target_group.")) {
-                Some(Some(name))
+            // A named resource is a target of a kind Drift reads forwards to, by its
+            // kind and name alone. A target group is written as before (no kind).
+            let named = group.and_then(|g| {
+                let (kind, name) = g.trim().split_once('.')?;
+                crate::terraform::TARGET_KINDS
+                    .contains(&kind)
+                    .then_some((kind, name))
+            });
+            let (group, kind) = match (group, named) {
+                (Some(_), Some((kind, name)))
                     if !name.is_empty()
                         && name
                             .chars()
                             .all(|c| c.is_alphanumeric() || c == '_' || c == '-') =>
                 {
-                    Some(name.to_string())
+                    let kind = (kind != "aws_lb_target_group").then(|| kind.to_string());
+                    (Some(name.to_string()), kind)
                 }
-                Some(_) => {
+                (Some(_), _) => {
                     warnings.push(format!(
                         "{shape}: `{target}` names something else after `#` (the entry is ignored)"
                     ));
                     continue;
                 }
-                None => None,
+                (None, _) => (None, None),
             };
             let (Some(module), Some(code)) = (config_dir(module), config_dir(code)) else {
                 warnings.push(format!("{shape} (an entry is ignored)"));
@@ -714,6 +740,7 @@ impl SecuritySettings {
             out.push(TerraformTie {
                 module,
                 group,
+                kind,
                 code,
             });
         }

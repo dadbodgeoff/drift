@@ -743,7 +743,11 @@ fn unmatched(g: &TargetGroup, svc: &str, routes: &[String]) -> Vec<String> {
         Some(_) => {}
     }
     if g.paths.is_empty() {
-        out.push("no listener rule Drift reads sends requests to it".to_string());
+        out.push(if g.kind.ends_with("target_group") {
+            "no listener rule Drift reads sends requests to it".to_string()
+        } else {
+            "nothing Drift reads sends requests to it by path".to_string()
+        });
     }
     out
 }
@@ -764,7 +768,8 @@ fn group_facts(g: &TargetGroup, svc: &str, routes: &[String], why: &[String]) ->
     };
     let no = unmatched(g, svc, routes);
     format!(
-        "Target group `{}` ({}{port}{health}{paths}). Matched: {}. Did not match: {}.",
+        "{} `{}` ({}{port}{health}{paths}). Matched: {}. Did not match: {}.",
+        g.noun(),
         g.name,
         g.at,
         if why.is_empty() {
@@ -785,13 +790,14 @@ fn group_excerpts(r: &Reading<'_>, g: &TargetGroup, ctx: &mut Context) {
     if let Some((file, i)) = at(&g.at) {
         let lines = lines_of(r.root, file);
         ctx.excerpt(block(
-            &format!("target group `{}`", g.name),
+            &format!("{} `{}`", g.noun().to_lowercase(), g.name),
             file,
             &lines,
             i,
         ));
     }
-    let needle = format!("aws_lb_target_group.{}", g.name);
+    let needle = g.address();
+    let group = g.kind.ends_with("target_group");
     let mut files: BTreeSet<String> = BTreeSet::new();
     if let Ok(rd) = std::fs::read_dir(r.root.join(&g.module)) {
         for e in rd.flatten() {
@@ -810,17 +816,23 @@ fn group_excerpts(r: &Reading<'_>, g: &TargetGroup, ctx: &mut Context) {
         let lines = lines_of(r.root, &file);
         for (i, l) in lines.iter().enumerate() {
             let t = l.trim_start();
-            if !(t.starts_with("resource \"aws_lb_listener_rule\"")
+            let listener = t.starts_with("resource \"aws_lb_listener_rule\"")
                 || t.starts_with("resource \"aws_lb_listener\"")
-                || t.starts_with("resource \"aws_alb_listener"))
-            {
+                || t.starts_with("resource \"aws_alb_listener");
+            // For another kind of target, any resource that names it (a route's
+            // integration, a URL map, an IAM grant).
+            if !(listener || (!group && t.starts_with("resource \""))) {
                 continue;
             }
             let end = block_end(&lines, i);
             if lines[i..end].iter().any(|l| l.contains(&needle)) && rules < 4 {
                 rules += 1;
                 ctx.excerpt(excerpt_of(
-                    &format!("a listener rule that sends to `{}`", g.name),
+                    &if group {
+                        format!("a listener rule that sends to `{}`", g.name)
+                    } else {
+                        format!("a resource that names `{}`", g.name)
+                    },
                     &file,
                     &lines,
                     i,
@@ -831,7 +843,12 @@ fn group_excerpts(r: &Reading<'_>, g: &TargetGroup, ctx: &mut Context) {
     }
     if rules == 0 {
         ctx.fact(format!(
-            "No listener rule in `{}` names `{needle}`.",
+            "No {} in `{}` names `{needle}`.",
+            if group {
+                "listener rule"
+            } else {
+                "other resource"
+            },
             if g.module.is_empty() { "." } else { &g.module }
         ));
     }
@@ -1025,8 +1042,10 @@ fn reach(
             .as_deref()
             .map_or_else(String::new, |h| format!(", health check {h}"));
         ctx.fact(format!(
-            "Target group `{}` ({}{port}{health}): none of these services' routes matched it.",
-            g.name, g.at
+            "{} `{}` ({}{port}{health}): none of these services' routes matched it.",
+            g.noun(),
+            g.name,
+            g.at
         ));
     }
     service_excerpts(r, dirs, ctx);

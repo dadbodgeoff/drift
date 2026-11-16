@@ -1,45 +1,52 @@
 //! The repository's Terraform, as far as a tie lets Drift read it.
 //!
-//! Drift does not read Terraform as a deployment: what a module deploys, with which
-//! variables, how many times, is not in the files. A person can say the one thing
-//! that is missing (`security.terraform` in `.drift/config.yaml`,
-//! [`crate::policy::TerraformTie`]): this target group forwards to this code, and
+//! Drift does not read Terraform as a deployment on its own: which code a target
+//! runs is not in the files. A person can say the one thing that is missing
+//! (`security.terraform` in `.drift/config.yaml`, [`crate::policy::TerraformTie`]):
+//! this target (a load balancer's target group, a Lambda function, an API Gateway
+//! integration, a GCP backend service, a Cloud Run service) runs this code, and
 //! requests from outside reach this code, in what this Terraform deploys, only
-//! through load-balancer rules that forward to that target. With that said, the
-//! listener rules answer for each route of the code: every
-//! `resource "aws_lb_listener_rule"` of the repository's `.tf` files, all taken as
-//! the rules of one listener.
+//! through what forwards to that target. With that said, what forwards in the
+//! repository's `.tf` files ([`forward`]) answers for each route of the code.
 //!
-//! A rule is read only in its plain form: one `action` of `type = "forward"` whose
-//! `target_group_arn` is `aws_lb_target_group.<name>.id` (or `.arn`) of its own
-//! module, and conditions that are `path_pattern { values = [literal strings] }`
-//! (`*` any run of characters, `?` any one) or `host_header`, which only narrows and
-//! is ignored. Anything else makes the rule one that is not read: another kind of
-//! condition, a second action, a `dynamic` block, `count` or `for_each`, a pattern
-//! that is a variable or a local, a target that is not a resource of the module.
+//! Each forward is read only in its plain form, its values worked out where the
+//! files settle them ([`values`]: a `locals` literal, a variable's `default` that no
+//! `.tfvars` file, `module` block or Terragrunt `inputs` sets again, `count` and
+//! `for_each` over those). Anything else makes the forward one that is not read, and
+//! the reason names the expression: a `dynamic` block, a condition of another kind,
+//! a pattern or a count that is a variable a deployment chooses, a target that is
+//! not a resource of the module.
 //!
 //! For a route of a tied code directory ([`Tied::verdict`]):
 //!
-//! - internet-facing when a rule that is read and forwards to the tied target
-//!   carries it;
-//! - unknown when one may carry it, when a rule that forwards to the tied target is
-//!   not read, when the target of a rule cannot be read (it may be the tied one),
-//!   when an `aws_lb_listener` or a load-balancer module forwards by default, when a
+//! - internet-facing when a forward that is read, takes requests from the internet
+//!   and sends them to the tied target carries every path of it, as the application
+//!   sees it (an API path the application may see under a stage or a base path, or
+//!   through an HTTP integration's own URL, is not one it carries);
+//! - unknown when one may carry it, when a forward to the tied target is not read,
+//!   when the target of a forward cannot be read (it may be the tied one), when
+//!   where a forward takes requests from is not settled (`internal = var.x`), when a
 //!   `terragrunt.hcl` has a `generate` block (it writes Terraform that is not in the
 //!   repository), or when a Terraform file cannot be parsed;
-//! - internal otherwise. A rule that forwards to another target group of the
-//!   repository says nothing against it.
+//! - internal otherwise. A forward that sends requests from inside a network only
+//!   (an internal load balancer nothing outside fronts, a private REST API, an
+//!   internal URL map, a Cloud Run service with internal ingress) says nothing
+//!   against it, nor does one to another target.
 //!
-//! What else Terraform opens to the code (a second load balancer, an API gateway, a
-//! public address) is not read: the tie is the person's word that there is nothing,
-//! and every verdict that rests on one says so.
+//! What else Terraform opens to the code (security groups, IAM, CloudFront
+//! behaviours, Azure, a public address) is not read: the tie is the person's word
+//! that there is nothing, and every verdict that rests on one says so.
 
-use std::collections::BTreeSet;
+mod forward;
+mod values;
+
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use crate::gateway::{Gateway, Glob, Route, Rule, Target};
 use crate::policy::{CONFIG_FILE, TerraformTie};
 use crate::security::Exposure;
+use forward::{Forward, From, Paths};
 
 /// One thing of a Terraform body: an attribute with its expression as written
 /// (comments taken out), or a block.
@@ -307,16 +314,23 @@ impl Hcl {
     }
 }
 
-/// The top-level blocks of a Terraform or Terragrunt file; none when it is not read.
-fn parse(text: &str) -> Option<Vec<Block>> {
+/// The items of a Terraform or Terragrunt file, attributes too; none when it is not
+/// read.
+fn parse_items(text: &str) -> Option<Vec<Item>> {
     let mut hcl = Hcl {
         c: text.chars().collect(),
         at: 0,
         line: 1,
         depth: 0,
     };
+    hcl.body(false)
+}
+
+/// The top-level blocks of a Terraform or Terragrunt file; none when it is not read.
+#[cfg(test)]
+fn parse(text: &str) -> Option<Vec<Block>> {
     Some(
-        hcl.body(false)?
+        parse_items(text)?
             .into_iter()
             .filter_map(|i| match i {
                 Item::Block(b) => Some(b),
@@ -333,71 +347,105 @@ fn literal(expr: &str) -> Option<String> {
         .then(|| inner.to_string())
 }
 
-/// `["a", "b"]`: every element a literal string.
-fn literals(expr: &str) -> Option<Vec<String>> {
-    let inner = expr.strip_prefix('[')?.strip_suffix(']')?;
-    let mut out = Vec::new();
-    let mut rest = inner.trim();
-    while !rest.is_empty() {
-        let end = rest.strip_prefix('"')?.find('"')? + 2;
-        out.push(literal(&rest[..end])?);
-        rest = rest[end..].trim_start();
-        rest = match rest.strip_prefix(',') {
-            Some(more) => more.trim_start(),
-            None if rest.is_empty() => rest,
-            None => return None,
-        };
-    }
-    Some(out)
-}
+/// The kinds of resource a tie can name as its target (`#<kind>.<name>`): what the
+/// forwards Drift reads send requests to.
+pub const TARGET_KINDS: &[&str] = &[
+    "aws_lb_target_group",
+    "aws_alb_target_group",
+    "aws_lambda_function",
+    "aws_lambda_alias",
+    "aws_api_gateway_integration",
+    "aws_apigatewayv2_integration",
+    "google_compute_backend_service",
+    "google_compute_region_backend_service",
+    "google_cloud_run_service",
+    "google_cloud_run_v2_service",
+];
 
-/// `aws_lb_target_group.<name>.id`, `.arn`, with or without an index
-/// (`aws_lb_target_group.api[0].id`): the target group resource of the module named.
-fn group_of(expr: &str) -> Option<String> {
-    let rest = ["aws_lb_target_group.", "aws_alb_target_group."]
-        .iter()
-        .find_map(|p| expr.strip_prefix(p))?;
-    let end = rest
-        .find(|c: char| !(c.is_alphanumeric() || c == '_' || c == '-'))
-        .unwrap_or(rest.len());
-    let (name, rest) = rest.split_at(end);
-    let rest = match rest.strip_prefix('[') {
-        Some(index) => &index[index.find(']')? + 1..],
-        None => rest,
-    };
-    (!name.is_empty() && matches!(rest, ".id" | ".arn")).then(|| name.to_string())
-}
+/// The targets `drift setup` offers a person to tie code to: the integrations are
+/// left to a person who writes the tie, since one names an API path, not a service.
+const OFFERED: &[&str] = &[
+    "aws_lb_target_group",
+    "aws_alb_target_group",
+    "aws_lambda_function",
+    "google_compute_backend_service",
+    "google_compute_region_backend_service",
+    "google_cloud_run_service",
+    "google_cloud_run_v2_service",
+];
 
-/// One `aws_lb_listener_rule` that forwards.
+/// A resource of a module: its kind and name.
+type Addr = (String, String);
+
+/// One `resource`, `data` or `module` block of a module.
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct LbRule {
-    /// `rule` (`file:line`), for messages.
-    shown: String,
-    /// The directory of its file: its module.
-    module: String,
-    /// The target group of its module it forwards to; none when that is not read.
-    group: Option<String>,
-    /// The path patterns it is for; empty when it has no path condition (every path).
-    patterns: Vec<String>,
-    /// Why it is not read.
-    unread: Option<String>,
+struct Res {
+    kind: String,
+    name: String,
+    block: Block,
+    file: String,
 }
 
-/// The listener rules and target groups of the repository's Terraform
-/// ([`Terraform::read`]).
+impl Res {
+    /// ``<noun> `name` (file:line)``.
+    fn shown(&self, noun: &str) -> String {
+        if noun.is_empty() {
+            format!("`{}` ({})", self.name, self.at())
+        } else {
+            format!("{noun} `{}` ({})", self.name, self.at())
+        }
+    }
+
+    fn at(&self) -> String {
+        format!("{}:{}", self.file, self.block.line)
+    }
+
+    /// Its `count` or `for_each`, with the expression.
+    fn meta(&self) -> Option<(&'static str, &str)> {
+        ["count", "for_each"]
+            .into_iter()
+            .find_map(|k| self.block.attr(k).map(|e| (k, e)))
+    }
+}
+
+/// One Terraform module: the `.tf` files of one directory.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct Terraform {
-    rules: Vec<LbRule>,
-    /// (module directory, name) of every `aws_lb_target_group`.
-    groups: BTreeSet<(String, String)>,
-    /// Why no route of a tied directory is said to be internal, whatever the rules
-    /// say: something that may forward requests and is not a rule Drift reads.
-    open: Vec<String>,
+struct Module {
+    dir: String,
+    resources: Vec<Res>,
+    data: Vec<Res>,
+    calls: Vec<Res>,
+    locals: BTreeMap<String, String>,
+    variables: BTreeMap<String, Option<String>>,
+    /// The variables something else in the repository sets, with where.
+    set_outside: BTreeMap<String, String>,
 }
 
-const RULES: &[&str] = &["aws_lb_listener_rule", "aws_alb_listener_rule"];
-const LISTENERS: &[&str] = &["aws_lb_listener", "aws_alb_listener"];
-const GROUPS: &[&str] = &["aws_lb_target_group", "aws_alb_target_group"];
+impl Module {
+    fn env(&self) -> values::Env<'_> {
+        values::Env {
+            locals: &self.locals,
+            variables: &self.variables,
+            set_outside: &self.set_outside,
+        }
+    }
+
+    fn get(&self, kind: &str, name: &str) -> Option<&Res> {
+        self.resources
+            .iter()
+            .find(|r| r.kind == kind && r.name == name)
+    }
+
+    fn has(&self, kind: &str, name: &str) -> bool {
+        self.get(kind, name).is_some()
+    }
+
+    fn of<'a>(&'a self, kinds: &'a [&'a str]) -> impl Iterator<Item = &'a Res> {
+        self.resources
+            .iter()
+            .filter(move |r| kinds.contains(&r.kind.as_str()))
+    }
+}
 
 /// The attributes of a load-balancer module that hold its listeners.
 const LISTENER_ATTRIBUTES: &[&str] = &[
@@ -407,69 +455,180 @@ const LISTENER_ATTRIBUTES: &[&str] = &[
     "default_action",
 ];
 
-impl Terraform {
-    /// Reads the Terraform `files` (repo-relative: `.tf`, `.tf.json`,
-    /// `terragrunt.hcl`) under `root`.
-    pub fn read(root: &Path, files: &[String]) -> Terraform {
-        let mut out = Terraform::default();
-        for file in files {
-            let Ok(text) = std::fs::read_to_string(root.join(file)) else {
-                out.open.push(format!("{file} is not read"));
-                continue;
-            };
-            out.add(file, &text);
-        }
-        out
-    }
+/// Parts of the provider resource types that forward requests: a file of Terraform as
+/// JSON that names one is said, since it is not read.
+const JSON_FORWARDING_KINDS: &[&str] = &[
+    "lb_listener",
+    "lb_target_group",
+    "api_gateway",
+    "apigatewayv2",
+    "lambda_function_url",
+    "url_map",
+    "cloud_run",
+    "backend_service",
+];
 
-    fn add(&mut self, file: &str, text: &str) {
-        let module = file.rsplit_once('/').map_or("", |(d, _)| d).to_string();
-        if file.ends_with(".tf.json") {
-            // Terraform written as JSON is not read: one that names a load balancer
-            // may hold a rule.
-            if text.contains("lb_listener") || text.contains("lb_target_group") {
-                self.open
-                    .push(format!("{file} is Terraform as JSON, which is not read"));
+/// What a `module` block sets that is not one of the module's variables.
+const MODULE_META: &[&str] = &[
+    "source",
+    "version",
+    "count",
+    "for_each",
+    "providers",
+    "depends_on",
+];
+
+/// `rel` (`./x`, `../x`) from the directory `dir`, repo-relative; none above the root.
+fn join_rel(dir: &str, rel: &str) -> Option<String> {
+    let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
+    for p in rel.split('/') {
+        match p {
+            "" | "." => {}
+            ".." => {
+                parts.pop()?;
             }
-            return;
+            p => parts.push(p),
         }
-        let Some(blocks) = parse(text) else {
-            self.open.push(format!("{file} is not read (not parsed)"));
-            return;
+    }
+    Some(parts.join("/"))
+}
+
+/// The keys an `inputs = { ... }` expression sets.
+fn input_keys(expr: &str) -> Vec<String> {
+    let c: Vec<char> = expr.chars().collect();
+    let mut out = Vec::new();
+    let mut depth = 0usize;
+    let mut word = String::new();
+    let mut i = 0;
+    while i < c.len() {
+        let ch = c[i];
+        match ch {
+            '{' | '[' | '(' => depth += 1,
+            '}' | ']' | ')' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+        if ch.is_alphanumeric() || ch == '_' || ch == '-' {
+            word.push(ch);
+        } else {
+            if depth == 1 && !word.is_empty() {
+                let rest: String = c[i..].iter().collect();
+                let rest = rest.trim_start();
+                if (rest.starts_with('=') && !rest.starts_with("==")) || rest.starts_with(':') {
+                    out.push(std::mem::take(&mut word));
+                }
+            }
+            word.clear();
+        }
+        i += 1;
+    }
+    out
+}
+
+/// The `.tfvars` files under `root`, to the depth deployment descriptions are found.
+fn tfvars(root: &Path) -> Vec<String> {
+    let walker = ignore::WalkBuilder::new(root)
+        .max_depth(Some(crate::security::COMPOSE_DEPTH))
+        .follow_links(false)
+        .hidden(true)
+        .git_ignore(true)
+        .git_global(false)
+        .git_exclude(false)
+        .require_git(false)
+        .filter_entry(|e| {
+            !(e.file_type().is_some_and(|t| t.is_dir()) && e.file_name() == "node_modules")
+        })
+        .build();
+    let mut out: Vec<String> = walker
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_some_and(|t| t.is_file()))
+        .filter_map(|e| {
+            let name = e.file_name().to_str()?;
+            if !(name.ends_with(".tfvars") || name.ends_with(".tfvars.json")) {
+                return None;
+            }
+            let rel = e.path().strip_prefix(root).ok()?;
+            let parts: Option<Vec<&str>> =
+                rel.components().map(|c| c.as_os_str().to_str()).collect();
+            parts.map(|p| p.join("/"))
+        })
+        .collect();
+    out.sort();
+    out
+}
+
+/// The modules of the Terraform `files` under `root`, and what may forward and is not
+/// read (pushed to `open`).
+fn modules(root: &Path, files: &[String], open: &mut Vec<String>) -> BTreeMap<String, Module> {
+    let mut out: BTreeMap<String, Module> = BTreeMap::new();
+    // Variables set from outside every module (a `.tfvars` file, Terragrunt `inputs`:
+    // which module they are for is not read), and those a `module` block sets.
+    let mut everywhere: BTreeMap<String, String> = BTreeMap::new();
+    let mut called: Vec<(String, String, String)> = Vec::new();
+    for file in files {
+        let Ok(text) = std::fs::read_to_string(root.join(file)) else {
+            open.push(format!("{file} is not read"));
+            continue;
         };
-        for b in &blocks {
-            let label = |i: usize| b.labels.get(i).map(String::as_str).unwrap_or_default();
+        let dir = file.rsplit_once('/').map_or("", |(d, _)| d).to_string();
+        if file.ends_with(".tf.json") {
+            if JSON_FORWARDING_KINDS.iter().any(|w| text.contains(w)) {
+                open.push(format!("{file} is Terraform as JSON, which is not read"));
+            }
+            continue;
+        }
+        let Some(items) = parse_items(&text) else {
+            open.push(format!("{file} is not read (not parsed)"));
+            continue;
+        };
+        let terragrunt = file.ends_with("terragrunt.hcl");
+        let m = out.entry(dir.clone()).or_insert_with(|| Module {
+            dir: dir.clone(),
+            ..Module::default()
+        });
+        for item in items {
+            let b = match item {
+                Item::Attr(k, v) if terragrunt && k == "inputs" => {
+                    for key in input_keys(&v) {
+                        everywhere.entry(key).or_insert_with(|| file.clone());
+                    }
+                    continue;
+                }
+                Item::Attr(..) => continue,
+                Item::Block(b) => b,
+            };
+            let label = |i: usize| b.labels.get(i).cloned().unwrap_or_default();
             match b.kind.as_str() {
-                "generate" if file.ends_with("terragrunt.hcl") => self.open.push(format!(
+                "generate" if terragrunt => open.push(format!(
                     "{file}:{} has a `generate` block, which writes Terraform that is not in the repository",
                     b.line
                 )),
-                "resource" if GROUPS.contains(&label(0)) => {
-                    self.groups.insert((module.clone(), label(1).to_string()));
-                }
-                "resource" if LISTENERS.contains(&label(0)) => {
-                    let forwards = b.blocks("default_action").any(|a| {
-                        !matches!(
-                            a.attr("type").and_then(literal).as_deref(),
-                            Some("redirect" | "fixed-response")
-                        )
-                    }) || b.blocks("dynamic").next().is_some();
-                    if forwards {
-                        self.open.push(format!(
-                            "listener `{}` ({file}:{}) may forward by default",
-                            label(1),
-                            b.line
-                        ));
+                _ if terragrunt => {}
+                "resource" | "data" => {
+                    let r = Res {
+                        kind: label(0),
+                        name: label(1),
+                        block: b.clone(),
+                        file: file.clone(),
+                    };
+                    if b.kind == "resource" {
+                        m.resources.push(r);
+                    } else {
+                        m.data.push(r);
                     }
                 }
-                "resource" if RULES.contains(&label(0)) => {
-                    let shown = format!("`{}` ({file}:{})", label(1), b.line);
-                    if let Some(rule) = rule(b, shown, &module) {
-                        self.rules.push(rule);
+                "locals" => {
+                    for i in &b.body {
+                        if let Item::Attr(k, v) = i {
+                            m.locals.insert(k.clone(), v.clone());
+                        }
                     }
                 }
-                // A load-balancer module with a listener that forwards.
+                "variable" => {
+                    m.variables
+                        .insert(label(0), b.attr("default").map(str::to_string));
+                }
                 "module" => {
+                    // A load-balancer module with a listener that forwards.
                     let forwards = b.body.iter().any(|i| match i {
                         Item::Attr(k, v) => {
                             LISTENER_ATTRIBUTES.contains(&k.as_str()) && v.contains("forward")
@@ -480,77 +639,219 @@ impl Terraform {
                         }
                     });
                     if forwards {
-                        self.open.push(format!(
+                        open.push(format!(
                             "module `{}` ({file}:{}) has a listener that forwards by default",
                             label(0),
                             b.line
                         ));
                     }
+                    let source = b.attr("source").and_then(literal).unwrap_or_default();
+                    if (source.starts_with("./") || source.starts_with("../"))
+                        && let Some(target) = join_rel(&dir, &source)
+                    {
+                        for i in &b.body {
+                            if let Item::Attr(k, _) = i
+                                && !MODULE_META.contains(&k.as_str())
+                            {
+                                called.push((
+                                    target.clone(),
+                                    k.clone(),
+                                    format!("module `{}` ({file}:{})", label(0), b.line),
+                                ));
+                            }
+                        }
+                    }
+                    m.calls.push(Res {
+                        kind: "module".into(),
+                        name: label(0),
+                        block: b.clone(),
+                        file: file.clone(),
+                    });
                 }
                 _ => {}
             }
         }
     }
+    for file in tfvars(root) {
+        let Ok(text) = std::fs::read_to_string(root.join(&file)) else {
+            everywhere.entry("*".into()).or_insert(file);
+            continue;
+        };
+        let keys: Option<Vec<String>> = if file.ends_with(".json") {
+            serde_json::from_str::<serde_json::Value>(&text)
+                .ok()
+                .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+        } else {
+            parse_items(&text).map(|items| {
+                items
+                    .into_iter()
+                    .filter_map(|i| match i {
+                        Item::Attr(k, _) => Some(k),
+                        Item::Block(_) => None,
+                    })
+                    .collect()
+            })
+        };
+        match keys {
+            Some(keys) => {
+                for k in keys {
+                    everywhere.entry(k).or_insert_with(|| file.clone());
+                }
+            }
+            None => {
+                everywhere.entry("*".into()).or_insert(file);
+            }
+        }
+    }
+    for m in out.values_mut() {
+        m.set_outside = everywhere.clone();
+        for (dir, var, by) in &called {
+            if *dir == m.dir {
+                m.set_outside
+                    .entry(var.clone())
+                    .or_insert_with(|| by.clone());
+            }
+        }
+    }
+    out
+}
+
+/// What forwards in the repository's Terraform ([`Terraform::read`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Terraform {
+    forwards: Vec<Forward>,
+    /// (module directory, kind, name) of every target a tie can name.
+    targets: BTreeSet<(String, String, String)>,
+    /// Why no route of a tied directory is said to be internal, whatever the
+    /// forwards say: something that may forward requests and is not read.
+    open: Vec<String>,
+}
+
+impl Terraform {
+    /// Reads the Terraform `files` (repo-relative: `.tf`, `.tf.json`,
+    /// `terragrunt.hcl`) under `root`, and the `.tfvars` files beside them.
+    pub fn read(root: &Path, files: &[String]) -> Terraform {
+        let mut out = Terraform::default();
+        let modules = modules(root, files, &mut out.open);
+        for m in modules.values() {
+            for r in m.of(TARGET_KINDS) {
+                out.targets
+                    .insert((m.dir.clone(), r.kind.clone(), r.name.clone()));
+            }
+        }
+        out.forwards = forward::read(&modules);
+        out
+    }
 
     /// What `tie` comes to, for the routes of its code; an error when it names no
-    /// target group Drift finds.
+    /// target Drift finds.
     pub fn tied(&self, tie: &TerraformTie) -> Result<Tied, String> {
-        let named = |name: &str| tie.group.as_deref().is_none_or(|g| g == name);
-        let groups: Vec<&str> = self
-            .groups
-            .iter()
-            .filter(|(module, name)| *module == tie.module && named(name))
-            .map(|(_, name)| name.as_str())
-            .collect();
-        let target = match &tie.group {
-            Some(g) => format!("{}#aws_lb_target_group.{g}", tie.module),
-            None => format!("the target groups of {}", tie.module),
+        let kinds: Vec<&str> = match (&tie.kind, &tie.group) {
+            (Some(k), _) => vec![k.as_str()],
+            (None, Some(_)) => forward::TARGET_GROUPS.to_vec(),
+            (None, None) => TARGET_KINDS.to_vec(),
         };
-        if groups.is_empty() {
+        let named = |name: &str| tie.group.as_deref().is_none_or(|g| g == name);
+        let ours: BTreeSet<Addr> = self
+            .targets
+            .iter()
+            .filter(|(module, kind, name)| {
+                *module == tie.module && kinds.contains(&kind.as_str()) && named(name)
+            })
+            .map(|(_, kind, name)| (kind.clone(), name.clone()))
+            .collect();
+        let groups_only = ours
+            .iter()
+            .all(|(k, _)| forward::TARGET_GROUPS.contains(&k.as_str()));
+        let target = match (&tie.group, &tie.kind) {
+            (Some(g), Some(k)) => format!("{}#{k}.{g}", tie.module),
+            (Some(g), None) => format!("{}#aws_lb_target_group.{g}", tie.module),
+            (None, _) if groups_only => format!("the target groups of {}", tie.module),
+            (None, _) => format!("the targets of {}", tie.module),
+        };
+        if ours.is_empty() {
+            let kind = tie.kind.as_deref().unwrap_or("aws_lb_target_group");
             return Err(format!(
-                "{CONFIG_FILE}: `security.terraform` names {target}, and no such `aws_lb_target_group` is in the repository's Terraform (the entry is ignored)"
+                "{CONFIG_FILE}: `security.terraform` names {target}, and no such `{kind}` is in the repository's Terraform{} (the entry is ignored)",
+                if tie.group.is_none() {
+                    ", nor any other target Drift reads"
+                } else {
+                    ""
+                }
             ));
         }
         let by = format!("tied to {} by {CONFIG_FILE}", shown_dir(&tie.code));
         let mut tied = Tied {
             tie: tie.clone(),
             target: target.clone(),
+            groups_only,
             every: None,
             gateway: None,
             globs: Vec::new(),
+            carriers: Vec::new(),
             unknown: None,
+            inside: Vec::new(),
         };
+        let tied_kinds: BTreeSet<&str> = ours.iter().map(|(k, _)| k.as_str()).collect();
         let mut plain: Vec<Rule> = Vec::new();
-        let mut files: BTreeSet<String> = BTreeSet::new();
         let mut unknown: Vec<String> = Vec::new();
-        for r in &self.rules {
-            let ours =
-                r.module == tie.module && r.group.as_deref().is_some_and(|g| groups.contains(&g));
-            match (&r.group, &r.unread) {
-                // Its target is not read: it may be the tied one.
-                (None, why) => unknown.push(format!(
-                    "listener rule {} is not read ({}): it may forward to {target}",
-                    r.shown,
-                    why.as_deref()
-                        .unwrap_or("its target is not a target group of its module")
-                )),
-                (Some(_), _) if !ours => {}
-                (Some(_), Some(why)) => unknown.push(format!(
-                    "listener rule {}, which forwards to {target}, is not read ({why})",
-                    r.shown
-                )),
-                (Some(_), None) if r.patterns.is_empty() => {
-                    tied.every.get_or_insert(format!(
-                        "listener rule {} forwards every path to {target} ({by})",
-                        r.shown
+        for f in &self.forwards {
+            let mine = f.module == tie.module && !f.to.is_disjoint(&ours);
+            let maybe = !mine
+                && f.any
+                    .as_ref()
+                    .is_some_and(|(_, ks)| ks.iter().any(|k| tied_kinds.contains(k)));
+            if !mine && !maybe {
+                continue;
+            }
+            let detail = f
+                .detail
+                .as_deref()
+                .map_or(String::new(), |d| format!("; {d}"));
+            // From inside a network only: it says nothing against the route being
+            // internal, and only a forward that names the target is worth saying.
+            if let From::Inside(why) = &f.from {
+                if mine {
+                    tied.inside.push(format!(
+                        "{} forwards to it from inside only ({why})",
+                        f.shown
                     ));
                 }
-                (Some(_), None) => {
-                    files.insert(r.shown.clone());
-                    for p in &r.patterns {
+                continue;
+            }
+            if maybe {
+                let why = f.any.as_ref().map_or("", |(w, _)| w.as_str());
+                unknown.push(format!("{why}: it may forward to {target}{detail}"));
+                continue;
+            }
+            if let Some(why) = &f.unread {
+                unknown.push(format!(
+                    "{}, which forwards to {target}, is not read ({why}){detail}",
+                    f.shown
+                ));
+                continue;
+            }
+            let from = match &f.from {
+                From::Unknown(w) => Some(w.clone()),
+                _ => None,
+            };
+            let notes = if f.notes.is_empty() {
+                String::new()
+            } else {
+                format!(", {}", f.notes.join(", "))
+            };
+            match &f.paths {
+                Paths::Every if from.is_none() => {
+                    tied.every.get_or_insert(format!(
+                        "{} forwards every path to {target}{notes} ({by})",
+                        f.shown
+                    ));
+                }
+                Paths::Lb(patterns) if from.is_none() && f.notes.is_empty() => {
+                    for p in patterns {
                         let stem = p.strip_suffix('*').unwrap_or(p);
                         if stem.contains(['*', '?']) {
-                            tied.globs.push((p.clone(), r.shown.clone()));
+                            tied.globs.push((p.clone(), f.shown.clone()));
                         } else {
                             plain.push(Rule {
                                 host: None,
@@ -564,6 +865,20 @@ impl Terraform {
                         }
                     }
                 }
+                paths => tied.carriers.push(Carrier {
+                    shown: f.shown.clone(),
+                    paths: match paths {
+                        Paths::Lb(p) => Paths::Globs {
+                            take: p.clone(),
+                            others: Vec::new(),
+                        },
+                        other => other.clone(),
+                    },
+                    method: f.method.clone(),
+                    rewrites: f.rewrites.clone(),
+                    from,
+                    notes,
+                }),
             }
         }
         unknown.extend(self.open.iter().cloned());
@@ -581,9 +896,9 @@ impl Terraform {
     }
 }
 
-/// One `aws_lb_target_group` of the repository's Terraform as it is plainly written,
-/// for a person to tie code to (`drift setup`): what it says of itself, never what a
-/// deployment of it would be.
+/// One target of the repository's Terraform as it is plainly written, for a person to
+/// tie code to (`drift setup`): what it says of itself, never what a deployment of
+/// it would be.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TargetGroup {
     /// The directory of its module, repo-relative.
@@ -596,56 +911,80 @@ pub struct TargetGroup {
     pub port: Option<String>,
     /// `health_check.path`, where it is a literal string.
     pub health: Option<String>,
-    /// The path patterns of the listener rules that are read and forward to it.
+    /// The paths of the forwards that are read and send requests to it: listener rule
+    /// patterns, API Gateway paths, URL map path rules.
     pub paths: Vec<String>,
+    /// The resource's kind (`aws_lb_target_group`, `aws_lambda_function`, ...).
+    pub kind: String,
 }
 
-/// The target groups of the Terraform `files` under `root`, sorted, each with the
-/// path patterns of the plain listener rules of its module that forward to it.
-pub fn target_groups(root: &Path, files: &[String]) -> Vec<TargetGroup> {
-    let mut out: Vec<TargetGroup> = Vec::new();
-    let mut rules: Vec<LbRule> = Vec::new();
-    for file in files.iter().filter(|f| f.ends_with(".tf")) {
-        let Ok(text) = std::fs::read_to_string(root.join(file)) else {
-            continue;
-        };
-        let Some(blocks) = parse(&text) else {
-            continue;
-        };
-        let module = file.rsplit_once('/').map_or("", |(d, _)| d).to_string();
-        for b in &blocks {
-            let label = |i: usize| b.labels.get(i).map(String::as_str).unwrap_or_default();
-            if b.kind != "resource" {
-                continue;
+impl TargetGroup {
+    /// What it is called in words: `Target group`, `Lambda function`, ...
+    pub fn noun(&self) -> &'static str {
+        match self.kind.as_str() {
+            "aws_lambda_function" | "aws_lambda_alias" => "Lambda function",
+            "google_compute_backend_service" | "google_compute_region_backend_service" => {
+                "Backend service"
             }
-            if GROUPS.contains(&label(0)) {
-                out.push(TargetGroup {
-                    module: module.clone(),
-                    name: label(1).to_string(),
-                    at: format!("{file}:{}", b.line),
-                    port: b
-                        .attr("port")
-                        .map(str::trim)
-                        .filter(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
-                        .map(str::to_string),
-                    health: b
-                        .blocks("health_check")
-                        .find_map(|h| h.attr("path").and_then(literal)),
-                    paths: Vec::new(),
-                });
-            } else if RULES.contains(&label(0))
-                && let Some(r) = rule(b, String::new(), &module)
-                && r.unread.is_none()
-            {
-                rules.push(r);
+            "google_cloud_run_service" | "google_cloud_run_v2_service" => "Cloud Run service",
+            "aws_api_gateway_integration" | "aws_apigatewayv2_integration" => {
+                "API Gateway integration"
             }
+            _ => "Target group",
         }
     }
-    for g in &mut out {
-        for r in &rules {
-            if r.module == g.module && r.group.as_deref() == Some(g.name.as_str()) {
-                g.paths.extend(r.patterns.iter().cloned());
+
+    /// `<kind>.<name>`, as a tie names it after `#`.
+    pub fn address(&self) -> String {
+        format!("{}.{}", self.kind, self.name)
+    }
+}
+
+/// The targets of the Terraform `files` under `root` a person may tie code to, sorted,
+/// each with the paths the forwards that are read send to it.
+pub fn target_groups(root: &Path, files: &[String]) -> Vec<TargetGroup> {
+    let tf: Vec<String> = files
+        .iter()
+        .filter(|f| f.ends_with(".tf"))
+        .cloned()
+        .collect();
+    let modules = modules(root, &tf, &mut Vec::new());
+    let forwards = forward::read(&modules);
+    let mut out: Vec<TargetGroup> = Vec::new();
+    for m in modules.values() {
+        for r in m.of(OFFERED) {
+            let group = forward::TARGET_GROUPS.contains(&r.kind.as_str());
+            let me = (r.kind.clone(), r.name.clone());
+            let mut paths = Vec::new();
+            for f in forwards
+                .iter()
+                .filter(|f| f.module == m.dir && f.to.contains(&me) && f.unread.is_none())
+            {
+                match &f.paths {
+                    Paths::Lb(p) => paths.extend(p.iter().cloned()),
+                    Paths::Globs { take, .. } => paths.extend(take.iter().cloned()),
+                    Paths::Template(t) => paths.push(t.clone()),
+                    Paths::Every => {}
+                }
             }
+            out.push(TargetGroup {
+                module: m.dir.clone(),
+                name: r.name.clone(),
+                at: r.at(),
+                port: r
+                    .block
+                    .attr("port")
+                    .map(str::trim)
+                    .filter(|p| group && !p.is_empty() && p.chars().all(|c| c.is_ascii_digit()))
+                    .map(str::to_string),
+                health: r
+                    .block
+                    .blocks("health_check")
+                    .find_map(|h| h.attr("path").and_then(literal))
+                    .filter(|_| group),
+                paths,
+                kind: r.kind.clone(),
+            });
         }
     }
     out.sort();
@@ -663,60 +1002,18 @@ fn shown_dir(dir: &str) -> &str {
     }
 }
 
-/// The rule of a `resource "aws_lb_listener_rule"` block; none for one that forwards
-/// nowhere (a redirect, a fixed response).
-fn rule(b: &Block, shown: String, module: &str) -> Option<LbRule> {
-    let mut unread: Option<String> = None;
-    let mut note = |why: String| {
-        unread.get_or_insert(why);
-    };
-    for meta in ["count", "for_each"] {
-        if b.attr(meta).is_some() {
-            note(format!("it has `{meta}`"));
-        }
-    }
-    if b.blocks("dynamic").next().is_some() {
-        note("it has a `dynamic` block".into());
-    }
-    let actions: Vec<&Block> = b.blocks("action").collect();
-    let mut group = None;
-    match actions.as_slice() {
-        [action] => match action.attr("type").and_then(literal).as_deref() {
-            // Nothing is forwarded.
-            Some("redirect" | "fixed-response") => return None,
-            Some("forward") => {
-                group = action.attr("target_group_arn").and_then(group_of);
-                if group.is_none() {
-                    note("its target is not a target group of its module".into());
-                }
-            }
-            _ => note("its action is not a plain forward".into()),
-        },
-        _ => note(format!("it has {} actions", actions.len())),
-    }
-    let mut patterns = Vec::new();
-    for condition in b.blocks("condition") {
-        for item in &condition.body {
-            match item {
-                Item::Block(c) if c.kind == "host_header" => {}
-                Item::Block(c) if c.kind == "path_pattern" => {
-                    match c.attr("values").and_then(literals) {
-                        Some(values) => patterns.extend(values),
-                        None => note("its path patterns are not literal strings".into()),
-                    }
-                }
-                Item::Block(c) => note(format!("its `{}` condition is not read", c.kind)),
-                Item::Attr(k, _) => note(format!("its condition `{k}` is not read")),
-            }
-        }
-    }
-    Some(LbRule {
-        shown,
-        module: module.to_string(),
-        group,
-        patterns,
-        unread,
-    })
+/// A forward to the tied target that is read and is not a plain listener rule of a
+/// load balancer that takes requests from the internet.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Carrier {
+    shown: String,
+    paths: Paths,
+    method: Option<String>,
+    rewrites: Option<String>,
+    /// Why where it takes requests from is not known.
+    from: Option<String>,
+    /// `, <fact>` for each fact said with it.
+    notes: String,
 }
 
 /// One tie, with what the repository's Terraform says of the routes of its code
@@ -726,15 +1023,21 @@ pub struct Tied {
     pub tie: TerraformTie,
     /// The tied target, for messages.
     target: String,
-    /// A rule that is read forwards every path to the target.
+    /// Every tied target is a load balancer's target group.
+    groups_only: bool,
+    /// A forward that is read sends every path to the target.
     every: Option<String>,
-    /// The rules that are read and forward to the target, by path or prefix.
+    /// The listener rules that are read and forward to the target, by path or prefix.
     gateway: Option<Gateway>,
     /// Their patterns with a `?` or a `*` inside: (pattern, rule).
     globs: Vec<(String, String)>,
-    /// Why no route is said to be internal ([`Terraform::open`], a rule to the
-    /// target that is not read, a rule whose target is not read).
+    /// The other forwards that are read and send to the target.
+    carriers: Vec<Carrier>,
+    /// Why no route is said to be internal ([`Terraform::open`], a forward to the
+    /// target that is not read, a forward whose target is not read).
     unknown: Option<String>,
+    /// The forwards to the target that take requests from inside only.
+    inside: Vec<String>,
 }
 
 impl Tied {
@@ -744,9 +1047,9 @@ impl Tied {
         code.is_empty() || path == code || path.starts_with(&format!("{code}/"))
     }
 
-    /// The exposure of `route` (written `shown`), for what this Terraform deploys,
-    /// and what says so.
-    pub fn verdict(&self, route: &Route, shown: &str) -> (Exposure, String) {
+    /// The exposure of `route` (written `shown`, answering `method` where one is
+    /// known), for what this Terraform deploys, and what says so.
+    pub fn verdict(&self, route: &Route, shown: &str, method: Option<&str>) -> (Exposure, String) {
         let by = format!("tied to {} by {CONFIG_FILE}", shown_dir(&self.tie.code));
         let target = &self.target;
         if let Some(every) = &self.every {
@@ -767,6 +1070,33 @@ impl Tied {
             return (
                 Exposure::Public,
                 format!("listener rule {rule} forwards {pattern} to {target} ({by})"),
+            );
+        }
+        let carried: Vec<(&Carrier, Glob, String)> = self
+            .carriers
+            .iter()
+            .map(|c| {
+                let (g, label) = forward::takes(&c.paths, route, shown);
+                let label = match &c.method {
+                    Some(m) => format!("{m} {label}"),
+                    None => label,
+                };
+                (
+                    c,
+                    forward::both(g, forward::method_glob(c.method.as_deref(), method)),
+                    label,
+                )
+            })
+            .filter(|(_, g, _)| *g != Glob::None)
+            .collect();
+        if let Some((c, _, label)) = carried.iter().find(|(c, g, _)| {
+            *g == Glob::Every
+                && c.from.is_none()
+                && (c.rewrites.is_none() || c.paths == Paths::Every)
+        }) {
+            return (
+                Exposure::Public,
+                format!("{} forwards {label} to {target}{} ({by})", c.shown, c.notes),
             );
         }
         if let Some(why) = &self.unknown {
@@ -790,10 +1120,38 @@ impl Tied {
                 ),
             );
         }
+        if let Some((c, g, label)) = carried.first() {
+            let why = match (&c.from, g) {
+                (Some(from), _) => format!(
+                    "{} forwards {label} to {target}, and whether it takes requests from outside is not known: {from}",
+                    c.shown
+                ),
+                (None, Glob::Every) => format!(
+                    "{} forwards {label} to {target}, and the path the application sees may not be that one: {}",
+                    c.shown,
+                    c.rewrites.as_deref().unwrap_or_default()
+                ),
+                (None, _) => format!(
+                    "{} may forward {shown} to {target}: {label} takes some of its paths or methods",
+                    c.shown
+                ),
+            };
+            return (Exposure::Unknown, format!("{why} ({by})"));
+        }
+        let inside = if self.inside.is_empty() {
+            String::new()
+        } else {
+            format!("; {}", self.inside.join("; "))
+        };
         (
             Exposure::Internal,
             format!(
-                "no listener rule in the repository's Terraform forwards {shown} to {target} ({by}); what else Terraform opens to it is not read, nor whether an application another rule publishes relays requests to it"
+                "{} in the repository's Terraform forwards {shown} to {target} ({by}){inside}; what else Terraform opens to it is not read (security groups, IAM, CloudFront behaviours, Azure), nor whether an application another rule publishes relays requests to it",
+                if self.groups_only {
+                    "no listener rule"
+                } else {
+                    "nothing Drift reads"
+                }
             ),
         )
     }
@@ -852,22 +1210,25 @@ mod tests {
             .next()
             .and_then(|c| c.blocks("path_pattern").next())
             .unwrap();
-        assert_eq!(
-            pattern.attr("values").and_then(literals),
-            Some(vec!["/v1/a*".to_string(), "/v1/b".to_string()])
+        let values = pattern.attr("values").unwrap();
+        assert!(
+            values.contains("\"/v1/a*\",") && values.contains("\"/v1/b\""),
+            "{values}"
+        );
+        assert!(
+            !values.contains("first") && !values.contains("and"),
+            "{values}"
         );
         assert_eq!(rule.attr("policy"), Some("<<heredoc>>"));
         assert_eq!(parse("resource \"a\" \"b\" {\n"), None);
-        assert_eq!(literals("[var.pattern]"), None);
-        assert_eq!(literals("[\"/v1/${var.name}/*\"]"), None);
-        assert_eq!(literals("var.patterns"), None);
-        assert_eq!(group_of("aws_lb_target_group.api.id"), Some("api".into()));
         assert_eq!(
-            group_of("aws_lb_target_group.api[0].arn"),
-            Some("api".into())
+            join_rel("infra/live", "../modules/api"),
+            Some("infra/modules/api".into())
         );
-        assert_eq!(group_of("var.target_group_arn"), None);
-        assert_eq!(group_of("module.lb.target_groups[\"api\"].arn"), None);
-        assert_eq!(group_of("aws_lb_target_group.api.name"), None);
+        assert_eq!(join_rel("", "../x"), None);
+        assert_eq!(
+            input_keys("{ name = \"api\" tags = { a = 1 } paths = [\"/x\"] }"),
+            ["name", "tags", "paths"]
+        );
     }
 }

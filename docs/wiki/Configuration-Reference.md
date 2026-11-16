@@ -68,7 +68,7 @@ Where entry points are reachable from, for `drift security`, `drift card`, the p
 | `security.internal` | list of directories | `[]` | Entry points under these directories are reachable only from inside the deployment (behind a gateway, a private network, a job runner). Reported as `internal`, with the setting as the source (`internal` in JSON too). |
 | `security.public` | list of directories | `[]` | Entry points under these directories are reachable from the internet. Reported as internet-facing in text and `public` in JSON, with the setting as the source. |
 | `security.not_deployed` | list of files or directories | `[]` | Deployment descriptions that are in the repository and deploy nothing (a compose file for end-to-end tests, Terraform kept for reference). Drift leaves them out of the boundary, and says so. |
-| `security.terraform` | list of `{target, code}` | `[]` | A person's statement that a Terraform target group forwards to the code in `code`, and that requests from outside reach that code, in what this Terraform deploys, only through load-balancer rules that forward to that target. Drift then reads the listener rules of the repository's Terraform for the routes of `code`. |
+| `security.terraform` | list of `{target, code}` | `[]` | A person's statement that a Terraform target (a target group, a Lambda function, an API Gateway integration, a GCP backend service, a Cloud Run service) runs the code in `code`, and that requests from outside reach that code, in what this Terraform deploys, only through what forwards to that target. Drift then reads what forwards in the repository's Terraform for the routes of `code`. |
 | `security.kubernetes` | list of `{workload, code}` (and `container`) | `[]` | A person's statement that a workload of the Kubernetes manifests runs the code in `code`, for a workload whose image the repository does not plainly build. Drift then reads the paths from outside that reach it for the routes of `code`. |
 
 Between `internal` and `public`, the longest matching directory wins.
@@ -77,7 +77,7 @@ Each `security.terraform` entry has exactly two keys:
 
 | Key | Meaning |
 | --- | --- |
-| `target` | The directory of the Terraform module, repo-relative, optionally followed by `#aws_lb_target_group.<name>` to name one target group. Without a name, every target group of the module. A name must be letters, digits, `_` and `-`. |
+| `target` | The directory of the Terraform module, repo-relative, optionally followed by `#<kind>.<name>` to name one target: the kind one of `aws_lb_target_group`, `aws_alb_target_group`, `aws_lambda_function`, `aws_lambda_alias`, `aws_api_gateway_integration`, `aws_apigatewayv2_integration`, `google_compute_backend_service`, `google_compute_region_backend_service`, `google_cloud_run_service`, `google_cloud_run_v2_service`. Without a name, every target of those kinds in the module. A name must be letters, digits, `_` and `-`. |
 | `code` | The code directory, repo-relative; `.` is the whole repository. |
 
 An entry with another key, a missing key, or a `#` that names something other than an `aws_lb_target_group` is a warning and that entry is ignored. An unknown key under `security` is a warning.

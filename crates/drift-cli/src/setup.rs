@@ -360,6 +360,7 @@ enum Write {
     NotDeployed(String),
     Internal(String),
     Public(String),
+    /// `security.terraform`: the target `group` (`<kind>.<name>`) of the module runs `code`.
     Tie {
         module: String,
         group: String,
@@ -411,7 +412,7 @@ impl Write {
                 code,
             } => format!(
                 "- {{target: {}, code: {}}}",
-                quoted(&format!("{module}#aws_lb_target_group.{group}")),
+                quoted(&format!("{module}#{group}")),
                 quoted(code)
             ),
             Write::Platform { file, code } => {
@@ -443,7 +444,7 @@ impl Write {
                 group,
                 code,
             } => Entry::Item(json!({
-                "target": format!("{module}#aws_lb_target_group.{group}"),
+                "target": format!("{module}#{group}"),
                 "code": code,
             })),
             Write::Platform { file, code } => Entry::Item(json!({
@@ -473,14 +474,16 @@ impl Write {
                 module,
                 group,
                 code,
-            } => cfg
-                .security
-                .terraform
-                .push(drift_mine::policy::TerraformTie {
+            } => cfg.security.terraform.push({
+                let (kind, name) = group.split_once('.').unwrap_or(("", group));
+                drift_mine::policy::TerraformTie {
                     module: module.clone(),
-                    group: Some(group.clone()),
+                    group: Some(name.to_string()),
+                    kind: (!kind.is_empty() && kind != "aws_lb_target_group")
+                        .then(|| kind.to_string()),
                     code: code.clone(),
-                }),
+                }
+            }),
             Write::Platform { file, code } => {
                 cfg.security
                     .platforms
@@ -528,10 +531,7 @@ fn config_text(cfg: &DriftConfig) -> String {
         .iter()
         .map(|t| {
             json!({
-                "target": match &t.group {
-                    Some(g) => format!("{}#aws_lb_target_group.{g}", t.module),
-                    None => t.module.clone(),
-                },
+                "target": t.target(),
                 "code": t.code,
             })
         })
@@ -1443,13 +1443,20 @@ impl<'a> Setup<'a> {
                 },
             )];
             text.push(format!(
-                "Target group `{}` ({}) looks like the one that sends requests to {svc}: {}.",
+                "{} `{}` ({}) looks like the one that sends requests to {svc}: {}.",
+                best.noun(),
                 best.name,
                 best.at,
                 why.join("; ")
             ));
             text.push(format!(
-                "Drift will take your word that only this target group sends requests to {svc}, and will read its rules to tell which routes are reachable from outside."
+                "Drift will take your word that only this {} sends requests to {svc}, and will read {} to tell which routes are reachable from outside.",
+                best.noun().to_lowercase(),
+                if best.kind.ends_with("target_group") {
+                    "its rules"
+                } else {
+                    "what forwards to it"
+                }
             ));
             let mut choices = Vec::new();
             let order: Vec<&drift_mine::terraform::TargetGroup> = ranked
@@ -1464,7 +1471,7 @@ impl<'a> Setup<'a> {
             for (k, g) in order.iter().enumerate() {
                 let write = Write::Tie {
                     module: g.module.clone(),
-                    group: g.name.clone(),
+                    group: g.address(),
                     code: dir.clone(),
                 };
                 // The likely one is counted when it is shown; any other is said once
@@ -1472,7 +1479,7 @@ impl<'a> Setup<'a> {
                 let effect = if k == 0 {
                     String::new()
                 } else {
-                    "Drift reads its rules for this code and says what moved.".to_string()
+                    "Drift reads what forwards to it for this code and says what moved.".to_string()
                 };
                 choices.push(Choice {
                     answer: format!("tie-{}", k + 1),
@@ -3368,6 +3375,7 @@ mod tests {
             port: None,
             health: Some("/health".into()),
             paths: vec!["/v1/*".into()],
+            kind: "aws_lb_target_group".into(),
         };
         let routes = vec!["/health".to_string(), "/v1/items".to_string()];
         let (score, carried, why) = matches(&g, "services/storage", &routes);
