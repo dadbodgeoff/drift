@@ -455,8 +455,9 @@ const LISTENER_ATTRIBUTES: &[&str] = &[
     "default_action",
 ];
 
-/// What a file of Terraform as JSON may hold that forwards requests: it is not read.
-const JSON_WORDS: &[&str] = &[
+/// Parts of the provider resource types that forward requests: a file of Terraform as
+/// JSON that names one is said, since it is not read.
+const JSON_FORWARDING_KINDS: &[&str] = &[
     "lb_listener",
     "lb_target_group",
     "api_gateway",
@@ -570,7 +571,7 @@ fn modules(root: &Path, files: &[String], open: &mut Vec<String>) -> BTreeMap<St
         };
         let dir = file.rsplit_once('/').map_or("", |(d, _)| d).to_string();
         if file.ends_with(".tf.json") {
-            if JSON_WORDS.iter().any(|w| text.contains(w)) {
+            if JSON_FORWARDING_KINDS.iter().any(|w| text.contains(w)) {
                 open.push(format!("{file} is Terraform as JSON, which is not read"));
             }
             continue;
