@@ -817,6 +817,8 @@ const PRACTICES_HELP: &str = "Examples:
   drift practices promote --list           the practices that may be made the rule for new code
   drift practices promote P-0f0acb --in app/api
                                            make one a convention (`drift practices promote --help`)
+  drift practices promote --concern authn --any-enforcing --in app/api
+                                           any way Drift reads as turning an unsigned caller away
 
 Facts, not rules: nothing here is enforced until a person promotes a practice
 (`drift practices promote`). authn, authz, validation, errors and api make the recipe;
@@ -2153,6 +2155,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let scope =
                 practices::checked_scope(&facts, concern.as_deref(), package.as_deref(), rel)?;
             let mut r = practices::report_with(root, &facts, scope, *units)?;
+            // A view of one file reads only its units: an offer to promote said there
+            // must hold for the whole place, as `drift practices promote` reads it.
+            if r.scope.path.is_some() {
+                let full = practices::report_units_kept(root, &facts, None);
+                promote::keep_offers_that_qualify(&full, &mut r);
+            }
             for w in practices::config_warnings(root, &facts) {
                 eprintln!("drift practices: {w}");
             }
