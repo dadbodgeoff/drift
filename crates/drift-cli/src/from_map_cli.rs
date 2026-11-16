@@ -1239,7 +1239,11 @@ pub fn accept_ids(
             policy
                 .conventions
                 .iter()
-                .any(|c| &c.id == *id && undecided(c) && c.rule.is_practice())
+                .any(|c| {
+                    &c.id == *id
+                        && undecided(c)
+                        && (c.rule.is_practice() || c.from_map.as_deref() == Some(DECLARED))
+                })
         })
         .cloned()
         .collect();
@@ -1276,6 +1280,15 @@ pub fn accept_ids(
         let Some(conv) = next.conventions.iter().find(|c| &c.id == id).cloned() else {
             continue;
         };
+        // A declared rule is accepted as the interactive step accepts it, so the files
+        // that break it today are recorded and not reported as new.
+        if conv.from_map.as_deref() == Some(DECLARED) {
+            let n = accept_declared(&repo, &mut next, &mut lock, id);
+            out.push(format!(
+                "{id}: declared by the repository, accepted advising ({n} file(s) that break it today recorded in {LOCK_FILE})"
+            ));
+            continue;
+        }
         if let Some(x) = covered_by(&report, &next, &conv) {
             covered.push(format!("{} (covered by {x})", sanitize(id, 40)));
             continue;

@@ -85,15 +85,17 @@ const BIOME: &str = r#"{
 }
 "#;
 
-/// `core/` (six files importing each other) below `ui/` (three files importing
-/// `core/`), with `biome` as `biome.json`.
+/// `core/` (sixteen files importing each other) below `ui/` (three files importing
+/// `core/`), with `biome` as `biome.json`. Sixteen: a role of fewer than 15 members is
+/// in the suggestion tier, where the show policy does not show the layering family, so
+/// the proposal would be held ("not shown") rather than offered.
 fn layered(biome: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     let r = dir.path();
     write(r, "package.json", "{ \"name\": \"demo\" }");
-    let names = ["alpha", "beta", "gamma", "delta", "omega", "sigma"];
+    let names: Vec<String> = (0..16).map(|i| format!("part{i}")).collect();
     for (i, n) in names.iter().enumerate() {
-        let next = names[(i + 1) % names.len()];
+        let next = &names[(i + 1) % names.len()];
         write(
             r,
             &format!("core/{n}.ts"),
@@ -104,7 +106,7 @@ fn layered(biome: &str) -> tempfile::TempDir {
         write(
             r,
             &format!("ui/{n}.ts"),
-            &format!("import {{ alpha }} from \"../core/alpha\";\n\nexport function {n}() {{\n  return alpha();\n}}\n"),
+            &format!("import {{ part0 }} from \"../core/part0\";\n\nexport function {n}() {{\n  return part0();\n}}\n"),
         );
     }
     write(r, "biome.json", biome);
@@ -125,7 +127,7 @@ fn init_proposes_what_the_lint_configuration_declares() {
     assert_eq!(proposed.len(), 1, "{entries:#?}");
     let p = proposed[0];
     assert_eq!(p["convention"]["rule"]["signal"], "import:ui", "{p:#}");
-    assert_eq!(p["follows"], 6, "{p:#}");
+    assert_eq!(p["follows"], 16, "{p:#}");
     assert_eq!(p["differ"], 0, "{p:#}");
     assert_eq!(p["unknown"], 0, "{p:#}");
     assert_eq!(p["declared"]["configs"][0], "biome.json", "{p:#}");
@@ -148,6 +150,53 @@ fn init_proposes_what_the_lint_configuration_declares() {
         !lock.lines().any(|l| l.starts_with(&format!("{id} "))),
         "nothing is recorded until a person accepts it:\n{lock}"
     );
+}
+
+/// Pins that `drift review --accept <id>` of a declared rule records the files that
+/// break it today in `drift.lock`, as the interactive accept does, so `drift check`
+/// reports none of them as a new violation. Before, only the interactive accept
+/// recorded them, and the non-interactive one reported today's breaks as new.
+#[test]
+fn accepting_a_declared_rule_records_its_breaks() {
+    let dir = layered(BIOME);
+    let r = dir.path();
+    write(
+        r,
+        "core/bad.ts",
+        "import { home } from \"../ui/home\";\n\nexport function bad() {\n  return home();\n}\n",
+    );
+    drift(r, &["--no-cache", "init"]);
+    let policy = ConventionsFile::load(r).unwrap().expect("a policy");
+    let id = policy
+        .conventions
+        .iter()
+        .find(|c| c.from_map.as_deref() == Some("declared"))
+        .unwrap_or_else(|| panic!("no declared proposal: {:?}", policy.conventions))
+        .id
+        .clone();
+    let breaks = policy
+        .conventions
+        .iter()
+        .find(|c| c.id == id)
+        .map(|c| c.evidence.total - c.evidence.holders);
+    assert_eq!(breaks, Some(1), "{:?}", policy.conventions);
+    drift(r, &["--no-cache", "review", "--accept", &id]);
+    let lock = std::fs::read_to_string(r.join("drift.lock")).unwrap_or_default();
+    assert!(
+        lock.lines().any(|l| l.starts_with(&format!("{id} core/bad.ts#"))),
+        "the break existing at acceptance is recorded:\n{lock}"
+    );
+    let out = drift(r, &["--no-cache", "check", "--format", "json"]);
+    let report: Value = serde_json::from_str(&out).unwrap_or_else(|e| panic!("{e}\n{out}"));
+    let new: Vec<&Value> = report["violations"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter(|v| v["id"] == id.as_str() && v["baselined"] != true)
+                .collect()
+        })
+        .unwrap_or_default();
+    assert!(new.is_empty(), "{new:#?}");
 }
 
 /// Pins that a configuration Drift cannot read to the end gives nothing, never a guess:
