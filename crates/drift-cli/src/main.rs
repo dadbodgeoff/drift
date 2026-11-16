@@ -595,7 +595,8 @@ enum Command {
         /// by handler and route, never by line, with the inventory version that
         /// wrote it. Commit it: `drift check` and `--ratchet` report what is found
         /// later and is not in it. Every kind fails `drift check` but
-        /// `unscoped-key`, which advises; with --fail-on, the kinds named fail too
+        /// `unscoped-key`, `workflow-hardening` and `image-hardening`, which advise;
+        /// with --fail-on, the kinds named fail too
         /// (kept when the baseline is written again).
         #[arg(long, conflicts_with_all = ["diff_base", "ratchet"])]
         write_baseline: bool,
@@ -603,7 +604,7 @@ enum Command {
         /// (`.drift/security.lock`), and those of it that are gone, with no commit
         /// to compare with. Exits 1 when a finding was added (with --fail-on, only
         /// for the kinds named: `unguarded-reaching`, `no-guard`, `guard-gap`,
-        /// `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`; without it, the kinds the baseline sets to fail): what the repository has today
+        /// `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `workflow-hardening`, `image-hardening`, `dependency`, `kubernetes`, `leak`, or `any`; without it, the kinds the baseline sets to fail): what the repository has today
         /// is accepted as it is, and nothing more of it comes in unseen.
         #[arg(long, conflicts_with = "diff_base")]
         ratchet: bool,
@@ -2340,6 +2341,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "risky",
                 "whole-row",
                 "workflow",
+                "workflow-hardening",
+                "image-hardening",
                 "dependency",
                 "kubernetes",
                 "leak",
@@ -2366,6 +2369,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             | "unscoped-key"
                             | "whole-row"
                             | "workflow"
+                            | "workflow-hardening"
+                            | "image-hardening"
                             | "dependency"
                             | "kubernetes"
                     )
@@ -2388,6 +2393,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             inv.workflows = drift_mine::workflows::read(root);
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
+            drift_mine::hardening::fill(&mut inv, root);
             // Each shared guard, linked to the convention that says the same (accepted
             // or proposed), when the project has conventions. A policy that cannot be
             // read only loses the links: the inventory is the repository's, not the
@@ -4812,6 +4818,7 @@ fn security_inventory(
     inv.workflows = drift_mine::workflows::read(root);
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
+    drift_mine::hardening::fill(&mut inv, root);
     inv
 }
 
@@ -5010,6 +5017,7 @@ fn security_compare(
             base_inv.workflows = drift_mine::workflows::read(base_root);
             base_inv.dependencies = drift_mine::dependencies::read(base_root);
             base_inv.cluster = drift_mine::kubernetes::read(base_root);
+            drift_mine::hardening::fill(&mut base_inv, base_root);
             baseline_findings(base_root, base_facts, &base_inv).map(|f| (f, base_inv))
         });
         match read {

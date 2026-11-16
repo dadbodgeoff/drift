@@ -56,7 +56,7 @@ What an upgrade can change without touching any of your files is **what `drift c
 
 ## The security baseline
 
-`.drift/security.lock` records the version of the inventory that wrote it (`# inventory: 2` in this build). The version is raised whenever a kind of finding is added, or a detector whose findings a baseline holds (a kind of risky operation). Version 1 is every kind and detector before the stamp; version 2 added `unscoped-key`. A baseline written before the stamp reads as version 1.
+`.drift/security.lock` records the version of the inventory that wrote it (`# inventory: 3` in this build). The version is raised whenever a kind of finding is added, or a detector whose findings a baseline holds (a kind of risky operation). Version 1 is every kind and detector before the stamp; version 2 added `unscoped-key`; version 3 added `workflow-hardening` and `image-hardening`, which advise. A baseline written before the stamp reads as version 1.
 
 After an upgrade, a finding of a kind newer than the baseline's version is not the change's doing: `drift check` and `drift security --ratchet` list it apart, as new in this version of Drift, and it fails nothing until `drift security --write-baseline` records it. So upgrading Drift never fails every check at once. A new kind also starts as advice: `unscoped-key` advises until a person sets it to fail (`drift security --write-baseline --fail-on unscoped-key`).
 

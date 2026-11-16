@@ -43,14 +43,23 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 ///
 /// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
 /// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
-/// and they ship together.)
-pub const INVENTORY_VERSION: u32 = 2;
+/// and they ship together.) 3: `workflow-hardening` and `image-hardening`
+/// ([`crate::hardening`]).
+pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
 const UNSTAMPED: u32 = 1;
 
 /// Kinds of finding added after version 1, with the version that added them.
-const KIND_SINCE: &[(&str, u32)] = &[("unscoped-key", 2)];
+///
+/// `workflow-hardening` and `image-hardening` read files an older Drift read for
+/// other kinds only: a baseline stamped 2 or less holds none of them, so what an
+/// unchanged repository has is new in Drift, not a change's.
+const KIND_SINCE: &[(&str, u32)] = &[
+    ("unscoped-key", 2),
+    ("workflow-hardening", 3),
+    ("image-hardening", 3),
+];
 
 /// Detectors (the kind of a risky operation, as `risky` and `unguarded-reaching`
 /// keys name it) added after version 1, with the version that added them.
@@ -105,7 +114,7 @@ const READ_SINCE: &[(&str, u32)] = &[
 /// Kinds that advise in `drift check` until a person sets them to fail
 /// (`drift security --write-baseline --fail-on <kind>`): new kinds of enforcement
 /// start in advice.
-pub const ADVISE_FIRST: &[&str] = &["unscoped-key"];
+pub const ADVISE_FIRST: &[&str] = &["unscoped-key", "workflow-hardening", "image-hardening"];
 
 /// The kinds of finding a baseline holds, in the order they are reported.
 pub const KINDS: &[(&str, &str)] = &[
@@ -138,6 +147,14 @@ pub const KINDS: &[(&str, &str)] = &[
     (
         "workflow",
         "CI workflow step(s) that run what an outsider wrote",
+    ),
+    (
+        "workflow-hardening",
+        "CI workflow job(s) an outsider can start that state no token permissions or run on a self-hosted runner",
+    ),
+    (
+        "image-hardening",
+        "image(s) built to deploy that run as root or hold a secret in a layer",
     ),
     (
         "dependency",
@@ -284,6 +301,23 @@ pub fn findings(inv: &Inventory, facts: &drift_core::RepoFacts) -> Findings {
             format!("{} in {} job {}: {}", w.kind, w.path, w.job, w.detail),
             &w.path,
             w.line,
+        );
+    }
+    // Keyed as a workflow finding is, under their own kind, so they advise.
+    for w in &inv.workflow_hardening {
+        add(
+            "workflow-hardening",
+            format!("{} in {} job {}: {}", w.kind, w.path, w.job, w.detail),
+            &w.path,
+            w.line,
+        );
+    }
+    for i in &inv.image_hardening {
+        add(
+            "image-hardening",
+            format!("{} in {} for {}: {}", i.kind, i.path, i.built_by, i.detail),
+            &i.path,
+            i.line,
         );
     }
     for d in &inv.dependencies {
