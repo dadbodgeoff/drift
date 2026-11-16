@@ -156,6 +156,17 @@ main branch.
   exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
   and unknown must not rise without a matching fall). For contributors; it is
   not part of the `drift` binary.
+- **Rules from more linter configurations:** `drift census --from-map` and
+  `drift init` now also read the import restrictions of an ESLint flat config's
+  blocks scoped by a literal `files` (and a legacy `.eslintrc.js`'s
+  `overrides`), ruff's `banned-api` and `ban-relative-imports`,
+  flake8-tidy-imports' `banned-modules`, and import-linter contracts. Each is
+  listed with the file and line that declare it (`declared.at` in `--json`); a
+  folder-to-layer restriction Drift can check exactly is proposed (advise, shown
+  to no agent until accepted), and the rest is listed with why (a package
+  outside the repository, a contract that forbids indirect imports too, a block
+  built by code Drift does not read, one a later setting changes). Mining reads
+  none of it.
 
 ### Changed: the files Drift writes
 

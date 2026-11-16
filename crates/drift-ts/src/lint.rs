@@ -23,9 +23,11 @@
 //! enable a rule (`typescript-eslint`'s `recommended`, `plugin:react-hooks/recommended`, `next/core-web-vitals`, Biome's
 //! recommended set) count as setting it to `error`; an explicit setting wins.
 
+mod declared;
+
 use std::collections::{BTreeMap, BTreeSet};
 
-use drift_core::{LintConfig, LintRule, ScopedLintRules};
+use drift_core::{DeclaredLint, LintConfig, LintRule, ScopedLintRules};
 use oxc_allocator::Allocator;
 use oxc_ast::ast::*;
 use oxc_parser::Parser;
@@ -200,7 +202,10 @@ pub fn read_config(
     if is_js {
         let inherits = &mut cfg.inherits;
         let rules = &mut rules;
-        drift_core::stack::with_stack_for(text.len(), || js_config(rel, text, rules, inherits))?;
+        let declared = &mut cfg.declared;
+        drift_core::stack::with_stack_for(text.len(), || {
+            js_config(rel, text, rules, inherits, declared);
+        })?;
     } else {
         let json = parse_jsonc(text);
         if let Some(v) = &json {
@@ -617,13 +622,19 @@ pub fn parse_jsonc(text: &str) -> Option<serde_json::Value> {
 /// A config that costs too much to parse ([`drift_core::speculation`],
 /// [`crate::arena`]) is read as having no rules.
 /// Recurses once per nesting level: runs on a stack that covers `text`.
-fn js_config(rel: &str, text: &str, rules: &mut Rules, inherits: &mut bool) {
+fn js_config(
+    rel: &str,
+    text: &str,
+    rules: &mut Rules,
+    inherits: &mut bool,
+    declared: &mut Vec<DeclaredLint>,
+) {
     let dialect = drift_core::speculation::Dialect::of_path(rel);
     if drift_core::speculation::too_costly(text, dialect) {
         return;
     }
     let _ = crate::arena::with_arena(text.len(), |allocator| {
-        js_config_in(allocator, rel, text, rules, inherits);
+        js_config_in(allocator, rel, text, rules, inherits, declared);
     });
 }
 
@@ -633,6 +644,7 @@ fn js_config_in(
     text: &str,
     rules: &mut Rules,
     inherits: &mut bool,
+    declared: &mut Vec<DeclaredLint>,
 ) {
     let source_type = SourceType::from_path(rel).unwrap_or_else(|_| SourceType::mjs());
     let ret = Parser::new(allocator, text, source_type).parse();
@@ -641,12 +653,14 @@ fn js_config_in(
     }
     let file = rel.rsplit('/').next().unwrap_or(rel);
     let legacy = file.starts_with(".eslintrc");
+    let base = rel.rsplit_once('/').map_or("", |(d, _)| d);
     let mut v = JsConfig {
         rules,
         bindings: BTreeMap::new(),
         consts: BTreeMap::new(),
         root: false,
         visits: 0,
+        listed: declared::Listing::new(text, base, legacy),
     };
     let mut exported: Vec<&Expression> = Vec::new();
     for stmt in &ret.program.body {
@@ -689,6 +703,7 @@ fn js_config_in(
     }
     // Legacy configs cascade from parent directories unless `root: true`.
     *inherits = legacy && !v.root;
+    *declared = v.listed.finish();
 }
 
 /// How deep `config` follows constants, calls and spreads.
@@ -707,6 +722,9 @@ struct JsConfig<'r, 'b, 'a> {
     root: bool,
     /// Expressions visited so far (see [`MAX_CONFIG_VISITS`]).
     visits: usize,
+    /// The import restrictions of every block, scoped ones too, where they are
+    /// written ([`LintConfig::declared`]): never read by mining.
+    listed: declared::Listing,
 }
 
 fn unwrap_ts<'b, 'a>(mut e: &'b Expression<'a>) -> &'b Expression<'a> {
@@ -819,10 +837,26 @@ impl<'b, 'a> JsConfig<'_, 'b, 'a> {
     /// constant naming them or a preset. `scoped`: inside a block limited by `files`.
     fn config(&mut self, e: &'b Expression<'a>, scoped: bool, depth: usize) {
         if depth > MAX_CONFIG_DEPTH || self.visits >= MAX_CONFIG_VISITS {
+            self.listed.unread();
             return;
         }
         self.visits += 1;
-        match unwrap_ts(e) {
+        let e = unwrap_ts(e);
+        if self.listed_kind(e) == Some(false) {
+            self.listed.unread();
+        }
+        let computed = matches!(e, Expression::CallExpression(_)) && !self.transparent_call(e);
+        if computed {
+            self.listed.enter_computed();
+        }
+        self.config_expr(e, scoped, depth);
+        if computed {
+            self.listed.leave_computed();
+        }
+    }
+
+    fn config_expr(&mut self, e: &'b Expression<'a>, scoped: bool, depth: usize) {
+        match e {
             Expression::ArrayExpression(a) => {
                 for el in &a.elements {
                     match el {
@@ -889,6 +923,172 @@ impl<'b, 'a> JsConfig<'_, 'b, 'a> {
 
     /// One config block (`{ files, rules, extends, ... }`).
     fn block(&mut self, o: &'b ObjectExpression<'a>, scoped: bool, depth: usize) {
+        let outer = self.listed.enter_block(o);
+        self.listed_rules(o);
+        if self.listed.legacy()
+            && let Some(p) = find_prop(o, "overrides")
+            && let Expression::ArrayExpression(a) = unwrap_ts(&p.value)
+        {
+            for el in &a.elements {
+                if let Some(Expression::ObjectExpression(entry)) = el.as_expression().map(unwrap_ts)
+                {
+                    let block = self.listed.enter_override(entry);
+                    self.listed_rules(entry);
+                    self.listed.leave(block);
+                }
+            }
+        }
+        self.block_settings(o, scoped, depth);
+        self.listed.leave(outer);
+    }
+
+    /// The import restrictions a block's `rules` sets, recorded where the block applies
+    /// ([`declared::Listing`]), whether or not the block is scoped.
+    fn listed_rules(&mut self, o: &'b ObjectExpression<'a>) {
+        let Some(p) = find_prop(o, "rules") else {
+            return;
+        };
+        let mut value = unwrap_ts(&p.value);
+        if let Expression::Identifier(id) = value
+            && let Some(init) = self.consts.get(id.name.as_str()).copied()
+        {
+            value = unwrap_ts(init);
+        }
+        let Expression::ObjectExpression(r) = value else {
+            self.listed.unread();
+            return;
+        };
+        for p in &r.properties {
+            let ObjectPropertyKind::ObjectProperty(p) = p else {
+                // `...shared` in `rules`: settings Drift does not see.
+                self.listed.unread();
+                continue;
+            };
+            if prop_name(p).as_deref().and_then(eslint_rule) != Some("no-restricted-imports") {
+                continue;
+            }
+            let (level, options) = match &p.value {
+                Expression::ArrayExpression(a) => {
+                    let level = a
+                        .elements
+                        .first()
+                        .and_then(|e| e.as_expression())
+                        .and_then(expr_level);
+                    let mut options = BTreeSet::new();
+                    for el in a.elements.iter().skip(1) {
+                        if let Some(x) = el.as_expression() {
+                            expr_strings(x, &mut options);
+                        }
+                    }
+                    (level, options)
+                }
+                other => (expr_level(other), BTreeSet::new()),
+            };
+            match level {
+                Some(level) => self.listed.set(p.span.start, level, options),
+                None => self.listed.unread(),
+            }
+        }
+    }
+
+    /// Whether `e`, an element of the exported configuration, is one Drift reads
+    /// (`Some(true)`), one it does not (`Some(false)`: a binding imported from another
+    /// file, a plugin's preset, a call that builds blocks), or one decided by what it
+    /// holds (`None`: an array, a block, a constant, a known wrapper).
+    fn listed_kind(&self, e: &Expression) -> Option<bool> {
+        match e {
+            Expression::Identifier(id) => {
+                if self.consts.contains_key(id.name.as_str()) {
+                    return None;
+                }
+                let module = self.bindings.get(id.name.as_str());
+                Some(module.is_some_and(|m| MODULE_PRESETS.iter().any(|(p, _)| p == m)))
+            }
+            Expression::StaticMemberExpression(_) | Expression::ComputedMemberExpression(_) => {
+                Some(self.known_preset(e))
+            }
+            Expression::CallExpression(c) => {
+                if let Expression::StaticMemberExpression(m) = &c.callee
+                    && m.property.name == "extends"
+                {
+                    // FlatCompat's shareable configs: read only when every one is known.
+                    let known = c.arguments.iter().all(|a| match a {
+                        Argument::StringLiteral(s) => {
+                            let n = s.value.display().to_string();
+                            STRING_PRESETS.iter().any(|(p, _)| *p == n)
+                        }
+                        _ => false,
+                    });
+                    return Some(known);
+                }
+                if self.transparent_call(e) {
+                    None
+                } else {
+                    Some(false)
+                }
+            }
+            Expression::ArrayExpression(_) | Expression::ObjectExpression(_) => None,
+            // A shareable config named in `extends`.
+            Expression::StringLiteral(s) => {
+                let n = s.value.display().to_string();
+                Some(STRING_PRESETS.iter().any(|(p, _)| *p == n))
+            }
+            _ => Some(false),
+        }
+    }
+
+    /// A preset of a package whose presets Drift lists, or of `@eslint/js` (whose
+    /// presets set no import restriction).
+    fn known_preset(&self, e: &Expression) -> bool {
+        let mut obj = match e {
+            Expression::StaticMemberExpression(m) => &m.object,
+            Expression::ComputedMemberExpression(m) => &m.object,
+            _ => return false,
+        };
+        if let Expression::StaticMemberExpression(m) = obj
+            && m.property.name == "flat"
+        {
+            obj = &m.object;
+        }
+        let Expression::StaticMemberExpression(m) = obj else {
+            return false;
+        };
+        let Expression::Identifier(id) = &m.object else {
+            return false;
+        };
+        m.property.name == "configs"
+            && self.bindings.get(id.name.as_str()).is_some_and(|module| {
+                module == "@eslint/js" || MEMBER_PRESETS.iter().any(|(p, _, _)| p == module)
+            })
+    }
+
+    /// A call that hands its arguments back as configuration, as its package documents
+    /// it: `defineConfig(...)` and `globalIgnores(...)` of `eslint/config`, and
+    /// `config(...)` of `typescript-eslint`.
+    fn transparent_call(&self, e: &Expression) -> bool {
+        let Expression::CallExpression(c) = e else {
+            return false;
+        };
+        let from = |name: &str, modules: &[&str]| {
+            self.bindings
+                .get(name)
+                .is_some_and(|m| modules.contains(&m.as_str()))
+        };
+        match &c.callee {
+            Expression::Identifier(id) => match id.name.as_str() {
+                n @ ("defineConfig" | "globalIgnores") => from(n, &["eslint/config"]),
+                _ => false,
+            },
+            Expression::StaticMemberExpression(m) => {
+                m.property.name == "config"
+                    && matches!(&m.object, Expression::Identifier(id) if from(id.name.as_str(), &["typescript-eslint"]))
+            }
+            _ => false,
+        }
+    }
+
+    /// The settings of one block for the whole configuration ([`Self::block`]).
+    fn block_settings(&mut self, o: &'b ObjectExpression<'a>, scoped: bool, depth: usize) {
         if find_prop(o, "root")
             .is_some_and(|p| matches!(p.value, Expression::BooleanLiteral(ref b) if b.value))
         {

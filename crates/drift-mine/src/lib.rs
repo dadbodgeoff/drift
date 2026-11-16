@@ -8,6 +8,7 @@ pub mod cochange;
 pub mod compose;
 pub mod context;
 pub mod declared;
+mod declared_lint;
 pub mod dependencies;
 pub mod entries;
 pub mod frameworks;

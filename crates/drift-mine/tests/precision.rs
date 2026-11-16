@@ -98,6 +98,7 @@ fn lint(path: &str, rule: &str, level: &str) -> LintConfig {
             options: vec![],
         }],
         scoped: vec![],
+        declared: vec![],
     }
 }
 

@@ -51,6 +51,7 @@ fn biome(dir: &str, options: &[&str]) -> LintConfig {
                 options,
             }],
         }],
+        declared: vec![],
     }
 }
 

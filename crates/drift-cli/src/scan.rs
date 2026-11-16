@@ -100,7 +100,8 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
                 return Ok(None);
             };
             facts.packages.extend(packages);
-            facts.lint = lint;
+            // The Python scan's own linter configurations stay beside them.
+            facts.lint.extend(lint);
         }
         if !facts.files.is_empty() && suite_matters {
             facts.integration_files.extend(drift_ts::integration_files(
@@ -112,11 +113,13 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
         facts
     } else {
         let packages = drift_py::packages_of(&root, &py);
+        let py_lint = drift_py::lint::lint_of(&root, &py);
         let Some(mut facts) = drift_ts::scan_file_walked(&root, opts, rel, walked)? else {
             return Ok(None);
         };
         if !facts.files.is_empty() {
             facts.packages.extend(packages);
+            facts.lint.extend(py_lint);
         }
         if !facts.files.is_empty() && suite_matters {
             facts.integration_files.extend(drift_py::integration_files(
@@ -162,6 +165,7 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
     into.skipped.extend(other.skipped);
     into.models.extend(other.models);
     into.packages.extend(other.packages);
+    into.lint.extend(other.lint);
     into.context_files.extend(other.context_files);
     into.integration_files.extend(other.integration_files);
     into.generated_clients.extend(other.generated_clients);
