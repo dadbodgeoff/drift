@@ -983,12 +983,11 @@ pub fn render_first_run(r: &PracticesReport) -> String {
     // No more than two of a kind before the others have had their turn: a
     // repository of many packages would list one thing five times.
     let mut seen: std::collections::BTreeMap<u8, usize> = std::collections::BTreeMap::new();
-    let (first, later): (Vec<(u8, String)>, Vec<(u8, String)>) =
-        ranked.into_iter().partition(|(rank, _)| {
-            let n = seen.entry(*rank).or_default();
-            *n += 1;
-            *n <= 2
-        });
+    let (first, later): (Vec<_>, Vec<_>) = ranked.into_iter().partition(|(rank, _)| {
+        let n = seen.entry(*rank).or_default();
+        *n += 1;
+        *n <= 2
+    });
     let findings: Vec<String> = first.into_iter().chain(later).map(|(_, f)| f).collect();
     if !findings.is_empty() {
         if !out.is_empty() {
