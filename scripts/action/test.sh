@@ -12,7 +12,10 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 data="$here/testdata"
-root="$(mktemp -d "${TMPDIR:-/tmp}/drift-action-test.XXXXXX")"
+# macOS sets TMPDIR with a trailing slash. A doubled slash here would differ from the
+# directory a child process reports as its own, which these tests compare.
+tmp="${TMPDIR:-/tmp}"
+root="$(mktemp -d "${tmp%/}/drift-action-test.XXXXXX")"
 trap 'rm -rf "$root"' EXIT
 fakes="$root/fakes"
 mkdir -p "$fakes"
