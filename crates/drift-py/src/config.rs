@@ -274,8 +274,23 @@ impl Linker<'_> {
             return DrfAttrs::Unread(chain.last().cloned().unwrap_or_default());
         }
         for c in &chain {
-            // A class of the repository: its own bases are in the chain.
-            if self.symbol_at(c).is_some() || c == "global#object" {
+            // A class of the repository: its own bases are in the chain. One that
+            // defines a method no HTTP verb names may run code as the view
+            // dispatches (`def dispatch(self, request, *a, **k): for p in
+            // self.permission_classes: ...`), which is not read here: whether it
+            // runs them is not known (review R5, row 8). A guard Drift did not read
+            // is never read as no guard.
+            if let Some((_, sym)) = self.symbol_at(c) {
+                if sym
+                    .members
+                    .iter()
+                    .any(|m| !HTTP_VERBS.contains(&m.name.as_str()))
+                {
+                    return DrfAttrs::Unread(c.clone());
+                }
+                continue;
+            }
+            if c == "global#object" {
                 continue;
             }
             let framework = c

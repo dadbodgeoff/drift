@@ -955,13 +955,20 @@ fn route_converters(route: &str) -> Vec<(String, String)> {
 }
 
 /// A route converter that parses its segment rather than taking any text of it:
-/// every one but the converters whose pattern is any text of a segment or of the
-/// rest of the path (Django's `str` and `path`, Flask's `string` and `path`,
-/// Starlette's `str` and `path`), a converter's arguments aside (`string(length=2)`
-/// still takes any text).
-fn converter_parses(conv: &str) -> bool {
+/// one the framework itself defines with a pattern that a value can fail (Django's
+/// `int`, `slug` and `uuid`; Werkzeug's `int`, `float`, `uuid` and `any`), a
+/// converter's arguments aside (`int(min=1)`). The framework's own definitions, a
+/// closed set: a converter the repository registers (`register_converter(Hex,
+/// "hex")`, whose pattern may be `.+`) is code this does not read, and is not said
+/// to parse (review R5, row 7). Before, every converter but `str`, `string` and
+/// `path` was.
+fn converter_parses(adapter: &str, conv: &str) -> bool {
     let name = conv.split('(').next().unwrap_or_default().trim();
-    !name.is_empty() && !matches!(name, "str" | "string" | "path")
+    match adapter {
+        "django" | "drf" => matches!(name, "int" | "slug" | "uuid"),
+        "flask" | "flask_restx" => matches!(name, "int" | "float" | "uuid" | "any"),
+        _ => false,
+    }
 }
 
 impl<'r> Linker<'r> {
@@ -1008,6 +1015,11 @@ impl<'r> Linker<'r> {
     /// registrations elsewhere give its symbols, its consumers, and what a call of a
     /// class built by `__new__` binds, which any file may make (`by_new`: some class
     /// of the repository is one).
+    ///
+    /// Not asked by the scan any more: it links every file again (review R5, row 1:
+    /// a reading made since that this test did not know reached what mining reads).
+    /// A test of it is a list of the readings made since, which the next one is
+    /// missing from.
     pub fn links_differently(&self, measured: &Self, fi: usize, by_new: bool) -> bool {
         let rel = self.module_of(fi);
         by_new
@@ -5510,7 +5522,7 @@ impl<'r> Linker<'r> {
                 "fastapi" => *typed,
                 "django" | "drf" | "flask" | "flask_restx" => converters
                     .iter()
-                    .any(|(n, conv)| n == name && converter_parses(conv)),
+                    .any(|(n, conv)| n == name && converter_parses(&e.adapter, conv)),
                 _ => false,
             })
         })

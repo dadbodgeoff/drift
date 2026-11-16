@@ -304,24 +304,18 @@ fn scan_inner(
     // Mining's input is held at the listings of the last measured build: where the
     // ones made since change a file, the file is what mining reads, and keeps what
     // `drift security` and the practice map read beside it ([`drift_core::Listed`]).
-    // Only the files the second link can read differently are linked again; kinds
-    // are a matter of the whole repository, and are classified for each reading.
+    // Every file is linked again: what mining reads is the second link's, never the
+    // first link's taken where a test said the two agree. A test of which files
+    // may differ has to know every reading made since, and one it did not know
+    // reached mining (review R5, row 1); the second link knows them all, because
+    // each asks `Linker::since_measured`. Kinds are a matter of the whole
+    // repository, and are classified for each reading.
     let facts = match measured {
         None => classified(linked),
         Some(measured) => {
-            let by_new = p
-                .files
-                .iter()
-                .any(|f| f.raw.symbols.iter().any(|s| s.built_by_new));
             let held: Vec<FileFacts> = (0..p.files.len())
                 .into_par_iter()
-                .map(|i| {
-                    if linker.links_differently(&measured, i, by_new) {
-                        measured.link(i, packages[i].clone())
-                    } else {
-                        linked[i].clone()
-                    }
-                })
+                .map(|i| measured.link(i, packages[i].clone()))
                 .collect();
             // The two readings are classified side by side.
             let (mut held, full) = rayon::join(|| classified(held), || classified(linked));

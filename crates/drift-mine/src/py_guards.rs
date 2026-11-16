@@ -74,6 +74,13 @@ pub enum Position {
     /// A call in a body: it refuses only by raising (what it hands back is the
     /// caller's to return or to drop: [`crate::security::hand_back`]).
     Call,
+    /// What stands around the Django admin's one entry point (`AdminSite.admin_view`
+    /// lets in whom the site's `has_permission` answers yes for, which a site of the
+    /// repository may answer otherwise, and the entry also serves the site's own
+    /// sign-in page to anyone): nothing there is read, so each is unknown, never
+    /// "no guard". Decided by the entry's adapter, not by a name of what stands
+    /// there (review R5, row 9).
+    Admin,
 }
 
 impl Position {
@@ -90,8 +97,8 @@ impl Position {
             // view is: bare, by its own entry.
             WrapKind::Call if matches!(adapter, "django" | "drf") => Some(Position::Decorator),
             // The admin's one entry point: `AdminSite.admin_view` wraps its views as
-            // a decorator does, and what the site lets in is read by its entry.
-            WrapKind::Call if adapter == "django_admin" => Some(Position::Decorator),
+            // a decorator does, and what the site lets in is not read.
+            WrapKind::Call if adapter == "django_admin" => Some(Position::Admin),
             // A base, a setting: read where they are.
             _ => None,
         }
@@ -314,6 +321,9 @@ fn read_at(
     holders: &[&Symbol],
     authz: bool,
 ) -> Verdict {
+    if at == Position::Admin {
+        return UNCLASSIFIED;
+    }
     let w = crate::mine::norm_ref(wrapper);
     // `cache_page(60)(view)` in a URLconf is written `...cache_page()`: the callee
     // called, its arguments where the facts hold them.
@@ -1488,12 +1498,6 @@ const FRAMEWORKS: &[(&str, &[&str])] = &[
             "contrib.auth.mixins",
             "contrib.auth.middleware",
             "contrib.admin.views.decorators",
-            // `AdminSite`: its `admin_view` lets in whom the site's `has_permission`
-            // answers yes for (Django's: an active staff user), which a site of the
-            // repository may answer otherwise, and the one admin entry point also
-            // serves the site's own sign-in page to anyone. No entry: unknown, never
-            // "no guard".
-            "contrib.admin.sites",
         ],
     ),
     (
@@ -2067,19 +2071,23 @@ mod tests {
     }
 
     /// S3: the Django admin's one entry point is wrapped in `AdminSite.admin_view`,
-    /// which lets in only staff that signed in. The list holds no entry for it, so
-    /// its reading is unknown, never "no guard" (pygoat `pygoat/urls.py` `/admin`).
+    /// which lets in only staff that signed in. What stands there is read at the
+    /// admin's own position, unknown, never "no guard" (pygoat `pygoat/urls.py`
+    /// `/admin`); no list of package paths says so (review R5, row 9).
     #[test]
     fn the_admin_view_is_read_and_unknown_not_nothing() {
         assert_eq!(
             Position::of(WrapKind::Call, "django_admin"),
-            Some(Position::Decorator)
+            Some(Position::Admin)
         );
+        let repo = drift_core::RepoFacts::default();
+        let ctx = RepoContext::new(&repo, &[]);
         assert_eq!(
-            lib(
-                Position::Decorator,
+            classify(
+                &ctx,
+                Position::Admin,
                 "pkg:django#contrib.admin.sites.AdminSite.admin_view",
-                ""
+                &[]
             ),
             UNCLASSIFIED
         );

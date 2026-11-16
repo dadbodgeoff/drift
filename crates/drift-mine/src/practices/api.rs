@@ -112,10 +112,12 @@ impl Concern for Api {
 /// what the handler returns by it (`-> Message`). A model: a validation library's
 /// class, or a class of the repository (FastAPI takes any class it is given as a
 /// model, as the validation concern reads a FastAPI input model) that is no response
-/// class: neither it nor a base is named as the lowering names a response class
-/// (`...Response`, which FastAPI sends as it is), and every base is read. Any other
-/// annotation (`-> dict`, a package's class, a base not read) proves nothing: no
-/// model, as before.
+/// class: no base is a package's class that is no validation library's (Starlette's
+/// and FastAPI's `Response` and what extends it, which FastAPI sends as it is), and
+/// every base is read. Decided by ancestry, never by a class's name: a pydantic
+/// `UserResponse(BaseModel)` is a model (review R5, row 10). Any other annotation
+/// (`-> dict`, a package's class, a base not read) proves nothing: no model, as
+/// before.
 fn annotated_model(cx: &Cx<'_>, adapter: &str, s: &drift_core::Symbol) -> bool {
     if adapter != "fastapi"
         || s.returns_type.is_empty()
@@ -138,17 +140,10 @@ fn annotated_model(cx: &Cx<'_>, adapter: &str, s: &drift_core::Symbol) -> bool {
     {
         return false;
     }
-    let response = |c: &str| {
-        crate::mine::norm_ref(c)
-            .rsplit(['#', '.'])
-            .next()
-            .is_some_and(|n| n.ends_with("Response"))
-    };
     let ancestors = ctx.ancestors(&t);
-    !response(&t)
-        && !ancestors
-            .iter()
-            .any(|a| response(a) || a.starts_with("unresolved:"))
+    !ancestors.iter().any(|a| {
+        a.starts_with("unresolved:") || (common::external(a) && validation_library(a).is_none())
+    })
 }
 
 /// The handler returns a value that is no function, and is a route of a router
