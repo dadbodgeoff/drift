@@ -94,8 +94,12 @@ fn what_is_there_is_accepted_and_what_is_added_fails() {
         "{lock}"
     );
     // A route that hands back who calls and touches nothing else checks nothing,
-    // and has nothing to check.
-    assert!(!lock.contains("no-authorization"), "{lock}");
+    // and has nothing to check. (The baseline's `# fail:` stamp, S5, names every kind
+    // that fails, `no-authorization` among them: only finding lines are looked at.)
+    assert!(
+        !lock.lines().any(|l| l.starts_with("no-authorization\t")),
+        "{lock}"
+    );
 
     // Nothing added: exit 0, also after the lines move.
     write(root, &format!("\n\n\n{HEAD}{BEFORE}"));

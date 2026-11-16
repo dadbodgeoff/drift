@@ -7714,6 +7714,17 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             left_out.insert(dir);
             continue;
         }
+        // A client file's server value and the env reads are listed for every
+        // production file, reached or not, as before files nothing reaches were set
+        // apart: setting a file apart must not drop a leak it holds.
+        for l in &f.client_leaks {
+            leaks.entry(l).or_default().push(&f.path);
+        }
+        for s in &f.symbols {
+            for r in &s.reads {
+                env.entry(r.clone()).or_default().insert(f.path.clone());
+            }
+        }
         // Nothing Drift read reaches it: what it holds is listed apart.
         if unreached.contains(&f.path) {
             let mut sinks: Vec<String> = f
@@ -7731,9 +7742,6 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             });
             continue;
         }
-        for l in &f.client_leaks {
-            leaks.entry(l).or_default().push(&f.path);
-        }
         for s in &f.symbols {
             for k in &s.sinks {
                 inv.sinks.push(SinkUse {
@@ -7743,9 +7751,6 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                     line: s.line,
                     fed: sink_fed(s, k),
                 });
-            }
-            for r in &s.reads {
-                env.entry(r.clone()).or_default().insert(f.path.clone());
             }
         }
         for e in &f.entry_points {

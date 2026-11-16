@@ -150,6 +150,13 @@ fn repo(older_reading: bool) -> tempfile::TempDir {
         let body = if i < 38 { GUARDED } else { UNGUARDED };
         write(r, &format!("app/api/r{i}/route.ts"), body);
     }
+    // Functions outside the routes, so `withAuth` is measured as rarer elsewhere (the
+    // miner's lift gate): with the routes alone no convention is mined, the lock holds
+    // no violation and there is nothing for an upgrade to read differently.
+    for i in 0..30 {
+        let body = format!("export function h{i}() {{\n  return {i};\n}}\n");
+        write(r, &format!("lib/h{i:02}.ts"), &body);
+    }
     write(r, ".gitignore", ".drift/cache/\n");
     let (code, out, err) = drift(r, &["init"]);
     assert_eq!(code, 0, "{out}{err}");

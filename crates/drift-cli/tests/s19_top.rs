@@ -115,16 +115,20 @@ fn top_ranks_what_the_request_reaches_and_counts_the_rest() {
     let r = dir.path();
     let (code, out, err) = drift(r, &["security", "--top"]);
     assert_eq!(code, 0, "{err}");
+    // F8 (`Caller::Unread`): each route hands a value to a call the facts do not record
+    // (`res.json`, `col.find`), so the basis lists what was not read on the way and the
+    // caller is "unless something Drift did not read turns them away", ranked as before
+    // among these (no route here has a guard Drift read).
     let one = out
         .lines()
         .position(|l| {
-            l.starts_with("  1. A caller Drift found no guard for can send a value that is written into a MongoDB $where expression (nosql_injection): GET /allocations/:id (server.ts:")
+            l.starts_with("  1. A caller, unless something Drift did not read turns them away, can send a value that is written into a MongoDB $where expression (nosql_injection): GET /allocations/:id (server.ts:")
         })
         .unwrap_or_else(|| panic!("{out}"));
     let two = out
         .lines()
         .position(|l| {
-            l.starts_with("  2. A caller Drift found no guard for can send a value that becomes part of the address of a request the server makes (dynamic_fetch): POST /b (server.ts:")
+            l.starts_with("  2. A caller, unless something Drift did not read turns them away, can send a value that becomes part of the address of a request the server makes (dynamic_fetch): POST /b (server.ts:")
         })
         .unwrap_or_else(|| panic!("{out}"));
     assert!(one < two, "{out}");
@@ -162,7 +166,7 @@ fn the_first_run_shows_at_most_three_under_the_inventory_heading() {
     let (code, out, err) = drift(r, &["init"]);
     assert_eq!(code, 0, "{err}");
     assert!(
-        out.contains("\nFrom the security inventory (what Drift read; not conventions, and nothing here is checked)\n  1. A caller Drift found no guard for can send a value that is written into a MongoDB $where expression (nosql_injection)"),
+        out.contains("\nFrom the security inventory (what Drift read; not conventions, and nothing here is checked)\n  1. A caller, unless something Drift did not read turns them away, can send a value that is written into a MongoDB $where expression (nosql_injection)"),
         "{out}"
     );
     assert!(

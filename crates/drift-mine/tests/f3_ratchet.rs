@@ -93,8 +93,10 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
             1,
             "{text}"
         );
+        // Rows pass through `report::sanitize`, which writes `>` as `›` (as before
+        // this build), so the key's arrow prints as `-›`.
         assert!(
-            text.contains("  server.ts#GET /s GET /s -> sql_string_interpolation  (server.ts:9)\n"),
+            text.contains("  server.ts#GET /s GET /s -› sql_string_interpolation  (server.ts:9)\n"),
             "{text}"
         );
     }
