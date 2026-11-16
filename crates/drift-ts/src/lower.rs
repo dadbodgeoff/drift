@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 86;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -868,6 +868,11 @@ pub struct RawFile {
     /// ([`drift_core::Listed::rewrites`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rewrites: Vec<drift_core::NextRewrite>,
+    /// What a SvelteKit `hooks.server` `handle` or a Nitro server middleware file
+    /// runs before the routes ([`serverhooks`]): the listed reading only, since the
+    /// measured build did not read it.
+    #[serde(default, skip_serializing_if = "serverhooks::RawServerHooks::is_empty")]
+    pub server_hooks: serverhooks::RawServerHooks,
     /// Top-level one-line environment helpers: functions whose body only returns a
     /// read of `process.env[param]` (`const env = (k) => process.env[k] ?? ""`), as
     /// (local name, parameter index).
@@ -1105,6 +1110,8 @@ pub(crate) mod registries;
 pub(crate) mod routes;
 #[path = "rows.rs"]
 mod rows;
+#[path = "serverhooks.rs"]
+pub mod serverhooks;
 #[path = "signals.rs"]
 pub(crate) mod signals;
 
@@ -1218,9 +1225,13 @@ fn lower_semantic(
     let mut l = Lowerer::new(semantic.scoping(), text);
     l.typescript = source_type.is_typescript();
     l.test_file = is_test_file(rel_path);
+    l.svelte_hooks = !l.test_file && serverhooks::svelte_hooks_file(rel_path);
     l.out.parse_ok = parse_ok;
     l.member_writes.visit_program(program);
     l.lower_program(program);
+    if !l.test_file {
+        l.lower_server_hooks(program, rel_path);
+    }
     if rel_path
         .rsplit('/')
         .next()
@@ -1470,8 +1481,15 @@ struct Lowerer<'s> {
     /// (`private readonly logger = new Logger(Svc.name)`): the receiver of a log call
     /// through `this.logger`. Read for log calls only.
     this_news: std::cell::RefCell<BTreeMap<String, RawRef>>,
+    /// Path tests a view of a server hook is lowered under, by where the test
+    /// starts and ends, with the value each is taken to have ([`serverhooks`]): a branch
+    /// they decide is read as taken or not, for the routes the view stands before.
+    assume: std::cell::RefCell<Vec<(u32, u32, bool)>>,
     /// The file is a test ([`is_test_file`]): it records the requests its tests make.
     test_file: bool,
+    /// The file is SvelteKit's `hooks.server` ([`serverhooks`]): a hook's `resolve`
+    /// is its continuation.
+    svelte_hooks: bool,
     /// What the file's bindings hold that an SQL sink reads through a name
     /// ([`signals::SqlLocals`]).
     sql: signals::SqlLocals,
@@ -2356,7 +2374,9 @@ impl<'s> Lowerer<'s> {
             module_calls: BTreeMap::new(),
             member_writes: MemberWrites::default(),
             this_news: std::cell::RefCell::new(BTreeMap::new()),
+            assume: std::cell::RefCell::new(Vec::new()),
             test_file: false,
+            svelte_hooks: false,
             sql: signals::SqlLocals::default(),
             closure_routers: BTreeSet::new(),
             local_refs: HashMap::new(),
@@ -2763,6 +2783,10 @@ impl<'s> Lowerer<'s> {
                         // is under it.
                         if let Some(base) = routes::base_path(init) {
                             self.base_paths.insert(id.name.to_string(), base);
+                        } else if adapter == "koa"
+                            && let Some(base) = routes::koa_prefix(init)
+                        {
+                            self.base_paths.insert(id.name.to_string(), base);
                         }
                     }
                     // Hono: `const route = createRoute({ method, path, middleware })` for `.openapi(route, ...)`.
@@ -2784,6 +2808,7 @@ impl<'s> Lowerer<'s> {
                     .insert(routes::DEFAULT_ROUTER.to_string(), adapter);
             }
         }
+        self.koa_prefixes(program);
         self.out.routers = self.express.keys().cloned().collect();
         self.practice_prepass(program);
         self.request_holders = caller::request_holders(program, self.scoping);
@@ -4265,7 +4290,8 @@ impl<'s> Lowerer<'s> {
                     return;
                 };
                 c.fn_depth = 1;
-                c.continuation_names.push(continuation_params(&x.params));
+                let names = c.continuation_names_of(&x.params);
+                c.continuation_names.push(names);
                 c.continuations.push(positional_continuation(&x.params));
                 c.note_params(&x.params);
                 c.visit_function_body(b);
@@ -5758,6 +5784,10 @@ struct Collector<'l, 's> {
     unauth_goes_on: u32,
     /// The check being recorded stands in such a branch.
     check_goes_on: bool,
+    /// A branch of the function's own body that a path test of a server hook's
+    /// view decides was taken, and it leaves: nothing after it runs in that view
+    /// ([`Lowerer::assume`]).
+    assumed_left: bool,
     /// For each list of statements being walked, innermost last, what comes after
     /// the statement being walked: nothing (0), a statement that leaves the
     /// function (1), anything else (2). With [`Collector::followed_saved`] for the
@@ -6151,6 +6181,7 @@ impl<'l, 's> Collector<'l, 's> {
             unauth_notes: 0,
             unauth_goes_on: 0,
             check_goes_on: false,
+            assumed_left: false,
             followed: Vec::new(),
             followed_saved: Vec::new(),
             returned_rejections: BTreeSet::new(),
@@ -9865,7 +9896,20 @@ impl Collector<'_, '_> {
                         words(x)
                     }
                 };
-                for (side, guard) in [(&l.left, other(&l.right)), (&l.right, other(&l.left))] {
+                for (side, guard, beside) in [
+                    (&l.left, other(&l.right), &l.right),
+                    (&l.right, other(&l.left), &l.left),
+                ] {
+                    // An operand a server hook's view takes to hold says nothing
+                    // of the caller, and asks nothing of the other one.
+                    let holds = |x: &Expression| self.assumed_value(x) == Some(!negated);
+                    if holds(side) {
+                        continue;
+                    }
+                    if holds(beside) {
+                        self.condition(side, out, depth + 1, negated);
+                        continue;
+                    }
                     let mut inner = Vec::new();
                     self.condition(side, &mut inner, depth + 1, negated);
                     out.extend(inner.into_iter().map(|(a, b, c, d, g)| {
@@ -10074,6 +10118,15 @@ impl Collector<'_, '_> {
             Expression::NewExpression(n) => (&n.callee, &n.arguments),
             _ => return None,
         };
+        // Koa's `ctx.throw(401)`, SvelteKit's `redirect(303, "/login")`, h3's
+        // `sendRedirect(event, "/login")`: the listed reading only, since the
+        // measured build.
+        if let Expression::CallExpression(c) = e
+            && let Some(o) = self.framework_refusal(c)
+            && !routes::unmeasured_listing()
+        {
+            return Some(o);
+        }
         let first = args.first().and_then(|a| a.as_expression());
         match call_name(callee) {
             Some("notFound") => return Some(CheckOutcome::NotFound),
@@ -11712,6 +11765,15 @@ impl Collector<'_, '_> {
                     && i.alternate
                         .as_ref()
                         .is_some_and(|a| self.leaves_for_good(a))
+            }
+            // Koa's `ctx.throw()` and SvelteKit's `error()` and `redirect()` throw
+            // too: the listed reading only, since the measured build.
+            Statement::ExpressionStatement(x)
+                if matches!(peel(&x.expression), Expression::CallExpression(c)
+                    if self.throws_by_framework(c))
+                    && !routes::unmeasured_listing() =>
+            {
+                true
             }
             // Next.js's `redirect()`, `notFound()`, `unauthorized()` and
             // `forbidden()` throw: nothing after them runs.
@@ -14016,7 +14078,11 @@ fn status_assigned(s: &Statement) -> Option<drift_core::CheckOutcome> {
         let AssignmentTarget::StaticMemberExpression(m) = &a.left else {
             return None;
         };
-        if m.property.name != "statusCode" {
+        // Koa's `ctx.status = 401`: the listed reading only, since the measured
+        // build.
+        if m.property.name != "statusCode"
+            && (m.property.name != "status" || routes::unmeasured_listing())
+        {
             return None;
         }
         literal_status(&a.right).and_then(status_outcome)
@@ -14115,6 +14181,23 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         }
         self.note_data_callbacks(it);
         self.note_left_out(it);
+        // A framework's call that throws where it stands (Koa's `ctx.throw()`,
+        // SvelteKit's `error()`) may refuse the request whatever it is given: the
+        // listed reading only, since the measured build.
+        if self.throws_by_framework(it) && !routes::unmeasured_listing() {
+            self.controls.insert("throw".into());
+            // One that throws a 401, a 403 or a redirect to the sign-in page turns
+            // the caller away, as a thrown error built with one does.
+            use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
+            use drift_core::controls::Rejection;
+            match self.framework_refusal(it) {
+                Some(Unauthenticated | SignInRedirect) => {
+                    self.note(Some(Rejection::Unauthenticated))
+                }
+                Some(drift_core::CheckOutcome::Forbidden) => self.note(Some(Rejection::Forbidden)),
+                _ => {}
+            }
+        }
         let kinds = self.l.call_sinks(it);
         // The call is given a value read off a parameter of the function: an
         // operation fed by it ([`drift_core::controls::SINK_FED`]), a callee it is
@@ -14847,8 +14930,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.own_this += 1;
         let of_value = self.object_fns.remove(&it.span.start);
         self.value_methods.push(of_value);
-        self.continuation_names
-            .push(continuation_params(&it.params));
+        let names = self.continuation_names_of(&it.params);
+        self.continuation_names.push(names);
         self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         walk::walk_function(self, it, flags);
@@ -14892,8 +14975,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
         }
         let outer = self.enter_fn(it.span.start, later);
-        self.continuation_names
-            .push(continuation_params(&it.params));
+        let names = self.continuation_names_of(&it.params);
+        self.continuation_names.push(names);
         self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         if self.fn_depth == 1
@@ -14993,6 +15076,20 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
     }
 
     fn visit_if_statement(&mut self, it: &IfStatement<'a>) {
+        // A path test a view of a server hook is lowered under decides the
+        // branch: it is read as plain statements of the body, or not at all.
+        if let Some(taken) = self.assumed_value(&it.test) {
+            let branch = if taken {
+                Some(&it.consequent)
+            } else {
+                it.alternate.as_ref()
+            };
+            if let Some(b) = branch {
+                self.visit_statement(b);
+                self.assumed_left |= leaves(b);
+            }
+            return;
+        }
         // A test of the function's own body, outside every branch, that leaves
         // where a request header does not match a secret the environment holds
         // (`if (!isAuthorized) return redirect(..)` of `const isAuthorized =
@@ -15254,6 +15351,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             });
             self.visit_statement(st);
             self.followed.pop();
+            // A branch a server hook's view takes left the function: what follows
+            // does not run in that view.
+            if body && std::mem::take(&mut self.assumed_left) {
+                break;
+            }
             if let Statement::IfStatement(i) = st
                 && i.alternate.is_none()
                 && leaves(&i.consequent)
