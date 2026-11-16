@@ -10,6 +10,7 @@ pub mod context;
 pub mod dependencies;
 pub mod entries;
 pub mod frameworks;
+pub mod from_map;
 pub mod funnel;
 pub mod gateway;
 pub mod guard_position;
