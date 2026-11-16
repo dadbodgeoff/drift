@@ -34,6 +34,13 @@ main branch.
 
 ### Added
 
+- **Hooks for other agents, one core:** `drift hook` now has an agent-neutral core with
+  one adapter per agent (`crates/drift-cli/src/hook_agents/`); Claude Code's behaviour is
+  unchanged. `drift hook generic <event>` (experimental) is Drift's own protocol for a
+  wrapper around another agent's hooks: the same rules before an edit, advice after it,
+  refusals of writes to `.drift/`, and end-of-turn block. No other agent's hook format is
+  built in yet; the [Hooks Reference](docs/wiki/Hooks-Reference.md#other-agents) lists
+  them as MCP and AGENTS.md only, and what a maintainer checks before adding one.
 - **Drift Studio packages:** `apps/studio/scripts/package.mjs` builds an AppImage and a
   deb (Linux), a dmg and a zip (macOS arm64 and x64) and an NSIS installer (Windows),
   each carrying its platform's `drift`, which a packaged Studio runs unless Settings

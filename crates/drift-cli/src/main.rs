@@ -8,6 +8,7 @@ mod findings;
 mod from_map_cli;
 mod guided;
 mod history;
+mod hook_agents;
 mod lookup;
 mod mcp;
 mod pr;
@@ -726,8 +727,8 @@ enum Command {
     Hook {
         #[arg(value_enum)]
         agent: Agent,
-        /// Hook event name: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
-        /// or SessionEnd.
+        /// Hook event name, in the agent's words: for claude SessionStart, PreToolUse,
+        /// PostToolUse, UserPromptSubmit, Stop or SessionEnd; for generic see below.
         event: String,
     },
     /// Serve Drift's MCP tools over stdio.
@@ -922,7 +923,15 @@ from the repository root:
   echo '{\"session_id\":\"try\",\"hook_event_name\":\"SessionStart\",\"source\":\"startup\"}' \\
     | drift hook claude SessionStart
 
-Every hook exits 0; its answer, if any, is JSON on stdout.";
+Every hook exits 0; its answer, if any, is JSON on stdout.
+
+`generic` (experimental) is Drift's own protocol, for a wrapper around the hooks of an
+agent Drift has no adapter for: one JSON object in (session_id, cwd, and file_path,
+content, command, kind, pattern, glob, path, source, reason or after_block by event),
+one out (decision allow, deny or block, reason, context, message). No other agent's
+hook format is built in yet: docs/wiki/Hooks-Reference.md lists each and why.
+
+  echo '{\"file_path\":\"src/new.ts\"}' | drift hook generic before-edit";
 
 const MCP_HELP: &str = "Register it with an MCP client, from the repository root:
   claude mcp add drift -- drift mcp                    Claude Code, this machine only
@@ -1036,9 +1045,15 @@ impl GateCandidateArg {
     }
 }
 
+/// The agents `drift hook` speaks to ([`hook_agents`]): one value per adapter.
 #[derive(Clone, Copy, ValueEnum)]
 enum Agent {
+    /// Claude Code: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, SessionEnd.
     Claude,
+    /// Experimental: Drift's own protocol, for a wrapper around another agent's hooks
+    /// (session-start, before-edit, after-edit, before-shell, before-search,
+    /// prompt-submit, end-of-turn, session-end).
+    Generic,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -4214,11 +4229,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 },
             }
         }
-        Command::Hook {
-            agent: Agent::Claude,
-            event,
-        } => {
-            if let Some(out) = agent::handle(event) {
+        Command::Hook { agent, event } => {
+            let adapter: &dyn hook_agents::Adapter = match agent {
+                Agent::Claude => &hook_agents::claude::ClaudeCode,
+                Agent::Generic => &hook_agents::generic::Generic,
+            };
+            if let Some(out) = agent::handle(adapter, event) {
                 println!("{out}");
             }
         }
