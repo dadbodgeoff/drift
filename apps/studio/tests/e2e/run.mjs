@@ -92,6 +92,9 @@ const VIEWS = [
   ["logs", ".dui-table"],
   ["settings", ".st-settings"],
   ["gallery", ".gl-section"],
+  ["from-map", ".fm-proposed"],
+  ["upgrade", ".ug-left"],
+  ["feedback", ".fbv-marks"],
 ];
 
 console.log("drift studio e2e");
@@ -1820,6 +1823,8 @@ await test("funnel: what mining dropped, gate by gate, with each gate's origin a
   expect(quiet.problems.length === 0, `console problems:\n${quiet.problems.join("\n")}`);
   await quiet.context().close();
 });
+
+await (await import("./screens.mjs")).default({ test, newPage, open, axe, expect, REPO, app });
 
 if (SCREENS) {
   await test("screenshots for docs (deviceScaleFactor 2)", async () => {

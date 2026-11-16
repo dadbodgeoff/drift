@@ -103,6 +103,16 @@ function dispatch(c: Channel, args: unknown[], requestId: string | undefined): u
       return s.funnel(args[0] as never, requestId);
     case "promoteList":
       return s.promoteList(args[0] as never, requestId);
+    case "fromMap":
+      return s.fromMap(args[0] as never, requestId);
+    case "upgrade":
+      return s.upgrade(args[0] as never, requestId);
+    case "upgradeApply":
+      return s.upgradeApply(args[0] as never, args[1] as never);
+    case "feedbackMark":
+      return s.feedbackMark(args[0] as never, args[1] as string, args[2] as string, args[3] as string, args[4] as string | null);
+    case "feedbackMarks":
+      return s.feedbackMarks(args[0] as never);
     case "policy":
       return s.policy(args[0] as never);
     case "review":

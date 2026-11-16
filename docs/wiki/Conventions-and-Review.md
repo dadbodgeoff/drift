@@ -168,6 +168,8 @@ Each line says how many units Drift could read there follow it, how many differ,
 
 Until a person accepts one, a proposal from the map is checked by nothing, is not baselined in `drift.lock`, and is shown to no agent. Interactive review asks about them apart, after the mined proposals: `y` accepts it in advise mode, `n` declines it (not asked again), `s` skips, `q` quits. Accepting a practice from the map writes it as `drift practices promote` would, with the units that differ today recorded in `drift.lock`; one that no longer qualifies as the code stands is left as proposed. The flags work too (`drift review --accept <id>`); a Python practice cannot be set to block. `drift init --no-from-map` writes none, and `drift census --from-map` lists them, with what qualified but was not proposed and why.
 
+Drift Studio shows the same list read-only, under Review, Proposals from the map: each proposal with its counts in the words `drift census --from-map` uses, where it stands in `.drift/conventions.yaml`, and what qualified but was not proposed, with Drift's reason. The proposals are decided in the Conventions view.
+
 ### Practices that may be promoted
 
 After the proposals, interactive `drift review` offers the practices from the practice map that may be promoted now (the same list as `drift practices promote --list`), one at a time. Each shows the preview `drift practices promote --dry-run` prints: how many units of the place follow, the ones that differ and would be recorded in `drift.lock`, what could not be read, and the command.

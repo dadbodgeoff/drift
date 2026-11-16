@@ -124,6 +124,7 @@ node scripts/make-round11-fixtures.mjs --drift <drift> --work <scratch>  # beaco
 node scripts/make-study-fixtures.mjs [--drift <drift> --eval-repos <dir> --work <scratch>]
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <dir> --work <scratch>  # twenty, dub: git-ignored
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <scratch copies> --work <scratch> --policy <names>  # also policy and check
+node scripts/make-screens-fixtures.mjs --drift <drift> --work <scratch>  # fixtures/screens: from-map, upgrade, feedback marks (after make-fixtures)
 ```
 
 `fixtures/acme/practices.json` is the exception for now: hand-written in the shape the engine prints

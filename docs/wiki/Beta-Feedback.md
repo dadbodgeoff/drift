@@ -13,6 +13,8 @@
    ```
 
    A violation is named the way `drift check` and `drift.lock` name it: the convention id and the member (`path#symbol`). A whole line of `drift.lock`, quoted, works too. A finding of `drift investigate` is named by its id: `drift feedback mark F-1a2b3c --true`. Marking the same report again replaces your verdict.
+
+   In Drift Studio, open a violation in Check and choose Mark true or Mark wrong. The dialog shows the exact `drift feedback mark` command it runs. The Feedback view lists your marks. The Studio never runs the export and sends nothing.
 3. When the beta asks for it, look at what the file would hold, then write it:
 
    ```

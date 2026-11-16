@@ -1,0 +1,27 @@
+{
+ "schema": "drift-feedback-marks",
+ "version": 1,
+ "marks": [
+  {
+   "report": "violation",
+   "id": "D-288d8d",
+   "member": "apps/web/app/api/admin/health/route.ts#GET",
+   "verdict": "wrong",
+   "why": "health check, public by design",
+   "kind": "wrapped_by:call",
+   "tier": "default",
+   "baselined": true,
+   "day": "2026-11-01"
+  },
+  {
+   "report": "violation",
+   "id": "D-b0d245",
+   "member": "apps/web/app/api/workspaces/[id]/archive-all/route.ts#GET",
+   "verdict": "true",
+   "kind": "wrapped_by:call",
+   "tier": "default",
+   "baselined": false,
+   "day": "2026-11-01"
+  }
+ ]
+}

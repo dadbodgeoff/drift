@@ -10,9 +10,10 @@
 //   session ids the last listing returned;
 // - the only writes to a repository are `drift review`, `drift init` and
 //   `drift practices promote` (the `promote` channel; `promotePreview` always
-//   runs it with `--dry-run`). ops.ts `writesRepository` is the list; a new
-//   write is added there, and here, on purpose.
-import { existsSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+//   runs it with `--dry-run`), `drift upgrade --apply` (`upgradeApply`) and
+//   `drift feedback mark` (`feedbackMark`, a git-ignored local file). ops.ts
+//   `writesRepository` is the list; a new write is added there, and here, on purpose.
+import { existsSync, lstatSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RepoFacts } from "../src/shared/contract/drift";
 import { slimFacts } from "../src/shared/contract/slim";
@@ -20,6 +21,7 @@ import type { AuditEntry, Decision, LogEntry, PromoteRequest, Provenance, RepoRe
 import { DriftError, resolveDrift, runDrift } from "./drift";
 import { gitInfo } from "./git";
 import { InvalidArgument, neighbourGate, answerFlags, assertAnswer, assertConventionIds, assertDecision, assertGitRef, assertRelPath, assertSessionId, driftErrorLine, exemptFlags, isInside, promoteFlags, reviewFlags, writesRepository } from "./ops";
+import { assertVerdict } from "./screens-ops";
 import { listSessionFiles, sessionTitle } from "./sessions";
 import type { Store } from "./store";
 
@@ -54,7 +56,14 @@ export const NO_FUNNEL = "this drift binary has no `census --why`: what mining d
 export const NO_PROMOTE_LIST = "this drift binary has no `practices promote --list`: the list of practices that may be promoted needs a newer Drift (choose one in Settings)";
 
 /** Read-only drift commands that print one JSON document on stdout. */
-type JsonOp = "census" | "check" | "security" | "practices" | "map" | "funnel" | "promoteList";
+type JsonOp = "census" | "check" | "security" | "practices" | "map" | "funnel" | "promoteList" | "fromMap" | "upgrade";
+
+/** A Drift from before proposals from the map has no `census --from-map`. */
+export const NO_FROM_MAP = "this drift binary has no `census --from-map`: proposals from Drift's map need a newer Drift (choose one in Settings)";
+/** A Drift from before `drift upgrade`. */
+export const NO_UPGRADE = "this drift binary has no `upgrade` command: what a newer Drift reads differently needs a newer Drift (choose one in Settings)";
+/** A Drift from before `drift feedback`. */
+export const NO_FEEDBACK = "this drift binary has no `feedback` command: marking a report true or wrong needs a newer Drift (choose one in Settings)";
 
 /** What clap prints for a subcommand or flag this binary does not have. */
 const OLD_BINARY = /unrecognized subcommand|unexpected argument/;
@@ -236,12 +245,16 @@ export class StudioMain {
       // The same for a Drift from before the miner's funnel or the promote list.
       if (op === "funnel" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FUNNEL);
       if (op === "promoteList" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_PROMOTE_LIST);
+      if (op === "fromMap" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FROM_MAP);
+      if (op === "upgrade" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_UPGRADE);
       throw e;
     }
     let data: unknown;
     try {
       data = JSON.parse(res.stdout);
     } catch {
+      // `drift upgrade` exits 2 when it refuses, so clap's own exit 2 (no such subcommand) reaches here.
+      if (op === "upgrade" && OLD_BINARY.test(res.stderr)) throw new DriftError(NO_UPGRADE, res);
       throw new DriftError(`drift ${op} did not print JSON (is this binary too old for ${op === "census" ? "census --json" : "JSON output"}?)`);
     }
     const provenance = this.provenance(root);
@@ -277,6 +290,76 @@ export class StudioMain {
   /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
   promoteList(r: RepoRef, id?: string) {
     return this.json(r, "promoteList", id);
+  }
+
+  /** `drift census --from-map --json`: the proposals from Drift's map, and what qualified and is not proposed, with why. Read-only. */
+  fromMap(r: RepoRef, id?: string) {
+    return this.json(r, "fromMap", id);
+  }
+
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote. Changes nothing (exit 0, 3, or 2: refused). */
+  upgrade(r: RepoRef, id?: string) {
+    return this.json(r, "upgrade", id);
+  }
+
+  /**
+   * `drift upgrade --apply --json` (and `--security-baseline` when the person ticked it): only what changes no decision a
+   * person made. Drift's report is returned as it printed it, a refusal (exit 2) and a failed write (exit 1) included;
+   * exit 1 with no report on stdout is an error, thrown with what Drift said.
+   */
+  async upgradeApply(r: RepoRef, opts: { securityBaseline: boolean }): Promise<unknown> {
+    const root = this.repo(r);
+    const res = await this.run(root, { op: "upgradeApply", securityBaseline: opts.securityBaseline });
+    try {
+      return JSON.parse(res.stdout) as unknown;
+    } catch {
+      if (OLD_BINARY.test(res.stderr)) throw new DriftError(NO_UPGRADE, res);
+      throw new DriftError(`drift upgrade --apply failed: ${driftErrorLine(res.stderr) ?? "it printed no report"}`, res);
+    }
+  }
+
+  /** `drift feedback mark`: a person's verdict on one violation, kept in .drift/feedback on this machine. Drift's output. */
+  async feedbackMark(r: RepoRef, id: string, member: string, verdict: string, why: string | null): Promise<string> {
+    const root = this.repo(r);
+    const [cid] = assertConventionIds([id]);
+    const v = assertVerdict(verdict);
+    try {
+      const res = await this.run(root, { op: "feedbackMark", id: cid, member, verdict: v, why });
+      return `${res.stdout}${res.stderr}`.trim().slice(0, 4000);
+    } catch (e) {
+      if (e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FEEDBACK);
+      throw e;
+    }
+  }
+
+  /**
+   * `.drift/feedback/marks.json` as `drift feedback mark` wrote it, parsed; null when there is none. Read the way Drift
+   * reads it: never through a symbolic link (`.drift` or `.drift/feedback` as a link is refused), inside the
+   * repository, at most 16 MB.
+   */
+  feedbackMarks(r: RepoRef): unknown {
+    const root = this.repo(r);
+    for (const rel of [".drift", ".drift/feedback"]) {
+      try {
+        if (lstatSync(join(root, rel)).isSymbolicLink()) throw new DriftError(`${rel} is a symbolic link; the Studio does not follow it`);
+      } catch (e) {
+        if (e instanceof DriftError) throw e;
+        return null;
+      }
+    }
+    const p = join(root, ".drift/feedback/marks.json");
+    let st;
+    try {
+      st = lstatSync(p);
+    } catch {
+      return null;
+    }
+    if (!st.isFile() || st.size > MAX_POLICY) throw new DriftError(".drift/feedback/marks.json is not a file the Studio reads");
+    try {
+      return JSON.parse(readFileSync(p, "utf8")) as unknown;
+    } catch {
+      throw new DriftError(".drift/feedback/marks.json is not JSON (drift feedback mark refuses it too until it is restored)");
+    }
   }
 
   policy(r: RepoRef) {

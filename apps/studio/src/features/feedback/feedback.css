@@ -1,0 +1,18 @@
+/* ---------- Feedback (drift feedback) ---------- */
+.fbv {
+  max-width: 1180px;
+}
+.fbv-head {
+  border-bottom: 1px solid var(--color-border);
+}
+.fbv-marks th,
+.fbv-marks td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.fbv-true .dui-icon {
+  color: var(--color-success);
+}
+.fbv-wrong .dui-icon {
+  color: var(--color-warning);
+}

@@ -1,0 +1,344 @@
+{
+ "schema": "drift-upgrade",
+ "version": 1,
+ "drift": "0.1.0-dev",
+ "apply": false,
+ "files": [
+  {
+   "path": ".drift/conventions.yaml",
+   "present": true,
+   "records": "`version:` (its format) and `engine:` (the Drift that last ran `drift init` here; `drift review` and `drift practices promote` keep it as it was); per convention `selector_version` (how its role is read; absent is 1) and, for an accepted one, `accepted_evidence` once a Drift that keeps it met it. It does not record which Drift made any later change.",
+   "written_by": "drift 0.1.0-dev",
+   "format": "1",
+   "this_drift": "reads formats up to 3; would write this file as format 1",
+   "notes": [
+    "selectors: 14 at version 3",
+    "the evidence a person accepted on is recorded for 0 of 12 accepted convention(s); Drift does not fill it in afterwards, since it would record what it reads today as what a person saw",
+    "2 proposal(s) in the file are not shown by this Drift (a kind it no longer proposes, or Python proposals turned off); the next `drift init` or `drift review` that writes the file leaves them out (no decision of a person is among them)"
+   ]
+  },
+  {
+   "path": "drift.lock",
+   "present": true,
+   "records": "no Drift version and no format version: one line `<convention id> <path#symbol>` per baselined violation and, below each line written since fingerprints, a comment `#~ <id> <fingerprint> <path#symbol>` (the older form `<id> ~<fingerprint> <path#symbol>` is read too).",
+   "this_drift": "reads it as written",
+   "notes": [
+    "20 baselined violation(s), 0 with a fingerprint line",
+    "20 line(s) have no fingerprint line, so the debt they hold does not follow its code when it moves; `drift init` adds them (this Drift reads the lock as it is either way)"
+   ]
+  },
+  {
+   "path": ".drift/security.lock",
+   "present": true,
+   "records": "`# inventory:` (the version of the inventory that wrote it; a baseline without the line reads as 1) and `# fail:` (the kinds that fail `drift check`); no Drift version.",
+   "format": "inventory 1",
+   "this_drift": "inventory 2",
+   "notes": [
+    "48 finding(s)"
+   ]
+  },
+  {
+   "path": ".drift/config.yaml",
+   "present": false,
+   "records": "no Drift version and no format version; an answer `drift setup` recorded carries the day it was given.",
+   "notes": []
+  },
+  {
+   "path": ".drift/review-log/log.jsonl",
+   "present": false,
+   "records": "each event records the Drift that wrote it (`drift.version`) and the event's shape (`v`). Local, append-only; an upgrade never changes it.",
+   "notes": []
+  },
+  {
+   "path": ".drift/feedback/marks.json",
+   "present": false,
+   "records": "`schema` and `version` of its shape; no Drift version. Local; an upgrade never changes it.",
+   "notes": []
+  },
+  {
+   "path": ".drift/cache",
+   "present": true,
+   "records": "the facts schema in its directory name (`facts-v11`) and each parser's tag below it (`ts-l84-0.1.0-dev`: the lowering version and the Drift version). A new Drift reads none of an older one's entries and parses again.",
+   "this_drift": "facts-v11/ts-l86-0.1.0-dev, facts-v11/py-l74-0.1.0-dev",
+   "notes": []
+  }
+ ],
+ "conventions": [
+  {
+   "id": "D-288d8d",
+   "summary": "apps/web: HTTP handlers in app/api/admin/** (route files) are wrapped in withAdmin()",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 20,
+    "members": 20,
+    "holders": 19,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-43b8c8",
+   "summary": "apps/api: classes in src/** (*.service files) are registered in Module() providers of apps/api/src/app.module.ts",
+   "rule": "wiring",
+   "accepted": null,
+   "now": {
+    "not_checked": 0,
+    "unchecked": "not checked: it is a wiring rule and the experimental wiring feature is off"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-69e735",
+   "summary": "apps/web: pages in app/** (page files) render inside <PageShell>",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 21,
+    "members": 21,
+    "holders": 20,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-82ce0b",
+   "summary": "services/agents: TypedDicts in agents/** take `TypedDict` from typing_extensions, not typing",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 24,
+    "members": 24,
+    "holders": 23,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-987321",
+   "summary": "files in packages/ui/** do not import from apps/web/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 61,
+    "members": 61,
+    "holders": 60,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-a312d9",
+   "summary": "apps/api: classes in src/** (*.controller files) are registered in Module() controllers of apps/api/src/app.module.ts",
+   "rule": "wiring",
+   "accepted": null,
+   "now": {
+    "not_checked": 0,
+    "unchecked": "not checked: it is a wiring rule and the experimental wiring feature is off"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-b0d245",
+   "summary": "apps/web: HTTP handlers in app/** (route files) are wrapped in withAdmin() or withWorkspace()",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 97,
+    "members": 96,
+    "holders": 89,
+    "not_checked": 0,
+    "mode": "block"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 1
+  },
+  {
+   "id": "D-ccf957",
+   "summary": "apps/api: HTTP handlers in src/** (*.controller files) are decorated with UseGuards()",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 49,
+    "members": 49,
+    "holders": 47,
+    "not_checked": 0,
+    "mode": "block"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-d779d0",
+   "summary": "apps/api: functions in src/** pass `event` to audit(), except 2 members (not calling the callee)",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 41,
+    "members": 39,
+    "holders": 37,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-da92a0",
+   "summary": "packages/emails: components in src/templates/** render <Footer>",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 23,
+    "members": 23,
+    "holders": 22,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-df89fd",
+   "summary": "apps/api: classes in src/** (*.service files) extend BaseService, except a member (of the module that defines a rule's target)",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 27,
+    "members": 26,
+    "holders": 25,
+    "not_checked": 0,
+    "mode": "advise"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 0
+  },
+  {
+   "id": "D-ed1ec0",
+   "summary": "apps/web: HTTP handlers in app/api/workspaces/** (route files) are wrapped in withWorkspace()",
+   "rule": "mined",
+   "accepted": null,
+   "now": {
+    "role": 74,
+    "members": 74,
+    "holders": 70,
+    "not_checked": 0,
+    "mode": "block"
+   },
+   "classes": [
+    "unchanged"
+   ],
+   "reading_only": 0,
+   "changed_code": 0,
+   "cannot_tell": 1
+  }
+ ],
+ "violations": {
+  "reading_only": [],
+  "changed_code": [],
+  "cannot_tell": [
+   {
+    "id": "D-b0d245",
+    "member": "apps/web/app/api/workspaces/[id]/archive-all/route.ts#GET",
+    "line": 4,
+    "why": ".drift/conventions.yaml at commit 409f9c2b557c was written by this same Drift (drift 0.1.0-dev), so no violation can come from a new reading"
+   },
+   {
+    "id": "D-ed1ec0",
+    "member": "apps/web/app/api/workspaces/[id]/archive-all/route.ts#GET",
+    "line": 4,
+    "why": ".drift/conventions.yaml at commit 409f9c2b557c was written by this same Drift (drift 0.1.0-dev), so no violation can come from a new reading"
+   }
+  ]
+ },
+ "security": {
+  "present": true,
+  "inventory": 1,
+  "stamped": false,
+  "this_inventory": 2,
+  "new_in_drift": {},
+  "new_in_drift_total": 0,
+  "failing_not_in_baseline": 0
+ },
+ "integrations": [
+  {
+   "path": ".claude/settings.json",
+   "kind": "claude-settings",
+   "state": "older",
+   "note": "Drift's entries are exactly what an older Drift wrote; this Drift also writes Bash(drift practices promote:*)"
+  }
+ ],
+ "done": [],
+ "left": [
+  {
+   "what": "read 2 new violation(s) Drift cannot tell were caused by a change or by the new reading; for one that is old code, a person adds its line `<id> <path#symbol>` to drift.lock",
+   "command": "drift check",
+   "by": "person"
+  },
+  {
+   "what": ".drift/security.lock has no inventory stamp (read as inventory 1) (this Drift: 2); a finding of a kind or detector newer than it fails nothing until it is stamped again",
+   "command": "drift upgrade --apply --security-baseline",
+   "by": "security_baseline"
+  },
+  {
+   "what": "add to .claude/settings.json the entries this Drift writes that the older Drift did not: Bash(drift practices promote:*)",
+   "command": "drift upgrade --apply",
+   "by": "apply"
+  }
+ ],
+ "pending": true
+}

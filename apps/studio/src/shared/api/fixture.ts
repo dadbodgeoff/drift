@@ -9,7 +9,8 @@ import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapsh
 import { fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
 import { answerPlan } from "@/shared/lib/questions";
-import type { Answer } from "@/shared/ipc/contract";
+import type { Answer, Verdict } from "@/shared/ipc/contract";
+import type { FeedbackMark, FeedbackMarks, UpgradeOutcome } from "@/shared/contract/screens";
 import { type Decision, type Loaded, type StudiesData, type StudioApi, retain } from "./types";
 
 interface Index {
@@ -21,6 +22,11 @@ interface Index {
   repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean }[];
   sessions: { id: string; project: string; title: string; bytes: number; modified: number; hasState: boolean }[];
   studies: { census: string[]; ab: string[]; runs?: string[]; variants?: { path: string; variant: string }[] };
+}
+
+/** fixtures/screens/index.json (scripts/make-screens-fixtures.mjs): which repository has which of its files. */
+interface ScreensIndex {
+  repos: Record<string, { fromMap?: boolean; upgrade?: boolean; upgradeApply?: boolean; marks?: boolean }>;
 }
 
 const PROVENANCE = { commit: "4f2a91c", branch: "main", driftVersion: "drift 0.1.0-dev" };
@@ -200,6 +206,80 @@ export class FixtureApi implements StudioApi {
     if (!r?.promoteList) throw new Error(`drift practices promote --list failed: fixture mode has no promote-list.json for ${repo.name}`);
     const list = await this.json<PromoteList>(`${await this.dir(repo)}/promote-list.json`);
     return this.wait(this.loaded(fixtureListOpen(list, [...(this.promoted.get(repo.path)?.keys() ?? [])]), false));
+  }
+
+  // ---------- proposals from the map, upgrade and feedback (fixtures/screens, scripts/make-screens-fixtures.mjs) ----------
+
+  private screensIdx: Promise<ScreensIndex> | null = null;
+  /** This tab's `drift upgrade --apply` per repository: the report Drift printed then. */
+  private upgraded = new Map<string, UpgradeOutcome>();
+  /** This tab's marks per repository (`drift feedback mark`), by report key. */
+  private marked = new Map<string, Map<string, FeedbackMark>>();
+
+  /** Which repository has which file under fixtures/screens; a repository without one fails as a run would. */
+  private async screen(repo: RepoRef, what: keyof ScreensIndex["repos"][string], file: string, command: string): Promise<string> {
+    this.screensIdx ??= this.json<ScreensIndex>("screens/index.json").catch(() => ({ repos: {} }));
+    const id = await this.dir(repo);
+    if (!(await this.screensIdx).repos[id]?.[what]) throw new Error(`${command} failed: fixture mode has no ${file} for ${repo.name}`);
+    return `screens/${id}/${file}`;
+  }
+
+  async fromMap(repo: RepoRef): Promise<Loaded<Census>> {
+    const path = await this.screen(repo, "fromMap", "from-map.json", "drift census --from-map");
+    return this.wait(this.loaded(await this.json<Census>(path), false), this.delay * 2);
+  }
+
+  async upgrade(repo: RepoRef): Promise<Loaded<UpgradeOutcome>> {
+    const path = await this.screen(repo, "upgrade", "upgrade.json", "drift upgrade");
+    return this.wait(this.loaded(this.upgraded.get(repo.path) ?? (await this.json<UpgradeOutcome>(path)), false), this.delay * 2);
+  }
+
+  /** What `drift upgrade --apply` printed for this fixture (with `--security-baseline` when asked); kept for this tab, no file is written. */
+  async upgradeApply(repo: RepoRef, opts: { securityBaseline: boolean }): Promise<UpgradeOutcome> {
+    const file = opts.securityBaseline ? "upgrade-apply-security.json" : "upgrade-apply.json";
+    const out = await this.json<UpgradeOutcome>(await this.screen(repo, "upgradeApply", file, "drift upgrade --apply"));
+    this.upgraded.set(repo.path, out);
+    return this.wait(out);
+  }
+
+  /** A mark as `drift feedback mark` records it (feedback.rs `mark`: the rule kind, tier and baselined of the violation as check reports it), in this tab only. */
+  async feedbackMark(repo: RepoRef, id: string, member: string, verdict: Verdict, why: string | null): Promise<string> {
+    const check = (await this.check(repo)).data;
+    const at = member.lastIndexOf("#");
+    const v = check.violations.find((x) => x.id === id && x.path === member.slice(0, at) && x.symbol === member.slice(at + 1));
+    const conv = check.conventions?.find((c) => c.id === id);
+    if (!conv) throw new Error(`drift feedback mark failed: no convention ${id} in .drift/conventions.yaml`);
+    const byKey = this.marked.get(repo.path) ?? new Map<string, FeedbackMark>();
+    const key = `violation ${id} ${member}`;
+    const replaced = byKey.has(key) || ((await this.fixtureMarks(repo))?.marks.some((m) => m.id === id && m.member === member) ?? false);
+    const clean = why === null ? undefined : why.trim().split(/\s+/).join(" ");
+    byKey.set(key, { report: "violation", id, member, verdict, ...(clean ? { why: clean } : {}), kind: conv.rule_kind ?? "", tier: v?.tier ?? conv.tier ?? "", baselined: v?.baselined ?? false, day: new Date().toISOString().slice(0, 10) });
+    this.marked.set(repo.path, byKey);
+    return this.wait(`${replaced ? "Replaced the mark" : "Marked"}: ${id} ${member} is ${verdict}. Kept in .drift/feedback/marks.json, on this machine only.\nThis changes no verdict: Drift reports it as before. \`drift feedback export\` counts it.\nfixture mode: recorded in this tab only; no file was written`);
+  }
+
+  private async fixtureMarks(repo: RepoRef): Promise<FeedbackMarks | null> {
+    try {
+      return await this.json<FeedbackMarks>(await this.screen(repo, "marks", "feedback-marks.json", "read marks"));
+    } catch {
+      return null;
+    }
+  }
+
+  /** The fixture's marks file, with this tab's marks in it as Drift records them: one per report, sorted by report, id and member. */
+  async feedbackMarks(repo: RepoRef): Promise<FeedbackMarks | null> {
+    const file = await this.fixtureMarks(repo);
+    const mine = this.marked.get(repo.path);
+    if (!file && !mine?.size) return this.wait(null);
+    const all = new Map<string, FeedbackMark>((file?.marks ?? []).map((m) => [`${m.report} ${m.id} ${m.member ?? ""}`, m]));
+    for (const [k, m] of mine ?? []) all.set(k, m);
+    const key = (m: FeedbackMark) => [m.report, m.id, m.member ?? ""];
+    const marks = [...all.values()].sort((a, b) => {
+      const [x, y] = [key(a), key(b)];
+      for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1;
+      return 0;
+    });
+    return this.wait({ schema: file?.schema ?? "drift-feedback-marks", version: file?.version ?? 1, marks });
   }
 
   async policy(repo: RepoRef) {

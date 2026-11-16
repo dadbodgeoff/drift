@@ -100,6 +100,8 @@ drift upgrade
 drift upgrade --apply
 ```
 
+Drift Studio shows the same report in its Upgrade view, at the foot of the sidebar. It offers Apply only for the work Drift lists as its own, and runs it only after you confirm in a dialog. `--security-baseline` is added only if you tick it there.
+
 4. **See what a re-learn would add**, without writing anything; re-run `init` only if you want the new proposals (it keeps every decision and id; new proposals get their current violations baselined). Then review them as you did the first time, and commit `.drift/conventions.yaml` and `drift.lock`.
 
 ```bash

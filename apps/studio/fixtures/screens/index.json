@@ -1,0 +1,16 @@
+{
+ "repos": {
+  "acme": {
+   "fromMap": true,
+   "upgrade": true,
+   "upgradeApply": true,
+   "marks": true
+  },
+  "quiet": {
+   "fromMap": true,
+   "upgrade": true,
+   "upgradeApply": false,
+   "marks": false
+  }
+ }
+}

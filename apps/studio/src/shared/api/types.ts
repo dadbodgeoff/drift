@@ -3,6 +3,8 @@
 // bridge; in a plain browser by fixtures that the real drift binary produced.
 import type { AbRow, Census, CensusWhy, CheckReport, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
+import type { FeedbackMarks, UpgradeOutcome } from "@/shared/contract/screens";
+import type { Verdict } from "@/shared/ipc/contract";
 
 export type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot };
 
@@ -69,6 +71,16 @@ export interface StudioApi {
   funnel(repo: RepoRef, opts?: RunOpts): Promise<Loaded<CensusWhy>>;
   /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
   promoteList(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PromoteList>>;
+  /** `drift census --from-map --json`: census with `from_map`, the proposals from Drift's map and what is not proposed, with why. Read-only. */
+  fromMap(repo: RepoRef, opts?: RunOpts): Promise<Loaded<Census>>;
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote (or why it refused). Changes nothing. */
+  upgrade(repo: RepoRef, opts?: RunOpts): Promise<Loaded<UpgradeOutcome>>;
+  /** `drift upgrade --apply [--security-baseline] --json`: an explicit write of only what changes no decision a person made; Drift's report. */
+  upgradeApply(repo: RepoRef, opts: { securityBaseline: boolean }): Promise<UpgradeOutcome>;
+  /** `drift feedback mark`: a person's verdict on one violation, kept on this machine (nothing is sent). Drift's output. */
+  feedbackMark(repo: RepoRef, id: string, member: string, verdict: Verdict, why: string | null): Promise<string>;
+  /** `.drift/feedback/marks.json` as Drift wrote it; null when nothing was marked. */
+  feedbackMarks(repo: RepoRef): Promise<FeedbackMarks | null>;
   policy(repo: RepoRef): Promise<PolicyFiles>;
   /** `drift review --accept|--reject|--block <ids>`: an explicit write; returns the audit entry. */
   review(repo: RepoRef, decision: Decision, ids: string[]): Promise<AuditEntry>;
