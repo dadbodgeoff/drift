@@ -215,7 +215,7 @@ Commit `.drift/conventions.yaml` and `drift.lock`. Only promote a card you would
 
 ## 4. Answer the setup questions, if there are any
 
-When `drift init` ends with a line saying questions only you can answer would make the answers sharper, run `drift setup`. If it has nothing to ask it says so:
+When the `Next` block `drift init` ends with lists `drift setup` (questions only you can answer), run it. If it has nothing to ask it says so:
 
 ```
 Nothing to ask: Drift has no question only you can answer.
