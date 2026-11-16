@@ -354,10 +354,16 @@ fn the_stale_line_quotes_its_place_for_a_shell() {
     let dir = repo("app/(auth)/api");
     let r = dir.path();
     let id = promote(r, "app/(auth)/api");
-    // Every route stops using withAuth: the practice is stale.
+    // Every route stops using withAuth, and the lock records each as legacy: the code
+    // the lock knows no longer bears the practice out, so it is stale. (Units that break
+    // it anew, not in the lock, would be violations instead: what a change breaks is
+    // never a reason to stop gating. Review fix v1, item 1.)
+    let mut lock = std::fs::read_to_string(r.join("drift.lock")).unwrap();
     for n in 0..40 {
         write(r, &format!("app/(auth)/api/r{n:02}/route.ts"), OPEN);
+        lock.push_str(&format!("{id} app/(auth)/api/r{n:02}/route.ts#GET\n"));
     }
+    std::fs::write(r.join("drift.lock"), lock).unwrap();
     let (_, out, err) = run(r, &["check"], None);
     let line = out
         .lines()

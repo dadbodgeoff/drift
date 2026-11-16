@@ -725,18 +725,20 @@ fn a_rename_into_a_role_with_edits_away_from_the_declaration() {
     );
 }
 
-/// Changes that break untouched routes from another file. PR mode fails exactly where
-/// the plain check would fail on main after the merge, and to tell the change's
-/// violations from main's it compares with the merge base. The merge-base worktree is
-/// cleaned up.
+/// Changes that break untouched routes from another file: plain check fails, so PR
+/// mode must too (main would go red on push). To tell the change's violations from
+/// main's it compares with the merge base. The merge-base worktree is cleaned up.
 ///
-/// Before S7 both changes failed the plain check (every route a violation, the rule in
-/// block). S7 changed that on purpose: a route wrapped in a wrapper that resolves to no
-/// code Drift read is "cannot tell", never reported; and a mined rule fewer than 75% of
-/// whose tellable members follow it is stale and advises (`check::mode_now`). Both
-/// changes leave the auth rule stale, so the plain check advises and exits 0, and PR
-/// mode exits 0 too. `--strict` fails on advice: there PR mode still compares with the
-/// merge base, reports what the change caused and not what main had.
+/// S7 made a mined rule fewer than 75% of whose tellable members follow it stale, and a
+/// stale rule advised; both changes then left the auth rule stale and every check passed.
+/// Review fix v1, item 1: what a change breaks (violations not in `drift.lock`) counts as
+/// following for staleness, and staleness never demotes such a violation. So:
+/// - re-export the wrapper: every route breaks anew; the rule is not stale and blocks,
+///   in the plain check and in PR mode, as before S7;
+/// - delete the wrapper: every guarded route is "cannot tell" (the wrapper resolves to
+///   no code Drift read), and unknown is never a violation, so the change reports
+///   nothing; the plain check still fails on main's own unguarded route, which is not
+///   in the lock, though the rule is stale on the lock's two legacy routes.
 #[test]
 fn cross_file_causes_compare_with_the_merge_base() {
     for case in ["delete the wrapper", "re-export the wrapper"] {
@@ -760,34 +762,24 @@ fn cross_file_causes_compare_with_the_merge_base() {
         git(r, &["add", "-A"]);
         git(r, &["commit", "-qm", "pr"]);
         let (plain, out, _) = drift(r, &["check"], &[]);
-        assert_eq!(plain, 0, "{case}: the stale rule advises: {out}");
-        assert!(
-            out.contains(&format!(
-                "drift: [{}] was block, now advise because it is stale: ",
-                ids.auth
-            )),
-            "{case}: {out}"
-        );
+        assert_eq!(plain, 1, "{case}: plain check fails: {out}");
         if case == "delete the wrapper" {
             assert!(
                 out.contains("it is wrapped in withAuth, which does not resolve to code Drift read"),
                 "{case}: {out}"
             );
+            assert!(
+                out.contains("a violation not in drift.lock still blocks"),
+                "{case}: {out}"
+            );
+        } else {
+            assert!(!out.contains("is stale"), "{case}: {out}");
         }
-        let (code, out, err) = drift(r, &["check", "--diff-base", "main"], &[]);
-        assert_eq!(code, 0, "{case}: as the plain check: {out}{err}");
         let status = git_out(r, &["status", "--porcelain"]);
         let indexes = cache_indexes(r);
         let (code, out, err) = drift(
             r,
-            &[
-                "check",
-                "--strict",
-                "--diff-base",
-                "main",
-                "--format",
-                "json",
-            ],
+            &["check", "--diff-base", "main", "--format", "json"],
             &[],
         );
         let report = json(&out);

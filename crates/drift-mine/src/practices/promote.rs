@@ -2527,7 +2527,16 @@ pub fn check(
         let accepted =
             Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
         let judged = r.judged(&place, &r.verdicts(&accepted));
-        if !judged.iter().any(|j| j.verdict == Verdict::Follows) {
+        // Units that break it anew (not in the lock) are the gate's to stop, never a
+        // reason to stop gating: counted against it, an agent rewrapping every route of
+        // the place made the practice stale (it fired on nothing) or pushed it under the
+        // share it blocks at. They count as following it, as a mined rule's do
+        // ([`crate::check`]'s staleness).
+        let anew = judged
+            .iter()
+            .filter(|j| j.verdict == Verdict::Breaks && !lock.contains(&c.id, &j.key()))
+            .count();
+        if anew == 0 && !judged.iter().any(|j| j.verdict == Verdict::Follows) {
             out.stale.push(Stale {
                 id: c.id.clone(),
                 summary: c.summary.clone(),
@@ -2549,7 +2558,7 @@ pub fn check(
         // evidence recorded then is not refreshed, the code is read now.
         let count = |v: Verdict| judged.iter().filter(|j| j.verdict == v).count();
         let (follows, breaks) = (count(Verdict::Follows), count(Verdict::Breaks));
-        let mode = if (follows as f64) < BLOCK_SHARE * (follows + breaks) as f64 {
+        let mode = if ((follows + anew) as f64) < BLOCK_SHARE * (follows + breaks) as f64 {
             "advise"
         } else {
             crate::check::effective_mode(c)
@@ -2574,7 +2583,13 @@ pub fn check(
                 summary: c.summary.clone(),
                 evidence: format!("{}/{}", c.evidence.holders, c.evidence.total),
                 example: c.example.clone(),
-                mode: mode.into(),
+                // Under the share, it advises for its legacy units only: a unit not in
+                // the lock keeps the practice's own mode.
+                mode: if lock.contains(&c.id, &key) {
+                    mode.into()
+                } else {
+                    crate::check::effective_mode(c).into()
+                },
                 tier: c.tier(),
                 baselined: lock.contains(&c.id, &key),
                 suppressed: suppressed(repo, j, &c.id),

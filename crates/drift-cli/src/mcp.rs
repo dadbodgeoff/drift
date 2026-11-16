@@ -513,15 +513,16 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                 }
             };
             // The mode each rule is checked with now, as `drift check` decides it: a rule
-            // set to block that a check of every file finds stale advises.
+            // set to block that a check of every file finds stale advises for its
+            // violations in drift.lock only, so the order (what an agent's new code must
+            // follow) is by the mode without staleness; the notes say it is stale.
             let stale = stale_now(
                 project,
                 no_cache,
                 &rules.iter().map(|(_, c)| *c).collect::<Vec<_>>(),
             )?;
             let stale_of = |c: &Convention| stale.get(&c.id).map(String::as_str);
-            let blocks_now =
-                |c: &Convention| drift_mine::check::mode_now(c, stale_of(c)).0 == "block";
+            let blocks_now = |c: &Convention| drift_mine::check::mode_now(c, None).0 == "block";
             order_rules(&mut rules, &blocks_now);
             let note = if unparsed {
                 format!(
@@ -1074,9 +1075,11 @@ pub fn explain_text(c: &Convention, exempt_now: &[String], now: &ExplainNow) -> 
     let exceptions = summary
         .rfind(", except ")
         .map(|i| summary[i + ", except ".len()..].to_string());
-    // The mode as `drift check` applies it now: a mined rule a check found stale advises.
+    // The mode as `drift check` applies it now: a mined rule a check found stale advises
+    // for its violations in drift.lock only; a new violation, the one an agent would
+    // write, is checked without staleness (staleness never demotes what a change adds).
     let stale = now.standing.as_ref().and_then(|s| s.stale.as_deref());
-    let blocks_now = drift_mine::check::mode_now(c, stale).0 == "block";
+    let blocks_now = drift_mine::check::mode_now(c, None).0 == "block";
     let if_it_does_not_fit = if blocks_now {
         "if it does not fit: a new violation blocks; fix the code, or, for an intentional exception, add `// drift-ignore <id>: <reason>` (`#` in Python) above the declaration (shown to reviewers).\n"
     } else {
@@ -1254,7 +1257,7 @@ fn standing_line(s: &drift_mine::check::Standing, layering: bool) -> String {
     }
     if let Some(why) = &s.stale {
         out.push_str(&format!(
-            "now: stale ({}): it advises until a person looks at it\n",
+            "now: stale ({}): its violations in drift.lock advise until a person looks at it; a new violation is checked as before\n",
             sanitize(why, 160)
         ));
     }
@@ -2305,11 +2308,13 @@ mod tests {
             "{out}"
         );
         assert!(
-            out.contains("now: stale (12 of its 40 members follow it now): it advises until a person looks at it\n"),
+            out.contains("now: stale (12 of its 40 members follow it now): its violations in drift.lock advise until a person looks at it; a new violation is checked as before\n"),
             "{out}"
         );
+        // Review fix v1, item 1: staleness never demotes a new violation, so an agent is
+        // told what `drift check` does with the one it would write: it blocks.
         assert!(
-            out.contains("if it does not fit: no action is needed"),
+            out.contains("if it does not fit: a new violation blocks"),
             "{out}"
         );
     }

@@ -1814,6 +1814,28 @@ impl Lock {
         taken
     }
 
+    /// Rewrite the lines of each legacy violation that moved ([`crate::check::CheckReport::moved`])
+    /// to where it is now: its member line and fingerprint lines under the old
+    /// `path#symbol` give way to a member line and the matched fingerprint under the
+    /// new one. Held by its fingerprint alone, moved debt turned new at the first edit
+    /// that changed the fingerprint, and the old line was listed as fixed. A move whose
+    /// old line is gone, or whose new place already has a line, is left as it is.
+    /// Returns how many moved.
+    pub fn follow_moves(&mut self, moved: &[crate::check::MovedDebt]) -> usize {
+        let mut n = 0;
+        for m in moved {
+            if !self.contains(&m.id, &m.from) || self.contains(&m.id, &m.to) {
+                continue;
+            }
+            self.entries.retain(|(id, key)| *id != m.id || Self::member_of(key) != m.from);
+            self.entries.insert((m.id.clone(), m.to.clone()));
+            self.entries
+                .insert((m.id.clone(), Self::fingerprint_key(&m.fingerprint, &m.to)));
+            n += 1;
+        }
+        n
+    }
+
     /// Copy every line of convention `from` to `to`, keeping `from`'s: a new card whose
     /// rule is `from`'s with alternatives added ([`ConventionsFile::merge_carrying`])
     /// has the same legacy debt, so `drift init` does not baseline it anew, while `from`
