@@ -365,7 +365,7 @@ fn scan_file_with(
     let Some(cache_dir) = &opts.cache_dir else {
         return Ok(None);
     };
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let Some(index) = Index::load(cache_dir, &root) else {
         return Ok(None);
     };

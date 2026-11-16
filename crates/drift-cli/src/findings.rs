@@ -213,7 +213,7 @@ pub fn write_issue(root: &Path, file: &Path, text: &str, force: bool) -> anyhow:
             file.display()
         );
     }
-    let roots = [std::path::absolute(root)?, root.canonicalize()?];
+    let roots = [std::path::absolute(root)?, drift_core::fsutil::canonical(root)?];
     if let Some(link) = std::iter::once(abs.as_path())
         .chain(
             abs.ancestors()
@@ -264,8 +264,17 @@ fn id_for(prefix: char, item: &str) -> String {
 
 /// A repository-relative path that stays inside: no `..`, not absolute.
 fn inside(p: &str) -> Option<String> {
+    // Windows: `\` is a separator there, never part of a name (on Unix it may be one),
+    // and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = p.replace('\\', "/");
+    #[cfg(windows)]
+    let p = owned.as_str();
     let p = p.trim();
     if p.is_empty() || p.starts_with('/') || p.contains('\0') || p.contains('\\') {
+        return None;
+    }
+    if cfg!(windows) && p.contains(':') {
         return None;
     }
     let parts: Vec<&str> = p

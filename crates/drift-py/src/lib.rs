@@ -239,7 +239,7 @@ fn prepare(
 
 /// Scan a repository's Python code and return its facts. Output is deterministic.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     // Every file is parsed, lowered and dropped on these workers' stacks.
     drift_core::stack::pool(opts.threads)?.install(|| scan_inner(&root, opts, None))
 }
@@ -469,7 +469,7 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     if !is_python_path(rel) || opts.cache_dir.is_none() {
         return Ok(None);
     }
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let py = ingest::walk(&root, opts.threads, &|_| false)?.python;
     scan_file_walked(&root, opts, rel, py)
 }
@@ -1097,7 +1097,7 @@ pub struct ImportRow {
 
 /// Every import in the repo's Python files with its resolution, uncached.
 pub fn debug_imports(root: &Path) -> anyhow::Result<Vec<ImportRow>> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let p =
         drift_core::stack::pool(0)?.install(|| prepare(&root, &ScanOptions::default(), None))?;
     let linker = Linker::new(&p.resolver, &p.files);

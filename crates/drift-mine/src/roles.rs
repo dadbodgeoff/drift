@@ -481,6 +481,8 @@ fn directive_line(t: &str) -> bool {
 /// one-line docstring may come between them). A comment that covers the whole file is
 /// one a reviewer sees at the top of it. Sorted.
 pub fn header_suppressions(text: &str) -> Vec<String> {
+    // A byte-order mark (Windows editors write one) is not code: the header starts after it.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let mut out = Vec::new();
     let mut in_block = false;
     for (n, line) in text.lines().enumerate() {
@@ -515,6 +517,8 @@ pub fn header_suppressions(text: &str) -> Vec<String> {
 /// at the end of that line, or in the comment lines directly above it (the import a
 /// layering rule is about, a model's declaration). Sorted.
 pub fn suppressions_at(text: &str, line: u32) -> Vec<String> {
+    // A byte-order mark is not code (and not a line): the comment on line 1 starts after it.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let lines: Vec<&str> = text.lines().collect();
     let mut out = Vec::new();
     let Some(i) = (line as usize)

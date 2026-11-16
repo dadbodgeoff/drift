@@ -988,9 +988,7 @@ impl Server {
     }
 
     fn start(&self) -> PathBuf {
-        self.root
-            .canonicalize()
-            .unwrap_or_else(|_| self.root.clone())
+        drift_core::fsutil::canonical(&self.root).unwrap_or_else(|_| self.root.clone())
     }
 
     /// `args` with each relative `path`/`paths` entry that names nothing under the

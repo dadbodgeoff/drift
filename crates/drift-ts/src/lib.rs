@@ -79,7 +79,7 @@ pub(crate) fn package_of(root: &Path, abs: &Path, memo: &mut PackageMemo) -> Str
 
 /// Scan a repository and return its facts. Output is deterministic.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     // Every file is parsed, lowered and dropped on these workers' stacks.
     drift_core::stack::pool(opts.threads)?.install(|| scan_inner(&root, opts, None))
 }
@@ -334,7 +334,7 @@ pub struct ImportRow {
 
 /// Every import and re-export specifier in the repo with its resolution, uncached.
 pub fn debug_imports(root: &Path) -> anyhow::Result<Vec<ImportRow>> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let ing = ingest::ingest(&root)?;
     // A file no stack could be had for is left out of this debug listing.
     let files: Vec<LoweredFile> = drift_core::stack::pool(0)?.install(|| {

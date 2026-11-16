@@ -357,7 +357,7 @@ fn unsafe_ignore_file(root: &Path, dir: &Path) -> Option<PathBuf> {
         let t = meta.file_type();
         let ok = if t.is_symlink() {
             // Dangling, or a link to a directory: reading fails at once, harmlessly.
-            match (fs::metadata(&p), p.canonicalize()) {
+            match (fs::metadata(&p), crate::fsutil::canonical(&p)) {
                 (Ok(m), Ok(real)) => real.starts_with(root) && (m.is_file() || m.is_dir()),
                 _ => true,
             }
@@ -501,7 +501,7 @@ pub fn walk(
     threads: usize,
     is_config: &(dyn Fn(&str) -> bool + Sync),
 ) -> anyhow::Result<Walked> {
-    let root = root.canonicalize()?;
+    let root = crate::fsutil::canonical(root)?;
     check_root_ignore_files(&root)?;
     let generated = generated_attributes(&root);
     let filter_root = root.clone();
@@ -756,7 +756,7 @@ pub fn ingest(root: &Path) -> anyhow::Result<IngestResult> {
 
 /// Walk `root` and return `lang`'s files to analyse plus the ones skipped and why.
 pub fn ingest_lang(root: &Path, lang: Lang) -> anyhow::Result<IngestResult> {
-    let root = root.canonicalize()?;
+    let root = crate::fsutil::canonical(root)?;
     check_root_ignore_files(&root)?;
     let generated = generated_attributes(&root);
     let mut out = IngestResult::default();
@@ -1104,6 +1104,7 @@ mod tests {
     }
 
     /// `f` on another thread: `None` when it has not finished within `secs` (a hang).
+    #[cfg(unix)]
     fn within<T: Send + 'static>(secs: u64, f: impl FnOnce() -> T + Send + 'static) -> Option<T> {
         let (tx, rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {

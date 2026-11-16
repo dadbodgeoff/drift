@@ -99,6 +99,34 @@ jobs:
         env:
           INSTA_UPDATE: "no"
 
+  test-windows:
+    # Native Windows (MSVC): the release build and the whole suite, gated as test-macos
+    # is (main, nightly, on demand, and pull requests that change the Rust build). Not
+    # yet green anywhere, so it never fails the run: its result shows, nothing waits on
+    # it. python3 is not on PATH on windows-latest, so the importlib oracle is skipped
+    # (it runs on Linux).
+    needs: rust-changed
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.rust-changed.outputs.rust == 'true') }}
+    continue-on-error: true
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      DRIFT_SKIP_ORACLE: "1"
+    steps:
+      - run: git config --global core.longpaths true
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo build --release --locked -p drift-cli
+      - run: target/release/drift --version
+      - run: cargo test --all --locked
+        env:
+          INSTA_UPDATE: "no"
+
   deny:
     runs-on: ubuntu-latest
     steps:

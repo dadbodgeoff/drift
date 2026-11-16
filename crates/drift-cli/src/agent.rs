@@ -772,7 +772,10 @@ fn brief_without_policy(cwd: &Path) -> Option<Value> {
         .ancestors()
         .find(|d| d.join(".git").exists())?
         .to_path_buf();
-    let home = std::env::var_os("HOME").map(PathBuf::from);
+    // Native Windows sets no `HOME`; its home directory is `USERPROFILE`.
+    let home = std::env::var_os("HOME")
+        .or_else(|| cfg!(windows).then(|| std::env::var_os("USERPROFILE")).flatten())
+        .map(PathBuf::from);
     if home.is_some_and(|h| h == root) || !brief_on(&root) {
         return None;
     }

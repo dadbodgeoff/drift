@@ -65,7 +65,8 @@ runs:
     - name: Cache Drift build
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
-        path: ~/.cargo/bin/drift
+        # `drift.exe` on a Windows runner; `drift` (as before) everywhere else.
+        path: ~/.cargo/bin/drift${{ runner.os == 'Windows' && '.exe' || '' }}
         key: drift-${{ runner.os }}-${{ steps.ref.outputs.sha }}
     - name: Install Drift
       shell: bash

@@ -457,7 +457,7 @@ impl ModuleResolver {
         candidates
             .into_iter()
             .find(|c| c.is_file())
-            .and_then(|c| c.canonicalize().ok())
+            .and_then(|c| drift_core::fsutil::canonical(&c).ok())
             .and_then(|c| self.in_repo(&c))
     }
 
@@ -465,7 +465,16 @@ impl ModuleResolver {
         if path.components().any(|c| c.as_os_str() == "node_modules") {
             return None;
         }
-        rel_posix(&self.root, path)
+        rel_posix(&self.root, path).or_else(|| {
+            // Windows: the resolver gives `C:\…` and `\\server\share\…`, std's root
+            // may be `\\?\…`; both through one spelling before they are compared.
+            if cfg!(windows) {
+                let root = drift_core::fsutil::canonical(&self.root).ok()?;
+                rel_posix(&root, &drift_core::fsutil::canonical(path).ok()?)
+            } else {
+                None
+            }
+        })
     }
 
     /// For a workspace package whose `exports`/`main` targets are build output that
