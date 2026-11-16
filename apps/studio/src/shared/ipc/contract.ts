@@ -37,7 +37,7 @@ export const DriftInfo = z.object({
   path: z.string().nullable(),
   version: z.string().nullable(),
   censusJson: z.boolean(),
-  source: z.enum(["settings", "path", "fixture", "none"]),
+  source: z.enum(["settings", "bundled", "path", "fixture", "none"]),
   error: z.string().optional(),
 });
 export type DriftInfo = z.infer<typeof DriftInfo>;

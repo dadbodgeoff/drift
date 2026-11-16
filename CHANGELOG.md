@@ -34,6 +34,15 @@ main branch.
 
 ### Added
 
+- **Drift Studio packages:** `apps/studio/scripts/package.mjs` builds an AppImage and a
+  deb (Linux), a dmg and a zip (macOS arm64 and x64) and an NSIS installer (Windows),
+  each carrying its platform's `drift`, which a packaged Studio runs unless Settings
+  names another. Unsigned builds say `unsigned` in the file name; signing and
+  notarisation read environment variables the owner sets
+  ([apps/studio/README.md](apps/studio/README.md#packaging)). CI builds the Linux
+  package on Studio pull requests (`.github/workflows/studio-package.yml`) and runs
+  a live end-to-end test of the Electron app against a real `drift`
+  (`apps/studio/tests/e2e/live.mjs`). No auto-update.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

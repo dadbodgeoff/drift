@@ -67,7 +67,7 @@ What does touch the network is around Drift, not inside it:
 
 ## The Studio
 
-The Studio is an Electron desktop app over the same CLI. It is not packaged: you run it from a checkout (`npm ci`, then `npm run start -w drift-studio`).
+The Studio is an Electron desktop app over the same CLI. You run it from a checkout (`npm ci`, then `npm run start -w drift-studio`) or from an unsigned package that CI builds (see `apps/studio/README.md`, Packaging). A package carries its platform's `drift` binary and runs it unless Settings names another; it has no updater and no update feed, so it never checks for a new version. It is not code-signed or notarised yet, so macOS and Windows warn before opening it.
 
 - **Network:** its content security policy is `default-src 'self'; ... connect-src 'self'; frame-src 'none'; object-src 'none'`, so the renderer cannot load or connect to anything outside the app. Its settings page states: "Nothing is sent anywhere: no telemetry, no network access except what you ask for." (The development server allows local `ws:` and `http://localhost:*` connections, for development only.)
 - **Processes:** it runs the `drift` binary with `execFile`, never through a shell, and does not run `git` (it reads `.git` files directly for provenance).

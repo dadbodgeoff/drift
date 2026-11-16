@@ -15,3 +15,4 @@ apps/studio/dist-electron/
 apps/studio/fixtures/local/
 apps/studio/.local-work/
 apps/studio/test-results/
+apps/studio/release/

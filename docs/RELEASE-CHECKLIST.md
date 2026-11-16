@@ -189,9 +189,10 @@ binary with a synthetic repository (the dry run's is enough):
 
 ## E. Not part of this publish
 
-- **The Studio** is not packaged, signed or notarised; it runs from a checkout.
-  It is not in any npm package. Its `package.json` versions (`0.1.0`) are not
-  Drift's version and `set-version.mjs` does not touch them.
+- **The Studio** is packaged unsigned by `.github/workflows/studio-package.yml`
+  (CI artifacts only); it is not signed, notarised, attached to a release or in
+  any npm package. What its first signed release needs is in
+  `apps/studio/README.md` (Packaging).
 - **Code signing.** The release binaries are not code-signed or notarised;
   checksums and SLSA build provenance are what users can verify.
 - **darwin-x64** is cross-compiled on Apple silicon and has no runner of its
