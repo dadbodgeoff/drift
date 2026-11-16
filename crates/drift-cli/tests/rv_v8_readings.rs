@@ -86,10 +86,7 @@ fn said(concern: &Value, symbol: &str) -> (String, String) {
 #[test]
 fn a_base_override_counts_only_where_it_runs_for_the_view() {
     let dir = repo(&[
-        (
-            "depot/__init__.py",
-            r#""#,
-        ),
+        ("depot/__init__.py", r#""#),
         (
             "depot/settings.py",
             r#"SECRET_KEY = "x"
@@ -193,10 +190,7 @@ if __name__ == "__main__":
 #[test]
 fn a_guard_past_a_cut_call_order_is_not_proven_to_run_before_the_write() {
     let dir = repo(&[
-        (
-            "svc/app/__init__.py",
-            r#""#,
-        ),
+        ("svc/app/__init__.py", r#""#),
         (
             "svc/app/deps.py",
             r#"from fastapi import HTTPException, Request
