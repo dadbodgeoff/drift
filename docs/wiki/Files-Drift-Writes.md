@@ -10,6 +10,7 @@ Drift reads the working tree and writes only under `.drift/`, to `drift.lock`, a
 | --- | --- | --- |
 | `.drift/conventions.yaml` | **Commit** | The team's decisions. `drift check`, the hooks, MCP and CI read it, so everyone gets the same rules. |
 | `drift.lock` | **Commit** | The baseline of legacy violations. Without it, old code would fail new checks on every machine. |
+| `.drift/security.lock` | **Commit** | The security baseline, written only by `drift security --write-baseline`: the security findings accepted as they are. `drift check` reports what is found later and is not in it. |
 | `.drift/config.yaml` | **Commit** | What `drift setup` and people said about deployment, packages and practices, so teammates and CI get the same answers. |
 | `.gitattributes` line `drift.lock merge=union` | Commit (you add it) | Lets parallel branches merge the lock without conflicts. Drift only suggests it. |
 | `.drift/cache/` | **Ignore** | A local cache of parsed facts, derived results and agent session state. It ignores itself. |
@@ -40,13 +41,13 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
 | --- | --- |
 | `drift scan` | The cache. `--out FILE` writes the fact index to FILE. |
 | `drift facts` | The cache. |
-| `drift init` | `.drift/conventions.yaml` (created, or merged keeping every decision), `drift.lock` (baseline on first run; new baselines for newly mined conventions later), the cache. |
+| `drift init` | `.drift/conventions.yaml` (created, or merged keeping every decision), `drift.lock` (baseline on first run; later, a baseline only for conventions new to the policy, and fingerprint lines for existing entries), the cache. It never writes `.drift/security.lock`: where there is none, it says what one would hold. |
 | `drift census` | The cache in text mode. With `--json` or `--coverage`: nothing, unless `DRIFT_CACHE_DIR` is set. |
 | `drift setup` | `.drift/config.yaml`, only when an answer, `--forget`, `--confirm` or `--reject` changes it. Listing, asking and `--json` write nothing; the repository is read without the cache unless `DRIFT_CACHE_DIR` is set. |
 | `drift investigate` | Listing, `--json` and `--agent-brief` write nothing (the cache is used as for `drift security`). `--record` and `--answers` write `.drift/config.yaml` (a record under `setup:`, or an agent's proposal under `setup.proposed`; `reachable` also adds a `security.public` entry), and for a finding `.drift/findings/`, for a gap report `.drift/gap-reports/`. |
 | `drift findings` | Nothing, except: `--issue ID --write FILE` writes FILE, and `--branch ID` creates a local git branch `drift/<id>` (a commit object and a branch ref; `HEAD`, the index and the working tree are not touched). |
 | `drift review` | `.drift/conventions.yaml` on every decision; `drift.lock` when a card is promoted from the withheld ones (its current outliers are baselined) or a practice is promoted (its units that differ are baselined); `.drift/review-log/` when the log is on (`--set-log on`) or `--log` is given; the file named by `--export-log`. |
-| `drift example`, `drift check`, `drift security` | The cache. (`example` and `check` need `.drift/conventions.yaml`.) |
+| `drift example`, `drift check`, `drift security` | The cache. (`example` and `check` need `.drift/conventions.yaml`.) `drift security --write-baseline` also writes `.drift/security.lock`. |
 | `drift card` | The cache and the derived-results directory, but only when the repository has `.drift/conventions.yaml` (or `DRIFT_CACHE_DIR` is set); otherwise nothing. |
 | `drift map`, `drift practices` | Nothing, unless `DRIFT_CACHE_DIR` is set. |
 | `drift practices promote` | `.drift/conventions.yaml` (one accepted convention added, or updated under the same id when promoted again) and `drift.lock` (one line per unit that differs today). With `--dry-run` or `--list`, or when it refuses: nothing. |
@@ -61,6 +62,7 @@ Do not ignore `.drift/` as a whole: that would drop the policy teammates and CI 
 .drift/
   conventions.yaml        commit
   config.yaml             commit
+  security.lock           commit (only once written)
   cache/                  ignore (has its own .gitignore of *)
     .gitignore
     facts-v11/<parser>/<xx>/<hash>.json
@@ -140,8 +142,36 @@ Written only with `agents.verify: on` in `.drift/conventions.yaml` (experimental
 
 Written by `drift init`, by promoting a withheld card in `drift review`, and by promoting a practice (`drift practices promote`, or the practices step of `drift review`). Never by agents: the hooks deny writes to it, and `drift check` only reads it. Entries that no longer apply are listed as `fixed` in `drift check --format json` and can be removed by hand. See [Configuration Reference](Configuration-Reference) for the format.
 
+It opens with `# drift.lock: legacy violations that never block. Fix code to remove lines.` Each entry has two lines, and the lines are sorted, so a convention's fingerprint lines come after its member lines:
+
+```text
+D-37416b app/api/r38/route.ts#GET
+D-37416b ~<16 hex digits> app/api/r38/route.ts#GET
+```
+
+The first is the member. The second, which starts with `~`, is a fingerprint of the member's code: 16 hex digits of a BLAKE3 hash of what Drift read of it, with its name, line and own file path left out. For a function or method, that is its kind and what it does (wrappers, calls, rendered components, keys passed, control flow, thrown classes, environment reads, risky operations, the order of its calls, decorator arguments, how many string literals). For a file it is its exported names, its directives and the import a layering rule is about; for a model, its source and fields; for a package, its name and scripts.
+
+The fingerprint is what lets old debt move. When a member moves to another file, or it or its file is renamed, and Drift reads the same of it, `drift check` baselines its violation by the fingerprint line, as long as the member the line names is gone from the code. One line covers one violation, so a copy next to the original is new. Two members collide only when Drift read the same of both (identical handlers); the rule that a line's own member must be gone takes care of that.
+
+A lock without fingerprint lines works as before, and an older Drift reads the plain lines as before. `drift init` adds the fingerprint lines to existing entries. Counts of legacy entries count the plain lines only.
+
+## `.drift/security.lock`
+
+The security baseline. Written only by `drift security --write-baseline`; `drift init` offers it and writes nothing. Commit it: `drift check` and `drift security --ratchet` then report each finding that is found now and is not in it.
+
+```text
+# drift security baseline: what `drift security` found when this was written.
+# `drift check` and `drift security --ratchet` report what is found now and is not here.
+# Written by `drift security --write-baseline`; do not edit by hand.
+# inventory: 2
+# fail: <kinds, separated by commas>
+<kind>	<key>
+```
+
+`# inventory:` is the version of what the inventory finds when the baseline was written (see [Versioning and Upgrades](Versioning-and-Upgrades#the-security-baseline)). `# fail:` lists the kinds whose new findings fail `drift check`; the others advise. Each finding is a line of its kind, a tab, and its key, by handler and route, never by line. A baseline written before these two header lines were added reads as inventory 1, with every kind failing but `unscoped-key`. See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
+
 ## Branches and merges
 
-All three committed files are text and are ordinary merge candidates. `drift.lock` is one sorted line per entry, so `merge=union` is safe for it; `.drift/conventions.yaml` and `.drift/config.yaml` are YAML and conflict like any YAML. After a merge, run `drift check` to see where the combined state stands.
+All the committed files are text and are ordinary merge candidates. `drift.lock` is sorted lines, so `merge=union` is safe for it; `.drift/conventions.yaml` and `.drift/config.yaml` are YAML and conflict like any YAML. After a merge, run `drift check` to see where the combined state stands.
 
 See also: [Configuration Reference](Configuration-Reference), [Command Reference](Command-Reference), [Hooks Reference](Hooks-Reference), [Security and Privacy](Security-and-Privacy), [Team Rollout](Team-Rollout), [Troubleshooting](Troubleshooting)

@@ -15,7 +15,7 @@ files -> scan -> per-file facts -> linking -> structure and roles
 2. **Facts, per file.** Each TypeScript, JavaScript and Python file is parsed on its own and "lowered" into language-neutral facts: its symbols, imports and exports, wrappers and decorators, calls, argument keys, control flow, environment reads, thrown classes, risky operations and entry points (HTTP routes, jobs, queues, commands). This step depends only on the file's text, so its output is cached by content hash. TypeScript and JavaScript use one parser and Python another; each language has its own framework adapters. [Languages and Frameworks](Languages-and-Frameworks) lists what is read.
 3. **Linking.** Facts that name something imported are resolved across files: through `tsconfig` `paths`, workspace packages and barrel files for TypeScript, and import resolution for Python, so that a call to `withAuth` in a route file is tied to its definition.
 4. **Structure and roles.** Drift finds the packages (directories with a `package.json`, `pyproject.toml`, `setup.cfg`, `setup.py` or `requirements*.txt`), their layers, and *roles*: groups of similar things that live together, such as "HTTP handlers in `app/api/**`" or "functions in `lib/**`". Roles come from structure only: package, directory prefix, kind of file, entry-point kind and symbol kind. `drift map` prints this and changes nothing.
-5. **Mining.** Within each role, Drift looks for a pattern that nearly all members share and the rest of the code does not. See [Conventions and Review](Conventions-and-Review).
+5. **Mining.** Within each role, Drift looks for a pattern that nearly all members share and the rest of the code does not. Each candidate rule passes a series of gates, below. See [Conventions and Review](Conventions-and-Review).
 6. **The practice map.** For each cross-cutting concern, Drift reads what each entry point does and groups the entry points by variant. See [Practices Map](Practices-Map).
 7. **The security inventory.** Drift lists entry points with their guards, the risky operations they reach, and where each can be reached from. See [Security Inventory](Security-Inventory).
 
@@ -24,6 +24,47 @@ What the fact layer records, for TypeScript and JavaScript (Python has its own a
 The commands that change files are `drift init`, `drift review`, `drift setup`, `drift export --write` and the hooks' session state. `drift scan`, `facts`, `census`, `check`, `security`, `card`, `map`, `practices` and `example` only read the repository (some write the cache).
 
 Output is deterministic: byte-identical across runs, thread counts, operating systems and checkout paths. That is tested.
+
+## What mining drops, and why
+
+A candidate rule becomes a proposal only if it passes every gate, in this order. `drift census --why` lists what each gate dropped, with the candidate's value and the gate's threshold; `drift census --why <gate>` lists one gate. It is observation only: the proposals are exactly those of `drift census`.
+
+| Gate | Passes | Origin |
+| --- | --- | --- |
+| `indirect_base` | a base class most holders extend themselves, not only through another base | engineering, rationale written but not measured |
+| `refines_base` | a base that is no refinement the outliers chose against | engineering, rationale written but not measured |
+| `optional_key` | a key passed on every call of the callee | engineering, rationale written but not measured |
+| `universal` | a rule some member of the role does not follow; a rule that holds for every member is never proposed | engineering, no study |
+| `wilson` | a lower bound of at least 0.75: with one outlier, a role of 19 or more members | engineering, no study |
+| `lift` | a rule the role follows at least 1.5 times (3 times) as often as all units of its kind | engineering, no study |
+| `mandated` | a rule no framework the repository uses mandates | engineering, no study |
+| `tautology` | a rule that does not restate the role's name | engineering, no study |
+| `python_family_hidden` | a Python rule of another family | study |
+| `holders_one_file` | holders in at least 3 files | study |
+| `how_built` | a call that is no part of how the code is built | engineering, no study |
+| `file_local` | holders spread over enough files of the role | engineering, rationale written but not measured |
+| `path_params` | a rule that is not the route's shape | engineering, no study |
+| `key_structure` | a rule that is not the table's key structure | engineering, no study |
+| `input` | a validation rule whose outliers do take input | engineering, no study |
+| `other_kind_outliers` | a rule some outlier of which is of the role's own kind | engineering, no study |
+| `lint_layering` | a layering rule not against the direction the linter states | engineering, no study |
+| `lint` | a rule the linter does not decide | engineering, no study |
+| `uncorroborated` | an avoidance something else in the repository corroborates | engineering, no study |
+| `call_family_hidden` | a calls rule on a guard, or a Python one | study |
+| `duplicate` | a rule no stronger rule of its role (or a nested role) already says | engineering, no study |
+| `cap_role` | one of the 5 best-scored drafts of its role | engineering, no study |
+| `cap_avoid` | one of the best-scored layering rules within a quarter of --max; default-tier ones are cut too | engineering, no study |
+| `cap_repo` | one of the --max best-scored drafts the show policy shows | engineering, no study |
+| `narrowed_out` | a rule still held, and broken, once exempt members are set aside (the bound is not checked again) | engineering, rationale written but not measured |
+| `compiler` | a rule the compiler does not check | engineering, rationale written but not measured |
+| `no_table` | any suggestion, when the table parses | engineering, no study |
+| `no_family` | a suggestion of a rule kind the table maps | study |
+| `hidden_family` | a suggestion of a family shown in its language | study |
+| `not_admitted` | a suggestion of a family admitted for its language | study |
+| `max_outliers` | a suggestion with at most 1 outlier | study |
+| `python_off` | any card while Python proposals are on (the default) | study |
+
+The origin says where the threshold comes from: `study` (set by a measured study), `engineering, no study`, or `engineering, rationale written but not measured`. A fourth origin, `pre-registered`, names no gate in this build. `--why` prints each gate's constant and where its origin is written down.
 
 ## The cache
 

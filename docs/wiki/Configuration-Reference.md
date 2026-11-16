@@ -220,7 +220,7 @@ conventions:
 | `agents` | mapping | | `agents.verify: on` lets the host agent verify suggestions (experimental, off by default; see [MCP Reference](MCP-Reference)). Set by hand; `drift init` keeps it. |
 | `review_log` | `on` | absent (off) | `drift review` and the Studio record each decision and each card shown in `.drift/review-log/`. Set with `drift review --set-log on\|off`. |
 | `packages` | list of directories | absent | Version 2 only: the workspace packages (`""` is the root) the conventions were mined over. Rewritten by `drift init`. |
-| `conventions` | list | | The conventions, accepted first, then proposed by strength, then rejected. |
+| `conventions` | list | | The conventions: accepted first, then proposed, then rejected. Accepted and rejected ones are ordered by id, so a run that only refreshes evidence moves no line of what people decided; proposals are ordered by lower bound, strongest first, then by id. |
 
 ### A convention
 
@@ -228,7 +228,7 @@ conventions:
 | --- | --- | --- |
 | `id` | text | `D-` and six hex digits. Stable across re-runs of `drift init`. |
 | `status` | `accepted`, `proposed`, `rejected` | `proposed` is mined and not yet reviewed and only ever advises; `accepted` is checked; `rejected` is never proposed again. |
-| `mode` | `advise`, `block` | Whether a new violation only reports or fails `drift check`. Experimental wiring rules always advise. A role of fewer than 15 members advises whatever the file says. |
+| `mode` | `advise`, `block` | Whether a new violation only reports or fails `drift check`. Experimental wiring rules always advise. A role that had fewer than 15 members when it was mined, a practice promoted below the share a block needs, and a mined rule gone stale advise whatever the file says; `drift check` says why. |
 | `summary` | text | Human summary, regenerated on each `drift init`. |
 | `role` | mapping | The selector for the members the convention is about: `package`, `dir`, `file`, `entry`, `kind`, and optionally `variety`, `export_name`, `member_kind`, `shape`, `also` (sibling roles of a merged card). Frozen once written. |
 | `rule` | mapping | `type` and its fields (below). |
@@ -239,22 +239,24 @@ conventions:
 | `exceptions` | list of `{member, reason}` | Outliers a reviewer marked as legitimate. `member` is `path#symbol`; `reason` is one line of at most 120 characters. `drift check` lists such a member as exempt (code `reviewed`). |
 | `different_kind` | list of `{path, entry_points}` | Files a person set apart as a different kind of thing (`drift review --answer ID=different --set-apart PATH`). `entry_points` lists entry points under an authentication or validation rule that the person confirmed one by one. |
 | `promoted_from_hidden` | `true` | The card was promoted by a person from the ones mining withheld. Absent when false. |
+| `accepted_evidence` | mapping | The evidence as it stood when a person accepted the convention: `role_size`, `holders`, `total`, `lower_bound`. Written the first time `drift init` meets the convention accepted, and moved with the decision when the id changes. `evidence` is rewritten on every run; this is not. Absent until then. |
 | `promoted_from_practice` | text | The practice-map variant (`P-` and six hex digits) a person promoted this convention from with `drift practices promote`. Absent for a mined convention. Its place is the role's `package` and `dir`. |
 
-Rule types: `wrapped_by` (`kind`, `any_of`), `passes_key` (`callee`, `index`, `key`), `calls` (`callee`), `renders` (`component`), `directive` (`value`), `control` (`value`), `throws` (`class`), `named` (`pattern`), `before` (`first`, `then`), `avoids` (`signal`), `has_test`, `prefers_library` (`group`, `preferred`), `model_has` (`field`), `package_has` (`item`), `dependency_version` (`name`, optional `range`), `imports_from` (`name`, `source`, `instead_of`), `practice` (`concern`, `any_of`: the practice-map variant keys accepted as ways, such as `wrap:lib/auth.ts#withAuth`; written only by promoting a practice, and checked by the practice map's classifier), and the experimental `registered_in` and `mirrors_keys`. A Drift from before promotion cannot read a file that holds a `practice` rule ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
+Rule types: `wrapped_by` (`kind`, `any_of`), `passes_key` (`callee`, `index`, `key`), `calls` (`callee`), `renders` (`component`), `directive` (`value`), `control` (`value`), `throws` (`class`), `named` (`pattern`), `before` (`first`, `then`), `avoids` (`signal`), `has_test`, `prefers_library` (`group`, `preferred`), `model_has` (`field`), `package_has` (`item`), `dependency_version` (`name`, optional `range`), `imports_from` (`name`, `source`, `instead_of`), `practice` (`concern`, `any_of`: the practice-map variant keys accepted as ways, such as `wrap:lib/auth.ts#withAuth`; optionally `any_mechanism`, mechanisms accepted whole, and `any_enforcing: true`, any way that enforces sign-in or permissions, both absent unless set; written only by promoting a practice, and checked by the practice map's classifier; see [Practices Map](Practices-Map#how-the-rule-is-checked)), and the experimental `registered_in` and `mirrors_keys`. A Drift from before promotion cannot read a file that holds a `practice` rule ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
 Edit `status` and `mode` by hand or with `drift review`; agents must not (the hooks deny writes under `.drift/`). Only `drift.lock` has a recommended merge setting (below). A conflict in this file is an ordinary YAML conflict: keep each side's decisions and run `drift check` afterwards.
 
 ## `drift.lock`
 
-Baselined violations: legacy violations that never fail `drift check`. One entry per line, sorted, `<convention id> <path#symbol>`; blank lines and lines starting with `#` are ignored.
+Baselined violations: legacy violations that never fail `drift check`. One line each, sorted: `<convention id> <path#symbol>`, and beside it a fingerprint line `<convention id> ~<16 hex digits> <path#symbol>` that lets the entry follow the member when it moves or is renamed (see [Files Drift Writes](Files-Drift-Writes#driftlock)). Blank lines and lines starting with `#` are ignored.
 
 ```text
 # drift.lock: legacy violations that never block. Fix code to remove lines.
 D-e0a68b app/api/events/route.ts#GET
+D-e0a68b ~<16 hex digits> app/api/events/route.ts#GET
 ```
 
-`drift init` baselines the current violations on the first run and, on later runs, the current violations of newly mined conventions; existing entries are kept. `drift practices promote` adds one line per unit that differs from the promoted practice today. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
+`drift init` baselines the current violations on the first run and, on later runs, only the current violations of conventions new to the policy. An existing convention is never baselined again. Existing entries are kept and gain a fingerprint line; when a decision moves to a new id (the rule gained an alternative), its lines move with it. `drift practices promote` adds one line per unit that differs from the promoted practice today. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
 
 ```bash
 echo "drift.lock merge=union" >> .gitattributes

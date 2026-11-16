@@ -732,6 +732,10 @@ and [`eval/study/runs/dev5-py/dev5-check.md`](eval/study/runs/dev5-py/dev5-check
 - **Python proposals are suggestions only, and their evidence is small.** No
   Python accuracy claim is made, and no Python convention blocks unless a person
   forces it.
+- **Rules proposed from Drift's map of the code are a second channel beside
+  mining.** They do not pass through the miner's measured gates, and their
+  accuracy has **not been measured yet**. They only advise, and nothing checks
+  one until a person accepts it.
 - **Conventions only.** Drift checks what your code already does; it is not a
   linter, a type checker or a security scanner. It is a guardrail, not a
   security control.

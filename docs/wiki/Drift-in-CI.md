@@ -9,10 +9,11 @@ The short version: CI checks the committed policy (`.drift/conventions.yaml` and
 | Command | Exit | Meaning |
 | --- | --- | --- |
 | `drift check` | 0 | no new violation, or only new violations of conventions in advise mode |
-| `drift check` | 1 | a new violation of a convention in block mode |
+| `drift check` | 1 | a new violation of a convention in block mode, or a security finding not in the committed security baseline, of a kind the baseline sets to fail |
 | `drift check --strict` | 1 | any new violation, advise mode included, or a file that could not be checked (not parsed for lack of stack, in the tree or at the merge base); without `--strict` that fails open, with the files named |
 | any command | 2 | an error: no `.drift/conventions.yaml` (`run drift init first`), a policy file that does not parse, an unknown convention id, a symbolic link at a write target, a base ref that does not resolve, no git at all with `--diff-base` |
 | `drift security`, `drift practices`, `drift card`, `drift map` | 0 | read-only facts; they report and never fail on findings (an error is still 2) |
+| `drift security --ratchet`, or `--diff-base` with `--fail-on` | 1 | a finding not in the security baseline, of a kind that fails; or, with `--diff-base --fail-on`, the change introduces a kind named |
 | `drift hook ...` | 0 | always; the answer is JSON on stdout |
 
 An unknown flag is also an error (exit 2, from the argument parser). In pull-request mode, "no merge base" is an error, never a pass: a shallow clone says `fetch-depth: 0 needed`.
@@ -20,6 +21,8 @@ An unknown flag is also an error (exit 2, from the argument parser). In pull-req
 Violations of conventions that are only *proposed*, legacy violations in `drift.lock`, and violations suppressed with `drift-ignore` or marked fine never fail. The practice departures that `drift check` also prints are facts, computed after the exit code is decided; they never change it.
 
 A practice a person promoted from the practice map is a convention, not a departure: its new violations are reported and fail exactly as any other convention's do, by its mode. Its two extra lines, a promoted practice that has gone stale and the units of its place that were not checked because the map cannot tell what they do, never fail a check. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+
+An accepted mined rule has the same two kinds of line. A member Drift could not read the rule for (a wrapper that does not resolve, a call that unpacks its arguments, and so on) is **not checked**: never reported, never failing, and its `drift.lock` line stays. A mined rule whose role has shrunk under 8 members, or which fewer than 75% of the members Drift can tell now follow, is **stale** and advises until a person looks, even when set to block. Each says so on a line of its own, and `--format json` carries them in `standing`. See [Conventions and Review](Conventions-and-Review#what-drift-check-could-not-tell).
 
 ## What blocks and what never blocks
 
@@ -32,13 +35,24 @@ A practice a person promoted from the practice map is a convention, not a depart
 | Practice departures (`drift check`'s second section) | Never |
 | A new violation of a promoted practice | As any convention: exit 1 in block mode, otherwise only with `--strict` |
 | A stale promoted practice, or units of a promoted practice not checked | Never |
+| A stale accepted mined rule, or members of a mined rule not checked | Never; a stale rule advises |
 | A promoted practice forced below the 80% share (`--force`) | Never; it advises only |
-| `drift security` and `drift security --diff-base` | Never; always exit 0 |
+| `drift security` and `drift security --diff-base` | Never without `--fail-on`; exit 0 |
+| A security finding not in `.drift/security.lock` | Yes, in `drift check`, for a kind the baseline sets to fail; `unscoped-key` advises until a person sets it to fail |
+| Security advice with no baseline (`drift check --diff-base`) | Never |
 | Suggestions | Only if a person forced one to block (`drift review --block --force`) |
 | Wiring rules (experimental) | Never, even with `--strict` |
-| A convention in a role under 15 members set to block | Never; treated as advise |
+| A convention set to block whose role had under 15 members when it was mined | Never; treated as advise |
 
 Only a person puts a convention in block mode, so a fresh `drift init` cannot break your CI.
+
+## The security baseline in CI
+
+Where the repository commits `.drift/security.lock` (`drift security --write-baseline`), `drift check` over the whole tree or a diff also reads the security inventory and reports each finding not in the baseline: a `Security baseline` section in text, `security` in JSON, one `::error` annotation each with `--format github`, and a SARIF result each under a rule `drift-security/<kind>`. Each finding fails the check when the baseline's `# fail:` line names its kind; the others advise. A baseline written by `--write-baseline` sets every kind to fail but `unscoped-key`; `drift security --write-baseline --fail-on unscoped-key` sets that one too. A check of named files reads no inventory.
+
+A finding of a kind newer than the Drift that wrote the baseline is listed apart, as new in this version of Drift, and fails nothing until the baseline is written again. With `--diff-base`, an entry point lacking a shared guard in a file the change did not touch (because other entry points gained the guard) is listed apart too, and fails nothing.
+
+With no baseline, `drift check --diff-base` lists what the change adds that a baseline would hold, under `Security advice: what this change adds (no security baseline; this does not fail the check)` (JSON `security_advice`). See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
 
 Upgrade the Drift that CI runs before anyone promotes a practice: a Drift from before promotion cannot read a `.drift/conventions.yaml` that holds one, and stops with exit 2 (see [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
@@ -123,7 +137,7 @@ compares the working tree with the merge base of the ref and `HEAD` (`git diff -
 - its file was added by the change;
 - it is on a declaration (a handler, component, class or model) and a line inside that declaration was added, changed or deleted. Drift records where a declaration starts, so a declaration runs to the line before the next one in the same file, and takes in the decorators and comments directly above it (up to a blank line). Editing a body counts: removing `requireUser()` from an existing handler is reported even though the first line did not change, and so does changing a class's decorator;
 - it is file-level (a file rule, a package manifest, top-level statements) and the change touched that file;
-- its file was renamed and it was not there before under the old path (in `drift.lock`, or at the merge base when that is checked): moving a handler into a route directory is reported even if its lines did not change, while moving a file keeps its legacy violations quiet (a plain `drift check` reports those, since they no longer match their `drift.lock` key);
+- its file was renamed and it was not there before under the old path (in `drift.lock`, or at the merge base when that is checked): moving a handler into a route directory is reported even if its lines did not change, while moving a file keeps its legacy violations quiet. A plain `drift check` keeps them quiet too where `drift.lock` has fingerprint lines and the moved code is unchanged; with a lock written before fingerprints it reports them, since they no longer match their `drift.lock` key;
 - a change elsewhere caused it (deleting a wrapper, changing a re-export). When a new violation outside the diff would fail the check, Drift also checks the merge base, with the current policy and lock and a throwaway fact cache, in a temporary directory built from git objects with a temporary index, then removed; your working tree and index are never touched, and no worktree is registered;
 - the change edits the policy (`.drift/conventions.yaml` or `drift.lock`): then every new violation is reported, as by a plain `drift check`, since dropping a lock entry makes that legacy violation new.
 

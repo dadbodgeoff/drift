@@ -43,6 +43,10 @@ The practice map and the security inventory are not rated by labelled cards. The
 
 The committed example of what this looks like in practice, on a 3,200-file monorepo (README): authorization reads 19 known, 2 none and 116 unknown of 137 units, and 64 of the unknown carry a check that was found and is not proven. Authentication reads 150 known, 20 none and 8 unknown of 178 units. An earlier build read 74 of the authorization units known; that figure included answers that were not proven, and an independent review found about 14 of 31 sampled to be false. The 19 are what is proven, each read against the source: a count of proofs, not of how much of the repository checks authorization.
 
+### Rules proposed from the practice map
+
+Rules proposed from Drift's map of the code are a second channel beside mining. They do not pass through the miner's gates, which are what the figures above measure. Their accuracy has **not been measured yet**. They only advise, and nothing checks one until a person accepts it.
+
 ## What the figures do not show
 
 - **No 95% figure and no held-out pass** of the default tier or of "not wrong".
@@ -50,6 +54,7 @@ The committed example of what this looks like in practice, on a 3,200-file monor
 - **No real-maintainer accept rate.** All labels come from labelling agents under a written rubric.
 - **No precision for the experimental agent verifier** (`agents.verify`, off by default): its frozen prompt scored 84.3% (43/51) on development cards it was not tuned on, below the 90% bar set for it, so it gates nothing.
 - **No recall figure** for mined conventions.
+- **No figure for rules proposed from the practice map** (above).
 - **No forecast for the next blind pool.**
 
 ## What to expect
@@ -61,10 +66,12 @@ On a TypeScript or JavaScript repository Drift has not seen: about 1 card shown 
 - **Languages.** TypeScript, JavaScript and Python only. Other languages are not read. See [Languages and Frameworks](Languages-and-Frameworks).
 - **Frameworks not listed.** Entry points are listed for the frameworks Drift has adapters for (for TypeScript and JavaScript: Next.js, Express, Hono, Fastify, NestJS, tRPC, Inngest, Trigger.dev, BullMQ; for Python: FastAPI, Flask, flask-restx, Django, DRF, Starlette and Celery). A route in a framework with no adapter is not listed, and `drift security` does not know it exists. Routes registered from a data structure handed to a helper in another file (`register(app, ROUTES)`) are not listed; routes registered in a loop or from a table in the same file are listed under an unknown prefix (`?`).
 - **Constructs not read.** A dependency list built where Drift does not look, a service reached by name at runtime, a package's middleware that no list knows, a request handed to another service by `fetch`, a value of the caller held in a context variable or request-scoped provider, and similar, leave the answer `unknown` and say so.
-- **Authorization is mostly `unknown`.** The caller's side of a comparison is partly taken from names (`self.principal.org_id`, `req.user.orgId`, a parameter called `session`): the proofs that would replace this are not built, and a TypeScript comparison with no side named for the caller is unknown. A TypeScript query filtered by the session's own value is unknown, because where a filter's value comes from is not recorded for TypeScript. A tenant check against a JWT claim (`row.org_id != get_jwt()["org_id"]`) is unknown, not known. A Flask blueprint built in a factory that takes its guard as a parameter is not yet read.
+- **Authorization is mostly `unknown`.** The caller's side of a comparison is partly taken from names (`self.principal.org_id`, `req.user.orgId`, a parameter called `session`): the proofs that would replace this are not built, and a TypeScript comparison with no side named for the caller is unknown. A TypeScript query is read for where its filter's value comes from (`where: { userId: session.user.id }`, or a value of the caller handed to the function that queries); a value Drift cannot trace to the caller proves nothing. A tenant check against a JWT claim (`row.org_id != get_jwt()["org_id"]`) is unknown, not known. A Flask blueprint built in a factory that takes its guard as a parameter is not yet read.
 - **Deployment descriptions.** Kubernetes, Helm, Terraform (unless tied with `security.terraform`), CloudFormation, CDK, Pulumi and many platform configurations are recognised but not read, so while one is there nothing it may route to is called internal. HAProxy, Envoy and Traefik's file provider are not read. What is deployed from outside the repository, and CI scripts, are not seen.
 - **Not a linter, type checker or security scanner.** Drift checks what your code already does. Its risky-operation detection is syntactic and narrow. Every security report ends with what it does not cover, and Drift is a guardrail, not a security control.
 - **Mining is held at an earlier input.** Entry points Drift has learned to list since the last measured build (some Django, router-mount, consumer and route-table forms) are in `drift security` and the practice map and not yet read by `census`, `init` or `check`. They enter mining at the next measured round.
+- **Mined rules Drift cannot read for a member.** For an accepted rule, a member whose deciding code Drift did not read (a wrapper that does not resolve or is built by a factory, a call that unpacks a value into its arguments, a component that does not resolve, an entry point the practice map cannot tell for a sign-in or permissions rule) is not checked: never reported, and counted on its own line by `drift check`. So a rule's silence on such a member is not a pass. See [Conventions and Review](Conventions-and-Review#what-drift-check-could-not-tell).
+- **Readings added since the last measured build** (handlers held by objects and constructor functions, error classes that refuse by their status, refusals through `next(err)`, validation through a package helper, generated Prisma clients, typed Python parameters, learned scope keys, and the others on [Languages and Frameworks](Languages-and-Frameworks#authentication-and-authorization-what-is-read)) are in the listed reading: `drift security` and the practice map use them, mining does not.
 - **Small samples.** Every out-of-sample figure above is on 2 to 15 cards or 12 to 30 repositories.
 
 ## How to read an answer accordingly
