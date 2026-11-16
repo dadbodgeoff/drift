@@ -78,13 +78,15 @@ Three properties follow from using the classifier:
 
 `drift check` already computes the practice map for the files it looks at (it prints departures today), so this adds no second analysis.
 
+**What "follows" means, as built.** A unit follows when its own way's key is in `any_of`. For concerns whose uses add up (sign-in, permissions, validation, responses: `Concern::additive`), a unit whose uses include every use of an accepted way follows too: doing more is still doing it. Elsewhere (configuration, logging, data access, errors, testing) the extra use is the departure, and only the whole key follows. Two more rule fields exist: `any_mechanism` (a mechanism accepted whole: one use of it follows where uses add up, every use must be of it elsewhere) and `any_enforcing` (any use the classifier says enforces: a sign-in that turns a caller away, an authorization check it proved). The command-line options that write them are not built yet. For sign-in and permissions, an entry point of kind `job` takes no request and is no unit (`Concern::needs_a_caller`). A way code follows by doing nothing (errors that all bubble, logging only with a built-in logger: `Concern::passive`) can be promoted, and the preview says it holds new code to nothing it has to try for.
+
 ## 4. What may be promoted
 
 Decided from counts, never from names:
 
 - The place (a package, or a directory of it) has at least 8 units of the concern (`MIN_ROLE_SIZE`).
 - The chosen ways hold at least 80% of the units Drift could read (`PLACE_SHARE`, the share the map already uses for "departs from").
-- At most 20% of the place is "could not tell". Above that Drift refuses and points at `drift practices --hints`: it cannot check what it cannot read.
+- At most 20% of the place is "could not tell". Above that Drift refuses and points at `drift practices --hints`: it cannot check what it cannot read. As built, when every unit it could not tell (two or more) shares one cause outside them (the same reason, one of a body not read, a wrapper not seen into, a name that does not resolve, a method of an untyped value, a file not parsed, and the same instrument), the refusal names that cause and the `.drift/config.yaml` line that would let Drift read it, when there is one. The 20% does not move.
 - `--force` lets a person promote below the 80%, in advise mode only. It is their codebase.
 
 Existing gates are unchanged: Python conventions advise only; block mode needs 15 units (`MIN_BLOCK_ROLE_SIZE`); `// drift-ignore <id>: <reason>` works as for any convention; agents are told under the existing admission rules.

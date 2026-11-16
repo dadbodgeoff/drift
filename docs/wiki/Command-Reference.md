@@ -146,7 +146,7 @@ drift init [OPTIONS]
 | `--root <ROOT>` | Repository root | `.` |
 | `--no-cache` | Disable the on-disk fact cache |  |
 | `--refresh-kinds` | Relearn the file-kind vocabulary frozen in the conventions file (to adopt new kinds after an upgrade). Existing conventions keep their ids, but the files their roles cover may change |  |
-| `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full |  |
+| `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full (this cap never hides a default-tier proposal; mining's own caps can, see `drift census`) |  |
 | `--all` | List every suggestion |  |
 | `--explain` | After the summary, print the long account: what the show policy kept back and why, a line per package in a monorepo, and what the practice map offers agents |  |
 
@@ -176,7 +176,7 @@ One screen on standard output, in this order:
 
 `--explain` prints the same screen and then, under `Explained`, the long account: which default-tier proposals wait for a person before agents see them, which mined cards the show policy withheld and why, a line per package in a monorepo, what the practice map offers agents, and the steps to promote a withheld card.
 
-On a re-run, decisions already in the file (accepted, rejected, mode, `agents: show`, exceptions) are kept. New proposals get their current violations baselined; existing lock entries are kept.
+On a re-run, decisions already in the file (accepted, rejected, mode, `agents: show`, exceptions) are kept. Only a convention new to the policy has its current violations baselined. An existing convention is never baselined again, even once all its old violations are fixed, so a violation of it added since is reported, not recorded. Existing lock entries are kept and gain their fingerprint line (see [Files Drift Writes](Files-Drift-Writes#driftlock)). When a rule gained an alternative and so its id changed, the decision moves to the new id, and so do its lock entries.
 
 **Exit codes**
 
@@ -208,8 +208,9 @@ drift census [OPTIONS]
 | `--kind-roles` | Also form and mine kind roles (selector version 4): roles of one structural kind (components, hooks, pydantic models, routers, ...) across the repository, as `kind_roles` in the config's `experimental` list does: off by default. For the study; writes nothing |  |
 | `--coverage` | How much of the repository Drift maps: the seven coverage measures (parsed, in a package, in a structural role, imports resolved, entry points, under a mined and under a shown convention), the production and test maps apart, a table per package and the unmapped files by reason. With --json, as JSON. Writes nothing |  |
 | `--listed` | Mine over every entry point Drift lists, not only those the last measured build listed: the routes `drift security` and the practice map read become members of the roles conventions are mined for. A preview of the next measured round: the precision of what it proposes was not measured, and nothing is written |  |
-| `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full |  |
+| `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full (this cap never hides a default-tier proposal; mining's caps can, and the text then says so) |  |
 | `--all` | List every suggestion |  |
+| `--why [GATE]` | List what each gate of mining dropped instead of the proposals: how many per gate, then the candidates (role, rule, holders of members, the gate's threshold and the candidate's value, whether the target is the repository's or a dependency's), strongest first. `--why GATE` (`universal`, `wilson`, `lift`, `cap_avoid`, ...): only that gate. With --json, every dropped candidate. Observation only: what is proposed is exactly what `census` proposes. Not with `--coverage` |  |
 
 **Examples**
 
@@ -225,6 +226,10 @@ drift census --json > census.json
 ```bash
 drift census --coverage
 ```
+```bash
+drift census --why              # what each gate of mining dropped, and why
+drift census --why wilson       # only the rules below the lower bound
+```
 
 **Output**
 
@@ -233,6 +238,23 @@ Text: a header (`N conventions from M units in K roles`), notes for block candid
 `--json`: one JSON object (`schema: 1`), with every outlier of every proposal; see [Output and JSON Reference](Output-and-JSON-Reference). It writes no files and uses the fact cache only where `DRIFT_CACHE_DIR` points.
 
 `--coverage`: how much of the repository Drift maps (seven measures, production and test apart, a table per package, the unmapped files by reason); with `--json`, the same as JSON. It writes nothing.
+
+When mining's caps cut default-tier rules, the text says so: `N default-tier rule(s) was not proposed because of mining's caps (...)`, naming how many fell to the cap of 5 per role, to the layering share (at most a quarter of `--max` layering rules per repository) and to the cap of `--max` per repository. `drift census --why` lists them.
+
+`--why`: what mining dropped, gate by gate. It opens:
+
+```text
+What mining dropped, gate by gate. Observation only: nothing listed here is proposed, checked or shown to agents, and the proposals are exactly those of `drift census`.
+```
+
+Then how far candidates got (`R roles, M of them with 8 or more members across files; N candidate rules observed, D drafted, K mined, P proposed.`), the count dropped per gate in the order mining applies them, each with where its threshold comes from, and then each gate's candidates:
+
+```text
+wilson: <n> dropped. Passes: a lower bound of at least 0.75: with one outlier, a role of 19 or more members. Threshold: MIN_LOWER_BOUND = 0.75 (95% Wilson lower bound of holders / members) (engineering, no study; docs/v2/PLAN.md:148; TIER-ADMISSION.md finds the bound does not predict precision).
+  <holders> of <members>  <role>: <rule> (<detail>; target defined in the repository; default tier)
+```
+
+At most 10 candidates are listed per gate, or 50 with a gate named; the rest are counted (`and N more (`drift census --why <gate> --json` lists every one)`). Where a threshold comes from is one of: `study` (set by a measured study), `pre-registered`, `engineering, no study`, `engineering, rationale written but not measured`. An unknown gate is an error that lists the gate names. `--why --json`: see [Output and JSON Reference](Output-and-JSON-Reference#drift-census---why---json). [How Drift Works](How-Drift-Works) lists the gates.
 
 **Exit codes**
 
@@ -537,7 +559,7 @@ Shows only what agents are shown: accepted conventions of the default tier, sugg
 
 Checks the code against accepted conventions, mined ones and practices a person promoted, and reports new violations. Legacy violations baselined in `drift.lock` never fail.
 
-Where the repository committed a security baseline (`.drift/security.lock`, written by `drift security --write-baseline`), a check of the whole tree or of a diff also lists the security findings that are not in it and exits 1 on any (text: a `Security baseline` section; `--format json`: `security`; `--format github`: one `::error` annotation each; SARIF: a notification each). A check of named files reads no inventory. See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
+Where the repository committed a security baseline (`.drift/security.lock`, written by `drift security --write-baseline`), a check of the whole tree or of a diff also lists the security findings that are not in it. It exits 1 on any of a kind the baseline sets to fail; a finding of `unscoped-key` only advises unless the baseline sets that kind to fail (text: a `Security baseline` section; `--format json`: `security`; `--format github`: one `::error` annotation each; SARIF: a result each, under a rule `drift-security/<kind>`). A check of named files reads no inventory. Where the repository has no baseline, `drift check --diff-base` lists what the change adds that a baseline would hold, under `Security advice: what this change adds (no security baseline; this does not fail the check)` (JSON `security_advice`). See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
 
 ```text
 drift check [OPTIONS] [FILES]...
@@ -578,6 +600,17 @@ drift check app/api/orders/route.ts
 
 Text (default): `drift: N new violation(s) (M legacy, baselined)`, then per violation the convention id and summary with its evidence, `at path:line symbol`, a file to copy (`like`), and its mode; a closing line on how to fix it, make an intentional exception or reject a wrong convention. After the violations, under their own heading, the practice map's departures for the files looked at (facts, never part of the exit code). Violations of accepted conventions agents are not shown are listed too, marked `not shown to agents` on their mode line; the legacy count includes theirs.
 
+Accepted mined rules have lines of their own too, and none of them changes the exit code. Each is printed only when it has something to say:
+
+```text
+drift: [<id>] <n> of <members> member(s) not checked: Drift could not read what decides the rule for them, and never reports what it cannot read (<holders> follow it)
+  why  <reason> (<n>)
+drift: [<id>] mined rule is stale: <why>, so it advises until a person looks: `drift review --advise <id>` keeps it as advice, `drift review --reject <id>` drops it
+drift: [<id>] was block, now advise because <why>
+```
+
+At most three `why` lines are printed; the rest are counted (`+N more reasons: `drift check --format json` lists them all (`standing`)`). What "not checked" and "stale" mean is on [Conventions and Review](Conventions-and-Review#what-drift-check-could-not-tell).
+
 A violation of a promoted practice is listed like any other. Two more kinds of line are about promoted practices, and neither changes the exit code: a **stale** promoted practice (no unit of its place uses any of its ways any more, so it fires on nothing until a person looks at it), and the number of units of a promoted practice's place that were **not checked** because the practice map cannot tell what they do (they are never reported).
 
 ```
@@ -593,7 +626,7 @@ drift: practices (facts, not rules; they never fail the check): 2 file(s) do a c
   app/api/r39/route.ts: authn: 38 of the 40 other entry points in app/api use wrap withAuth [P-0f0acb]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
 ```
 
-`--format json`: `violations`, `fixed`, `conventions`, and `practices`, `diff`, `stale_practices` and `practices_not_checked` when present; see [Output and JSON Reference](Output-and-JSON-Reference). `--format sarif`: SARIF 2.1.0 (new violations only; blocking rules at level `error`, other advice at `warning`, suggestions at `note`; members a convention is not about are listed as notes; unchecked files, unsure findings and practice departures are run notifications, not results). `--format github`: GitHub Actions annotations for new violations (`::error` for block mode, `::warning` for advice, `::notice` for suggestions), `::warning` for files not checked, `::notice` for unsure findings, exempt members and practice departures, a final summary line, and a job summary appended to the file `GITHUB_STEP_SUMMARY` names when that variable is set.
+`--format json`: `violations`, `fixed`, `conventions`, and `practices`, `diff`, `standing`, `security`, `security_advice`, `stale_practices` and `practices_not_checked` when present; see [Output and JSON Reference](Output-and-JSON-Reference). `--format sarif`: SARIF 2.1.0 (new violations only; blocking rules at level `error`, other advice at `warning`, suggestions at `note`; members a convention is not about are listed as notes; unchecked files, unsure findings and practice departures are run notifications, not results). `--format github`: GitHub Actions annotations for new violations (`::error` for block mode, `::warning` for advice, `::notice` for suggestions), `::warning` for files not checked, `::notice` for unsure findings, exempt members and practice departures, a final summary line, and a job summary appended to the file `GITHUB_STEP_SUMMARY` names when that variable is set.
 
 With `--diff-base REF`, only violations introduced since the merge base with REF are reported (in changed lines and added files), and a header says how many files the diff added, changed and deleted. The merge base must be in the local history: in a shallow clone that lacks it, this is an error (use `fetch-depth: 0`).
 
@@ -603,13 +636,13 @@ With `--diff-base`, the practice facts also list the entry points the diff adds 
 
 | Code | Meaning |
 | --- | --- |
-| 0 | No new violation that fails. Advice, legacy violations, practice departures, stale promoted practices, units of a promoted practice not checked, and files that could not be checked (without `--strict`) do not fail. |
-| 1 | A new violation of a convention in block mode (`mode block` as checked: a role of fewer than 15 members advises whatever the file says), or, with `--strict`, any new violation, and any file that could not be checked (not parsed for lack of stack, in the tree or at the merge base). Wiring advice never fails, even with `--strict`. |
+| 0 | No new violation that fails. Advice, legacy violations, practice departures, stale promoted practices and mined rules, members and units not checked, security advice, and files that could not be checked (without `--strict`) do not fail. |
+| 1 | A new violation of a convention in block mode (`mode block` as checked: a role that had fewer than 15 members when it was mined, or a stale mined rule, advises whatever the file says), or, with `--strict`, any new violation, and any file that could not be checked (not parsed for lack of stack, in the tree or at the merge base). Wiring advice never fails, even with `--strict`. Also a security finding not in the security baseline, of a kind the baseline sets to fail. |
 | 2 | Error: no `.drift/conventions.yaml`, an unreadable policy, a path outside the repository, `--diff-base` outside a git work tree or with a ref Git cannot find, or a command-line usage error. |
 
 **Notes**
 
-Intentional exception: `// drift-ignore <id>: <reason>` directly above the declaration (`#` in Python); a comment without a reason suppresses nothing. In SARIF and GitHub output, paths are from the git top level when `--root` is a subdirectory. Run without `--root` in a directory with no `.drift/conventions.yaml`, it uses the nearest one above and makes the file arguments absolute.
+Intentional exception: `// drift-ignore <id>: <reason>` directly above the declaration (`#` in Python); a comment without a reason suppresses nothing. A violation that is about a whole file (a file's exports or directives, a layering import) takes the comment at the top of the file, and a layering violation also on the import's line or directly above it; see [Conventions and Review](Conventions-and-Review#drift-ignore-comments). In SARIF and GitHub output, paths are from the git top level when `--root` is a subdirectory. Run without `--root` in a directory with no `.drift/conventions.yaml`, it uses the nearest one above and makes the file arguments absolute.
 
 ## drift security
 
@@ -630,9 +663,9 @@ drift security [OPTIONS] [FILES]...
 | `--diff-base <REF>` | Report only what the change since the merge base with this ref introduces: entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, and entry points made internet-facing. Facts for a pull request; exit 0 |  |
 | `--no-cache` | Disable the on-disk fact cache |  |
 | `--github` | With --diff-base: GitHub Actions output (notice annotations, and a job summary when GITHUB_STEP_SUMMARY is set) |  |
-| `--fail-on <KINDS>` | With --diff-base: exit 1 when the change introduces any of these, separated by commas: `unguarded-reaching`, `no-guard`, `guard-gap`, `risky`, `leak`, `public`, or `any`. With --ratchet: only these kinds fail (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`). Off unless given |  |
-| `--write-baseline` | Write the security baseline (`.drift/security.lock`): every finding of the inventory as it is now, and every entry point the practice map reads as checking nothing of a signed-in caller, keyed by handler and route, never by line. Commit it |  |
-| `--ratchet` | Report the findings that are not in the security baseline, and those of it that are gone, with no commit to compare with. Exits 1 when a finding was added (with `--fail-on`, only for the kinds named) |  |
+| `--fail-on <KINDS>` | With --diff-base: exit 1 when the change introduces any of these, separated by commas: `unguarded-reaching`, `no-guard` (one whose guard cannot be read is listed apart as guard unknown and never counted), `guard-gap`, `risky`, `leak`, `public`, or `any`. With --ratchet: only these kinds fail (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`). With --write-baseline: the kinds named are set to fail. Off unless given |  |
+| `--write-baseline` | Write the security baseline (`.drift/security.lock`): every finding of the inventory as it is now, keyed by handler and route, never by line, with the inventory version that wrote it. Commit it. Every kind fails `drift check` but `unscoped-key`, which advises; with --fail-on, the kinds named fail too (kept when the baseline is written again) |  |
+| `--ratchet` | Report the findings that are not in the security baseline, and those of it that are gone, with no commit to compare with. Exits 1 when a finding was added (with `--fail-on`, only for the kinds named; without it, the kinds the baseline sets to fail) |  |
 | `--max <MAX>` | Rows shown per section in text output (entry points with no wrapper or decorator: always the first 50; exceptions per shared guard: the first 10) | `20` |
 
 **Examples**
@@ -656,13 +689,15 @@ Text: a summary line (entry points, how many have no guard, how many have a guar
 
 `--json`: the full inventory (`FILES` does not filter it); see [Output and JSON Reference](Output-and-JSON-Reference).
 
-`--diff-base REF`: only what the change since the merge base introduces: entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, entry points made internet-facing. With `--json` the payload is `guard_gaps`, `unguarded_reaching`, `sinks`, `leaks`, `now_public`, `added_without_guard` and `diff`; with `--github`, notice annotations plus a job summary when `GITHUB_STEP_SUMMARY` is set.
+`--diff-base REF`: only what the change since the merge base introduces: entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, entry points made internet-facing. With `--json` the payload is `guard_gaps`, `unguarded_reaching`, `sinks`, `leaks`, `now_public`, `added_without_guard`, `guard_unknown` (when not empty) and `diff`; with `--github`, notice annotations plus a job summary when `GITHUB_STEP_SUMMARY` is set.
 
-With `--diff-base`, a section 'New entry points where Drift found no guard, or cannot tell' (JSON `added_without_guard`) lists added handlers in changed files whose guard is none or unknown; routes already listed under a shared guard, and routes the practice map knows are open on purpose (probes, `AllowAny`, webhook signatures), are left out.
+With `--diff-base`, the added handlers in changed files where Drift found no guard are listed (JSON `added_without_guard`); routes already listed under a shared guard, and routes the practice map knows are open on purpose (probes, `AllowAny`, webhook signatures), are left out. Those with no guard and something whose guard cannot be read are listed apart, under `New entry points whose guard is unknown (Drift could not read what may be one; not findings)` (JSON `guard_unknown`), and `--fail-on no-guard` never counts them.
+
+With `--write-baseline`, it prints what it wrote (`Wrote .drift/security.lock (N finding(s)): ...`, a count per kind) and which kinds only advise. Writing it again keeps the kinds the baseline already set to fail and adds those `--fail-on` names.
 
 **Exit codes**
 
-0 on success, including when it lists findings. 1 with `--fail-on`, when the change introduces one of the kinds named (standard error says which), and with `--ratchet`, when a finding that is not in the baseline is found. 2 on error (for example `--diff-base` outside a git work tree or with a ref Git cannot find, or a `--fail-on` name that is none of the kinds).
+0 on success, including when it lists findings. 1 with `--fail-on`, when the change introduces one of the kinds named (standard error says which), and with `--ratchet`, when a finding that is not in the baseline is found, of a kind that fails. 2 on error: for example `--diff-base` outside a git work tree or with a ref Git cannot find, a `--fail-on` name that is none of the kinds, `--fail-on` without `--diff-base`, `--ratchet` or `--write-baseline`, `--fail-on public` with `--write-baseline` or `--ratchet`, a kind read against the baseline (`scope-gap`, `no-authorization`, `unscoped-key`, `whole-row`, `workflow`, `dependency`, `kubernetes`) with `--diff-base`, and `--ratchet` with no baseline.
 
 **Notes**
 
@@ -911,15 +946,17 @@ Wrote .drift/conventions.yaml and drift.lock.
 | `written` | `false` with `--dry-run` |
 | `place` | The place as output names it (`.` for the root package) |
 | `convention` | The convention written (or that would be): `id`, `summary`, `status`, `mode`, `promoted_from_practice` |
-| `candidate` | What was counted: `concern`, `unit` (what one unit is), `place` (`package`, `dir`), `ways` (the accepted ways: `id`, `key`, `label`, `members`), `other_ways` (the other known ways units of the place use, most members first), `follows`, `exceptions` (every unit that differs, sorted by path, line and symbol), `unknown`, `total` (`follows` + exceptions + `unknown`), `example` (a unit that follows, to copy), `forced` |
+| `candidate` | What was counted: `concern`, `unit` (what one unit is), `place` (`package`, `dir`), `ways` (the accepted ways: `id`, `key`, `label`, `members`), `other_ways` (the other known ways units of the place use, most members first), `follows`, `exceptions` (every unit that differs, sorted by path, line and symbol), `unknown`, `total` (`follows` + exceptions + `unknown`), `example` (a unit that follows, to copy), `forced`; and, each only when set, `passive` (the way is what code does by doing nothing), `jobs` (background jobs not counted, for sign-in and permissions) and `unknown_cause` (`reason`, `instrument`, `units`, and `hint` when a `.drift/config.yaml` line would let Drift read it: the one cause outside them that every unknown unit shares) |
 | `baselined` | The number of `drift.lock` lines added (with `--dry-run`, that would be added) |
 | `replay` | With `--block`: `{ "recent": 15, "followed": 14 }`, the units the replay read and how many of them follow. Otherwise `null` |
 | `same_way` | The ids of the mined conventions, proposed or accepted, whose rule requires the same thing of code in the same package (empty when there is none). With both accepted, new code that breaks them is reported under each |
 | `preview` | The text preview |
 
-On refusal, exit 2 and on standard output `{ "refused": { "code": "…", … }, "message": "<the sentence>" }`. The codes and their fields: `unknown_variant` (`id`); `not_a_way` (`id`, `why`: the id names `none`, the tail of one-off ways, or a way only declared, with no unit proven to use it); `other_concern` (`id`, `concern`: a `--with` variant of another concern); `no_such_place` (`place`); `no_place` (`id`, `nearest`: the refusal of the place that came nearest, or null); `too_small` (`place`, `units`, `min`); `below_share` (`place`, `follows`, `read`); `too_unknown` (`place`, `unknown`, `total`). Four more come from the command line itself and carry only the code, except the last: `no_variant` (no id and no `--list`), `block_forced` (`--block` with `--force`), `no_policy` (no `.drift/conventions.yaml`: run `drift init` first), and `block_refused` (`id`, `replay`: the replay that was run, or null when there is no history to read, the place is Python, or the practice was forced).
+On refusal, exit 2 and on standard output `{ "refused": { "code": "…", … }, "message": "<the sentence>" }`. The codes and their fields: `unknown_variant` (`id`); `not_a_way` (`id`, `why`: the id names `none`, the tail of one-off ways, or a way only declared, with no unit proven to use it); `other_concern` (`id`, `concern`: a `--with` variant of another concern); `no_such_place` (`place`); `no_place` (`id`, `nearest`: the refusal of the place that came nearest, or null); `too_small` (`place`, `units`, `min`); `below_share` (`place`, `follows`, `read`); `too_unknown` (`place`, `unknown`, `total`, and `cause` in the shape of `unknown_cause` when the unknown units share one). Four more come from the command line itself and carry only the code, except the last: `no_variant` (no id and no `--list`), `block_forced` (`--block` with `--force`), `no_policy` (no `.drift/conventions.yaml`: run `drift init` first), and `block_refused` (`id`, `replay`: the replay that was run, or null when there is no history to read, the place is Python, or the practice was forced).
 
 `--list --json`: `{ "candidates": [ { "place": ".", "command": "drift practices promote P-0f0acb --in .", "candidate": { … } } ], "declined": 0, "promoted": [] }`, with `candidate` as above, sorted by concern, place and variant id. A practice already promoted, or one you declined in `drift review`, is not listed again: `promoted` holds the ids of the conventions that cover what would have been listed, and `declined` counts the ones declined. (On the sample repository the broadest place that qualifies is the root package, `.`, so `--list` names that; `--in app/api` names the directory.)
+
+The preview can carry three more lines: the shared cause of the unknown units (`All N are unknown for one cause outside them: ...`), the background jobs not counted (`N background jobs take no request and are not counted.`), and, for a way of doing nothing, `This is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.` See [Practices Map](Practices-Map#how-the-rule-is-checked).
 
 **Exit codes**
 

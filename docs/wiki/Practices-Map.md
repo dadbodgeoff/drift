@@ -104,6 +104,9 @@ Besides a guard that turns callers away (a wrapper, decorator, base class, depen
 | `dynamic` | dynamic code (computed callees, spreads) |
 | `body_unreadable` | the body awaits a call whose body cannot be read; it may be the check |
 | `not_followed` | a value that would decide the concern (a tenant id from a header or route) is handed to code whose checks are not followed |
+| `partly_read` | a function the unit runs was read except for a method of a value whose type Drift does not know; the instrument is that function |
+| `forwarded` | the request is handed on to another service over HTTP; the instrument is the function that hands it on |
+| `signature_not_proven` | a webhook signature verifier is called, but its failure does not provably leave the handler |
 | `route_not_matched` | a test request whose route is not a literal may be the one that covers this entry point |
 | `unclassified` | an instrument no vocabulary, usage or declaration classifies |
 | `check_not_proven` | a check was found and is not proven to run on every request, or only its name says what it is |
@@ -223,7 +226,13 @@ The rule is checked by the same classifier that draws the map, not by matching a
 | does it another known way, is `identified` (reads the caller and turns no one away), or `none` | breaks it: a violation, unless it is in `drift.lock` or has a `drift-ignore` comment |
 | `unknown` | **never reported.** Counted, and `drift check` says how many units it could not check |
 
-So a unit Drift cannot read never becomes a violation, and "nothing found" is told apart from "could not tell". A way is what the map read, stored by its key (the file and symbol that define it), so a second helper that does the same job is a second way: add it with `--with`. A helper you declared in `.drift/config.yaml` under `practices:` is a known way like any other.
+So a unit Drift cannot read never becomes a violation, and "nothing found" is told apart from "could not tell".
+
+**Doing more than the accepted way.** For sign-in (`authn`), permissions (`authz`), validation and responses (`api`), what a unit does adds up: a route that signs the caller in with the accepted guard and also checks something else still signs them in. There a unit follows when its uses include every use of an accepted way. For the other concerns (configuration, logging, data access, errors, testing) the extra use is itself the departure (a config value read in place beside the config module), so a unit follows only when what it does, as a whole, is an accepted way. `drift practices --json --units` lists each unit's separate `uses`.
+
+**A whole mechanism, or any way that enforces.** The `practice` rule in `.drift/conventions.yaml` can hold two more fields beside `any_of`. `any_mechanism` lists mechanisms accepted whole, by the classifier's own names (`wrap`, `permission`, `dependency`, ...): for sign-in, permissions, validation and responses a unit follows when one of its uses is of such a mechanism, whatever instrument it names; for the other concerns, every one of its uses must be. A mechanism that cannot enforce (one that opens a route, one that only identifies the caller) is never offered whole. `any_enforcing: true` accepts any way the classifier says enforces the concern: for sign-in, a use that turns a caller away; for permissions, a check Drift proved. A unit with nothing found, or one that only identifies the caller, breaks it. Only sign-in and permissions have this notion. Both fields are absent unless set, and a unit Drift cannot tell is never a violation under them either. `drift practices promote` has no option that writes them in this build.
+
+**Background jobs.** For sign-in and permissions, an entry point of kind `job` takes no request, so a promoted practice does not count, check or report it. The preview says how many were left out: `  N background jobs take no request and are not counted.` A way is what the map read, stored by its key (the file and symbol that define it), so a second helper that does the same job is a second way: add it with `--with`. A helper you declared in `.drift/config.yaml` under `practices:` is a known way like any other.
 
 A violation of a promoted practice is reported like any other violation, in `drift check` and in CI, and counts toward the exit code by its mode. To make an exception on purpose, put `// drift-ignore <id>: <reason>` (`#` in Python) directly above the declaration; a reason is required.
 
@@ -238,6 +247,16 @@ Drift decides from counts in the place, never from names. A practice may be prom
 | Share of all units in the place that are `unknown` | at most **20%** | Drift cannot hold code to what it cannot read |
 
 On the sample repository: 40 entry points in `app/api`, 0 unknown, 38 of 40 (95%) use `withAuth`. It qualifies.
+
+When more than 20% are unknown, the refusal says so: `In <place>, Drift cannot tell how <unknown> of the <total> do it (<pct>%, more than 20%): it cannot hold code to what it cannot read.` When every unknown unit, two or more, is unknown for one cause outside them (the same reason and the same instrument, which no unit's own file holds), it names that cause instead of pointing at `drift practices --hints`:
+
+```text
+All <n> are unknown for one cause outside them: a wrapper Drift cannot see into (`<instrument>`). This line in .drift/config.yaml would let Drift read it: `<line>`.
+```
+
+The cause is one of: `a call whose body Drift cannot read`, `a wrapper Drift cannot see into`, `a name that does not resolve`, `a method of a value whose type Drift does not know`, `a file that was not parsed`. Where no `.drift/config.yaml` line names it, the sentence ends `No .drift/config.yaml line names it: once Drift reads that call, they can be told.` The preview of a practice that does qualify prints the same sentence when its unknown units share one cause. The 20% is not moved by it: the place is still refused.
+
+**A way of doing nothing.** Some ways are what code does by doing nothing: errors that all bubble up to the framework, or logging only with a built-in logger. A practice of such a way holds new code to nothing it has to try for, and the preview says so: `This is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.`
 
 `drift practices promote --list` lists every practice that qualifies now, one line each with the command to run. Each variant is listed at its broadest place that qualifies: the package, or a directory of it only where the package as a whole does not qualify.
 

@@ -1148,8 +1148,10 @@ pub struct Symbol {
     /// from a constructor call (`self.repo = RuleRepository()`), as
     /// `attribute=<canonical class>` (`db=pkg:sqlalchemy.ext.asyncio#AsyncSession`).
     /// A method called through the attribute of an instance (`repository.db.commit`)
-    /// is that class's. A builtin's is not recorded. Sorted; recorded by Python only;
-    /// omitted when empty.
+    /// is that class's. A builtin's is not recorded. Sorted; omitted when empty.
+    /// Recorded by Python, and by TypeScript in the listed reading only (the class a
+    /// property is declared with: `public prisma!: PrismaClient`, a constructor
+    /// parameter property `private readonly users: UsersService`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub attr_types: Vec<String>,
     /// The repository's callees (of [`Symbol::calls`] and [`Symbol::receiver_calls`])
@@ -1408,7 +1410,7 @@ pub struct Member {
     pub throws: Vec<String>,
     /// Keys passed to calls in the method's own body ([`Symbol::args`], for this
     /// method alone): the filter keys of its queries. Sorted; omitted when empty.
-    /// Recorded by Python only.
+    /// Recorded by Python and TypeScript.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
     /// The method's own scoped queries ([`Symbol::scoped_queries`], for this method
@@ -2098,8 +2100,9 @@ pub mod controls {
     pub const REFUSES_ABSENT: &str = "refuses_absent:";
     /// What starts the control that says where the value a scoped query filters by
     /// comes from ([`crate::ScopedQuery`]): `filter_value:<callee>\t<key>\t<side>`,
-    /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62). Mining
-    /// never proposes it.
+    /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62), and by
+    /// TypeScript in the listed reading (lowering 76, side `caller`). Mining never
+    /// proposes it.
     pub const FILTER_VALUE: &str = "filter_value:";
     /// What starts the control that says what a call of the body is given, for
     /// each call of the repository's own code, also one given nothing:

@@ -42,6 +42,8 @@ drift init
 
 Running `census` first is optional; it previews and writes nothing. `drift init` writes the proposals (all `proposed`: nothing is checked, shown to agents, or able to block) and baselines today's violations in `drift.lock`.
 
+If `drift init` says `Security baseline: none yet`, the security inventory found something. Writing `.drift/security.lock` (`drift security --write-baseline`) accepts today's findings as they are, so that `drift check` fails only on new ones. Decide that with the security owner; it is not part of `drift init`.
+
 Do not commit yet. If `drift init` says nothing was proposed, that is a normal outcome on a small or uniform repository; the practice map and the security inventory still work, and you can skip to "Answer setup once".
 
 ### Week 1: review together
@@ -106,7 +108,7 @@ Set a convention to block only when you would reject the same violation in code 
 drift review --block D-37416b
 ```
 
-Only default-tier conventions in roles of 15 or more members can be set to block without `--force`, and a block-mode convention in a smaller role is treated as advise. A promoted practice is set to block with `drift practices promote <P-id> --in <place> --block`, which Drift allows only when, of the 15 units most recently added to the place, at least 80% follow it; it needs git history, and a Python place advises only. Each blocking decision is a pull request to `.drift/conventions.yaml`. `drift review --advise <id>` is the way back.
+Only default-tier conventions in roles of 15 or more members can be set to block without `--force`, and a block-mode convention in a smaller role is treated as advise. A block-mode mined rule whose evidence no longer holds (stale) advises too until a person looks; `drift check` says which and why. `.drift/conventions.yaml` keeps the evidence as it stood when a convention was first seen accepted (`accepted_evidence`), so the owner can see how the role has changed since. A promoted practice is set to block with `drift practices promote <P-id> --in <place> --block`, which Drift allows only when, of the 15 units most recently added to the place, at least 80% follow it; it needs git history, and a Python place advises only. Each blocking decision is a pull request to `.drift/conventions.yaml`. `drift review --advise <id>` is the way back.
 
 ## Ownership
 
@@ -114,8 +116,9 @@ Treat `.drift/conventions.yaml`, `drift.lock` and `.drift/config.yaml` as policy
 
 - **Name an owner** (a person or a small group), and require their review of changes to these files, for example with a `CODEOWNERS` entry. Drift does not enforce this; your repository host does.
 - **Agents cannot edit these files.** The hooks deny edits to `.drift/` and `drift.lock`, including shell commands that write there, best effort. `drift setup` lets an agent propose, never decide, any answer that would make Drift say more.
-- **Review `drift.lock` changes.** Lines are added by people (at `init`, and when a person promotes a practice) and removed by fixing code. A pull request that adds lock lines is baselining new violations and deserves the same scrutiny as a new `drift-ignore`.
-- **Count suppressions.** `drift check` counts `drift-ignore` comments, and the pull-request summary lists the ones a change adds.
+- **Review `drift.lock` changes.** Lines are added by people (at `init`, and when a person promotes a practice) and removed by fixing code. A pull request that adds lock lines is baselining new violations and deserves the same scrutiny as a new `drift-ignore`. Re-running `drift init` baselines only conventions new to the policy, never again an existing one, and adds a fingerprint line beside each existing entry; those lines are expected. Legacy code moved or renamed with its code unchanged stays baselined by its fingerprint, so a refactor that moves files does not add lock lines.
+- **Count suppressions.** `drift check` counts `drift-ignore` comments, and the pull-request summary lists the ones a change adds. A comment at the top of a file covers that file's file-level violations (its exports, directives, a layering import); review those as carefully as one on a declaration.
+- **Review `.drift/security.lock` changes** with the security owner. Writing it again accepts every finding there is now.
 
 If two branches change `.drift/conventions.yaml` at once, Drift has no merge tool for it: resolve it like any YAML file (keep both sides' decisions; ids are stable), then run `drift review --list` or `drift check` to confirm the file still parses. A file that does not parse stops the commands that read it with exit 2. `drift.lock` needs no resolution when you use `merge=union`, because lines are only added by people and removed by fixing code.
 

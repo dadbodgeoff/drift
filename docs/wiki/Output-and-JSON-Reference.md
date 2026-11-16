@@ -74,6 +74,21 @@ The conventions Drift would propose. Writes no files.
 | `workspace` | object (optional) | Present only in a repository of several packages: `tools` and per-package rows. |
 | `unchecked` | list of paths (optional) | Files not parsed for lack of stack, left out of every count. |
 
+### `drift census --why --json`
+
+What mining dropped, gate by gate. Observation only: the proposals are exactly those of `drift census`, and nothing listed is proposed, checked or shown to agents. With a gate named (`drift census --why wilson --json`), `gates` and `dropped` hold only that gate.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `schema` | integer | 1. |
+| `observation_only` | boolean | Always `true`. |
+| `gate` | text or null | The gate named, or null. |
+| `reached` | mapping | How many reached each stage: `roles`, `role_mined` (roles with 8 or more members across files), `observed`, `drafted`, `mined`, `proposed`. |
+| `gates` | list | Every gate in the order mining applies it: `name`, `constant` (the threshold as the code holds it), `passes` (what passes, in words), `origin`, `source` (where that origin is written down), `dropped` (how many). |
+| `dropped` | list | Every dropped candidate rule, below. |
+
+`origin` is one of `study` (set by a measured study), `pre-registered`, `engineering, no study`, and `engineering, rationale written but not measured`. A dropped row: `gate`, `id` (the id the convention would have had), `role`, `rule` (the rule in words), `family`, `lang`, `holders`, `members`, `value` and `threshold` (the measured value and the bar it missed, where the gate has numbers), `detail`, `target` (`repository`, `dependency`, `built_in`, `unresolved`, `mixed` or `none`: where the rule's target is defined) and `default_tier` (whether the rule would have been in the default tier).
+
 A proposal:
 
 | Field | Type | Meaning |
@@ -110,8 +125,28 @@ New violations of accepted conventions, with the conventions as checked.
 | `unchecked` | list of paths (optional) | Files not checked: no stack large enough to parse them could be reserved, so their violations are unknown, not absent. |
 | `exempt` | list (optional) | Members an accepted convention is not about, with `id`, `path`, `symbol`, `line`, `reason` and `code`. |
 | `suppressed_neighbour` | list (optional) | Warnings the neighbour gate held back (only with `DRIFT_NEIGHBOUR_GATE=on`). |
+| `standing` | list (optional) | Per accepted mined rule, what the check read of its members; below. Omitted when there are none. |
+| `security` | mapping (optional) | What the security baseline (`.drift/security.lock`) does not hold; below. Omitted when the repository has no baseline, and when files are named. |
+| `security_advice` | list (optional, with `--diff-base`) | With no security baseline: what the change adds that a baseline would hold, as advice: `kind` (`no-guard`, `unguarded-reaching` or `unscoped-key`), `key`, `at` (`path:line`), `read` (what Drift read), `reaches` (optional: the operations fed by the request it reaches). Never part of the exit code. |
 | `stale_practices` | list (optional) | Promoted practices none of whose ways any unit of their place uses any more: `id`, `summary`, `units` (the units of the concern in the place now). They fire on nothing and never fail the check. Omitted when there are none. |
 | `practices_not_checked` | list (optional) | Per promoted practice, the units of its place the practice map cannot tell: `id`, `units`. Never reported, never fail the check. Omitted when there are none. |
+
+A standing (under `standing`):
+
+| Field | Meaning |
+| --- | --- |
+| `id` | The convention. |
+| `whole` | Whether the counts are of the whole repository. A check of named files counts the members they hold only, and staleness is then not decided. |
+| `role` | Units in its role now, exempt ones included. |
+| `members` | Members the rule is about: those that follow it, those that break it and those not checked. |
+| `holders` | Members that follow it. |
+| `not_checked` | Members Drift could not tell: never reported, and their `drift.lock` lines stay. |
+| `not_checked_why` | Optional: each reason in words, with how many members. |
+| `stale` | Optional: why the rule is stale. It then advises until a person looks. |
+| `mode` | `block` or `advise`: the mode it is checked with now. |
+| `mode_note` | Optional: `was block, now advise because ...` when that mode is not the one in the file. |
+
+The security part (under `security`): `added` (found now and not in the baseline, of a kind the baseline sets to fail, by kind: each `{key, at}`; these fail the check), `advised` (the same, of a kind that only advises), `new_in_drift` (of a kind newer than the inventory that wrote the baseline: not the change's finding), `outside_change` (with `--diff-base`: entry points lacking a shared guard in files the change did not touch), `gone` (`{kind, key}`: in the baseline and no longer found) and `kept` (how many baseline findings are still found). The four maps are omitted when empty. See [Security Inventory](Security-Inventory).
 
 A violation:
 
@@ -119,7 +154,7 @@ A violation:
 | --- | --- | --- |
 | `id`, `path`, `symbol`, `line` | | The convention and the member. |
 | `summary`, `evidence`, `example` | text | The rule, `holders/total`, and a member to copy. |
-| `mode` | `advise` or `block` | The effective mode: `advise` for roles too small to block, whatever the file says. |
+| `mode` | `advise` or `block` | The effective mode: `advise` for roles too small to block, and for a stale mined rule, whatever the file says. |
 | `tier` | `default` or `suggestion` (optional) | |
 | `baselined` | boolean | In `drift.lock`: legacy, never fails. |
 | `suppressed` | boolean | Suppressed by a `drift-ignore` comment with a reason. |
@@ -133,7 +168,7 @@ A convention as checked:
 | Field | Meaning |
 | --- | --- |
 | `id`, `status`, `mode` | As in `.drift/conventions.yaml`. |
-| `effective_mode` | As checked once accepted: a role under 15 members advises even when `mode` is `block`, and so does a practice promoted below the 80% share (`--force`). |
+| `effective_mode` | As checked once accepted: a role that had under 15 members when it was mined advises even when `mode` is `block`, and so does a practice promoted below the 80% share (`--force`), an experimental wiring rule, and a mined rule gone stale. |
 | `tier`, `tier_reason`, `language`, `names_package`, `rule_kind`, `members`, `blockable` | As in a census proposal. |
 | `agents` | Whether agents are shown it, with a person's `agents: show` and a forced block taken into account. |
 | `verify` | Only with `agents.verify: on`: the experimental verifier's standing. |
@@ -192,7 +227,9 @@ Only what the change since the merge base introduces. Exits 0 whatever it lists.
 | Field | Meaning |
 | --- | --- |
 | `guard_gaps` | Entry points in changed files lacking a guard most of their siblings have, that did not lack it at the merge base: `guard`, `kind`, `package`, `dir`, `members`, `with_guard`, `entry`, `example`, `convention`. |
-| `unguarded_reaching` | Entry point rows with no wrapper or decorator reaching a risky operation, not so at the merge base. |
+| `unguarded_reaching` | Entry point rows with no guard reaching a risky operation, not so at the merge base. |
+| `added_without_guard` | Entry points the change adds that a request reaches where Drift found no guard in what it read. One whose guard Drift cannot read is not here. |
+| `guard_unknown` | Optional: entry points the change adds with no guard and something whose guard cannot be read. Guard unknown, never a finding. |
 | `sinks` | Risky operations in changed files that were not at the merge base. |
 | `leaks` | Client files newly reaching server-only code or secrets. |
 | `now_public` | Entry points that were not internet-facing at the merge base and are now. |
@@ -214,7 +251,7 @@ What the codebase does for each concern: facts about the code, which nothing che
 | `findings` | list | What to look at first, in rank order: `kind` (`unscoped_key`, `unexplained_split`, `none`, `unknown`, `duplicate_helper`), `concern` (or `hygiene`), `package`, `variants`, `members`, `instrument`, `config_hint`, `examples`, and for some kinds `key`, `copies`, `shared_calls`. |
 | `consumers` | list (optional) | Message consumers, listed apart and counted in no concern. |
 
-A concern: `id`, `title`, `unit`, `population` (`total`, `known`, `declared`, `none`, `unknown`, `coverage`, `left_out` of tests and non-production), `variants`, `unknown`, `by_package`, `divergence`, `groups` (variants grouped by the instrument they share, optional) and, with `--units`, `units` (every unit with its assignment: `known`, `none` or `unknown`, and the reason).
+A concern: `id`, `title`, `unit`, `population` (`total`, `known`, `declared`, `none`, `unknown`, `coverage`, `left_out` of tests and non-production), `variants`, `unknown`, `by_package`, `divergence`, `groups` (variants grouped by the instrument they share, optional) and, with `--units`, `units` (every unit with its assignment: `known`, `none` or `unknown`, and the reason). A unit row also carries, each only when set: `kind` (the entry point's kind, such as `http` or `job`), `uses` (the key of each of its known uses, sorted: a unit that does an accepted way and more still follows that way), `enforces` (of a known unit of authentication or authorization: whether one of its uses turns a caller away, or is a check Drift proved) and `unscoped` (of an authorization unit: the tenant or owner key it takes from the request and neither checks nor scopes).
 
 A concern's `population`, and the entries of `recipes[].concerns`, carry an `identified` count when it is not zero. A unit's `assignment` is `known`, `identified`, `none` or `unknown`; a `none` unit has `basis`. A variant: `id` (`P-` and six hex digits), `key`, `label`, `kind` (`known`, `none` or `identified`), `mechanisms`, `instruments`, `source` (`vocab`, `usage` or `declared`), `members`, `share`, `where` (packages, directories, roles, entry kinds, methods), `sets_apart` (at most 3), `examples` (at most 3), `exceptions` (at most 10, the rest in `exceptions_more`), `conventions`, `promotable` (null unless the variant may be promoted now; then `rule` is `"practice"`, `role` is `""` and `place` is the place `drift practices promote` would use, as output names it) and optionally `alternatives`.
 

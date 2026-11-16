@@ -31,6 +31,7 @@ There is no separate changelog file; what changed in a release is in its release
 | Index versions | `index-v11-1/`, `index-py-v11-5/` in the cache | 1 (TS/JS), 5 (Python) | The version of the file-stamp index that lets later scans read only changed files. |
 | Policy format | `version:` in `.drift/conventions.yaml` | 1 or 2 (reads up to 2) | See below. |
 | Selector version | `selector_version:` on a convention | up to 3 (4 for test and kind roles) | How a convention's role selector is read. |
+| Inventory version | `# inventory:` in `.drift/security.lock` | 2 | The version of what the security inventory finds, stamped in the baseline it writes. See below. |
 | JSON schema versions | `schema`, `version` in the JSON outputs | see [Output and JSON Reference](Output-and-JSON-Reference) | The output formats. |
 
 ## What happens to the cache when the binary changes
@@ -44,13 +45,20 @@ I found no code that deletes old fact-cache entries when they stop being used. A
 | File | After an upgrade |
 | --- | --- |
 | `.drift/conventions.yaml` | Read as written. Version 1 files need no migration. A file with a `version` higher than the running Drift knows (above 2 in this build) is refused with `was written by a newer Drift` (exit 2): upgrade the binary. Version 2 appears when `drift init` runs in a repository of several packages, so a team that mixes Drift versions can hit this: a Drift that does not know version 2 cannot read the file. Selectors are frozen when a convention is written, so a new Drift keeps checking the members the convention was written for; a new Drift mines again only when you run `drift init`. A file that holds a promoted practice cannot be read by a Drift from before promotion (below). |
-| `drift.lock` | Read as written; a plain list of lines, with no version. |
+| `drift.lock` | Read as written; a plain list of lines, with no version. A lock without fingerprint lines works as before; the next `drift init` adds them. An older Drift reads the plain lines and ignores the fingerprint lines (they name no member it can see). |
+| `.drift/security.lock` | Read as written. Its `# inventory:` line says which inventory wrote it (below). |
 | `.drift/config.yaml` | Read as written. A key the running Drift does not know is a warning, never an error, so a file written for a newer Drift is harmless to an older one (it ignores what it does not know). |
 | Session state, review log | Local. A session state that cannot be read is replaced; a review log is append-only with its own event version. |
 
 What an upgrade can change without touching any of your files is **what `drift check` finds**, because the facts and the readings of guards and exposure improve between versions: a violation can appear that was invisible before, a baselined violation can disappear (it is then listed as `fixed`), and a practice or security answer can move between `known`, `none` and `unknown`. This is why the upgrade steps below start with a check on your main branch.
 
 `drift init --refresh-kinds` relearns the file-kind vocabulary frozen in `.drift/conventions.yaml`, to adopt new kinds after an upgrade. Existing conventions keep their ids, but the files their roles cover may change, so run `drift check` afterwards and review new violations of accepted conventions (they are not baselined).
+
+## The security baseline
+
+`.drift/security.lock` records the version of the inventory that wrote it (`# inventory: 2` in this build). The version is raised whenever a kind of finding is added, or a detector whose findings a baseline holds (a kind of risky operation). Version 1 is every kind and detector before the stamp; version 2 added `unscoped-key`. A baseline written before the stamp reads as version 1.
+
+After an upgrade, a finding of a kind newer than the baseline's version is not the change's doing: `drift check` and `drift security --ratchet` list it apart, as new in this version of Drift, and it fails nothing until `drift security --write-baseline` records it. So upgrading Drift never fails every check at once. A new kind also starts as advice: `unscoped-key` advises until a person sets it to fail (`drift security --write-baseline --fail-on unscoped-key`).
 
 ## Promoted practices and older Drift
 
