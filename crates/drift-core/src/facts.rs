@@ -2700,6 +2700,17 @@ pub struct RepoFacts {
     /// output, and in a single-file scan.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub generated_clients: Vec<String>,
+    /// Files of the listed reading only ([`RepoFacts::listed`]): the scripts of
+    /// single-file components (`.vue`, `.svelte`, `.astro`), which the last measured
+    /// build did not read. Mining reads `files` alone, so its input is the same with
+    /// them or without; `drift security` and the practice map read them with the
+    /// rest. Sorted by path; omitted when empty (TypeScript lowering 87).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_files: Vec<FileFacts>,
+    /// The files of the listed reading that were skipped, and why
+    /// ([`RepoFacts::listed_files`]). Sorted; omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_skipped: Vec<Skipped>,
 }
 
 /// The keys one file declares, for co-change rules.
@@ -2853,6 +2864,12 @@ pub enum SkipReason {
     /// such as `{| |}` or `opaque type`, TypeScript-only nodes, a strip that would
     /// change the program): no facts.
     FlowSyntax,
+    /// A component (`.vue`, `.svelte`, `.astro`) whose script blocks cannot be
+    /// delimited with certainty (a block that never ends, two blocks of one kind,
+    /// blocks in different languages or in one Drift does not read, markup nested
+    /// out of order before a script tag): no facts. In the listed reading only
+    /// ([`RepoFacts::listed_skipped`]).
+    ComponentScript,
 }
 
 impl RepoFacts {
@@ -2870,7 +2887,11 @@ impl RepoFacts {
                 .iter()
                 .any(|f| f.listed.is_some() || f.symbols.iter().any(order_may_be_cut))
         };
-        if !listed(&self.files) && !listed(&self.context_files) {
+        if !listed(&self.files)
+            && !listed(&self.context_files)
+            && self.listed_files.is_empty()
+            && self.listed_skipped.is_empty()
+        {
             return std::borrow::Cow::Borrowed(self);
         }
         std::borrow::Cow::Owned(self.clone().into_listed())
@@ -2878,6 +2899,15 @@ impl RepoFacts {
 
     /// [`RepoFacts::listed`], in place: no copy of the facts is made.
     pub fn into_listed(mut self) -> RepoFacts {
+        // The files only this reading holds join the rest ([`RepoFacts::listed_files`]).
+        if !self.listed_files.is_empty() {
+            self.files.append(&mut self.listed_files);
+            self.files.sort_by(|a, b| a.path.cmp(&b.path));
+        }
+        if !self.listed_skipped.is_empty() {
+            self.skipped.append(&mut self.listed_skipped);
+            self.skipped.sort();
+        }
         for f in self.files.iter_mut().chain(&mut self.context_files) {
             f.take_listed();
             for s in f.symbols.iter_mut().filter(|s| order_may_be_cut(s)) {
@@ -3396,5 +3426,10 @@ impl RepoFacts {
         self.key_files.dedup_by(|a, b| a.path == b.path);
         self.integration_files.sort();
         self.integration_files.dedup();
+        for f in &mut self.listed_files {
+            f.normalize();
+        }
+        self.listed_files.sort_by(|a, b| a.path.cmp(&b.path));
+        self.listed_skipped.sort();
     }
 }

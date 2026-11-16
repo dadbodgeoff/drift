@@ -356,6 +356,8 @@ fn scan_inner(
         key_files: vec![],
         integration_files: vec![],
         generated_clients: vec![],
+        listed_files: vec![],
+        listed_skipped: vec![],
     };
     // A test file not parsed for lack of stack still exists: it pairs like the others.
     let parsed = repo.files.len();

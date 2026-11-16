@@ -43,7 +43,6 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
         "guard-gap",
         "no-authorization",
         "no-guard",
-        "risky",
         "scope-gap",
         "unguarded-reaching",
         "whole-row",
@@ -51,6 +50,8 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     ] {
         assert_eq!(found_since(kind, "x"), 2, "{kind}");
     }
+    // Widened again by the scripts of single-file components.
+    assert_eq!(found_since("risky", "x"), 3);
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");

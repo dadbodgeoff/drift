@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 86;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -1180,7 +1180,21 @@ fn lower_parsed(
     text: &str,
     source_type: SourceType,
 ) -> RawFile {
-    let ret = Parser::new(allocator, text, source_type).parse();
+    lower_parsed_with(allocator, rel_path, text, source_type, Default::default())
+}
+
+/// [`lower_parsed`] with the parser's `options` (a component's script:
+/// [`crate::sfc`]).
+pub(crate) fn lower_parsed_with(
+    allocator: &oxc_allocator::Allocator,
+    rel_path: &str,
+    text: &str,
+    source_type: SourceType,
+    options: oxc_parser::ParseOptions,
+) -> RawFile {
+    let ret = Parser::new(allocator, text, source_type)
+        .with_options(options)
+        .parse();
     if ret.fatal_error {
         return RawFile {
             parse_ok: false,

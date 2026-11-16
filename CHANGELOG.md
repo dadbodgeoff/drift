@@ -33,6 +33,18 @@ main branch.
 
 ### Added
 
+- **Vue, Svelte and Astro components are read.** The script blocks of `.vue`,
+  `.svelte` and `.astro` files (Vue `<script>` and `<script setup>`, Svelte's
+  instance and module scripts, Astro frontmatter and bundled `<script>` tags) are
+  read as one module each, at the file's own lines, and a `.ts` import of a
+  component resolves to it. They are in the listed reading only: `drift security`
+  and the practice map read them, `drift scan --json` holds them under
+  `listed_files` and `listed_skipped`, and mining proposes the same as without
+  them. A component whose blocks cannot be delimited with certainty is skipped as
+  `component_script`. Templates are not read. TypeScript lowering 87. The security
+  baseline's inventory is 3: a risky operation in a component is new in Drift
+  against an older `.drift/security.lock`, not a change's finding, where the file
+  did not change.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

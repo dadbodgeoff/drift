@@ -167,6 +167,8 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
     into.generated_clients.extend(other.generated_clients);
     into.generated_clients.sort();
     into.generated_clients.dedup();
+    into.listed_files.extend(other.listed_files);
+    into.listed_skipped.extend(other.listed_skipped);
     into.normalize();
 }
 

@@ -838,6 +838,7 @@ pub fn unread_paths(repo: &RepoFacts) -> BTreeSet<String> {
                         | SkipReason::TooCostly
                         | SkipReason::StackUnavailable
                         | SkipReason::FlowSyntax
+                        | SkipReason::ComponentScript
                 )
             })
             .map(|s| s.path.clone()),
