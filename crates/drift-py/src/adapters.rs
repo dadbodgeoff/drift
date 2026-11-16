@@ -11,6 +11,9 @@ use super::*;
 use crate::link::unlisted::Family;
 use drift_core::UnlistedReason as Reason;
 
+#[path = "framework_routes.rs"]
+mod framework_routes;
+
 /// Decorator attributes that register a route or task on a receiver.
 const HTTP_VERBS: &[&str] = &[
     "get", "post", "put", "patch", "delete", "options", "head", "trace",
@@ -2077,6 +2080,9 @@ impl<'t> Lowerer<'t> {
             || bases.iter().any(is_view_base);
         let methods = if viewish {
             self.handler_methods(name, &sym, &c.body)
+        } else if let Some(late) = self.framework_late_methods(c, &sym) {
+            // A Litestar controller: its handlers, for the listed reading only.
+            late
         } else if !bases.is_empty() && !sym.methods.is_empty() {
             // A class on a base of the repository may be a view (`Items(Base)`,
             // `Base(View)`): its handler methods are symbols of the link that reads

@@ -199,6 +199,9 @@ pub const ENTRY_FRAMEWORKS: &[(&str, &[&str])] = &[
         &["flask_restx", "flask_restplus", "flask_restful", "flask"],
     ),
     ("fastapi", &["fastapi", "starlette"]),
+    ("sanic", &["sanic"]),
+    ("litestar", &["litestar"]),
+    ("ninja", &["ninja", "django"]),
     ("celery", &["celery"]),
     ("dramatiq", &["dramatiq"]),
 ];

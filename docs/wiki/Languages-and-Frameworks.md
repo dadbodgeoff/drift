@@ -42,6 +42,10 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | Django | Python | `urlpatterns` reachable from `ROOT_URLCONF` (`path`, `re_path`, `include`, `decorator_include`, and other pattern lists unpacked in place: `[*cycle_urls, *module_urls]`), the admin as one entry point | run |
 | Django REST framework | Python | `APIView`, `ViewSet` and `@api_view` handlers, with their `permission_classes` | run (`APIView`) |
 | Starlette | Python | `Route` tables, with the middleware of mounts and routes | run |
+| Quart | Python | Listed since, as Flask: `Quart()`, blueprints and their prefixes, verb decorators, `websocket`, hooks (`before_request`) as guards | source |
+| django-ninja | Python | Listed since: `NinjaAPI()` and `Router()` verb decorators, `add_router` prefixes, served where a URLconf reachable from `ROOT_URLCONF` mounts `api.urls`. `auth=` of the operation, else the router, else the API is the guard (`auth=None` takes it away); what an `auth` callable decides is not read, so such a route's guard is unknown | source |
+| Litestar | Python | Listed since: handlers (`@get`, `@post`, ...) named in `route_handlers=` of `Litestar()` and `Router(path=...)`, and `Controller` classes with `path`. `guards=` of every layer, and the handler's own `dependencies=`, run before it. `before_request=`, `on_app_init=` and options unpacked from a value make the guard unknown | source |
+| Sanic | Python | Listed since, read as Flask: `Sanic()`, `Blueprint(url_prefix=...)`, `app.blueprint(bp)`, `Blueprint.group(...)`, verb decorators, `websocket`, `add_route` (also of an `HTTPMethodView`), request hooks (`on_request`, `middleware("request")`, `register_middleware`) as guards | source |
 | Celery, Dramatiq | Python | Tasks, as `job`; Celery beat schedules as `cron` | run |
 | rq | Python | Functions decorated with `@job` (`rq.decorators.job`, `django_rq.job`), as `consumer` | source |
 | Message consumers (aio_pika, kombu) | Python | `consumer` entry points | source |
@@ -55,7 +59,7 @@ A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr
 
 ## Frameworks not listed
 
-These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
+These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Tornado, aiohttp and Bottle. (Quart, django-ninja, Litestar and Sanic are listed since the last measured build, from small test repositories only; see the table above. Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
 
 - `drift security` lists none of its routes, `drift practices` has no recipe for them, and a card says it knows no entry point for the file.
 - Convention mining, `drift check`, the review flow and the hooks' rule priming still work on the code as code.
@@ -126,7 +130,7 @@ Readings worth knowing, one sentence each:
 - **Python: typed parameters and return annotations.** A handler whose every input arrives through a parameter the framework parses by its declared type (a FastAPI parameter annotated `uuid.UUID`, `EmailStr` or a model; a Django or Flask converter such as `<uuid:pk>`), and whose body reads no other input, validates its input: a value the type does not take is answered with an error. A FastAPI handler's return annotation is read as its response model; `response_model=None` makes none.
 - **Python: Django and DRF.** `admin.site.urls` is one entry point guarded by `AdminSite.admin_view` (active staff users); `admin_view` in decorator position is read and is `unknown`. `permission_classes` on a base that is not DRF's is not credited. A class that serves routes (`AnalyticsEndpoint.as_view()` in `urlpatterns`) is a handler, never a database client. A `raise` in an `except` turns away only the requests whose `try` failed, so the code after it is no longer read as skipped. Checks two helper methods deep in a permission class are not read.
 - **Unscoped keys and learned scope keys.** An entry point that signs the caller in and takes a tenant or owner key from the request, which nothing it runs, read to the end, checks or filters a query by, is the finding `unscoped_key` (`unscoped` on its unit in `drift practices --json --units`). Which keys tie rows to a caller is learned from the repository's own code: a key counts when at least 3 bodies of production code filter by it with a value of the caller, over at least 3 different query targets. The lists of names are only a fallback.
-- **Lowering versions in this build:** Python 74, TypeScript 86 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
+- **Lowering versions in this build:** Python 75, TypeScript 87 (see [Versioning and Upgrades](Versioning-and-Upgrades)).
 
 ### Known gaps stated in the project's documents
 

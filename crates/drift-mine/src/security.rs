@@ -2594,7 +2594,16 @@ pub const GATEWAY_IMAGES: &[&str] = &["nginx", "traefik", "caddy", "haproxy", "e
 const SERVED_ELSEWHERE: &str = "?";
 
 /// The adapters of a Python application object ([`Boundaries::served`]).
-const PYTHON_ADAPTERS: &[&str] = &["fastapi", "flask", "flask_restx", "django", "drf"];
+const PYTHON_ADAPTERS: &[&str] = &[
+    "fastapi",
+    "flask",
+    "flask_restx",
+    "django",
+    "drf",
+    "sanic",
+    "litestar",
+    "ninja",
+];
 
 /// Files of a Next.js application that can move its routes and that Drift does not
 /// read, relative to the application's directory.
@@ -2622,8 +2631,17 @@ const NEXT_UNREAD: &[&str] = &[
 /// variable) keeps its own path, and a NestJS controller's module and global
 /// prefixes are not read: a route of those, in a service a gateway routes to, is
 /// never said to be internal ([`Boundaries::expose`]).
-pub const EVERY_MOUNT_LISTED: &[&str] =
-    &["fastapi", "flask", "flask_restx", "django", "drf", "nextjs"];
+pub const EVERY_MOUNT_LISTED: &[&str] = &[
+    "fastapi",
+    "flask",
+    "flask_restx",
+    "django",
+    "drf",
+    "sanic",
+    "litestar",
+    "ninja",
+    "nextjs",
+];
 
 /// One service of a compose file ([`Boundaries::read_compose_at`]).
 struct Svc {
