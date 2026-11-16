@@ -17,6 +17,8 @@ mod scan;
 mod setup;
 mod wiring;
 mod workspace;
+// S23: `drift feedback`.
+mod feedback;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, IsTerminal, Write};
@@ -670,6 +672,12 @@ enum Command {
         /// File to update in place (between drift markers); prints to stdout when omitted.
         #[arg(long)]
         write: Option<PathBuf>,
+    },
+    /// Beta feedback: mark a report true or wrong, and write a file of counts you can
+    /// read in full and choose to share. Sends nothing.
+    Feedback {
+        #[command(subcommand)]
+        action: feedback::FeedbackAction,
     },
 }
 
@@ -4315,6 +4323,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             return Ok(ExitCode::from(code));
         }
+        Command::Feedback { action } => return feedback::run(root, cli.no_cache, action),
     }
     Ok(ExitCode::SUCCESS)
 }
