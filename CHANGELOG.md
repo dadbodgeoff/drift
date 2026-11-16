@@ -156,6 +156,15 @@ main branch.
   exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
   and unknown must not rise without a matching fall). For contributors; it is
   not part of the `drift` binary.
+- **`eval/scoreboard/` after score:** `after/score.json` scores this build
+  on the seven repositories, and `RESULTS.md` sets the eight scoreboard numbers
+  before against after, says what each still needs (labels, a replay, `drift
+  check` runs, a release-build timing), and classifies the two guard trips unit
+  by unit. Harness version 2 (`harness_version` in every score) reads the map's
+  proposals from `from_map` (version 1 counted none) and unscoped keys from the
+  authz rows. `score --no-timing` marks timings n/a. `diff` names a repository
+  scored on one side only, and says when the two sides were scored by different
+  harness versions.
 
 ### Changed: the files Drift writes
 

@@ -31,6 +31,14 @@ import time
 from collections import Counter, defaultdict
 
 SCHEMA = 1
+# How `score` computes its numbers, written into every score.json. Bump it whenever a
+# number is computed differently from the same raw outputs, so that `diff` can say when
+# its two sides were scored by different harnesses (a score with no stamp is 1).
+#   2: the map's proposals are read from `from_map` (1 read the census proposals);
+#      `sec.findings.unscoped-key` from the practice rows' `unscoped`; finding keys
+#      carry the method, as ratchet.rs does; `sec.unreached*`, `entry.in_map_listed`;
+#      `score --no-timing`.
+HARNESS_VERSION = 2
 REPOS = [
     "epic",
     "juice-shop",
@@ -373,7 +381,9 @@ def define_metrics():
     metric("entry.local", "Entry points local only", "info", source="audit 4 §2: 5")
     metric("entry.reaching_sink", "Entry points reaching a risky operation", "info", source="audit 4 §2: 153")
     metric("entry.reaching_sink_no_guard", "... of which with no guard", "info", source="audit 4 §2: 62")
-    metric("entry.in_map", "Entry points in `drift map`", "up", source="audit 5 §2.5: 952 (inventory 1,914)")
+    metric("entry.in_map", "Entry points in `drift map` (measured listing)", "up", source="audit 5 §2.5: 952 (inventory 1,914)")
+    metric("entry.in_map_listed", "Entry points in `drift map`, every listing (`entry_point_counts.listed`; new build)", "up",
+           source="map --json entry_point_counts")
     # security
     metric("sec.findings", "Security baseline findings (all kinds)", "info", source="audit 4 §2 table: 892 (4-count.py)")
     for k in ["no-guard", "unguarded-reaching", "guard-gap", "scope-gap", "risky", "whole-row", "workflow",
@@ -392,6 +402,10 @@ def define_metrics():
     metric("sec.unlisted_snippets", "Unlisted rows in data/static/codefixes (snippets that never run)", "down",
            source="audit 4 §2 / S6: juice-shop 18")
     metric("sec.sinks_snippets", "Sinks in data/static/codefixes", "down", source="audit 4 §2 / S6: juice-shop 9")
+    metric("sec.unreached", "Production files nothing read reaches (`unreached`, listed apart; new build)", "info",
+           source="S6: juice-shop codefixes snippets")
+    metric("sec.unreached_sinks", "Risky operations in unreached files (listed apart; new build)", "info", source="S6")
+    metric("sec.unreached_snippets", "Unreached files in data/static/codefixes (new build)", "info", source="S6")
     metric("sec.guard_gaps", "Guard gaps", "info", source="audit 4 §2: 5")
     metric("sec.guard_gap_exceptions", "Guard-gap exceptions", "down", source="audit 4 §2: 8; S5: epic 1 -> 0")
     metric("sec.guard_gap_exceptions_unknown", "Guard-gap exceptions whose guard is unknown", "down", True,
@@ -499,7 +513,15 @@ define_metrics()
 
 
 def unknown_guard(e):
-    return bool(e.get("opaque") or e.get("unknown") or e.get("guard_unknown"))
+    """`opaque` is the only field `security --json` writes for a guard it could not read
+    (security.rs EntryRow::opaque, omitted when empty); no build writes `unknown` or
+    `guard_unknown` on an entry row, so they are not read."""
+    return bool(e.get("opaque"))
+
+
+def entry_key(path, symbol, method, route):
+    """ratchet.rs `entry_key`: the handler, then its method and route when present."""
+    return " ".join([f"{path}#{symbol}"] + [p for p in (method, route) if p])
 
 
 def guard_class(e):
@@ -526,18 +548,19 @@ def ratchet_findings(sec, prac):
                 and not unknown_guard(e) and not e.get("verifies_signature"))
 
     for e in sec.get("entry_points", []):
-        k = f'{e["path"]}#{e["symbol"]} {e.get("method") or ""} {e.get("route") or ""}'
+        k = entry_key(e["path"], e["symbol"], e.get("method"), e.get("route"))
         if ung(e):
             for x in e.get("reaches", []):
-                F.add(("unguarded-reaching", k + x["kind"]))
+                F.add(("unguarded-reaching", f'{k} -> {x["kind"]}'))
         if e.get("kind") in REQUEST_KINDS and ung(e) and not e.get("opens"):
             F.add(("no-guard", k))
     for g in sec.get("guard_gaps", []):
         for e in g.get("exceptions", []):
-            F.add(("guard-gap", e["path"] + e["symbol"] + str(e.get("route")) + g["guard"]))
+            F.add(("guard-gap", f'{entry_key(e["path"], e["symbol"], e.get("method"), e.get("route"))} lacks {g["guard"]}'))
     for g in sec.get("scope_gaps", []):
         for e in g.get("exceptions", []):
-            F.add(("scope-gap", e["path"] + e["symbol"] + str(g.get("resource"))))
+            F.add(("scope-gap", f'{entry_key(e["path"], e["symbol"], e.get("method"), e.get("route"))} reads '
+                                f'{g.get("resource")} without {g.get("key")}'))
     for s in sec.get("sinks", []):
         F.add(("risky", s["kind"] + s["path"] + s["symbol"]))
     for name, kind in (("whole_rows", "whole-row"), ("workflows", "workflow"), ("dependencies", "dependency"),
@@ -547,15 +570,19 @@ def ratchet_findings(sec, prac):
     for leak in sec.get("client_leaks", []):
         for c in leak.get("clients", []):
             F.add(("leak", c + str(leak.get("reaches"))))
-    for f in sec.get("findings", []) or []:  # a newer build may list findings itself (unscoped-key)
-        if isinstance(f, dict) and f.get("kind") in ("unscoped-key", "unscoped_key"):
-            F.add(("unscoped-key", json.dumps(f, sort_keys=True)))
     if prac:
+        # ratchet.rs add_unauthorized and add_unscoped read the practice map's authz
+        # rows (main.rs baseline_findings); `security --json` has no `findings` list
+        # (security.rs Inventory), so it is not read.
         for c in prac.get("concerns", []):
-            if c["id"] == "authz":
-                for u in c["units"]:
-                    if u["assignment"] == "none":
-                        F.add(("no-authorization", u["path"] + u["symbol"] + str(u.get("route"))))
+            if c["id"] != "authz":
+                continue
+            for u in c["units"]:
+                k = entry_key(u["path"], u["symbol"], u.get("method"), u.get("route"))
+                if u["assignment"] == "none":
+                    F.add(("no-authorization", k))
+                if u.get("unscoped"):
+                    F.add(("unscoped-key", f'{k} takes {u["unscoped"]}'))
     return Counter(k for k, _ in F)
 
 
@@ -660,9 +687,20 @@ def score_repo(rdir, repo):
         for k in ["no-guard", "unguarded-reaching", "guard-gap", "scope-gap", "risky", "whole-row", "workflow",
                   "dependency", "kubernetes", "leak", "no-authorization", "unscoped-key"]:
             m[f"sec.findings.{k}"] = F[k]
+        if prac is None:  # these two kinds come from the practice map's rows
+            m["sec.findings.no-authorization"] = m["sec.findings.unscoped-key"] = None
+        # Files nothing read reaches are listed apart (`unreached`, omitted when empty).
+        # Absent from a build that does not write it at all: see the practice rows below.
+        UR = sec.get("unreached")
+        if UR is not None:
+            m["sec.unreached"] = len(UR)
+            m["sec.unreached_sinks"] = sum(len(u.get("sinks") or []) for u in UR)
+            m["sec.unreached_snippets"] = sum(1 for u in UR if "data/static/codefixes/" in u.get("path", ""))
     m["sec.check_reports"] = None
     if mp is not None:
         m["entry.in_map"] = sum(ep.get("count", 0) for p in mp.get("packages", []) for ep in p.get("entry_points", []))
+        counts = mp.get("entry_point_counts")
+        m["entry.in_map_listed"] = counts.get("listed") if isinstance(counts, dict) else None
 
     # ---- practice units
     rows_by = {}  # (concern, path, symbol, line) -> [rows]
@@ -740,8 +778,14 @@ def score_repo(rdir, repo):
             m["units.authn.job"] = sum(1 for u in authn["units"] if kind_of(u) == "job")
             m["units.authn.none_job"] = sum(1 for u in authn["units"] if u["assignment"] == "none" and kind_of(u) == "job")
         m["units.findings.unscoped_key"] = sum(1 for f in prac.get("findings", []) or [] if f.get("kind") == "unscoped_key")
-        if sec is not None:
-            m["sec.findings.unscoped-key"] = m.get("sec.findings.unscoped-key", 0)
+        if sec is not None and not new_rows:
+            # An older build's rows may not carry `unscoped` at all: not 0, unknown.
+            m["sec.findings.unscoped-key"] = None
+        if sec is not None and "sec.unreached" not in m:
+            # `unreached` is omitted when empty; a build whose rows carry `kind` or
+            # `uses` writes it, so absent there is 0. An older build: unknown.
+            for k in ("sec.unreached", "sec.unreached_sinks", "sec.unreached_snippets"):
+                m[k] = 0 if new_rows else None
 
     # ---- promote candidates
     cand_keys = []
@@ -847,8 +891,13 @@ def score_repo(rdir, repo):
 
     # ---- from the map (new build only)
     fm_ids = []
-    if fmap is not None:
-        entries = from_map_entries(fmap)
+    entries = from_map_entries(fmap) if fmap is not None else None
+    if fmap is not None and entries is None:
+        for key in ["map.entries", "map.proposed", "map.proposed.layering", "map.proposed.practice", "map.proposed.other",
+                    "map.same_as_mined"]:
+            m[key] = None
+        notes.append("census --from-map --json: no `from_map` list in the output; its numbers are n/a")
+    if entries is not None:
         m["map.entries"] = len(entries)
         prop = [e for e in entries if e.get("proposed")]
         m["map.proposed"] = len(prop)
@@ -928,16 +977,16 @@ def failed_commands(rdir):
 
 
 def from_map_entries(v):
-    if isinstance(v, list):
-        return [e for e in v if isinstance(e, dict)]
-    if isinstance(v, dict):
-        for key in ("entries", "proposals", "from_map", "rules"):
-            if isinstance(v.get(key), list):
-                return [e for e in v[key] if isinstance(e, dict)]
-        for val in v.values():
-            if isinstance(val, list) and val and isinstance(val[0], dict) and "proposed" in val[0]:
-                return val
-    return []
+    """The entries of `census --from-map --json`: the census JSON with a `from_map` list
+    beside its `proposals`, each entry with `kind` (practice, layering, declared, wiring)
+    and `proposed`. Its `proposals` are the mined census conventions, never the map's.
+    None when the output has no `from_map` list, so its numbers say n/a, not 0."""
+    if isinstance(v, dict) and isinstance(v.get("from_map"), list):
+        return [e for e in v["from_map"] if isinstance(e, dict)]
+    return None
+
+
+TIMING_KEYS = ("time.census_first_s", "time.census_per_100k_s", "time.collect_s", "time.peak_rss_mib")
 
 
 def total(values):
@@ -952,12 +1001,23 @@ def score(args):
     data = os.path.abspath(args.data)
     truth = os.path.abspath(args.truth) if args.truth else os.path.join(os.path.dirname(os.path.abspath(__file__)), "truth")
     repos = [r for r in REPOS if os.path.isdir(os.path.join(data, r))]
-    out = {"schema": SCHEMA, "data": data, "repos": {}, "notes": {}, "labels": {}, "failed": {}}
+    out = {"schema": SCHEMA, "harness_version": HARNESS_VERSION, "data": data, "repos": {}, "notes": {}, "labels": {},
+           "failed": {}}
     cmeta = read_json(data, "collect.json")
     if cmeta:
         out["build"] = {k: cmeta.get(k) for k in ("binary", "binary_sha256", "version", "started", "cache")}
+    no_timing = getattr(args, "no_timing", None)
+    if no_timing:
+        out["timing_not_comparable"] = no_timing
     for r in repos:
         m, notes, labels = score_repo(os.path.join(data, r), r)
+        if no_timing:
+            # Timings of a build that is not the release profile, or of a run that
+            # shared the machine, measure the run, not Drift: n/a, never a number.
+            for k in TIMING_KEYS:
+                if k in m:
+                    m[k] = None
+            notes.append("timings not comparable, set to n/a: " + no_timing)
         out["repos"][r] = m
         out["labels"][r] = labels
         failed = failed_commands(os.path.join(data, r))
@@ -1215,6 +1275,12 @@ def diff(args):
     if b is None or a is None:
         sys.exit("diff: each side is a score.json, or a data directory (scored on the fly)")
     repos = [r for r in REPOS if r in b["repos"] and r in a["repos"]]
+    # A repository scored on one side only is compared on none of its numbers and
+    # none of its guards: said so, never skipped in silence.
+    others = sorted((set(b["repos"]) | set(a["repos"])) - set(repos), key=lambda r: (r not in REPOS, r))
+    one_side = {"before_only": [r for r in others if r in b["repos"]],
+                "after_only": [r for r in others if r in a["repos"]]}
+    versions = {"before": b.get("harness_version", 1), "after": a.get("harness_version", 1)}
     meta = dict(b.get("meta", {}))
     meta.update(a.get("meta", {}))
     meta.update({k: v for k, v in META.items()})
@@ -1270,15 +1336,31 @@ def diff(args):
             known_a = (g(a, "known") or 0) + (g(a, "identified") or 0)
             fall = max(0, (g(b, "none") or 0) - (g(a, "none") or 0)) + max(0, known_b - known_a)
             if du > fall:
-                unknown_guard_fail.append(f"{r} {c}: unknown +{du}, none/known fell by {fall}")
+                rows_d = (g(a, "rows") or 0) - (g(b, "rows") or 0)
+                grew = f" (rows {rows_d:+d}: the rise may be units new to the concern; compare the units)" if rows_d else ""
+                unknown_guard_fail.append(f"{r} {c}: unknown +{du}, none/known fell by {fall}{grew}")
+    version_line = None
+    if versions["before"] != versions["after"]:
+        version_line = (f"scored by different harness versions: before {versions['before']}, after {versions['after']};"
+                        " a number may move because it is computed another way. Re-score both sides from their data"
+                        " (`score --data`) for a like-for-like diff")
+    one_side_lines = [f"{r}: scored {side} only; none of its numbers or guards are compared"
+                      for side, key in (("before", "before_only"), ("after", "after_only")) for r in one_side[key]]
     if args.json:
         print(json.dumps({"repos": repos, "rows": [
             {"key": k, "label": md.get("label"), "direction": md.get("direction"), "guard": md.get("guard"),
              "before": dict(zip(repos, bv)), "after": dict(zip(repos, av)), "total_before": bt, "total_after": at,
              "verdict": v} for k, md, bv, av, bt, at, ch, v in rows if ch or not args.changed],
             "guard_regressions": regressions, "guard_missing": missing, "unknown_guard": unknown_guard_fail,
-            "not_comparable": {"repos": split, "keys": not_comparable}}, indent=1))
+            "not_comparable": {"repos": split, "keys": not_comparable, "one_side": one_side},
+            "harness_version": versions}, indent=1))
     else:
+        if version_line:
+            print("HARNESS VERSION: " + version_line)
+        for x in one_side_lines:
+            print("NOT COMPARABLE: " + x)
+        if version_line or one_side_lines:
+            print()
         w = 9
         head = f"{'number':52} {'good':4} " + "".join(f"{SHORT.get(r, r)[:w]:>{2 * w + 3}}" for r in repos) + f"{'total':>{2 * w + 6}}"
         print(head)
@@ -1317,8 +1399,12 @@ def diff(args):
         if "census.text_sha256" in regressions:
             print("  the plain census text moved: compare <dir>/<repo>/census.txt of the two data directories"
                   " (diff -u); plain census never lists the map's proposals (only `census --from-map` does)")
+        for x in one_side_lines:
+            print("NOT COMPARABLE: " + x)
+        if version_line:
+            print("HARNESS VERSION: " + version_line)
         if not regressions and not unknown_guard_fail and not missing:
-            print("guards: none regressed")
+            print("guards: none regressed" + (" (in the repositories both sides have)" if one_side_lines else ""))
     sys.exit(1 if regressions or unknown_guard_fail or missing else 0)
 
 
@@ -1377,6 +1463,9 @@ def main():
     s.add_argument("--data", required=True)
     s.add_argument("--truth", default=None, help="default: truth/ beside this script")
     s.add_argument("--out", default=None, help="also write the score as JSON here")
+    s.add_argument("--no-timing", default=None, metavar="REASON",
+                   help="the timings are not comparable (a debug build, a shared machine): time.* become n/a "
+                        "and REASON is recorded")
     d = sub.add_parser("diff", help="before and after; exits 1 on a guard regression")
     d.add_argument("before", help="score.json or data directory")
     d.add_argument("after", help="score.json or data directory")
