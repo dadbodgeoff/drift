@@ -98,7 +98,11 @@ fn repo() -> tempfile::TempDir {
     write(r, "app/api/open/route.ts", UNGUARDED);
     write(r, "app/api/run/route.ts", UNGUARDED_EVAL);
     write(r, "app/api/unknown/route.ts", UNREAD_CHECK);
-    write(r, "app/api/old/route.ts", &format!("// edited\n{UNGUARDED}"));
+    write(
+        r,
+        "app/api/old/route.ts",
+        &format!("// edited\n{UNGUARDED}"),
+    );
     git(r, &["add", "-A"]);
     git(r, &["commit", "-qm", "routes"]);
     dir

@@ -94,7 +94,9 @@ impl Reason {
                 "it accepts what code does by doing nothing, so new code would follow it without trying".to_string()
             }
             Reason::Preview => "a concern the map only previews".to_string(),
-            Reason::PythonOff => "Python proposals are off (`proposals: {python: off}`)".to_string(),
+            Reason::PythonOff => {
+                "Python proposals are off (`proposals: {python: off}`)".to_string()
+            }
             Reason::Overlaps(id) => format!("{id} holds an overlapping place for the same concern"),
             Reason::SameAsMined(id) => format!("the miner already proposes it as {id}"),
             Reason::NotShown => {
@@ -678,10 +680,7 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
             if *settles > 0 {
                 line.push_str(&format!(" ({settles} named as departures today)"));
             }
-            line.push_str(&format!(
-                "; {} could not be read (never reported)",
-                candidate.unknown
-            ));
+            line.push_str(&format!("; {} could not be read (never reported)", candidate.unknown));
             out.push(line);
         }
         Basis::Layering { evidence, unknown } => {
@@ -880,7 +879,14 @@ pub fn for_init(
     } else {
         let report = crate::practices::report_units_kept(root, repo, None);
         let known = known(Some(&*policy), &[]);
-        collect(repo, &report, &policy.file_kinds, &known, Some(&*policy), python_on)
+        collect(
+            repo,
+            &report,
+            &policy.file_kinds,
+            &known,
+            Some(&*policy),
+            python_on,
+        )
     };
     write(policy, &c);
     c
@@ -1096,7 +1102,9 @@ pub fn review_step(
             "y" => {
                 if conv.from_map.as_deref() == Some(PRACTICE) {
                     match accept_practice(repo, report, policy, &mut lock, &conv) {
-                        Some(n) => println!("  accepted: {id}, advise ({n} recorded in {LOCK_FILE})"),
+                        Some(n) => {
+                            println!("  accepted: {id}, advise ({n} recorded in {LOCK_FILE})")
+                        }
                         None => {
                             println!("  {id} no longer qualifies: left as proposed");
                             continue;
@@ -1249,6 +1257,7 @@ mod tests {
                 key: "wrapped_by:withAuth".to_string(),
                 label: "withAuth".to_string(),
                 members: follows,
+                alternatives: Vec::new(),
             }],
             follows,
             total: follows,

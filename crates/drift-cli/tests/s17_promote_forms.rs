@@ -83,9 +83,7 @@ fn commands_in(text: &str) -> Vec<Vec<String>> {
         let mut rest = line;
         while let Some(at) = rest.find("drift practices promote ") {
             let tail = &rest[at..];
-            let end = tail
-                .find(|c| c == '`' || c == ')' || c == ';')
-                .unwrap_or(tail.len());
+            let end = tail.find(['`', ')', ';']).unwrap_or(tail.len());
             let cmd = tail[..end].trim();
             rest = &tail[end.max(1)..];
             if cmd.contains('<') || cmd.contains("--list") || cmd.contains("--block") {
@@ -111,7 +109,10 @@ fn every_command_is_taken(r: &Path, text: &str) -> usize {
         let mut args: Vec<&str> = cmd.iter().map(String::as_str).collect();
         args.push("--dry-run");
         let (code, out, err) = run(r, &args);
-        assert_eq!(code, 0, "printed, then refused: {args:?}\n{out}\n{err}\nin:\n{text}");
+        assert_eq!(
+            code, 0,
+            "printed, then refused: {args:?}\n{out}\n{err}\nin:\n{text}"
+        );
     }
     cmds.len()
 }
@@ -126,28 +127,55 @@ fn a_mechanism_or_any_enforcing_way_is_promoted_by_concern() {
     let (code, v) = json(
         r,
         &[
-            "practices", "promote", "--concern", "authn", "--any-enforcing", "--in", "app/api",
-            "--dry-run", "--json",
+            "practices",
+            "promote",
+            "--concern",
+            "authn",
+            "--any-enforcing",
+            "--in",
+            "app/api",
+            "--dry-run",
+            "--json",
         ],
     );
     assert_eq!(code, 0, "{v}");
     assert_eq!(v["written"], false, "{v}");
     assert_eq!(v["candidate"]["any_enforcing"], true, "{v}");
     assert_eq!(v["candidate"]["follows"], 38, "{v}");
-    assert!(v["candidate"]["ways"].as_array().is_some_and(Vec::is_empty), "{v}");
+    assert!(
+        v["candidate"]["ways"].as_array().is_some_and(Vec::is_empty),
+        "{v}"
+    );
 
     let (code, v) = json(
         r,
         &[
-            "practices", "promote", "--concern", "authn", "--mechanism", "wrap", "--in",
-            "app/api", "--dry-run", "--json",
+            "practices",
+            "promote",
+            "--concern",
+            "authn",
+            "--mechanism",
+            "wrap",
+            "--in",
+            "app/api",
+            "--dry-run",
+            "--json",
         ],
     );
     assert_eq!(code, 0, "{v}");
     assert_eq!(v["candidate"]["mechanisms"][0], "wrap", "{v}");
     let text = drift(
         r,
-        &["practices", "promote", "--concern", "authn", "--any-enforcing", "--in", "app/api", "--dry-run"],
+        &[
+            "practices",
+            "promote",
+            "--concern",
+            "authn",
+            "--any-enforcing",
+            "--in",
+            "app/api",
+            "--dry-run",
+        ],
     );
     assert!(text.ends_with("Dry run: nothing was written.\n"), "{text}");
     assert_eq!(
@@ -163,11 +191,38 @@ fn each_new_refusal_says_what_drift_read() {
     let dir = sample();
     let r = dir.path();
     for (args, code, says) in [
-        (vec!["--concern", "authn", "--mechanism", "nosuch", "--in", "app/api"], "not_a_mechanism", "The mechanisms Drift read for it here: wrap ("),
-        (vec!["--concern", "nosuch", "--any-enforcing"], "unknown_concern", "The concerns Drift read here: "),
-        (vec!["--concern", "errors", "--any-enforcing", "--in", "app/api"], "no_enforcing", "Drift has that reading for authn"),
-        (vec!["--concern", "authn", "--in", "app/api"], "nothing_accepted", "--any-enforcing"),
-        (vec!["--any-enforcing", "--in", "app/api"], "no_concern", "need --concern"),
+        (
+            vec![
+                "--concern",
+                "authn",
+                "--mechanism",
+                "nosuch",
+                "--in",
+                "app/api",
+            ],
+            "not_a_mechanism",
+            "The mechanisms Drift read for it here: wrap (",
+        ),
+        (
+            vec!["--concern", "nosuch", "--any-enforcing"],
+            "unknown_concern",
+            "The concerns Drift read here: ",
+        ),
+        (
+            vec!["--concern", "errors", "--any-enforcing", "--in", "app/api"],
+            "no_enforcing",
+            "Drift has that reading for authn",
+        ),
+        (
+            vec!["--concern", "authn", "--in", "app/api"],
+            "nothing_accepted",
+            "--any-enforcing",
+        ),
+        (
+            vec!["--any-enforcing", "--in", "app/api"],
+            "no_concern",
+            "need --concern",
+        ),
     ] {
         let mut all = vec!["practices", "promote"];
         all.extend(args.iter().copied());
@@ -196,15 +251,24 @@ fn the_list_ranks_and_sets_passive_candidates_apart() {
     let active = v["candidates"].as_array().unwrap();
     let passive = v["passive"].as_array().unwrap();
     assert!(!active.is_empty(), "{v}");
-    assert!(active.iter().all(|c| c["candidate"]["passive"] != true), "{v}");
-    assert!(passive.iter().all(|c| c["candidate"]["passive"] == true), "{v}");
+    assert!(
+        active.iter().all(|c| c["candidate"]["passive"] != true),
+        "{v}"
+    );
+    assert!(
+        passive.iter().all(|c| c["candidate"]["passive"] == true),
+        "{v}"
+    );
     for c in active.iter().chain(passive) {
         let cmd = c["command"].as_str().unwrap();
         assert!(!cmd.contains("promote  "), "{cmd}");
         assert!(c["departures"].is_u64(), "{c}");
     }
     // Ranked: the departures each would settle never rise down the list.
-    let n: Vec<u64> = active.iter().map(|c| c["departures"].as_u64().unwrap()).collect();
+    let n: Vec<u64> = active
+        .iter()
+        .map(|c| c["departures"].as_u64().unwrap())
+        .collect();
     assert!(n.windows(2).all(|w| w[0] >= w[1]), "{n:?}");
     // The sign-in practice settles the two unguarded routes' departures.
     let authn = active
@@ -215,7 +279,9 @@ fn the_list_ranks_and_sets_passive_candidates_apart() {
 
     let text = drift(r, &["practices", "promote", "--list"]);
     if !passive.is_empty() {
-        let heading = text.find("follows by doing nothing").unwrap_or_else(|| panic!("{text}"));
+        let heading = text
+            .find("follows by doing nothing")
+            .unwrap_or_else(|| panic!("{text}"));
         let first = text.find("    drift practices promote").unwrap();
         assert!(first < heading, "a passive candidate listed first:\n{text}");
     }
@@ -275,12 +341,19 @@ fn a_view_of_one_file_prints_no_command_that_is_refused() {
     write(r, "svc/app/api/special.py", &module("special", 10, true));
     for f in 0..8 {
         let name = format!("open{f}");
-        write(r, &format!("svc/app/api/{name}.py"), &module(&name, 5, false));
+        write(
+            r,
+            &format!("svc/app/api/{name}.py"),
+            &module(&name, 5, false),
+        );
     }
     drift(r, &["init"]);
     let one = drift(r, &["practices", "--path", "svc/app/api/special.py"]);
     every_command_is_taken(r, &one);
-    let all = drift(r, &["practices", "--path", "svc/app/api/special.py", "--all"]);
+    let all = drift(
+        r,
+        &["practices", "--path", "svc/app/api/special.py", "--all"],
+    );
     every_command_is_taken(r, &all);
     let v: Value = serde_json::from_str(&drift(
         r,
@@ -301,7 +374,10 @@ fn a_view_of_one_file_prints_no_command_that_is_refused() {
             args.extend(["--in", place]);
         }
         let (code, out, err) = run(r, &args);
-        assert_eq!(code, 0, "offered in JSON, then refused: {args:?}\n{out}{err}");
+        assert_eq!(
+            code, 0,
+            "offered in JSON, then refused: {args:?}\n{out}{err}"
+        );
     }
     // The whole map's own offers are taken too.
     let whole = drift(r, &["practices"]);

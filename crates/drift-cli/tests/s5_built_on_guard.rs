@@ -95,5 +95,8 @@ fn a_guard_built_on_the_shared_one_is_no_exception() {
         lock.contains("guard-gap\tapp/api/open/route.ts#GET GET /api/open lacks withAuth"),
         "{lock}"
     );
-    assert!(!lock.contains("app/api/admin/route.ts#GET GET /api/admin lacks"), "{lock}");
+    assert!(
+        !lock.contains("app/api/admin/route.ts#GET GET /api/admin lacks"),
+        "{lock}"
+    );
 }

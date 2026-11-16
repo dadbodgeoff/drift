@@ -552,15 +552,13 @@ fn export(root: &Path, no_cache: bool, a: &ExportArgs) -> anyhow::Result<()> {
 fn refuse_drift_state(root: &Path, out: &Path) -> anyhow::Result<()> {
     let abs = std::path::absolute(out)?;
     let root_abs = std::path::absolute(root)?;
-    if let Ok(rel) = abs.strip_prefix(&root_abs) {
-        if rel == Path::new(LOCK_FILE)
-            || (rel.starts_with(".drift") && !rel.starts_with(DIR))
-        {
-            bail!(
-                "{} is Drift's policy or state; write the feedback file somewhere else (default {DIR}/{DEFAULT_OUT})",
-                out.display()
-            );
-        }
+    if let Ok(rel) = abs.strip_prefix(&root_abs)
+        && (rel == Path::new(LOCK_FILE) || (rel.starts_with(".drift") && !rel.starts_with(DIR)))
+    {
+        bail!(
+            "{} is Drift's policy or state; write the feedback file somewhere else (default {DIR}/{DEFAULT_OUT})",
+            out.display()
+        );
     }
     Ok(())
 }
@@ -916,7 +914,9 @@ pub fn summary(doc: &FeedbackExport, out: &Path, dry_run: bool, fresh_key: bool)
             doc.review_log.total.shown, doc.review_log.total.accepted, doc.review_log.total.declined
         ));
     } else {
-        s.push_str("  - no review log was found (it is off unless turned on), so no review counts\n");
+        s.push_str(
+            "  - no review log was found (it is off unless turned on), so no review counts\n",
+        );
     }
     s.push_str("It leaves out: every path, symbol, package and dependency name, route, the repository's name and remote, authors, commit hashes, times finer than the day, the members of marks and exceptions, and the reasons of exceptions");
     if !doc.include_reasons {
@@ -1107,7 +1107,10 @@ fn why_text(text: &str) -> anyhow::Result<String> {
     let why = text.split_whitespace().collect::<Vec<_>>().join(" ");
     anyhow::ensure!(!why.is_empty(), "--why is empty: leave it out, or say why");
     let n = why.chars().count();
-    anyhow::ensure!(n <= MAX_WHY, "the reason has {n} characters; keep it to {MAX_WHY}");
+    anyhow::ensure!(
+        n <= MAX_WHY,
+        "the reason has {n} characters; keep it to {MAX_WHY}"
+    );
     Ok(why)
 }
 
@@ -1149,9 +1152,18 @@ mod tests {
     fn hashes_are_keyed_and_stable() {
         let a = [1u8; 32];
         let b = [2u8; 32];
-        assert_eq!(hashed(&a, "convention", "D-1"), hashed(&a, "convention", "D-1"));
-        assert_ne!(hashed(&a, "convention", "D-1"), hashed(&b, "convention", "D-1"));
-        assert_ne!(hashed(&a, "convention", "D-1"), hashed(&a, "finding", "D-1"));
+        assert_eq!(
+            hashed(&a, "convention", "D-1"),
+            hashed(&a, "convention", "D-1")
+        );
+        assert_ne!(
+            hashed(&a, "convention", "D-1"),
+            hashed(&b, "convention", "D-1")
+        );
+        assert_ne!(
+            hashed(&a, "convention", "D-1"),
+            hashed(&a, "finding", "D-1")
+        );
         let hex: String = a.iter().map(|x| format!("{x:02x}")).collect();
         assert_eq!(parse_key(&hex), Some(a));
     }

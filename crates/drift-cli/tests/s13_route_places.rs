@@ -30,7 +30,11 @@ fn drift(root: &Path, args: &[&str]) -> String {
         String::from_utf8_lossy(&out.stdout).into_owned(),
         String::from_utf8_lossy(&out.stderr).into_owned(),
     );
-    assert_eq!(out.status.code(), Some(0), "{args:?} failed:\n{stdout}\n{stderr}");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{args:?} failed:\n{stdout}\n{stderr}"
+    );
     stdout
 }
 

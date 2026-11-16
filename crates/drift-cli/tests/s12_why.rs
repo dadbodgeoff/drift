@@ -109,7 +109,11 @@ fn census_without_why_is_unchanged() {
     let json_before = drift(r, &["census", "--json"]);
     let _ = drift(r, &["census", "--why"]);
     let _ = drift(r, &["census", "--why", "--json"]);
-    assert_eq!(before, drift(r, &["census"]), "--why changes no later census");
+    assert_eq!(
+        before,
+        drift(r, &["census"]),
+        "--why changes no later census"
+    );
     assert_eq!(json_before, drift(r, &["census", "--json"]));
     assert!(!before.contains("What mining dropped"), "{before}");
     assert!(!before.contains("mining's caps"), "{before}");
@@ -230,18 +234,19 @@ fn why_lists_a_universal_and_a_below_bound_rule_under_their_gates() {
     assert_eq!(perch["detail"], "lower bound 0.50 under 0.75");
     assert_eq!(perch["target"], "repository");
     // Neither is listed under the other gate.
-    assert!(
-        !wilson
-            .iter()
-            .any(|d| d["rule"].as_str().unwrap().contains("withSession")
-                && d["role"].as_str().unwrap().contains("app/nests/**"))
-    );
+    assert!(!wilson.iter().any(|d| {
+        d["rule"].as_str().unwrap().contains("withSession")
+            && d["role"].as_str().unwrap().contains("app/nests/**")
+    }));
 
     // Every gate is documented with its constant and origin; the counts are the rows'.
     let gates = v["gates"].as_array().unwrap();
     let g = |name: &str| gates.iter().find(|g| g["name"] == name).unwrap();
     assert_eq!(g("universal")["origin"], "engineering, no study");
-    assert_eq!(g("wilson")["dropped"].as_u64().unwrap(), wilson.len() as u64);
+    assert_eq!(
+        g("wilson")["dropped"].as_u64().unwrap(),
+        wilson.len() as u64
+    );
     assert!(
         g("wilson")["constant"]
             .as_str()
@@ -260,20 +265,27 @@ fn why_lists_a_universal_and_a_below_bound_rule_under_their_gates() {
 
     // The text view: per gate, then the candidates, strongest first.
     let text = drift(r, &["census", "--why"]);
-    assert!(text.starts_with("What mining dropped, gate by gate."), "{text}");
+    assert!(
+        text.starts_with("What mining dropped, gate by gate."),
+        "{text}"
+    );
     assert!(text.contains("\nuniversal: "), "{text}");
     assert!(
-        text.lines().any(|l| l.starts_with("  12 of 12  ")
-            && l.contains("app/nests/**")
-            && l.contains("withSession")
-            && l.contains("holds for all 12 of 12")
-            && l.contains("target defined in the repository")),
+        text.lines().any(|l| {
+            l.starts_with("  12 of 12  ")
+                && l.contains("app/nests/**")
+                && l.contains("withSession")
+                && l.contains("holds for all 12 of 12")
+                && l.contains("target defined in the repository")
+        }),
         "{text}"
     );
     assert!(
-        text.lines().any(|l| l.starts_with("  10 of 13  ")
-            && l.contains("app/perches/**")
-            && l.contains("lower bound 0.50 under 0.75")),
+        text.lines().any(|l| {
+            l.starts_with("  10 of 13  ")
+                && l.contains("app/perches/**")
+                && l.contains("lower bound 0.50 under 0.75")
+        }),
         "{text}"
     );
 
