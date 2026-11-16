@@ -4400,6 +4400,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .map(|c| c.id.as_str())
                         .collect();
                     print_report(&report, &hidden, &practices::practice_concerns(&policy));
+                    // What each rule that reported a new violation rests on.
+                    pr::print_trust(&facts, &policy, &report);
                     if *strict && unread {
                         println!("drift: --strict: files that were not checked fail the check");
                     }
@@ -4418,7 +4420,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 Format::Github => {
                     // Annotations name files from the git top level ([`project::at_git_top`]).
                     let prefix = project::git_prefix(root);
-                    pr::github_output(
+                    pr::github_output_with(
                         &project::at_git_top(&report, &prefix),
                         scope.as_ref(),
                         &prefix,
@@ -4426,6 +4428,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         *strict,
                         &departures,
                         &added,
+                        &drift_mine::report::Basis::new(&facts, &policy, &report),
                     )?;
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
                         for a in rows {
