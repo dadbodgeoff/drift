@@ -1680,10 +1680,18 @@ impl Lowerer<'_> {
                         {
                             // A positional argument is a status where it reads as
                             // one (a message beside it is not); a status keyword
-                            // is one whatever it is given.
+                            // is one whatever it is given. Any other value (a
+                            // parameter, `*args`) may be the status: unread, so a
+                            // `Denied(404)` of a 401 base reads no status.
                             for a in &call.arguments.args {
-                                if let Some(s) = practice::status_of(a) {
-                                    found.insert(s);
+                                match practice::status_of(a) {
+                                    Some(s) => {
+                                        found.insert(s);
+                                    }
+                                    None if !matches!(a, Expr::StringLiteral(_) | Expr::FString(_)) => {
+                                        *unread = true;
+                                    }
+                                    None => {}
                                 }
                             }
                             for k in &call.arguments.keywords {

@@ -923,11 +923,14 @@ fn source(r: &str) -> VariantSource {
 /// member (`a.ts#authedProcedure.input().use()` -> `a.ts#authedProcedure`). The
 /// same cut [`crate::guard_position`] makes of a bound builder.
 fn builder_base(derives_from: &str) -> &str {
-    let Some(open) = derives_from.find('(') else {
+    // The cut is made in the value's name, after the module's path: a route
+    // group (`app/(auth)/trpc.ts`) or a dotted directory is no step.
+    let from = derives_from.find('#').map_or(0, |i| i + 1);
+    let Some(open) = derives_from[from..].find('(').map(|i| i + from) else {
         return derives_from;
     };
-    match derives_from[..open].rfind('.') {
-        Some(dot) => &derives_from[..dot],
+    match derives_from[from..open].rfind('.') {
+        Some(dot) => &derives_from[..from + dot],
         None => derives_from,
     }
 }
@@ -1023,8 +1026,12 @@ fn adds_no_step(cx: &Cx<'_>, w: &str) -> bool {
             return at > 0 && external(&cur);
         };
         if d.derives_from.is_empty() {
-            // `w` itself built by a call: what that call builds is not read.
-            return at > 0;
+            // `w` itself built by a call: what that call builds is not read. A
+            // binding on the way built only by a package's calls
+            // (`initTRPC.create()`) is where the chain starts; one built by the
+            // repository's own function (`makeProcedure()`, which may add the
+            // guard) or by no call the facts record was not read.
+            return at > 0 && !d.calls.is_empty() && d.calls.iter().all(|c| external(c));
         }
         if d.derives_from.contains('(') {
             return false;
@@ -1413,10 +1420,12 @@ fn role_only_guard(cx: &Cx<'_>, g: &str) -> bool {
 /// The one switch for reading a shared-secret refusal
 /// ([`drift_core::controls::REFUSES_SECRET`]) as `service_auth`: a header
 /// compared whole with a value of the environment, the body left where they
-/// differ. Off, such a body reads as it did before this reading (the compare is
-/// no body check the facts record).
+/// differ. Off: the facts do not show that the value is a secret (an `Origin` or
+/// `Host` compared with the app's public URL reads the same), so such a refusal is
+/// a check found and not proven, unknown ([`UnknownReason::CheckNotProven`]),
+/// never `service_auth`.
 fn shared_secret_refusal_is_service_auth() -> bool {
-    true
+    false
 }
 
 /// Reads one body the entry point runs (`py`: a Python one; `request`: of an entry
@@ -1444,10 +1453,14 @@ fn body(
     // TypeScript: the body leaves wherever a request header differs from a secret
     // the environment holds, outside every branch
     // ([`drift_core::controls::REFUSES_SECRET`]): a sending service is checked.
-    if !py && shared_secret_refusal_is_service_auth() {
+    if !py {
         for c in &s.controls {
             if let Some(header) = c.strip_prefix(drift_core::controls::REFUSES_SECRET) {
                 let instrument = format!("header:{header}");
+                if !shared_secret_refusal_is_service_auth() {
+                    r.call_unknown(UnknownReason::CheckNotProven, &instrument);
+                    continue;
+                }
                 let u = use_of(SERVICE_AUTH, &instrument);
                 if !r.uses.contains(&u) {
                     r.add(SERVICE_AUTH, &instrument, VariantSource::Usage);
