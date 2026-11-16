@@ -2763,7 +2763,7 @@ fn data_call(cx: &Cx<'_>, callee: &str) -> bool {
 /// from beside that directory, `unresolved:../generated/prisma/client`), or a name
 /// a module of the repository hands on from one (`export * from
 /// "../generated/prisma/client"`, `import { PrismaClient } from ...` named again).
-fn generated_client(cx: &Cx<'_>, r: &str) -> bool {
+pub(super) fn generated_client(cx: &Cx<'_>, r: &str) -> bool {
     let generated = &cx.facts.generated_clients;
     if generated.is_empty() {
         return false;

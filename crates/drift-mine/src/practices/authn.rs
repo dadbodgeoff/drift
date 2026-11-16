@@ -1394,6 +1394,18 @@ fn body(
         };
         r.add("body_check", &what, src);
     }
+    // TypeScript: the body leaves by a refusal (a `throw`, or an error handed to the
+    // framework's continuation, the handler's own parameter by its position) for
+    // every request for which what gives the caller gave nothing
+    // ([`security::refuses_without_identity`]): a check of the body, the one
+    // `drift security` lists it by. Only what a giver proven to hand back who calls,
+    // or nothing, gave counts; any other test is not read here.
+    if !py
+        && ctx.since_measured()
+        && let Some(giver) = security::refuses_without_identity(ctx, s)
+    {
+        r.add("body_check", &crate::mine::norm_ref(giver), source(giver));
+    }
     // [STRICT] Python: the body answers 401 where no check records why (after a
     // branch that returns for a signed-in caller): found, never none.
     if py && security::answers_401_unrecorded(s) {
@@ -3663,5 +3675,40 @@ mod tests {
                 "{path}"
             );
         }
+    }
+
+    /// A body that refuses (throws, or hands an error to its continuation) for every
+    /// request for which a giver of who calls gave nothing has a body check by that
+    /// giver; a giver not proven to hand back who calls gives none.
+    #[test]
+    fn a_refusal_without_the_caller_is_a_body_check() {
+        let route = "app/api/projects/[projectId]/route.ts";
+        let with = |gives: bool| {
+            let mut facts = fixtures::next_clerk();
+            for f in facts.files.iter_mut() {
+                for s in f.symbols.iter_mut() {
+                    if f.path == route && s.name == "GET" {
+                        s.controls.push(format!(
+                            "{}lib/db.ts#db",
+                            drift_core::controls::REFUSES_WITHOUT
+                        ));
+                    }
+                    if gives && f.path == "lib/db.ts" && s.name == "db" {
+                        s.controls
+                            .push(drift_core::controls::RETURNS_CALLER.to_string());
+                    }
+                }
+            }
+            facts
+        };
+        let d = empty();
+        let facts = with(true);
+        let cx = Cx::new(&facts, &d);
+        let k = key(&of(&assign_all(&Authn, &cx), route, "GET"));
+        assert!(k.contains("body_check:lib/db.ts#db"), "{k}");
+        let facts = with(false);
+        let cx = Cx::new(&facts, &d);
+        let k = key(&of(&assign_all(&Authn, &cx), route, "GET"));
+        assert!(!k.contains("lib/db.ts#db"), "{k}");
     }
 }

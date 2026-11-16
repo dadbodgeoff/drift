@@ -4535,6 +4535,28 @@ impl<'s> Lowerer<'s> {
                                 member: String::new(),
                             });
                         }
+                        // Each pipe the decorator is handed (`@Param("id",
+                        // ParseIntPipe)`, `@Body(new ValidationPipe())`): the
+                        // framework runs it on the value before the handler
+                        // ([`drift_core::controls::PIPES_INPUT`], listed reading).
+                        if let Expression::CallExpression(c) = unwrap_expr(&d.expression) {
+                            for a in c.arguments.iter().filter_map(|a| a.as_expression()) {
+                                let pipe = match unwrap_expr(a) {
+                                    Expression::NewExpression(n) => self.canon(&n.callee),
+                                    e @ (Expression::Identifier(_)
+                                    | Expression::StaticMemberExpression(_)) => self.canon(e),
+                                    _ => None,
+                                };
+                                if let Some(p) =
+                                    pipe.filter(|r| !matches!(r.base, RawBase::Global(_)))
+                                {
+                                    sym.listed_refs.push((
+                                        drift_core::controls::PIPES_INPUT.to_string(),
+                                        vec![p],
+                                    ));
+                                }
+                            }
+                        }
                     }
                     Some("Headers") => {
                         if let Some(Expression::StringLiteral(l)) = first_arg(d) {
