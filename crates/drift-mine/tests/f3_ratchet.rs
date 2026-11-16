@@ -7,9 +7,23 @@
 //! the code; against a diff, only `guard-gap` outside the change was spared.
 
 use drift_mine::ratchet::{
-    Findings, INVENTORY_VERSION, compare_with, found_since, newer_readings_line, parse_baseline,
-    render, render_lock,
+    Findings, INVENTORY_VERSION, Since, compare_with, found_since, newer_readings_line,
+    parse_baseline, render, render_lock,
 };
+
+/// What a commit shows (review of PR 148, area 7 item 1): `found` there, `touched`
+/// since, and gap exceptions that are not the change's.
+fn since(found: &Findings, touched: &[&str], outside: &[(&str, &str)]) -> Since {
+    Since {
+        commit: "c0ffee".into(),
+        found: found.keys().cloned().collect(),
+        touched: touched.iter().map(|p| p.to_string()).collect(),
+        outside: outside
+            .iter()
+            .map(|(k, key)| (k.to_string(), key.to_string()))
+            .collect(),
+    }
+}
 
 fn found(rows: &[(&str, &str, &str)]) -> Findings {
     rows.iter()
@@ -33,11 +47,12 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
         "scope-gap",
         "unguarded-reaching",
         "whole-row",
+        "workflow",
     ] {
         assert_eq!(found_since(kind, "x"), 2, "{kind}");
     }
     // Read as before.
-    for kind in ["workflow", "dependency", "kubernetes", "leak"] {
+    for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");
     }
     const { assert!(INVENTORY_VERSION >= 2) };
@@ -70,12 +85,17 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
             ".github/workflows/ci.yml:7",
         ),
     ]);
-    // A whole-tree check: nothing says what a change did. (Against a diff, a
-    // touched file fails as before: `against_a_diff_*` below, F10.)
+    // A whole-tree check, where the commit that wrote the baseline shows every
+    // finding there and no file changed since. (Against a diff, a touched file fails
+    // as before: `against_a_diff_*` below, F10. With nothing to compare with, nothing
+    // is held: review of PR 148, area 7 item 1.)
     {
         let r = compare_with(&now, &b, None);
+        assert!(r.new_in_drift.is_empty(), "{r:?}");
+        assert_eq!(r.unshown, 4, "{r:?}");
+        let r = compare_with(&now, &b, Some(&since(&now, &[], &[])));
         assert_eq!(r.kept, 1);
-        for kind in ["unguarded-reaching", "risky", "guard-gap"] {
+        for kind in ["unguarded-reaching", "risky", "guard-gap", "workflow"] {
             assert_eq!(
                 r.new_in_drift.get(kind).map(Vec::len),
                 Some(1),
@@ -83,10 +103,11 @@ fn an_older_baseline_fails_nothing_a_wider_reading_finds_in_a_whole_tree_check()
             );
             assert!(!r.added.contains_key(kind), "{kind}: {r:?}");
         }
-        // A kind read as before still fails on what is not in the baseline.
-        assert_eq!(r.added.get("workflow").map(Vec::len), Some(1), "{r:?}");
+        // The workflow reading widened too (comment-triggered runs, bracket-form
+        // expressions): held as the others are, only where shown old.
+        assert!(!r.added.contains_key("workflow"), "{r:?}");
         let line = newer_readings_line(&r).unwrap();
-        assert!(line.starts_with("3 finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them"), "{line}");
+        assert!(line.starts_with("4 finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them"), "{line}");
         let text = render(&r, 20);
         assert_eq!(
             text.matches("readings newer than this baseline").count(),
@@ -135,8 +156,14 @@ fn a_scope_gap_outside_the_change_fails_nothing() {
             "b.ts:4",
         ),
     ]);
-    let touched = |p: &str| p == "b.ts";
-    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    // `a.ts`'s exception was there at the commit compared with, in a file the change
+    // did not touch ([`drift_mine::ratchet::not_the_changes_gaps`] says so).
+    let shown = since(
+        &Findings::new(),
+        &["b.ts"],
+        &[("scope-gap", "a.ts#f GET /a reads note without userId")],
+    );
+    let r = compare_with(&now, &b, Some(&shown));
     assert_eq!(r.added["scope-gap"][0].at, "b.ts:4");
     assert_eq!(r.outside_change["scope-gap"][0].at, "a.ts:3");
 }
@@ -159,8 +186,9 @@ fn against_a_diff_a_new_unguarded_route_fails_an_unstamped_baseline() {
             "lib/dao.ts:2",
         ),
     ]);
-    let touched = |p: &str| p == "routes/new.ts";
-    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    // The merge base has what was there; the route is the change's (also if a
+    // reading at the base had found it: its file is touched).
+    let r = compare_with(&now, &b, Some(&since(&now, &["routes/new.ts"], &[])));
     assert_eq!(r.kept, 1);
     assert_eq!(
         r.added.get("no-guard").map(|rows| rows[0].at.as_str()),
@@ -181,8 +209,7 @@ fn against_a_diff_an_old_finding_in_an_untouched_file_fails_nothing() {
             "lib/dao.ts:2",
         ),
     ]);
-    let touched = |p: &str| p == "routes/new.ts";
-    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    let r = compare_with(&now, &b, Some(&since(&now, &["routes/new.ts"], &[])));
     assert!(r.added.is_empty(), "{r:?}");
     assert_eq!(r.new_in_drift.get("risky").map(Vec::len), Some(1), "{r:?}");
     assert!(newer_readings_line(&r).is_some());

@@ -25,6 +25,30 @@ fn write(root: &Path, rel: &str, body: &str) {
     fs::write(p, body).unwrap();
 }
 
+fn git(root: &Path, args: &[&str]) {
+    let out = Command::new("git")
+        .args([
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "init.defaultBranch=main",
+        ])
+        .args(args)
+        .current_dir(root)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
 fn drift(root: &Path, args: &[&str]) -> (i32, String, String) {
     let out = Command::new(&*BIN)
         .arg("--no-cache")
@@ -90,6 +114,13 @@ fn an_older_baseline_lists_what_a_wider_reading_finds_and_fails_nothing() {
         as_older_release(&lock, &["no-guard", "unguarded-reaching"]),
     )
     .unwrap();
+    // Nothing shows the code is old (no commit): it fails (review of PR 148, area 7
+    // item 1). Committed as the older release left it, the commit shows it.
+    let (code, out, err) = drift(r, &["check"]);
+    assert_eq!(code, 1, "{out}{err}");
+    git(r, &["init", "-q"]);
+    git(r, &["add", "-A"]);
+    git(r, &["commit", "-qm", "as the older release wrote it"]);
     let (code, out, err) = drift(r, &["check"]);
     assert_eq!(code, 0, "{out}{err}");
     assert!(

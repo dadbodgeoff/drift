@@ -21,8 +21,9 @@
 //! a baseline only where the baseline was written by an inventory at least as new as
 //! the reading that finds it: a finding of a kind, a detector or a reading newer than
 //! the baseline ([`KIND_SINCE`], [`DETECTOR_SINCE`], [`READ_SINCE`]) may be what a new
-//! Drift reads, not what a change did, so it is reported apart and fails nothing
-//! until the baseline is written again. A kind added since ([`ADVISE_FIRST`])
+//! Drift reads, not what a change did. It is reported apart and fails nothing until
+//! the baseline is written again only where Drift shows the code under it did not
+//! change ([`Since`]); where it cannot show that, it fails (fail closed). A kind added since ([`ADVISE_FIRST`])
 //! advises until a person sets it to fail.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -66,12 +67,12 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 /// Kinds of finding whose reading a version widened (it finds more of the kind, or
 /// keys some differently), with that version: a baseline written before it does
 /// not hold what the wider reading finds, and a finding of the kind cannot be told
-/// apart from one a change added, since both are keyed the same. So against an
-/// older baseline every finding of the kind it does not hold is new in Drift
-/// ([`Ratchet::new_in_drift`]) until the baseline is written again, except, against
-/// a diff, in a file the change touched: there it fails as the kind did before
-/// (a touched file may hold what only the wider reading sees, but holding it apart
-/// would let every finding a change adds through after an upgrade).
+/// apart from one a change added by its key. So against an older baseline a
+/// finding of the kind it does not hold is new in Drift ([`Ratchet::new_in_drift`])
+/// until the baseline is written again only where this Drift finds it at the commit
+/// compared with, in a file unchanged since ([`Since`]); elsewhere it fails as the
+/// kind did before (holding it apart would let every finding a change adds through
+/// after an upgrade).
 ///
 /// 2:
 /// - `no-guard`, `unguarded-reaching`: entry points read through a wrapper a call
@@ -83,9 +84,12 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///   constructors and more sides of a filter;
 /// - `risky`: a `$where` built in a helper, a Python file path bound to a name
 ///   first, a property written under a key read off a parameter;
-/// - `whole-row`: read for every entry point, so for those newly listed too.
+/// - `whole-row`: read for every entry point, so for those newly listed too;
+/// - `workflow`: runs a comment starts, expressions in bracket form, reusable
+///   workflows a job calls, and a second step of a job with the same expression
+///   keyed apart (` (occurrence N in the job)`).
 ///
-/// `workflow`, `dependency`, `kubernetes` and `leak` read as before. Every later
+/// `dependency`, `kubernetes` and `leak` read as before. Every later
 /// change to what a reading finds adds its kinds here with the new version.
 const READ_SINCE: &[(&str, u32)] = &[
     ("guard-gap", 2),
@@ -95,6 +99,7 @@ const READ_SINCE: &[(&str, u32)] = &[
     ("scope-gap", 2),
     ("unguarded-reaching", 2),
     ("whole-row", 2),
+    ("workflow", 2),
 ];
 
 /// Kinds that advise in `drift check` until a person sets them to fail
@@ -431,31 +436,131 @@ pub fn parse_lock(text: &str) -> BTreeSet<(String, String)> {
 }
 
 /// A baseline file, its header read too ([`Baseline`]).
+///
+/// Two branches that each wrote the header merge (`merge=union`) into a file with
+/// both sides' lines. Read so that neither side's lines weaken the other's: every
+/// `# fail:` line's kinds fail (the union), and of several stamps the newest is the
+/// version (a newer stamp holds less apart as new in Drift). A stamp Drift cannot
+/// read is read as the oldest; [`header_problems`] says so.
 pub fn parse_baseline(text: &str) -> Baseline {
     let text = text.strip_prefix('\u{feff}').unwrap_or(text); // a Windows editor's byte-order mark
-    let mut version = UNSTAMPED;
-    let mut fail = None;
+    let mut version: Option<u32> = None;
+    let mut fail: Option<BTreeSet<String>> = None;
     for l in text.lines().take_while(|l| l.starts_with('#')) {
         if let Some(v) = l.strip_prefix(VERSION_LINE) {
-            // A stamp Drift cannot read is read as the oldest: what is newer than
-            // that never fails.
-            version = v.trim().parse().unwrap_or(UNSTAMPED);
+            if let Ok(v) = v.trim().parse::<u32>() {
+                version = Some(version.map_or(v, |was| was.max(v)));
+            }
         } else if let Some(kinds) = l.strip_prefix(FAIL_LINE.trim_end()) {
-            fail = Some(
+            fail.get_or_insert_with(BTreeSet::new).extend(
                 kinds
                     .split(',')
                     .map(str::trim)
                     .filter(|k| !k.is_empty())
-                    .map(str::to_string)
-                    .collect(),
+                    .map(str::to_string),
             );
         }
     }
     Baseline {
         findings: parse_lock(text),
-        version,
+        version: version.unwrap_or(UNSTAMPED),
         fail,
     }
+}
+
+/// What the header of a baseline file says that a person should know, since it
+/// changes what is checked: a stamp Drift cannot read (read as version 1, so a
+/// finding of a newer reading is held apart only where Drift shows it old), and
+/// more than one stamp or `# fail:` line (what a `merge=union` of two branches
+/// leaves). Plain sentences, sorted as found.
+pub fn header_problems(text: &str) -> Vec<String> {
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let mut out = Vec::new();
+    let (mut stamps, mut fails) = (0, 0);
+    for l in text.lines().take_while(|l| l.starts_with('#')) {
+        if let Some(v) = l.strip_prefix(VERSION_LINE) {
+            stamps += 1;
+            if v.trim().parse::<u32>().is_err() {
+                out.push(format!(
+                    "{SECURITY_LOCK}: the stamp `{}` cannot be read, so the baseline is read as inventory {UNSTAMPED}; `drift upgrade --apply --security-baseline` on the default branch writes it again",
+                    crate::report::sanitize(l.trim(), 80)
+                ));
+            }
+        } else if l.starts_with(FAIL_LINE.trim_end()) {
+            fails += 1;
+        }
+    }
+    if stamps > 1 {
+        out.push(format!(
+            "{SECURITY_LOCK} has {stamps} `# inventory:` lines (two branches' headers merged); the newest is read"
+        ));
+    }
+    if fails > 1 {
+        out.push(format!(
+            "{SECURITY_LOCK} has {fails} `# fail:` lines (two branches' headers merged); every kind any of them names fails"
+        ));
+    }
+    out
+}
+
+/// The baseline a change's check enforces: the change's own (`head`, its findings
+/// are what a person accepted in it), with a header no weaker than the one at the
+/// commit it is compared with (`base`). A change that takes a kind off `# fail:`, or
+/// lowers or removes `# inventory:`, would decide by its own edit what checks it;
+/// the stricter of the two is kept, and each weakening is said.
+pub fn stricter(head: &Baseline, base: &Baseline) -> (Baseline, Vec<String>) {
+    let mut out = head.clone();
+    let mut said = Vec::new();
+    let (now, was) = (head.fail_kinds(), base.fail_kinds());
+    let dropped: Vec<&str> = was.difference(&now).map(String::as_str).collect();
+    if !dropped.is_empty() {
+        said.push(format!(
+            "this change takes {} off `# fail:` in {SECURITY_LOCK}; this check still fails on them, as the baseline the change starts from says",
+            crate::report::sanitize(&dropped.join(", "), 300)
+        ));
+        out.fail = Some(now.union(&was).cloned().collect());
+    }
+    if head.version < base.version {
+        said.push(format!(
+            "this change lowers `# inventory:` in {SECURITY_LOCK} from {} to {}{}; this check reads it as {}, as the baseline the change starts from says",
+            base.version,
+            head.version,
+            if head.version == UNSTAMPED {
+                " (no stamp, or one that cannot be read)"
+            } else {
+                ""
+            },
+            base.version
+        ));
+        out.version = base.version;
+    }
+    (out, said)
+}
+
+/// What changed in a baseline's header from `was` to `now` that checks less: kinds
+/// taken off `# fail:`, a stamp lowered or removed. Said where Drift has no commit
+/// to enforce the older header against (a check of no diff); empty when nothing
+/// weakened.
+pub fn header_weakened(was: &Baseline, now: &Baseline) -> Vec<String> {
+    let mut said = Vec::new();
+    let dropped: Vec<String> = was
+        .fail_kinds()
+        .difference(&now.fail_kinds())
+        .cloned()
+        .collect();
+    if !dropped.is_empty() {
+        said.push(format!(
+            "{SECURITY_LOCK} was edited to take {} off `# fail:`: findings of those kinds no longer fail",
+            crate::report::sanitize(&dropped.join(", "), 300)
+        ));
+    }
+    if now.version < was.version {
+        said.push(format!(
+            "{SECURITY_LOCK} was edited to lower `# inventory:` from {} to {}",
+            was.version, now.version
+        ));
+    }
+    said
 }
 
 /// The baseline of the repository at `root`; `None` where there is none.
@@ -504,17 +609,17 @@ pub struct Ratchet {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub advised: BTreeMap<String, Vec<Added>>,
     /// Found now and not in the baseline, of a kind, a detector or a reading newer
-    /// than the inventory that wrote it ([`found_since`]): what this version of
-    /// Drift reads, which the baseline could not hold. Against a diff, only those in
-    /// files the change did not touch (in a touched file they fail as before).
-    /// They fail nothing until the baseline is written again. Omitted when empty
-    /// (additive).
+    /// than the inventory that wrote it ([`found_since`]), and shown to be old code
+    /// read anew: found by this Drift at the commit compared with ([`Since`]), in a
+    /// file unchanged since. What this version of Drift reads, which the baseline
+    /// could not hold. They fail nothing until the baseline is written again.
+    /// Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub new_in_drift: BTreeMap<String, Vec<Added>>,
     /// Against a diff: entry points lacking a shared guard or scope in files the
-    /// change did not touch (other entry points gained it, so these turned into
-    /// exceptions without being changed): not the change's finding. They fail
-    /// nothing. Omitted when empty (additive).
+    /// change did not touch, that lacked it before the change too
+    /// ([`not_the_changes_gaps`]): not the change's finding. They fail nothing.
+    /// Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub outside_change: BTreeMap<String, Vec<Added>>,
     /// In the baseline and no longer found: writing the baseline again drops them,
@@ -522,10 +627,50 @@ pub struct Ratchet {
     pub gone: Vec<Gone>,
     /// How many findings the baseline holds that are still found.
     pub kept: usize,
+    /// The commit the findings were compared with to tell old code read anew from a
+    /// change's ([`Since::commit`]). Omitted when none was (additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub since: Option<String>,
+    /// Of `added`: findings of a reading newer than the baseline that Drift could not
+    /// show to be old code read anew (not found at [`Ratchet::since`], in a file
+    /// changed since then, or no commit to compare with). They fail. Omitted when 0
+    /// (additive).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub unshown: usize,
+    /// Why no commit could be compared with, where `unshown` counts any. Omitted
+    /// otherwise (additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unshown_why: Option<String>,
+    /// What the baseline's header says or a change did to it that changes what is
+    /// checked ([`header_problems`], [`stricter`], [`header_weakened`]). Omitted when
+    /// empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub header: Vec<String>,
+    /// Against a diff: entry points the change adds whose guard Drift could not read
+    /// ([`crate::security::Regressions::guard_unknown`]). Not checked: unknown is never
+    /// a finding, and these fail nothing. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub guard_unknown: Vec<Unknown>,
+}
+
+fn is_zero(n: &usize) -> bool {
+    *n == 0
+}
+
+/// An entry point whose guard Drift could not read ([`Ratchet::guard_unknown`]).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+pub struct Unknown {
+    /// The entry point, keyed as a baseline keys it.
+    pub key: String,
+    /// `path:line`.
+    pub at: String,
+    /// What may be its guard and could not be read ([`EntryRow::has`]).
+    pub read: String,
 }
 
 impl Ratchet {
-    /// Whether anything is found that the baseline does not hold, failing or not.
+    /// Whether anything is found that the baseline does not hold, failing or not, or
+    /// anything is said of what was not checked or of the header.
     pub fn has_news(&self) -> bool {
         [
             &self.added,
@@ -535,7 +680,134 @@ impl Ratchet {
         ]
         .iter()
         .any(|m| m.values().any(|rows| !rows.is_empty()))
+            || !self.header.is_empty()
+            || !self.guard_unknown.is_empty()
     }
+}
+
+/// What shows, of the findings a baseline does not hold, which are old code read
+/// anew and which a change could have added: what this Drift finds at a commit
+/// before the change (a diff's merge base, or with no diff the commit that last
+/// wrote the baseline), with the files changed since. A finding may be held apart
+/// as new in this Drift only where it was found there and its file is unchanged;
+/// with no `Since` nothing is held apart, and every finding the baseline does not
+/// hold is checked (fail closed).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Since {
+    /// The commit.
+    pub commit: String,
+    /// What this Drift finds at the commit, keyed as now. A renamed file's findings
+    /// are keyed by its old path there, so they are not matched: they fail, as one
+    /// in a changed file does.
+    pub found: BTreeSet<(String, String)>,
+    /// The paths, as now, that were added or changed since the commit.
+    pub touched: BTreeSet<String>,
+    /// Gap exceptions (`guard-gap`, `scope-gap`) found now that are not the change's
+    /// ([`not_the_changes_gaps`]).
+    pub outside: BTreeSet<(String, String)>,
+}
+
+/// Of the gap exceptions found now (`head`), those that are not the change's: in a
+/// file the change did not touch, and either found at the commit compared with
+/// (`base_found`) or, for a guard gap, an entry point the commit has with the same
+/// guards, nothing more opaque and nothing more open, so that what it lacks it
+/// lacked before and the gap appeared because other entry points gained the guard.
+/// The guards read at the commit come through every file the entry point's guard
+/// chain passes (a mount, a router's middleware, an app hook), so a guard removed
+/// from any of them is a change of its guards, and is the change's.
+///
+/// A scope gap is not the change's only where it was found at the commit: whether
+/// an entry point filtered a query by the caller is not listed where no gap was, so
+/// that the scope was gained elsewhere cannot be shown.
+pub fn not_the_changes_gaps(
+    base: &Inventory,
+    head: &Inventory,
+    base_found: &BTreeSet<(String, String)>,
+    touched: &dyn Fn(&str) -> bool,
+) -> BTreeSet<(String, String)> {
+    let mut out = BTreeSet::new();
+    for g in &head.guard_gaps {
+        for e in &g.exceptions {
+            if touched(&e.path) {
+                continue;
+            }
+            let key = (
+                "guard-gap".to_string(),
+                format!(
+                    "{} lacks {}",
+                    entry_key(&e.path, &e.symbol, e.method.as_deref(), e.route.as_deref()),
+                    g.guard
+                ),
+            );
+            let same_guards = base.entry_points.iter().any(|b| {
+                b.path == e.path
+                    && b.symbol == e.symbol
+                    && b.method == e.method
+                    && b.route == e.route
+                    && b.guards == e.guards
+                    && b.opaque == e.opaque
+                    && b.opens == e.opens
+            });
+            if same_guards || base_found.contains(&key) {
+                out.insert(key);
+            }
+        }
+    }
+    for g in &head.scope_gaps {
+        for e in &g.exceptions {
+            if touched(&e.path) {
+                continue;
+            }
+            let key = (
+                "scope-gap".to_string(),
+                format!(
+                    "{} reads {} without {}",
+                    entry_key(&e.path, &e.symbol, e.method.as_deref(), e.route.as_deref()),
+                    g.resource,
+                    g.key
+                ),
+            );
+            if base_found.contains(&key) {
+                out.insert(key);
+            }
+        }
+    }
+    out
+}
+
+/// Whether comparing `found` with `baseline` could hold anything apart, so that the
+/// findings at a commit ([`Since`]) are worth reading: a finding the baseline does
+/// not hold of a reading newer than it, or (against a diff) a gap exception, in a
+/// file not `touched`.
+pub fn needs_since(
+    found: &Findings,
+    baseline: &Baseline,
+    diff: bool,
+    touched: &dyn Fn(&str) -> bool,
+) -> bool {
+    found.iter().any(|((kind, key), at)| {
+        let path = at.rsplit_once(':').map_or(at.as_str(), |(p, _)| p);
+        !baseline.findings.contains(&(kind.clone(), key.clone()))
+            && !touched(path)
+            && (found_since(kind, key) > baseline.version
+                || (diff && (kind == "guard-gap" || kind == "scope-gap")))
+    })
+}
+
+/// [`Ratchet::guard_unknown`] of a diff: the entry points the change adds whose
+/// guard cannot be read, as [`crate::security::regressions`] lists them.
+pub fn guard_unknown(rows: &[EntryRow]) -> Vec<Unknown> {
+    let mut out: Vec<Unknown> = rows
+        .iter()
+        .map(|e| Unknown {
+            key: row_key(e),
+            at: format!("{}:{}", e.path, e.line),
+            read: e.has(),
+        })
+        .collect();
+    out.sort();
+    out.dedup();
+    out
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -564,36 +836,43 @@ pub fn compare(found: &Findings, baseline: &BTreeSet<(String, String)>) -> Ratch
     )
 }
 
-/// Compares what is found now with `baseline`. `touched`, against a diff, says
-/// whether the change added or changed a path: a guard gap elsewhere is not the
-/// change's ([`Ratchet::outside_change`]), as [`crate::security::regressions`]
-/// counts only exceptions in touched files.
-pub fn compare_with(
-    found: &Findings,
-    baseline: &Baseline,
-    touched: Option<&dyn Fn(&str) -> bool>,
-) -> Ratchet {
-    let mut out = Ratchet::default();
+/// Compares what is found now with `baseline`. A finding the baseline does not
+/// hold is held apart only on what `since` shows ([`Since`]): as new in this Drift
+/// ([`Ratchet::new_in_drift`]) where it is of a reading newer than the baseline, was
+/// found at the commit and its file did not change since; as not the change's
+/// ([`Ratchet::outside_change`]) where it is a gap exception `since` says other entry
+/// points made. With `since` `None` nothing shows either, so every finding the
+/// baseline does not hold is checked: a baseline an older Drift wrote (unstamped)
+/// must not let a change's own unguarded route through because nothing could be
+/// compared.
+pub fn compare_with(found: &Findings, baseline: &Baseline, since: Option<&Since>) -> Ratchet {
+    let mut out = Ratchet {
+        since: since.map(|s| s.commit.clone()),
+        ..Ratchet::default()
+    };
     for ((kind, key), at) in found {
-        if baseline.findings.contains(&(kind.clone(), key.clone())) {
+        let k = (kind.clone(), key.clone());
+        if baseline.findings.contains(&k) {
             out.kept += 1;
             continue;
         }
         let path = at.rsplit_once(':').map_or(at.as_str(), |(p, _)| p);
-        // A gap is a share of siblings: an untouched entry point turns into an
-        // exception when others gain what it lacks.
-        let relative = kind == "guard-gap" || kind == "scope-gap";
-        // Against a diff, a newer reading's finding in a file the change touched
-        // fails as its kind did before the reading widened: held apart, a baseline an
-        // older Drift wrote (unstamped) would let a change's own unguarded route
-        // through. Only what lies in untouched files, or a check of no diff, is held.
-        let to = if found_since(kind, key) > baseline.version && !touched.is_some_and(|t| t(path)) {
+        let newer = found_since(kind, key) > baseline.version;
+        // Old code read anew: there at the commit, in a file unchanged since. A
+        // newer reading's finding in a changed file fails as its kind did before the
+        // reading widened (keys do not say what in a unit changed).
+        let shown_old =
+            since.is_some_and(|s| s.found.contains(&k) && !s.touched.contains(path));
+        let to = if newer && shown_old {
             &mut out.new_in_drift
-        } else if relative && touched.is_some_and(|t| !t(path)) {
+        } else if since.is_some_and(|s| s.outside.contains(&k)) {
             &mut out.outside_change
         } else if !baseline.fails(kind) {
             &mut out.advised
         } else {
+            if newer {
+                out.unshown += 1;
+            }
             &mut out.added
         };
         to.entry(kind.clone()).or_default().push(Added {
@@ -636,6 +915,13 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         r.kept,
         r.gone.len()
     ));
+    // Composed by Drift; the repository's text in them is sanitized where it is put.
+    for line in &r.header {
+        out.push_str(&format!("  {line}\n"));
+    }
+    if let Some(line) = unshown_line(r) {
+        out.push_str(&format!("  {line}\n"));
+    }
     for (kind, what) in KINDS {
         let Some(rows) = r.added.get(*kind) else {
             continue;
@@ -676,10 +962,27 @@ pub fn render(r: &Ratchet, max: usize) -> String {
             "the guard"
         };
         out.push_str(&format!(
-            "\n{} {what} [{kind}] in files this change did not touch: other entry points gained {gained}, so these are not this change's; they fail nothing\n",
+            "\n{} {what} [{kind}] in files this change did not touch, lacking what they lacked before it (other entry points gained {gained}, or the gap was there already): not this change's; they fail nothing\n",
             rows.len()
         ));
         rows_text(&mut out, rows, max);
+    }
+    if !r.guard_unknown.is_empty() {
+        out.push_str(&format!(
+            "\n{} new entry point(s) whose guard Drift could not read: not checked (unknown is never a finding); they fail nothing\n",
+            r.guard_unknown.len()
+        ));
+        for u in r.guard_unknown.iter().take(max) {
+            out.push_str(&format!(
+                "  {}  ({}): {}\n",
+                crate::report::sanitize(&u.key, 300),
+                crate::report::sanitize(&u.at, 200),
+                crate::report::sanitize(&u.read, 300)
+            ));
+        }
+        if r.guard_unknown.len() > max {
+            out.push_str(&format!("  ... and {} more\n", r.guard_unknown.len() - max));
+        }
     }
     if !r.gone.is_empty() {
         out.push_str(&format!(
@@ -703,6 +1006,25 @@ pub fn newer_readings_line(r: &Ratchet) -> Option<String> {
     (n > 0).then(|| {
         format!(
             "{n} finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them: `drift security --write-baseline`"
+        )
+    })
+}
+
+/// The one line that says why findings of readings newer than the baseline fail
+/// ([`Ratchet::unshown`]); None where none do.
+pub fn unshown_line(r: &Ratchet) -> Option<String> {
+    (r.unshown > 0).then(|| {
+        let why = match (&r.unshown_why, &r.since) {
+            (Some(why), _) => format!(": {why}"),
+            (None, Some(commit)) => format!(
+                " (not found at commit {}, or in a file changed since)",
+                &commit[..commit.len().min(12)]
+            ),
+            (None, None) => String::new(),
+        };
+        format!(
+            "{} of them come from readings newer than this baseline and fail: Drift could not show that the code under them did not change{why}. Where they are old code, `drift upgrade --apply --security-baseline` run on the default branch records them and stamps the baseline",
+            r.unshown
         )
     })
 }
@@ -921,7 +1243,9 @@ mod tests {
     }
 
     /// Pins the stamp: a baseline says which inventory wrote it and which kinds
-    /// fail; one with no stamp is version 1, and a kind added since fails nothing.
+    /// fail; one with no stamp is version 1, and a kind added since is held apart
+    /// only where a commit shows it there before (review of PR 148, area 7 item 1:
+    /// before, with nothing to compare with, every such finding was held).
     #[test]
     fn the_header_says_the_version_and_the_kinds_that_fail() {
         let text = render_lock(&Findings::new());
@@ -937,29 +1261,229 @@ mod tests {
             ("unscoped-key".into(), "a.py#f GET /a takes org_id".into()),
             "a.py:3".into(),
         );
-        let r = compare_with(&now, &old, None);
+        let since = Since {
+            commit: "c0ffee".into(),
+            found: now.keys().cloned().collect(),
+            ..Since::default()
+        };
+        let r = compare_with(&now, &old, Some(&since));
         assert!(r.added.is_empty(), "{r:?}");
         assert_eq!(r.new_in_drift["unscoped-key"].len(), 1);
+        // Nothing to compare with: not held apart (it advises, as its kind does).
+        let r = compare_with(&now, &old, None);
+        assert!(r.new_in_drift.is_empty(), "{r:?}");
+        assert_eq!(r.advised["unscoped-key"].len(), 1);
     }
 
-    /// Pins the diff filter: a guard gap in a file the change did not touch is not
-    /// the change's, and fails nothing.
+    /// Pins review of PR 148, area 7 item 1: against an unstamped baseline, with
+    /// nothing that shows the code is old, a new route where Drift found no guard
+    /// fails, and the run says why and what re-stamps the baseline. Before, with no
+    /// diff, it was held as new in Drift and the check passed.
     #[test]
-    fn a_guard_gap_outside_the_change_fails_nothing() {
+    fn a_newer_reading_is_held_only_where_a_commit_shows_it_old() {
+        let old = parse_baseline("# drift security baseline\nno-guard\ta.ts#f GET /a\n");
+        let mut now = Findings::new();
+        now.insert(("no-guard".into(), "a.ts#f GET /a".into()), "a.ts:1".into());
+        now.insert(
+            ("no-guard".into(), "run.ts#POST /run POST /run".into()),
+            "run.ts:2".into(),
+        );
+        now.insert(
+            ("no-guard".into(), "old.ts#GET /o GET /o".into()),
+            "old.ts:2".into(),
+        );
+        let mut r = compare_with(&now, &old, None);
+        assert_eq!(r.kept, 1);
+        assert_eq!(r.added["no-guard"].len(), 2, "{r:?}");
+        assert_eq!(r.unshown, 2);
+        r.unshown_why = Some("the baseline is in no commit".into());
+        let line = unshown_line(&r).unwrap();
+        assert!(line.contains("the baseline is in no commit"), "{line}");
+        assert!(line.contains("`drift upgrade --apply --security-baseline` run on the default branch"), "{line}");
+        assert!(render(&r, 20).contains(&line));
+
+        // At the commit that wrote the baseline, this Drift finds `old.ts`'s route
+        // and not the one added since: only the first is held.
+        let since = Since {
+            commit: "c0ffee".into(),
+            found: [("no-guard".to_string(), "old.ts#GET /o GET /o".to_string())]
+                .into_iter()
+                .collect(),
+            touched: ["run.ts".to_string()].into_iter().collect(),
+            ..Since::default()
+        };
+        let r = compare_with(&now, &old, Some(&since));
+        assert_eq!(r.new_in_drift["no-guard"][0].at, "old.ts:2", "{r:?}");
+        assert_eq!(r.added["no-guard"].len(), 1, "{r:?}");
+        assert_eq!(r.added["no-guard"][0].at, "run.ts:2");
+        assert_eq!(r.unshown, 1);
+        // Found there, but its file changed since: not shown old.
+        let since = Since {
+            touched: ["old.ts".to_string()].into_iter().collect(),
+            ..since
+        };
+        let r = compare_with(&now, &old, Some(&since));
+        assert!(r.new_in_drift.is_empty(), "{r:?}");
+        assert_eq!(r.added["no-guard"].len(), 2, "{r:?}");
+    }
+
+    fn row(path: &str, guards: &[&str]) -> EntryRow {
+        EntryRow {
+            path: path.into(),
+            package: String::new(),
+            symbol: "GET /x".into(),
+            line: 1,
+            kind: "http".into(),
+            method: Some("GET".into()),
+            route: Some("/x".into()),
+            guards: guards.iter().map(|g| g.to_string()).collect(),
+            wrappers: Vec::new(),
+            opaque: Vec::new(),
+            authenticates: Vec::new(),
+            opens: Vec::new(),
+            validates: false,
+            reaches: Vec::new(),
+            reads: Vec::new(),
+            exposure: crate::security::Exposure::Unknown,
+            boundary: None,
+            local: false,
+            descriptions: Vec::new(),
+            tied: false,
+            basis: None,
+            exposure_basis: None,
+            known_open: false,
+            verifies_signature: Vec::new(),
+        }
+    }
+
+    fn eref(e: &EntryRow) -> crate::security::EntryRef {
+        crate::security::EntryRef {
+            path: e.path.clone(),
+            symbol: e.symbol.clone(),
+            line: e.line,
+            kind: e.kind.clone(),
+            method: e.method.clone(),
+            route: e.route.clone(),
+            guards: e.guards.clone(),
+            opens: e.opens.clone(),
+            opaque: e.opaque.clone(),
+            local: e.local,
+            basis: None,
+            verifies_signature: Vec::new(),
+        }
+    }
+
+    fn gap(exception: &EntryRow, example: &EntryRow) -> crate::security::GuardGap {
+        crate::security::GuardGap {
+            package: String::new(),
+            kind: "http".into(),
+            dir: String::new(),
+            guard: "requireAdmin (middleware)".into(),
+            members: 10,
+            with_guard: 9,
+            exceptions: vec![eref(exception)],
+            unknown: Vec::new(),
+            example: eref(example),
+            convention: None,
+        }
+    }
+
+    /// Pins review of PR 148, area 7 items 2 and 3: a guard gap in a file the change
+    /// did not touch is not the change's only where its entry point read the same at
+    /// the commit (other entry points gained the guard). Removing the guard from a
+    /// router in another file changes what the entry point's guards are, so the gap
+    /// is the change's and fails. Before, any gap outside the touched files passed.
+    #[test]
+    fn a_guard_gap_outside_the_change_is_not_the_changes_only_where_its_guards_held() {
         let b = parse_baseline(&render_lock(&Findings::new()));
+        let users = row("admin/users.ts", &[]);
+        let example = row("admin/roles.ts", &["requireAdmin (middleware)"]);
+        let head = Inventory {
+            entry_points: vec![users.clone(), example.clone()],
+            guard_gaps: vec![gap(&users, &example)],
+            ..Inventory::default()
+        };
         let mut now = Findings::new();
         now.insert(
-            ("guard-gap".into(), "a.ts#f GET /a lacks auth".into()),
-            "a.ts:3".into(),
+            (
+                "guard-gap".into(),
+                "admin/users.ts#GET /x GET /x lacks requireAdmin (middleware)".into(),
+            ),
+            "admin/users.ts:1".into(),
         );
-        now.insert(
-            ("guard-gap".into(), "b.ts#g GET /b lacks auth".into()),
-            "b.ts:4".into(),
+        let touched = |p: &str| p == "app.ts";
+        // At the commit it had the guard, through the router `app.ts` mounted.
+        let base = Inventory {
+            entry_points: vec![row("admin/users.ts", &["requireAdmin (middleware)"]), example.clone()],
+            ..Inventory::default()
+        };
+        let since = Since {
+            commit: "c0ffee".into(),
+            outside: not_the_changes_gaps(&base, &head, &BTreeSet::new(), &touched),
+            ..Since::default()
+        };
+        assert!(since.outside.is_empty(), "{since:?}");
+        let r = compare_with(&now, &b, Some(&since));
+        assert_eq!(r.added["guard-gap"].len(), 1, "{r:?}");
+        // It lacked it at the commit too: other entry points gained it.
+        let base = Inventory {
+            entry_points: vec![users.clone(), example],
+            ..Inventory::default()
+        };
+        let since = Since {
+            outside: not_the_changes_gaps(&base, &head, &BTreeSet::new(), &touched),
+            ..since
+        };
+        let r = compare_with(&now, &b, Some(&since));
+        assert!(r.added.is_empty(), "{r:?}");
+        assert_eq!(r.outside_change["guard-gap"][0].at, "admin/users.ts:1");
+        // In a file the change touched it is the change's whatever it read before.
+        let touched = |p: &str| p == "admin/users.ts";
+        assert!(not_the_changes_gaps(&base, &head, &BTreeSet::new(), &touched).is_empty());
+        // Nothing to compare with: it fails.
+        let r = compare_with(&now, &b, None);
+        assert_eq!(r.added["guard-gap"].len(), 1, "{r:?}");
+    }
+
+    /// Pins review of PR 148, area 7 item 4 and area 1 item 6: two branches' headers
+    /// merged by `merge=union` leave two `# fail:` lines and two stamps; neither
+    /// side's weakens the other's (before, the last line won). A stamp that cannot be
+    /// read is said. A change's own edit of the header is not what checks it: the
+    /// stricter of its header and the base's is enforced, and the edit is said.
+    #[test]
+    fn a_header_a_change_weakens_is_said_and_the_stricter_is_kept() {
+        let merged = parse_baseline(
+            "# drift security baseline\n# inventory: 2\n# fail: no-guard,risky\n# inventory: 1\n# fail: workflow\nno-guard\ta.ts#f GET /a\n",
         );
-        let touched = |p: &str| p == "b.ts";
-        let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
-        assert_eq!(r.added["guard-gap"].len(), 1);
-        assert_eq!(r.added["guard-gap"][0].at, "b.ts:4");
-        assert_eq!(r.outside_change["guard-gap"][0].at, "a.ts:3");
+        assert_eq!(merged.version, 2);
+        assert_eq!(
+            merged.fail_kinds(),
+            ["no-guard", "risky", "workflow"]
+                .into_iter()
+                .map(str::to_string)
+                .collect::<BTreeSet<String>>()
+        );
+        let said = header_problems("# x\n# inventory: two\n# fail: a\n# fail: b\n");
+        assert_eq!(said.len(), 2, "{said:?}");
+        assert!(said[0].contains("cannot be read"), "{said:?}");
+        assert!(said[1].contains("2 `# fail:` lines"), "{said:?}");
+        assert_eq!(parse_baseline("# inventory: two\n").version, 1);
+
+        let base = parse_baseline(&render_lock(&Findings::new()));
+        let head = parse_baseline("# drift security baseline\n# fail: \n");
+        assert!(!head.fails("no-guard"));
+        let (kept, said) = stricter(&head, &base);
+        assert_eq!(kept.version, INVENTORY_VERSION);
+        assert!(kept.fails("no-guard") && kept.fails("risky"));
+        assert!(!kept.fails("unscoped-key"));
+        assert_eq!(said.len(), 2, "{said:?}");
+        assert!(said[0].contains("takes dependency, guard-gap"), "{said:?}");
+        assert!(said[1].contains("lowers `# inventory:`"), "{said:?}");
+        // A header made stricter is kept as it is, and nothing is said.
+        let (kept, said) = stricter(&base, &head);
+        assert_eq!(kept, base);
+        assert!(said.is_empty());
+        assert_eq!(header_weakened(&base, &head).len(), 2);
+        assert!(header_weakened(&head, &base).is_empty());
     }
 }

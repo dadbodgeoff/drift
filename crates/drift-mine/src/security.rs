@@ -8073,11 +8073,14 @@ pub struct GapRegression {
 /// are looked at, except `now_public`, which is about the boundary moving.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Regressions {
-    /// Entry points in changed files lacking a guard most of their siblings have, that
-    /// did not lack it at the merge base.
+    /// Entry points lacking a guard most of their siblings have, that did not lack it
+    /// at the merge base: in changed files, or elsewhere where their guards read
+    /// differently at the merge base (the change took a guard off a mount or a
+    /// router in another file).
     pub guard_gaps: Vec<GapRegression>,
-    /// Entry points in changed files with no guard reaching a risky
-    /// operation, not so at the merge base.
+    /// Entry points with no guard reaching a risky operation, not so at the merge
+    /// base: in changed files, or elsewhere where their guards read differently at
+    /// the merge base.
     pub unguarded_reaching: Vec<EntryRow>,
     /// Risky operations in changed files that were not at the merge base.
     pub sinks: Vec<SinkUse>,
@@ -8140,9 +8143,33 @@ pub fn regressions(
                 .map(move |e| (g.guard.clone(), base_key(&e.path, &e.symbol)))
         })
         .collect();
+    // An entry point's guards come through every file its guard chain passes (a
+    // mount, a router's middleware, an app hook): one in a file the change did not
+    // touch whose guards read differently at the base lost them through the change.
+    let base_guards: BTreeMap<(String, Option<String>, Option<String>), &Vec<String>> = base
+        .entry_points
+        .iter()
+        .map(|e| {
+            (
+                (base_key(&e.path, &e.symbol), e.method.clone(), e.route.clone()),
+                &e.guards,
+            )
+        })
+        .collect();
+    let guards_changed = |path: &str,
+                          symbol: &str,
+                          method: &Option<String>,
+                          route: &Option<String>,
+                          guards: &Vec<String>| {
+        base_guards
+            .get(&(key(path, symbol), method.clone(), route.clone()))
+            .is_some_and(|was| *was != guards)
+    };
     for g in &head.guard_gaps {
         for e in &g.exceptions {
-            if !touched(&e.path) {
+            if !touched(&e.path)
+                && !guards_changed(&e.path, &e.symbol, &e.method, &e.route, &e.guards)
+            {
                 continue;
             }
             if base_exceptions.contains(&(g.guard.clone(), key(&e.path, &e.symbol))) {
@@ -8173,7 +8200,12 @@ pub fn regressions(
     out.unguarded_reaching = head
         .entry_points
         .iter()
-        .filter(|e| e.unguarded() && !e.reaches.is_empty() && touched(&e.path))
+        .filter(|e| {
+            e.unguarded()
+                && !e.reaches.is_empty()
+                && (touched(&e.path)
+                    || guards_changed(&e.path, &e.symbol, &e.method, &e.route, &e.guards))
+        })
         .filter(|e| !base_bare_reaching.contains(&key(&e.path, &e.symbol)))
         .cloned()
         .collect();

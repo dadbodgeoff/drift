@@ -505,6 +505,53 @@ impl DiffScope {
     pub fn changed(&self) -> usize {
         self.files.len() - self.added()
     }
+
+    /// Runs `read` on the merge base, checked out into a temporary directory with
+    /// its own fact cache ([`BaseTree`]) and scanned: its root there and its facts.
+    /// For what is read of the merge base beyond its inventory (the security
+    /// baseline's findings read the practice map, the CI workflows and the manifests
+    /// there). The checkout is removed when `read` returns.
+    pub fn with_base<R>(
+        &self,
+        root: &Path,
+        read: impl FnOnce(&Path, &drift_core::RepoFacts) -> R,
+    ) -> anyhow::Result<R> {
+        let prefix = git(root, &["rev-parse", "--show-prefix"])?.required("git rev-parse")?;
+        let prefix = String::from_utf8_lossy(&prefix).trim_end().to_string();
+        let tree = BaseTree::create(root, &self.merge_base)?;
+        let base_root = tree.path.join(&prefix);
+        let opts = crate::scan::ScanOptions {
+            cache_dir: Some(tree.cache.clone()),
+            threads: 0,
+        };
+        let (facts, _) = crate::scan::scan(&base_root, &opts)
+            .with_context(|| format!("scanning the merge base {}", short(&self.merge_base)))?;
+        let out = read(&base_root, &facts);
+        drop(tree);
+        Ok(out)
+    }
+}
+
+/// The text of `rel` (relative to `root`) at commit `rev`; `None` where git cannot
+/// show it (no git, no such file there).
+pub fn file_at(root: &Path, rev: &str, rel: &str) -> Option<String> {
+    let out = git(root, &["show", &format!("{rev}:./{rel}")]).ok()?;
+    out.ok.then(|| out.text())
+}
+
+/// The last commit that changed `rel` (relative to `root`), or why there is none: no
+/// git, or the file is in no commit.
+pub fn last_commit_of(root: &Path, rel: &str) -> Result<String, String> {
+    let out = git(root, &["log", "-1", "--format=%H", "--", rel])
+        .map_err(|_| "git could not be run".to_string())?;
+    let commit = out.text().trim().to_string();
+    if !out.ok {
+        return Err("git could not read the repository's history".to_string());
+    }
+    if commit.is_empty() {
+        return Err(format!("{rel} is in no commit"));
+    }
+    Ok(commit)
 }
 
 /// The entry points of the merge base: file, symbol, method, route
