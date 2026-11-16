@@ -189,7 +189,7 @@ export default function ${pascal(e)}Email({ name }: { name: string }) {
   });
 
   // ---------- apps/web (Next.js) ----------
-  w("apps/web/package.json", JSON.stringify({ name: "@acme/web", version: "0.0.0", private: true, dependencies: { next: "15.0.0", react: "19.0.0", zod: "3.23.8", "next-safe-action": "7.9.0", "@acme/db": "0.0.0", "@acme/ui": "0.0.0", "@acme/utils": "0.0.0", "@acme/emails": "0.0.0" } }, null, 2) + "\n");
+  w("apps/web/package.json", JSON.stringify({ name: "@acme/web", version: "0.0.0", private: true, dependencies: { next: "15.5.28", react: "19.0.0", zod: "4.6.6", "next-safe-action": "7.9.0", "@acme/db": "0.0.0", "@acme/ui": "0.0.0", "@acme/utils": "0.0.0", "@acme/emails": "0.0.0" } }, null, 2) + "\n");
   w("apps/web/tsconfig.json", JSON.stringify({ extends: "../../tsconfig.json", compilerOptions: { baseUrl: ".", paths: { "@/*": ["./*"] } } }, null, 2) + "\n");
   w("apps/web/lib/auth.ts", `
 import { db } from "@acme/db";

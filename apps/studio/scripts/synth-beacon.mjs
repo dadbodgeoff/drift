@@ -60,7 +60,7 @@ export function writeBeacon(root) {
   w("README.md", "# beacon\n\nA synthetic monorepo for Drift Studio's fixtures.\n");
 
   // apps/portal: Next.js route handlers, 31 of 33 wrapped in withSession(); the health and status probes are not.
-  pkg("apps/portal", "@beacon/portal", { dependencies: { next: "15.0.0", "@beacon/core": "*" } });
+  pkg("apps/portal", "@beacon/portal", { dependencies: { next: "15.5.28", "@beacon/core": "*" } });
   w("apps/portal/lib/session.ts", "export function withSession<T>(handler: T): T {\n  return handler;\n}\n");
   for (const r of ROUTES) w(`apps/portal/app/api/${r}/route.ts`, GUARDED);
   w(BEACON.health, UNGUARDED);
