@@ -66,13 +66,19 @@ fn has_prefix(s: &Symbol, prefix: &str) -> bool {
 const ROUTER_PACKAGE: &str =
     r#"{ "name": "web", "dependencies": { "react-router": "7.1.0", "zod": "3.23.8" } }"#;
 
+/// A React Router app in framework mode: `react-router` alone is the library,
+/// which serves no route file (`filerouters::react_router_package` reads a package
+/// of the framework, `@react-router/*` or `@remix-run/*`), so no loader of it is a
+/// route and nothing answers by its return.
+const ROUTER_APP_PACKAGE: &str = r#"{ "name": "web", "dependencies": { "react-router": "7.1.0", "@react-router/node": "7.1.0", "zod": "3.23.8" } }"#;
+
 /// Pins: a React Router loader that returns a value answers by it in the listed
 /// reading; one that returns nothing, and a function of no route file, do not;
 /// the measured copy says neither.
 #[test]
 fn a_router_handler_that_returns_a_value_answers_by_it() {
     let r = repo(&[
-        ("package.json", ROUTER_PACKAGE),
+        ("package.json", ROUTER_APP_PACKAGE),
         (
             "app/routes/notes.ts",
             r#"export async function loader() {

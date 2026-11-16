@@ -255,8 +255,10 @@ urlpatterns = [
             .any(|w| w.starts_with("unresolved:permission_classes, run only if")),
         "{wraps:?}"
     );
+    // The measured build lists no `SignOut.post`: the class itself is the entry
+    // point and carries the permission wrap (checked against commit a0779066).
     assert!(
-        call_wraps(&mined, v, "SignOut.post")
+        call_wraps(&mined, v, "SignOut")
             .iter()
             .any(|w| w == PERM)
     );

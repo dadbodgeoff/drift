@@ -4349,6 +4349,22 @@ impl<'s> Lowerer<'s> {
             });
         }
         self.handler_facts(p.handler, &mut sym);
+        // A handler that names the input only to leave it unread (`async ({ ctx,
+        // input }) => handler({ ctx })`): `input_unread`, the listed reading only,
+        // as for a function bound to a name ([`record_input_unread`]).
+        match p.handler.map(unwrap_expr) {
+            Some(Expression::ArrowFunctionExpression(a)) => {
+                record_input_unread(&mut sym, self.scoping, &a.params, || {
+                    ReachesArguments::of_arrow(&a.body)
+                });
+            }
+            Some(Expression::FunctionExpression(f)) => {
+                record_input_unread(&mut sym, self.scoping, &f.params, || {
+                    ReachesArguments::of(f.body.as_deref())
+                });
+            }
+            _ => {}
+        }
         sym.app_unread.extend(p.position.unread.iter().cloned());
         for c in &p.position.calls {
             if !sym.guard_calls.contains(c) {

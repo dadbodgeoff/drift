@@ -103,7 +103,11 @@ fn write(files: &[(&str, &str)]) -> tempfile::TempDir {
     dir
 }
 
-const ROUTER_PACKAGE: &str = "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"zod\": \"3.23.8\" } }\n";
+/// A React Router app in framework mode: `react-router` alone is the library,
+/// which serves no route file (the file router is read from a package of the
+/// framework, `@react-router/*` or `@remix-run/*`); without one no handler below
+/// is a route and no concern has a unit.
+const ROUTER_PACKAGE: &str = "{ \"name\": \"web\", \"dependencies\": { \"react-router\": \"7.1.0\", \"@react-router/node\": \"7.1.0\", \"zod\": \"3.23.8\" } }\n";
 
 /// Pins: epic's loaders and actions read unknown `unclassified` for API because
 /// the adapter is on no list; now the facts say the router sends what they
