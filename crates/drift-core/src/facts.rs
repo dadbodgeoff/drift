@@ -521,6 +521,14 @@ pub const CALLER_USE_UNREAD: &str = "global#scope_unread";
 /// [`Member::unread`] for a method whose body answers 403.
 pub const ANSWERS_403: &str = "status:403";
 
+/// [`Member::unread`] of a Python method whose own `except` handler answers with a
+/// response. With a call of the same method of its base (`super().<name>(...)` in
+/// [`Member::receiver_calls`]) it is an override of the framework's method that
+/// turns what that method raised into an answer: on an in-repo base of a view, how
+/// the view's errors become responses. Read from what the body does, never from what
+/// the method is called. Python, the listed reading only; mining never reads it.
+pub const CATCH_RESPONDS: &str = "catch_responds";
+
 /// [`Member::unread`] of a permission test, where its body says what it answers a
 /// caller who is not signed in: `has_permission(self, request, view)` of a class (a
 /// DRF permission class reads `request.user`) and `test_func(self)` (a view with

@@ -214,6 +214,9 @@ pub(crate) struct Lowerer<'t> {
     /// The module-level `def`s by name, the first of each
     /// ([`verdict::of_test`] reads the test a decorator is given).
     defs: HashMap<String, &'t ast::StmtFunctionDef>,
+    /// The module-level `class`es by name, the first of each
+    /// ([`Lowerer::class_status`] reads the status an error class sets).
+    class_defs: HashMap<String, &'t ast::StmtClassDef>,
     /// Names bound inside `if TYPE_CHECKING:` only.
     type_only_names: BTreeSet<String>,
     /// Names an import bound that the module then binds again, with what the
@@ -492,6 +495,7 @@ impl<'t> Lowerer<'t> {
             bindings: BTreeMap::new(),
             functions: BTreeSet::new(),
             defs: HashMap::new(),
+            class_defs: HashMap::new(),
             type_only_names: BTreeSet::new(),
             rebound_imports: BTreeMap::new(),
             all: None,
@@ -686,7 +690,10 @@ impl<'t> Lowerer<'t> {
                     self.defs.entry(f.name.as_str().to_string()).or_insert(f);
                     self.bind(f.name.as_str(), RawBinding::Local, ctx);
                 }
-                Stmt::ClassDef(c) => self.bind(c.name.as_str(), RawBinding::Local, ctx),
+                Stmt::ClassDef(c) => {
+                    self.class_defs.entry(c.name.as_str().to_string()).or_insert(c);
+                    self.bind(c.name.as_str(), RawBinding::Local, ctx)
+                }
                 Stmt::Assign(a) => {
                     let mut names = Vec::new();
                     for t in &a.targets {
@@ -1614,6 +1621,131 @@ impl Lowerer<'_> {
         }
     }
 
+    /// The one status a module-level error class of this module answers with by its
+    /// own definition: `status_code = 403` (or `status = ...`) in its body,
+    /// `self.status_code = 401` in its `__init__`, or a status handed to its base's
+    /// initialiser there (`super().__init__(403, "...")`,
+    /// `super().__init__(status_code=401)`). Where its own body sets none, the
+    /// status of its first base where that is a class of this module, a few bases
+    /// deep. `None` where it is no class of this module, where nothing read sets a
+    /// status, where one is set from what is not written there (a parameter, a
+    /// setting), or where two are set. Read from what the class is, never from
+    /// what it is called (stream S15c): a class of another module, or one built on
+    /// a package's error class with no status of its own, is not read here.
+    pub(crate) fn class_status(&self, name: &str) -> Option<u16> {
+        self.class_status_at(name, 0)
+    }
+
+    fn class_status_at(&self, name: &str, depth: usize) -> Option<u16> {
+        /// Bases followed in this module.
+        const MAX_BASES: usize = 4;
+        /// The attributes an error class says its status in (DRF's `APIException`,
+        /// Starlette's and FastAPI's `HTTPException` read `status_code`).
+        const STATUS_ATTRS: [&str; 2] = ["status_code", "status"];
+        if depth > MAX_BASES || !matches!(self.bindings.get(name), Some(RawBinding::Local)) {
+            return None;
+        }
+        let c = self.class_defs.get(name)?;
+        let mut found: BTreeSet<u16> = BTreeSet::new();
+        let mut unread = false;
+        fn note(e: &Expr, found: &mut BTreeSet<u16>, unread: &mut bool) {
+            match practice::status_of(e) {
+                Some(s) => {
+                    found.insert(s);
+                }
+                None => *unread = true,
+            }
+        }
+        /// What `__init__` sets: `self.<attr> = ...`, and what it hands
+        /// `super().__init__(...)`, at any depth of its compound statements.
+        fn init(body: &[Stmt], found: &mut BTreeSet<u16>, unread: &mut bool) {
+            for s in body {
+                match s {
+                    Stmt::Assign(a) => {
+                        for t in &a.targets {
+                            if let Expr::Attribute(x) = t
+                                && matches!(x.value.as_ref(), Expr::Name(n) if n.id.as_str() == "self")
+                                && STATUS_ATTRS.contains(&x.attr.as_str())
+                            {
+                                note(&a.value, found, unread);
+                            }
+                        }
+                    }
+                    Stmt::Expr(x) => {
+                        if let Expr::Call(call) = x.value.as_ref()
+                            && let Expr::Attribute(f) = call.func.as_ref()
+                            && f.attr.as_str() == "__init__"
+                            && matches!(f.value.as_ref(), Expr::Call(s)
+                                if matches!(s.func.as_ref(), Expr::Name(n) if n.id.as_str() == "super"))
+                        {
+                            // A positional argument is a status where it reads as
+                            // one (a message beside it is not); a status keyword
+                            // is one whatever it is given.
+                            for a in &call.arguments.args {
+                                if let Some(s) = practice::status_of(a) {
+                                    found.insert(s);
+                                }
+                            }
+                            for k in &call.arguments.keywords {
+                                if k.arg
+                                    .as_ref()
+                                    .is_some_and(|n| STATUS_ATTRS.contains(&n.as_str()))
+                                {
+                                    note(&k.value, found, unread);
+                                }
+                            }
+                        }
+                    }
+                    Stmt::If(i) => {
+                        init(&i.body, found, unread);
+                        for c in &i.elif_else_clauses {
+                            init(&c.body, found, unread);
+                        }
+                    }
+                    Stmt::With(w) => init(&w.body, found, unread),
+                    Stmt::Try(t) => {
+                        init(&t.body, found, unread);
+                        init(&t.orelse, found, unread);
+                        init(&t.finalbody, found, unread);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        for s in &c.body {
+            match s {
+                Stmt::Assign(a) => {
+                    if let [Expr::Name(t)] = a.targets.as_slice()
+                        && STATUS_ATTRS.contains(&t.id.as_str())
+                    {
+                        note(&a.value, &mut found, &mut unread);
+                    }
+                }
+                Stmt::AnnAssign(a) => {
+                    if let (Expr::Name(t), Some(v)) = (a.target.as_ref(), a.value.as_deref())
+                        && STATUS_ATTRS.contains(&t.id.as_str())
+                    {
+                        note(v, &mut found, &mut unread);
+                    }
+                }
+                Stmt::FunctionDef(f) if f.name.as_str() == "__init__" => {
+                    init(&f.body, &mut found, &mut unread);
+                }
+                _ => {}
+            }
+        }
+        if unread || found.len() > 1 {
+            return None;
+        }
+        if let Some(s) = found.into_iter().next() {
+            return Some(s);
+        }
+        match c.arguments.as_deref().and_then(|a| a.args.first()) {
+            Some(Expr::Name(b)) if b.id.as_str() != name => self.class_status_at(b.id.as_str(), depth + 1),
+            _ => None,
+        }
+    }
+
     /// [`drift_core::controls::REFUSAL_NOT_RETURNED`]: the function hands back, by
     /// name, functions defined in its body none of which refuses or names another
     /// that does, while one it does not hand back refuses, and its own statements
@@ -2449,6 +2581,23 @@ pub(crate) struct Collector<'l, 't> {
     rejects_every: bool,
     rejects_some: bool,
     refuses_all: bool,
+    /// The same three as the reading made since the measured build gives them,
+    /// where an error class of this module raised with no status argument is read
+    /// by the status its own definition sets ([`Lowerer::class_status`]) before
+    /// its name is asked ([`Collector::by_status`]). Written as that reading's
+    /// own where the two differ ([`crate::raw::SINCE`]).
+    since_rejects_every: bool,
+    since_rejects_some: bool,
+    since_refuses_all: bool,
+    /// While [`Collector::guard_paths`] is asked for the reading made since the
+    /// measured build: a raise of a class is read by its own status first.
+    pub(crate) by_status: std::cell::Cell<bool>,
+    /// The names the body binds to a path built from a part that is no constant
+    /// (`path = os.path.join(base, name)`), in the order written, and the names
+    /// bound in a way that is not followed (`path += ...`, `a, path = ...`): a
+    /// file opened at one is opened at that path ([`Collector::opens_built_path`]).
+    path_built: BTreeSet<String>,
+    path_unfollowed: BTreeSet<String>,
     /// A handler of such a `try` answers "not allowed" (a 403): something that may
     /// be the guard in a body that reads a subject, as a 403 outside a handler counts
     /// only there.
@@ -2683,6 +2832,12 @@ impl<'l, 't> Collector<'l, 't> {
             rejects_every: false,
             rejects_some: false,
             refuses_all: false,
+            since_rejects_every: false,
+            since_rejects_some: false,
+            since_refuses_all: false,
+            by_status: std::cell::Cell::new(false),
+            path_built: BTreeSet::new(),
+            path_unfollowed: BTreeSet::new(),
             handler_forbidden: false,
             reads_subject: false,
             in_except: 0,
@@ -2798,16 +2953,35 @@ impl<'l, 't> Collector<'l, 't> {
             self.controls
                 .insert(drift_core::controls::RETURNS_REQUEST.into());
         }
-        if self.rejects_every && !self.rejects_some {
-            self.controls
-                .insert(drift_core::controls::REFUSES_EVERY.into());
+        // What the paths say, as the measured build read them and as the reading
+        // made since does (an error class read by its own status): a control both
+        // hold is written as it was, one only one holds is marked for that reading.
+        let path_controls = |every: bool, some: bool, all: bool| {
+            let mut out: Vec<&'static str> = Vec::new();
+            if every && !some {
+                out.push(drift_core::controls::REFUSES_EVERY);
+            }
+            if some && !every {
+                out.push(drift_core::controls::REJECTS_SOME);
+            } else if all && !every {
+                out.push(drift_core::controls::REFUSES_ALL);
+            }
+            out
+        };
+        let measured = path_controls(self.rejects_every, self.rejects_some, self.refuses_all);
+        let since = path_controls(
+            self.since_rejects_every,
+            self.since_rejects_some,
+            self.since_refuses_all,
+        );
+        for c in &measured {
+            match since.contains(c) {
+                true => self.controls.insert((*c).to_string()),
+                false => self.controls.insert(format!("{MEASURED}{c}")),
+            };
         }
-        if self.rejects_some && !self.rejects_every {
-            self.controls
-                .insert(drift_core::controls::REJECTS_SOME.into());
-        } else if self.refuses_all && !self.rejects_every {
-            self.controls
-                .insert(drift_core::controls::REFUSES_ALL.into());
+        for c in since.iter().filter(|c| !measured.contains(c)) {
+            self.controls.insert(format!("{SINCE}{c}"));
         }
         // After the continuation only, here and in what the symbol already holds: a
         // callee or error this walk, or an earlier one, meets before it is not.
@@ -3044,6 +3218,17 @@ impl<'l, 't> Collector<'l, 't> {
             guard_paths::Paths::RefusesAll => self.refuses_all = true,
             guard_paths::Paths::Every => self.rejects_every = true,
             guard_paths::Paths::Some => self.rejects_some = true,
+        }
+        // And as the reading made since the measured build reads them, where a
+        // raised error class says its status by its own definition (S15c).
+        self.by_status.set(true);
+        let since = self.guard_paths(body);
+        self.by_status.set(false);
+        match since {
+            guard_paths::Paths::Silent => {}
+            guard_paths::Paths::RefusesAll => self.since_refuses_all = true,
+            guard_paths::Paths::Every => self.since_rejects_every = true,
+            guard_paths::Paths::Some => self.since_rejects_some = true,
         }
         self.conds = conds;
         // The symbol's own function returns early, without refusing, only for the
@@ -3479,6 +3664,7 @@ impl<'l, 't> Collector<'l, 't> {
         for s in since {
             self.since_sinks.insert(s.to_string());
         }
+        self.note_path_sink(c);
         if self.l.is_validation_call(self, c) {
             self.controls.insert("validates".into());
         }
@@ -3884,12 +4070,92 @@ impl Collector<'_, '_> {
             self.sql_text.insert(target.to_string());
         }
     }
+
+    /// Notes a name the statement binds to a path built from a part that is no
+    /// constant ([`Lowerer::built_path`]: `path = os.path.join(base, name)`), in the
+    /// order written. Bound to anything else afterwards it is one no longer; bound
+    /// in a way that is not followed (`path += name`, one of several targets, a
+    /// loop's target) it is never one again in this body, so a file opened at it
+    /// is not said to be opened at a built path (S15c).
+    fn note_path_binding(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Assign(a) => match a.targets.as_slice() {
+                [Expr::Name(n)] => self.bind_path(n.id.as_str(), Some(a.value.as_ref())),
+                targets => {
+                    let mut names = Vec::new();
+                    for t in targets {
+                        target_names(t, &mut names);
+                    }
+                    for n in names {
+                        self.bind_path(n, None);
+                    }
+                }
+            },
+            Stmt::AnnAssign(a) => {
+                if let (Expr::Name(n), Some(v)) = (a.target.as_ref(), a.value.as_deref()) {
+                    self.bind_path(n.id.as_str(), Some(v));
+                }
+            }
+            Stmt::AugAssign(a) => {
+                if let Expr::Name(n) = a.target.as_ref() {
+                    self.bind_path(n.id.as_str(), None);
+                }
+            }
+            Stmt::For(f) => {
+                let mut names = Vec::new();
+                target_names(&f.target, &mut names);
+                for n in names {
+                    self.bind_path(n, None);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// [`Collector::note_path_binding`] of one name: `value` is what a plain
+    /// assignment binds it to, `None` a binding that is not followed.
+    fn bind_path(&mut self, name: &str, value: Option<&Expr>) {
+        let built = match value {
+            Some(v) => !self.path_unfollowed.contains(name) && self.l.built_path(self, v),
+            None => {
+                self.path_unfollowed.insert(name.to_string());
+                false
+            }
+        };
+        if built {
+            self.path_built.insert(name.to_string());
+        } else {
+            self.path_built.remove(name);
+        }
+    }
+
+    /// A file opened, sent or removed at a path the body bound to one built from a
+    /// part that is no constant ([`Collector::note_path_binding`]: `file_path =
+    /// os.path.join(os.path.dirname(__file__), name)`, then `open(file_path)`): a
+    /// path traversal sink, read since the measured build, and fed only where what
+    /// the request sent or a parameter reaches the path itself. Written for the
+    /// listed reading only ([`crate::raw::SINCE`]): what mining reads is as the
+    /// measured build read it.
+    fn note_path_sink(&mut self, c: &ast::ExprCall) {
+        let Some(path @ Expr::Name(n)) = c.arguments.args.first() else {
+            return;
+        };
+        if !self.path_built.contains(n.id.as_str()) || !self.l.opens_path(self, c) {
+            return;
+        }
+        let kind = signals::kind::PATH;
+        self.since_sinks.insert(kind.to_string());
+        if self.input_reaches(path, 0) {
+            self.fed_sinks.insert(format!("{SINCE}{kind}"));
+        }
+    }
 }
 
 impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
         self.note_fed_binding(stmt);
         self.note_sql_binding(stmt);
+        self.note_path_binding(stmt);
         self.note_rows(stmt);
         if Lowerer::secret_binding(stmt) {
             self.since_sinks.insert(signals::kind::SECRET.to_string());

@@ -377,14 +377,46 @@ impl<'t> Collector<'_, 't> {
         }
     }
 
+    /// The raise is of an error class of the code (not a built-in) that refuses
+    /// the caller. For the reading made since the measured build
+    /// ([`Collector::by_status`]), a class of this module is read by the one status
+    /// its own definition sets ([`crate::lower::Lowerer::class_status`]): a refusal
+    /// where that is 401 or 403, and none where it is another, whatever the class
+    /// is called. The class's name decides only where no status is read: for the
+    /// measured build always, and since, for a class of another module or one
+    /// whose definition sets no status it writes out. That is the marked fallback
+    /// ([`drift_core::controls::rejection_class_name`]); nothing new is built on it.
     fn raises_rejection_class(&self, e: &Expr) -> bool {
         let class = match e {
             Expr::Call(c) => c.func.as_ref(),
             e => e,
         };
-        self.canon(class)
+        if !self
+            .canon(class)
             .is_some_and(|r| !matches!(r.base, RawBase::Global(_)))
-            && last_name(class).is_some_and(drift_core::controls::rejection_class_name)
+        {
+            return false;
+        }
+        if self.by_status.get()
+            && let Some(status) = self.own_class_status(class)
+        {
+            return matches!(status, 401 | 403);
+        }
+        // By name: the fallback.
+        last_name(class).is_some_and(drift_core::controls::rejection_class_name)
+    }
+
+    /// The status a class of this module raised by its name sets by its own
+    /// definition ([`crate::lower::Lowerer::class_status`]). `None` for anything
+    /// else: an import, a local, an attribute of another module.
+    fn own_class_status(&self, class: &Expr) -> Option<u16> {
+        let Expr::Name(n) = class else {
+            return None;
+        };
+        if !matches!(self.resolve(n.id.as_str()), Some(RawBase::Local(_))) {
+            return None;
+        }
+        self.l.class_status(n.id.as_str())
     }
 
     /// The expression calls what turns the caller away by itself, somewhere in it
