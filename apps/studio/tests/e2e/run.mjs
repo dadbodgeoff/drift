@@ -1713,6 +1713,8 @@ await test("conventions: a proposal from Drift's map of the code says so, and a 
     // Mined: every other proposal, and not this one.
     await page.click(".dui-segmented button:has-text('Mined')");
     await page.waitForFunction(() => !document.querySelector(".st-qitem[data-id='D-5e0a71']") && document.querySelectorAll(".st-qitem").length > 0);
+    // The detail follows the queue a render later: wait for it to leave the hidden proposal.
+    await page.waitForSelector(".cv-frommap-note", { state: "detached" });
     expect((await page.locator(".cv-frommap-note").count()) === 0, "a mined proposal carries no from-the-map note");
     expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
     await page.context().close();
