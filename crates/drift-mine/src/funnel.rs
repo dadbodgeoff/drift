@@ -634,8 +634,8 @@ thread_local! {
 }
 
 /// Start recording dropped candidates on this thread: at every gate, or (`only`) at the
-/// gates named. `census --why` records every gate; the plain `census` records only the
-/// caps, to say when they cut a default-tier rule ([`cap_note`]).
+/// gates named. `census --why` records every gate (and says from the caps' rows when they
+/// cut a default-tier draft, [`cap_note`]); the plain `census` records nothing.
 pub fn record(only: Option<&[&'static str]>) {
     let only = only.map(|g| g.iter().copied().collect());
     DROPS.with(|d| {
@@ -893,7 +893,7 @@ pub fn why_text(
         .collect();
     let mut out = String::new();
     out.push_str(
-        "What mining dropped, gate by gate. Observation only: nothing listed here is proposed, checked or shown to agents, and the proposals are exactly those of `drift census`.\n",
+        "What mining dropped, gate by gate. Observation only: nothing listed here is proposed, checked or shown to agents, and mining proposes exactly what it proposes for `drift census`. Wiring proposals pass none of these gates and are not counted here.\n",
     );
     let total = |s: &str| stage_total(counts, s).map(|n| thousands(n as usize));
     if let (Some(roles), Some(mined_roles), Some(observed), Some(drafted), Some(mined), Some(proposed)) = (
@@ -982,50 +982,51 @@ pub fn why_text(
 /// The caps of mining that can cut a default-tier rule.
 pub const CAP_GATES: &[&str] = &["cap_role", "cap_avoid", "cap_repo"];
 
-/// What `census` says when mining's caps cut default-tier rules: how many, by which cap,
-/// and how to see them. `None` when they cut none. The `--suggestions` cap never hides a
-/// default-tier proposal; these caps, applied while mining, can (the layering share of
-/// `--max` in particular), and the proposals are left as they are: this only says so.
-pub fn cap_note(rows: &[Dropped], max: usize) -> Option<String> {
-    let mut by: BTreeMap<usize, (&str, usize)> = BTreeMap::new();
-    for d in rows.iter().filter(|d| d.default_tier) {
+/// What `census --why` says when mining's caps cut default-tier drafts: how many, by
+/// which cap. `None` when they cut none. Printed only under `--why` (text and JSON), never
+/// by the plain `census`, whose text is compared byte for byte between builds to show
+/// the miner did not move.
+///
+/// It says only what is known. A cap cuts a *draft*: the steps mining runs after the
+/// caps (narrowing, merging sibling roles, the compiler check) never ran on it, so some
+/// would not have become proposals, and nothing here says a larger `--max` would
+/// propose them (that is not checked without mining again). Counted: production roles'
+/// drafts of the default tier, each id once per cap, less the ids a person rejected
+/// (`rejected`: never proposed again, whatever the caps). The test roles' pass (`test:`
+/// families) is left out: it is mined apart, over test units only.
+pub fn cap_note(rows: &[Dropped], rejected: &BTreeSet<String>) -> Option<String> {
+    // Cap (its index in `CAP_GATES`) -> (its limit, the ids it cut).
+    let mut by: BTreeMap<usize, (Option<f64>, BTreeSet<&str>)> = BTreeMap::new();
+    for d in rows.iter().filter(|d| {
+        d.default_tier && !d.family.starts_with("test:") && !rejected.contains(&d.id)
+    }) {
         if let Some(i) = CAP_GATES.iter().position(|g| *g == d.gate) {
-            by.entry(i).or_insert((CAP_GATES[i], 0)).1 += 1;
+            let e = by.entry(i).or_insert((None, BTreeSet::new()));
+            e.0 = e.0.or(d.threshold);
+            e.1.insert(d.id.as_str());
         }
     }
-    let n: usize = by.values().map(|(_, n)| n).sum();
+    let n: usize = by.values().map(|(_, ids)| ids.len()).sum();
     if n == 0 {
         return None;
     }
-    let avoid = ((max as f64 * 0.25).ceil() as usize).max(1);
     let parts: Vec<String> = by
-        .values()
-        .map(|(g, k)| match *g {
-            "cap_role" => format!(
-                "{k} by the cap of {} per role",
-                crate::mine::MAX_PER_ROLE
-            ),
-            "cap_avoid" => format!(
-                "{k} by the layering share, at most {avoid} layering rules per repository (a quarter of --max {max})"
-            ),
-            _ => format!("{k} by the cap of {max} per repository (--max)"),
+        .iter()
+        .map(|(&i, (limit, ids))| {
+            let k = ids.len();
+            let limit = limit.map_or(String::new(), |l| format!(" of {}", l as usize));
+            match CAP_GATES[i] {
+                "cap_role" => format!("{k} by the cap{limit} per role"),
+                "cap_avoid" => format!("{k} by the layering share{limit} per repository"),
+                _ => format!("{k} by the cap{limit} per repository (--max)"),
+            }
         })
         .collect();
-    let see = if by.len() == 1 {
-        let g = by.values().next().map_or("cap_repo", |(g, _)| *g);
-        format!("`drift census --why {g}` lists them")
-    } else {
-        "`drift census --why` lists them under each cap".to_string()
-    };
-    let raise = if by.values().any(|(g, _)| *g != "cap_role") {
-        ", and a larger --max proposes them"
-    } else {
-        ""
-    };
     Some(format!(
-        "{n} default-tier rule{} not proposed because of mining's caps ({}). The default tier is otherwise listed in full: {see}{raise}.",
+        "{n} default-tier draft{} cut by mining's caps ({}). Mining's later steps were not run on {}: this counts drafts, not proposals.",
         if n == 1 { " was" } else { "s were" },
-        parts.join("; ")
+        parts.join("; "),
+        if n == 1 { "it" } else { "them" }
     ))
 }
 
@@ -1165,24 +1166,35 @@ mod tests {
         );
     }
 
-    /// The caps' note says how many default-tier rules each cap cut, and nothing when none.
+    /// The caps' note counts default-tier drafts each cap cut, and nothing when none; it
+    /// leaves out drafts a person rejected and the test roles' pass, counts an id once,
+    /// and claims nothing about a larger --max (it is not checked).
     #[test]
     fn cap_note_counts_default_tier_cuts() {
-        assert!(cap_note(&[row("cap_avoid", 30, 31, false)], 15).is_none());
-        let n = cap_note(
-            &[
-                row("cap_avoid", 30, 31, true),
-                row("cap_avoid", 20, 21, true),
-                row("wilson", 9, 12, true),
-            ],
-            15,
-        )
-        .unwrap();
-        assert!(
-            n.starts_with("2 default-tier rules were not proposed because of mining's caps (2 by the layering share, at most 4 layering rules per repository"),
-            "{n}"
+        let none = BTreeSet::new();
+        assert!(cap_note(&[row("cap_avoid", 30, 31, false)], &none).is_none());
+        let capped = |gate, holders, members| {
+            let mut r = row(gate, holders, members, true);
+            r.threshold = Some(4.0);
+            r
+        };
+        let mut test_role = capped("cap_avoid", 25, 26);
+        test_role.family = "test:avoids".to_string();
+        let rows = [
+            capped("cap_avoid", 30, 31),
+            capped("cap_avoid", 30, 31),
+            capped("cap_avoid", 20, 21),
+            capped("cap_avoid", 10, 11),
+            test_role,
+            row("wilson", 9, 12, true),
+        ];
+        let rejected: BTreeSet<String> = [rows[3].id.clone()].into_iter().collect();
+        let n = cap_note(&rows, &rejected).unwrap();
+        assert_eq!(
+            n,
+            "2 default-tier drafts were cut by mining's caps (2 by the layering share of 4 per repository). Mining's later steps were not run on them: this counts drafts, not proposals."
         );
-        assert!(n.contains("`drift census --why cap_avoid` lists them"), "{n}");
+        assert!(!n.contains("--max proposes"), "{n}");
     }
 
     #[test]

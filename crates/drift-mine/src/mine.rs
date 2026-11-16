@@ -4785,8 +4785,18 @@ fn mine_units_traced<'a>(
     }
     if let Some(mut by_id) = deduped {
         for d in &drafts {
+            // The kept draft's own row (two drafts can share an id), else any one.
             if let Some(rows) = by_id.get_mut(&convention_id(&d.role, &d.rule)) {
-                rows.pop();
+                match rows.iter().rposition(|r| {
+                    r.value == Some(d.lb) && r.holders == d.holders.len() && r.members == d.n
+                }) {
+                    Some(i) => {
+                        rows.remove(i);
+                    }
+                    None => {
+                        rows.pop();
+                    }
+                }
             }
         }
         for row in by_id.into_values().flatten() {

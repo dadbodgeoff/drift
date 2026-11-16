@@ -112,8 +112,7 @@ fn census_without_why_is_unchanged() {
     assert_eq!(before, drift(r, &["census"]), "--why changes no later census");
     assert_eq!(json_before, drift(r, &["census", "--json"]));
     assert!(!before.contains("What mining dropped"), "{before}");
-    // No cap cut a default-tier rule here, so no cap note.
-    assert!(!before.contains("because of mining's caps"), "{before}");
+    assert!(!before.contains("mining's caps"), "{before}");
     if let Ok(old) = std::env::var("DRIFT_BEFORE_BIN") {
         let out = run(&old, r, &["census"]);
         assert!(out.status.success());
@@ -121,6 +120,74 @@ fn census_without_why_is_unchanged() {
             String::from_utf8(out.stdout).unwrap(),
             before,
             "census prints what the binary before S12 printed"
+        );
+    }
+}
+
+/// Four lower layers `kit0/` .. `kit3/` (60 files each, the first of which imports a
+/// form) below `views/forms/` (12 files, each importing every kit): four layering rules,
+/// more than the layering share of `--max 4` (one) lets through.
+fn layered() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    write(r, "package.json", "{ \"name\": \"heronry\" }");
+    for k in 0..4 {
+        for i in 0..60 {
+            let body = if i == 0 {
+                format!("import {{ f3 }} from \"../views/forms/f3\";\n\nexport const k{i} = f3;\n")
+            } else {
+                format!("export const k{i} = {i};\n")
+            };
+            write(r, &format!("kit{k}/k{i}.ts"), &body);
+        }
+    }
+    for i in 0..12 {
+        let mut body: String = (0..4)
+            .map(|k| format!("import {{ k2 as k{k}x }} from \"../../kit{k}/k2\";\n"))
+            .collect();
+        body.push_str(&format!("\nexport const f{i} = [k0x, k1x, k2x, k3x];\n"));
+        write(r, &format!("views/forms/f{i}.tsx"), &body);
+    }
+    dir
+}
+
+/// Pins where the caps' note is said: only under `--why` (text and JSON), never in the
+/// plain `census`, whose text is compared byte for byte between builds to show mining did
+/// not move. Before this change the plain `census --max 4` printed "N default-tier rules
+/// were not proposed because of mining's caps ... a larger --max proposes them", an
+/// overcount (drafts later steps would drop) with a claim nobody checked.
+#[test]
+fn the_cap_note_is_said_under_why_only() {
+    let dir = layered();
+    let r = dir.path();
+    let plain = drift(r, &["census", "--max", "4"]);
+    assert!(!plain.contains("mining's caps"), "{plain}");
+    assert!(!plain.contains("a larger --max"), "{plain}");
+
+    let why = drift(r, &["census", "--why", "--max", "4"]);
+    let note = why
+        .lines()
+        .find(|l| l.contains("cut by mining's caps"))
+        .unwrap_or_else(|| panic!("no cap note under --why: {why}"));
+    assert!(note.contains("by the layering share of 1 per repository"), "{note}");
+    assert!(note.ends_with("this counts drafts, not proposals."), "{note}");
+    assert!(!why.contains("a larger --max"), "{why}");
+
+    let v: Value =
+        serde_json::from_str(&drift(r, &["census", "--why", "--max", "4", "--json"])).unwrap();
+    assert!(
+        v["cap_note"].as_str().is_some_and(|n| n.contains("cut by mining's caps")),
+        "{v:#}"
+    );
+    assert!(!rows(&v, "cap_avoid").is_empty(), "{v:#}");
+
+    if let Ok(old) = std::env::var("DRIFT_BEFORE_BIN") {
+        let out = run(&old, r, &["census", "--max", "4"]);
+        assert!(out.status.success());
+        assert_eq!(
+            String::from_utf8(out.stdout).unwrap(),
+            plain,
+            "census --max 4 prints what the binary before S12 printed"
         );
     }
 }

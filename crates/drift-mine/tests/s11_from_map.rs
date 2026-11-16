@@ -5,8 +5,8 @@
 use drift_core::{FileFacts, Import, PackageFacts, RepoFacts};
 use drift_mine::check::{Scope, check};
 use drift_mine::context::RepoContext;
-use drift_mine::from_map::{MAX_OFFERED, MinedRule, layering, manifest, offered};
-use drift_mine::mine::{Rule, signals};
+use drift_mine::from_map::{CHECKED_CLAUSE, MAX_OFFERED, MinedRule, layering, manifest, offered};
+use drift_mine::mine::{Rule, convention_id, signals};
 use drift_mine::policy::{ConventionsFile, Lock, Mode, Status};
 use drift_mine::roles::{FileKinds, PACKAGE_WIDE, View};
 
@@ -88,7 +88,7 @@ fn a_clean_one_way_pair_is_proposed() {
     assert!(c.id.starts_with("D-"), "{}", c.id);
     assert_eq!(
         c.summary,
-        "Code in core never imports ui/screens (40 files, none do)"
+        format!("Code in core never imports ui/screens (40 files, none do; {CHECKED_CLAUSE})")
     );
     assert_eq!(
         (
@@ -240,7 +240,7 @@ fn a_declared_dependency_is_evidence_and_never_restated() {
     assert!(ps[0].layering.reverse_declared);
     assert_eq!(
         c.summary,
-        "Code in packages/core never imports apps/web (40 files, none do)"
+        format!("Code in packages/core never imports apps/web (40 files, none do; {CHECKED_CLAUSE})")
     );
     assert!(propose(&workspace(true)).is_empty());
 }
@@ -313,4 +313,82 @@ fn a_repository_is_offered_a_few_and_told_how_many_more() {
 fn manifest_proposes_nothing_yet() {
     let r = workspace(false);
     assert!(manifest(&r, &FileKinds::learn(&r), &[]).is_empty());
+}
+
+/// `core/` read in full (40 importing files) plus `extra` files of `core/` that each
+/// import a sibling, as `layered` builds them, made unread by `unread`.
+fn with_unread(n: usize, unread: impl Fn(&mut FileFacts)) -> RepoFacts {
+    let extra = (0..n)
+        .map(|i| {
+            let mut f = file(&format!("core/u{i}.ts"), "", &["core/c1.ts".to_string()]);
+            unread(&mut f);
+            f
+        })
+        .collect();
+    layered(40, 40, extra)
+}
+
+/// Pins rule 2 (unknown is never "none do"): a file of the layer that failed to parse is
+/// not counted as a file that does not import the target. It is counted apart, named in
+/// the summary, and counts toward no threshold. Before, it was one of the "41 files,
+/// none do".
+#[test]
+fn a_file_that_failed_to_parse_is_not_read_not_clean() {
+    let ps = propose(&with_unread(1, |f| f.parse_ok = false));
+    assert_eq!(ps.len(), 1, "{ps:#?}");
+    let p = &ps[0];
+    assert_eq!((p.layering.importing, p.layering.not_read), (40, 1));
+    assert_eq!(p.convention.evidence.total, 40);
+    assert_eq!(
+        p.convention.summary,
+        format!("Code in core never imports ui/screens (40 files, none do; 1 file of core not read; {CHECKED_CLAUSE})")
+    );
+    assert!(!p.layering.example.starts_with("core/u"), "{}", p.layering.example);
+}
+
+/// Pins that an import Drift could not resolve makes its file unknown: `@/x` joined to
+/// the importer's folder no longer says which layer it lands in, so it may be the
+/// target's. Before, the import was skipped and the file counted as one that does not
+/// import the target.
+#[test]
+fn a_file_with_an_unresolved_import_is_not_read() {
+    let ps = propose(&with_unread(1, |f| {
+        f.imports.push(Import {
+            module: "unresolved:core/@/screens/s1".into(),
+            names: vec!["x".into()],
+            type_only: false,
+            load: Default::default(),
+        })
+    }));
+    assert_eq!(ps.len(), 1, "{ps:#?}");
+    assert_eq!((ps[0].layering.importing, ps[0].layering.not_read), (40, 1));
+}
+
+/// Pins that a file the scan skipped whole is not read either (it has no facts at all),
+/// and that a layer with more than a fifth of its files not read (the bound promoted
+/// practices use, `MAX_UNKNOWN_SHARE`) is not proposed: 11 of 51 files is 21.6%; 10 of 50
+/// is exactly a fifth, still proposed.
+#[test]
+fn a_layer_drift_mostly_could_not_read_is_not_proposed() {
+    let mut r = layered(40, 40, vec![]);
+    r.skipped.push(drift_core::Skipped {
+        path: "core/huge.ts".into(),
+        reason: drift_core::SkipReason::TooLarge,
+    });
+    let ps = propose(&r);
+    assert_eq!(ps.len(), 1, "{ps:#?}");
+    assert_eq!((ps[0].layering.importing, ps[0].layering.not_read), (40, 1));
+
+    assert_eq!(propose(&with_unread(10, |f| f.parse_ok = false)).len(), 1);
+    assert!(propose(&with_unread(11, |f| f.parse_ok = false)).is_empty());
+}
+
+/// Pins that the proposal's id is the one mining gives the same role and rule: once
+/// accepted, mining keeps that rule under that id, and `ConventionsFile::merge` finds
+/// the accepted convention instead of adding a proposed copy beside it.
+#[test]
+fn the_id_is_minings_id_for_the_same_rule() {
+    let ps = propose(&layered(40, 40, vec![]));
+    let c = &ps[0].convention;
+    assert_eq!(c.id, convention_id(&c.role, &c.rule));
 }
