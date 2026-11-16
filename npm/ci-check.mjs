@@ -75,7 +75,11 @@ const config = JSON.parse(readFileSync(join(repo, "npm/config.json"), "utf8"));
 // 4. Versions and names agree, so a release tag passes release.yml's verify job
 //    and the npm wrapper, the plugin and the Action all point at one repository.
 const cargoToml = readFileSync(join(repo, "Cargo.toml"), "utf8");
-const cargoVersion = /\[workspace\.package\][^[]*?\nversion = "([^"]*)"/.exec(cargoToml)?.[1];
+// The [workspace.package] table: from its header to the next table header (a line
+// starting with `[`), so bracketed values such as `authors = ["..."]` stay inside it.
+const workspacePackage = /^\[workspace\.package\][ \t]*\r?\n([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml)?.[1] ?? "";
+const workspaceKey = (key) => new RegExp(`^${key}[ \\t]*=[ \\t]*"([^"]*)"`, "m").exec(workspacePackage)?.[1];
+const cargoVersion = workspaceKey("version");
 if (!cargoVersion) fail("Cargo.toml: no [workspace.package] version");
 for (const c of ["drift-core", "drift-ts", "drift-py", "drift-mine"]) {
   const v = new RegExp(`\\n${c} = \\{[^}\\n]*version = "([^"]*)"`).exec(cargoToml)?.[1];
@@ -104,7 +108,7 @@ for (const [event, groups] of Object.entries(hooksJson.hooks ?? {})) {
   }
 }
 const repoUrl = config.repository;
-const cargoRepo = /\[workspace\.package\][^[]*?\nrepository = "([^"]*)"/.exec(cargoToml)?.[1];
+const cargoRepo = workspaceKey("repository");
 for (const [where, url] of [
   ["Cargo.toml repository", cargoRepo],
   ["plugin.json repository", plugin.repository],
