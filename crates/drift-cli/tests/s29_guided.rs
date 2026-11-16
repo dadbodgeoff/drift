@@ -7,8 +7,11 @@
 //!   integration under `setup:`, and leaves `drift check` with nothing new;
 //! - with no terminal and no answers it changes no file, on a fresh repository and on
 //!   one already set up, and prints each question with the flag that answers it;
-//! - Enter (an empty answer) skips: nothing is written;
-//! - a re-run asks nothing already decided.
+//! - Enter (an empty answer) skips: nothing is written, not even `drift init`'s files on
+//!   a repository that has none; a yes there runs `drift init` first;
+//! - a key no question has, or one given to both lists, is an error with nothing written;
+//! - an agent's run asks nothing and writes nothing;
+//! - a re-run asks nothing already decided; `--forget` undoes a recorded "no".
 
 use std::collections::BTreeMap;
 use std::io::Write as _;
@@ -128,7 +131,10 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
             if p.is_dir() {
                 todo.push(p);
             } else {
-                out.insert(p.strip_prefix(root).unwrap().to_path_buf(), std::fs::read(&p).unwrap());
+                out.insert(
+                    p.strip_prefix(root).unwrap().to_path_buf(),
+                    std::fs::read(&p).unwrap(),
+                );
             }
         }
     }
@@ -238,13 +244,165 @@ fn enter_skips_and_writes_nothing() {
     let r = dir.path();
     drift(r, &["init"]);
     let before = snapshot(r);
+    let enters = "\n".repeat(200);
     let out = person(
         r,
         &["setup", "--by", "person", "--guided"],
-        Some(&"\n".repeat(200)),
+        Some(enters.as_str()),
     );
     assert_eq!(snapshot(r), before, "{out}");
-    assert!(out.contains("Skipped, asked again by the next `drift setup`"), "{out}");
+    assert!(
+        out.contains("Skipped, asked again by the next `drift setup`"),
+        "{out}"
+    );
+}
+
+/// Pins that `drift init` runs only once a person answers a proposal: on a repository
+/// with no conventions file, Enter at every question, or the input ending at once,
+/// writes no file (before, the flow ran `drift init` before asking anything).
+#[test]
+fn enter_or_eof_on_a_fresh_repository_writes_nothing() {
+    let dir = repo();
+    let r = dir.path();
+    let before = snapshot(r);
+    let enters = "\n".repeat(200);
+    for input in [enters.as_str(), ""] {
+        let out = person(r, &["setup", "--by", "person", "--guided"], Some(input));
+        assert_eq!(snapshot(r), before, "{out}");
+        assert!(out.contains("would propose"), "{out}");
+        assert!(out.contains("Nothing written."), "{out}");
+    }
+}
+
+/// Pins that a yes on a repository with no conventions file runs `drift init` (the
+/// binary itself, with `--root`) and records the answer in what it wrote.
+#[test]
+fn a_yes_on_a_fresh_repository_runs_init_then_records_it() {
+    let dir = repo();
+    let r = dir.path();
+    let dry = drift(r, &["setup"]);
+    let mined = first_card(&dry, "mined");
+    let out = person(r, &["setup", "--by", "person", "--yes-to", &mined], None);
+    assert!(out.contains("Ran `drift init`"), "{out}");
+    let policy = ConventionsFile::load(r).unwrap().expect("a policy");
+    let c = policy.conventions.iter().find(|c| c.id == mined).unwrap();
+    assert_eq!(c.status, Status::Accepted, "{out}");
+    assert_eq!(c.mode, Mode::Advise, "{out}");
+    assert_eq!(
+        policy
+            .conventions
+            .iter()
+            .filter(|c| c.status == Status::Accepted)
+            .count(),
+        1,
+        "{out}"
+    );
+    assert!(r.join("drift.lock").exists(), "{out}");
+    // Nothing else was said yes to.
+    assert!(!r.join(".drift/security.lock").exists(), "{out}");
+}
+
+/// Pins that a key no question has is an error naming it, with nothing written
+/// (before, it was skipped and the rest of the answers written), and that a key given
+/// to both lists is refused.
+#[test]
+fn an_unknown_or_doubled_key_is_refused_and_nothing_is_written() {
+    let dir = repo();
+    let r = dir.path();
+    drift(r, &["init"]);
+    let before = snapshot(r);
+    let (code, out, err) = run(
+        r,
+        &["setup", "--by", "person", "--yes-to", "baseline,D-nosuch"],
+        None,
+        true,
+    );
+    assert_ne!(code, 0, "{out}\n{err}");
+    assert!(err.contains("names D-nosuch,"), "{err}");
+    assert_eq!(snapshot(r), before, "{out}");
+    let (code, out, err) = run(
+        r,
+        &["setup", "--by", "person", "--yes-to", "baseline", "--no-to", "basline"],
+        None,
+        true,
+    );
+    assert_ne!(code, 0, "{out}\n{err}");
+    assert!(err.contains("names basline,"), "{err}");
+    assert_eq!(snapshot(r), before, "{out}");
+    let (code, out, err) = run(
+        r,
+        &["setup", "--by", "person", "--yes-to", "baseline", "--no-to", "baseline"],
+        None,
+        true,
+    );
+    assert_ne!(code, 0, "{out}\n{err}");
+    assert!(err.contains("baseline given to both"), "{err}");
+    assert_eq!(snapshot(r), before, "{out}");
+}
+
+/// Runs drift as an agent does (`DRIFT_AGENT=1`), with a person's variables set too.
+fn agent(root: &Path, args: &[&str]) -> (i32, String, String) {
+    let out = Command::new(&*BIN)
+        .arg("--no-cache")
+        .args(args)
+        .current_dir(root)
+        .env_remove("DRIFT_CACHE_DIR")
+        .env_remove("CLAUDECODE")
+        .env("DRIFT_AGENT", "1")
+        .env("DRIFT_SETUP_PERSON", "1")
+        .env("DRIFT_SETUP_PERSON_NONINTERACTIVE", "1")
+        .stdin(Stdio::null())
+        .output()
+        .unwrap();
+    (
+        out.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+/// Pins that an agent's run asks nothing and writes nothing, even with `--by person`
+/// and a person's variables (before, a scripted `--by person` run wrote the baseline).
+#[test]
+fn an_agents_run_asks_nothing_and_writes_nothing() {
+    let dir = repo();
+    let r = dir.path();
+    drift(r, &["init"]);
+    let before = snapshot(r);
+    let (code, out, err) = agent(r, &["setup"]);
+    assert_eq!(code, 0, "{out}\n{err}");
+    assert!(out.contains("Would ask"), "{out}");
+    for args in [
+        &["setup", "--by", "person", "--yes-to", "baseline"][..],
+        &["setup", "--by", "person", "--guided"][..],
+        &["setup", "--yes-to", "baseline"][..],
+    ] {
+        let (code, out, err) = agent(r, args);
+        assert_ne!(code, 0, "{args:?}\n{out}\n{err}");
+    }
+    assert_eq!(snapshot(r), before);
+}
+
+/// Pins that `drift setup --forget <id>` undoes a recorded "no": the question is asked
+/// again.
+#[test]
+fn forget_undoes_a_recorded_no() {
+    let dir = repo();
+    let r = dir.path();
+    drift(r, &["init"]);
+    let out = person(r, &["setup", "--by", "person", "--no-to", "agents-md"], None);
+    let id = out
+        .split("recorded as ")
+        .nth(1)
+        .and_then(|rest| rest.split_whitespace().next())
+        .unwrap_or_else(|| panic!("no id in:\n{out}"))
+        .to_string();
+    assert!(id.starts_with("S-"), "{out}");
+    assert!(!drift(r, &["setup"]).contains("--yes-to agents-md"));
+    person(r, &["setup", "--by", "person", "--forget", &id], None);
+    let again = drift(r, &["setup"]);
+    assert!(again.contains("--yes-to agents-md"), "{again}");
+    assert!(!read(r, ".drift/config.yaml").contains("declined"), "{again}");
 }
 
 #[test]
