@@ -502,7 +502,6 @@ fn words(name: &str) -> Vec<String> {
     out
 }
 
-
 /// A name that says the caller by its last word (`user`, `currentUser`,
 /// `authSession`; not `userId`, which names a value anyone may hold).
 fn caller_name(name: &str) -> bool {

@@ -321,11 +321,15 @@ fn input(cx: &Cx<'_>, adapter: &str, i: &str) -> Result<Classified, (UnknownReas
 /// What a call handed what the request sent beside a binding does with it
 /// ([`controls::PARSES_INPUT`], `<callee>\t<binding>`): `None` where the binding is
 /// no schema (a client, a setting, a function), so the call says nothing of
-/// validation. Where it is one, a package's call checks the request against it
-/// (`parseWithZod(formData, { schema })`): `schema:<library>`, the library the
-/// schema is built with, whatever the callee is called. A function of the
-/// repository handed both, or a callee that was not resolved, is not followed:
-/// `Err` with it.
+/// validation. Where it is one, the call checks the request against it only where
+/// the callee is a validation library's own (`safeParse(Schema, body)` of
+/// valibot, [`validation_library`]): `schema:<library>`, the library the schema is
+/// built with. Any other callee is found beside a schema and not proven (`Err`
+/// with it): a package that is no validation library (`jwt.sign(body,
+/// env.SECRET)` where `env` was parsed with zod, a model SDK handed a schema for
+/// what it answers, `parseWithZod` of a forms package), as an input handed to one
+/// reads ([`handed_unread`]); a function of the repository, whose body is not
+/// followed here; a callee that was not resolved.
 fn parsed_input(cx: &Cx<'_>, rest: &str) -> Option<Result<Classified, String>> {
     let (callee, given) = rest.split_once('\t')?;
     let (lib, source) = if let Some(label) = declared(cx, super::VALIDATION, given) {
@@ -341,7 +345,7 @@ fn parsed_input(cx: &Cx<'_>, rest: &str) -> Option<Result<Classified, String>> {
         }
         (schema_library(cx, d, 0)?, VariantSource::Usage)
     };
-    if callee.starts_with("pkg:") {
+    if validation_library(callee).is_some() {
         Some(Ok(("schema", lib, source)))
     } else {
         Some(Err(crate::mine::norm_ref(callee).into_owned()))
@@ -350,16 +354,16 @@ fn parsed_input(cx: &Cx<'_>, rest: &str) -> Option<Result<Classified, String>> {
 
 /// What a pipe a parameter decorator is handed does to the request's value
 /// ([`controls::PIPES_INPUT`]): the framework runs it on the value before the
-/// handler and answers for what it refuses. A package's pipe is a typed model of
-/// the parameter by that pipe; a class of the repository is a schema where its own
-/// calls are a validation library's, and found, not proven, otherwise (`Err`). A
-/// reference to anything but a class (a constant naming the parameter) is no pipe.
+/// handler and answers for what it refuses. A package's pipe is found and not
+/// proven (`Err`): what it does is not read, and a pipe may only transform or
+/// default the value (`new DefaultValuePipe(10)`); one that makes a declared
+/// class's decorators run is read with that class ([`input`]). A class of the
+/// repository is a schema where its own calls are a validation library's, and
+/// found, not proven, otherwise (`Err`). A reference to anything but a class (a
+/// constant naming the parameter) is no pipe.
 fn piped_input(cx: &Cx<'_>, pipe: &str) -> Option<Result<Classified, String>> {
     if let Some(label) = declared(cx, super::VALIDATION, pipe) {
         return Some(Ok(("schema", label.to_string(), VariantSource::Declared)));
-    }
-    if pipe.starts_with("pkg:") {
-        return Some(Ok(("typed_model", pipe.to_string(), VariantSource::Usage)));
     }
     if external(pipe) {
         return Some(Err(crate::mine::norm_ref(pipe).into_owned()));
@@ -520,10 +524,13 @@ mod tests {
         );
     }
 
-    /// The listed reading's parses and pipes: a package's call handed a schema beside
-    /// what the request sent validates with the schema's library, whatever it is
-    /// called; one of the repository is found, not proven; a binding that is no
-    /// schema says nothing; a package's pipe on a parameter is a typed model.
+    /// The listed reading's parses and pipes: a validation library's own call handed
+    /// a schema beside what the request sent validates with the schema's library;
+    /// any other package's call, and one of the repository, is found, not proven
+    /// (it fails before the fix: `jwt.sign(body, env.SECRET)` with a zod-parsed
+    /// `env` was `schema:zod`); a binding that is no schema says nothing; a
+    /// package's pipe on a parameter is found, not proven (it was a typed model,
+    /// `new DefaultValuePipe(10)` included).
     #[test]
     fn calls_handed_a_schema_and_parameter_pipes() {
         let d = empty();
@@ -543,9 +550,23 @@ mod tests {
         };
         let parses = controls::PARSES_INPUT;
         let facts = with(&format!(
-            "{parses}pkg:@conform-to/zod#parseWithZod\tlib/schemas.ts#CreateProject"
+            "{parses}pkg:zod#z.object.parse\tlib/schemas.ts#CreateProject"
         ));
         assert_eq!(key(&at(&facts)), "schema:zod");
+        // A package that is no validation library, handed the request's data and a
+        // binding built with zod: found beside a schema, not proven.
+        for callee in [
+            "pkg:@conform-to/zod#parseWithZod",
+            "pkg:jsonwebtoken#sign",
+            "pkg:ai#generateObject",
+        ] {
+            let facts = with(&format!("{parses}{callee}\tlib/schemas.ts#CreateProject"));
+            assert!(
+                matches!(at(&facts), Assignment::Unknown { .. }),
+                "{callee}: {:?}",
+                at(&facts)
+            );
+        }
         let facts = with(&format!(
             "{parses}lib/forms.ts#parseForm\tlib/schemas.ts#CreateProject"
         ));
@@ -557,15 +578,17 @@ mod tests {
         // `db` is a client, not a schema: the call says nothing of validation.
         let facts = with(&format!("{parses}pkg:acme#send\tlib/db.ts#db"));
         assert!(matches!(at(&facts), Assignment::None { .. }), "{:?}", at(&facts));
-        let facts = with(&format!(
-            "{}pkg:@nestjs/common#ParseIntPipe",
-            controls::PIPES_INPUT
-        ));
-        let k = key(&at(&facts));
-        assert!(
-            k.starts_with("typed_model:") && k.ends_with("ParseIntPipe"),
-            "{k}"
-        );
+        for pipe in [
+            "pkg:@nestjs/common#ParseIntPipe",
+            "pkg:@nestjs/common#DefaultValuePipe(new)",
+        ] {
+            let facts = with(&format!("{}{pipe}", controls::PIPES_INPUT));
+            assert!(
+                matches!(at(&facts), Assignment::Unknown { .. }),
+                "{pipe}: {:?}",
+                at(&facts)
+            );
+        }
         // Without them the handler reads input and nothing validates it.
         let facts = fixtures::next_clerk();
         assert!(matches!(at(&facts), Assignment::None { .. }));

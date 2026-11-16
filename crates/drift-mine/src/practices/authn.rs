@@ -976,10 +976,17 @@ fn derived_bases(cx: &Cx<'_>, sfile: &FileFacts, route: &Symbol, w: &str, r: &mu
 /// sign-in, so a route standing on the base is the one the repository leaves
 /// open (`publicProcedure`, of which `authedAdminProcedure =
 /// publicProcedure.use(isAdmin)` is made). Read from the derivation and the
-/// proof, never from the wrapper's name.
+/// proof, never from the wrapper's name. Only where the wrapper adds no step of
+/// its own to what it is made from (`publicProcedure = t.procedure`): a wrapper
+/// whose steps were not read (`authed = t.procedure.use(sessionOf)`, with
+/// `admin = authed.use(isAdmin)` proven) may sign in by them, and is unknown,
+/// never open.
 fn unguarded_base(cx: &Cx<'_>, w: &str) -> bool {
     let w = crate::mine::norm_ref(w).into_owned();
     if external(&w) || !w.contains('#') {
+        return false;
+    }
+    if !adds_no_step(cx, &w) {
         return false;
     }
     for f in &cx.facts.files {
@@ -997,6 +1004,36 @@ fn unguarded_base(cx: &Cx<'_>, w: &str) -> bool {
                 return true;
             }
         }
+    }
+    false
+}
+
+/// The binding `w` is another bound as it is (`publicProcedure = t.procedure`,
+/// `p = base`), followed to [`MAX_BASES`] bindings, with no builder step anywhere
+/// on the way: the value that built the first of them (`initTRPC.create()`) is all
+/// it runs ([`unguarded_base`]). A step added on the way (`.use(..)`), a binding of
+/// the repository that does not resolve, or a chain followed past the bound is not
+/// that.
+fn adds_no_step(cx: &Cx<'_>, w: &str) -> bool {
+    let mut cur = w.to_string();
+    for at in 0..MAX_BASES {
+        let Some(d) = cx.context().definition(&cur) else {
+            // A package's value is where the chain starts; anything else of the
+            // repository was not read.
+            return at > 0 && external(&cur);
+        };
+        if d.derives_from.is_empty() {
+            // `w` itself built by a call: what that call builds is not read.
+            return at > 0;
+        }
+        if d.derives_from.contains('(') {
+            return false;
+        }
+        let next = crate::mine::norm_ref(&d.derives_from).into_owned();
+        if next == cur {
+            return false;
+        }
+        cur = next;
     }
     false
 }

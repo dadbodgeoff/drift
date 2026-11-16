@@ -1,5 +1,5 @@
 //! Facts the TypeScript/JavaScript lowering did not produce, or got wrong, that left
-//! units unknown or misread (TS `LOWERING_VERSION` 85). Each is in the listed
+//! units unknown or misread (one TS `LOWERING_VERSION` bump). Each is in the listed
 //! reading only ([`drift_core::Listed`]): what mining reads stays as the last
 //! measured build read it, and every test pins that too.
 //!
