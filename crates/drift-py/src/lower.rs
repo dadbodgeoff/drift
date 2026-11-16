@@ -71,6 +71,8 @@ pub(crate) mod practice;
 pub(crate) mod receivers;
 #[path = "registries.rs"]
 pub(crate) mod registries;
+#[path = "servers.rs"]
+pub mod servers;
 #[path = "settings.rs"]
 pub(crate) mod settings;
 #[path = "signals.rs"]
@@ -119,6 +121,7 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.lower_body(&module.body);
     l.lower_adapters_anywhere(&module.body);
     l.lower_frameworks(&module.body);
+    l.lower_servers(&module.body);
     l.lower_settings(&module.body);
     l.lower_error_handlers(&module.body);
     l.lower_main_guard(&module.body);

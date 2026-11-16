@@ -219,7 +219,8 @@ fn own_method_calls(f: &ast::StmtFunctionDef) -> Vec<String> {
 }
 
 /// Class-based view methods that handle an HTTP method.
-const HANDLER_METHODS: &[&str] = &["get", "post", "put", "patch", "delete", "head", "options"];
+pub(crate) const HANDLER_METHODS: &[&str] =
+    &["get", "post", "put", "patch", "delete", "head", "options"];
 /// DRF viewset actions and the HTTP method each serves.
 const DRF_ACTIONS: &[(&str, &str)] = &[
     ("list", "GET"),
@@ -2103,6 +2104,11 @@ impl<'t> Lowerer<'t> {
         } else {
             vec![]
         };
+        // The methods aiohttp's, Tornado's and Falcon's servers, and Django's
+        // management commands, call ([`Lowerer::server_late`]).
+        let mut methods = methods;
+        let late = self.server_late(c, &sym, &methods);
+        methods.extend(late);
         self.self_class = None;
         self.self_methods.clear();
         self.self_bases.clear();

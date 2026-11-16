@@ -1431,6 +1431,13 @@ pub struct RawFile {
     /// listed link only. Lowering 75.
     #[serde(default, skip_serializing_if = "RawFrameworks::is_empty")]
     pub frameworks: RawFrameworks,
+    /// aiohttp, Tornado, Falcon, Channels, management commands, Huey and arq
+    /// ([`crate::lower::servers`]): listed since the measured build (lowering 75).
+    #[serde(
+        default,
+        skip_serializing_if = "crate::lower::servers::RawServers::is_empty"
+    )]
+    pub servers: crate::lower::servers::RawServers,
 }
 
 /// One entry of a [`RawRefList`].

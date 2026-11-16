@@ -167,6 +167,11 @@ main branch.
   snippets imported in the Caddyfile are read, and an nginx regular-expression
   location that is a plain anchored prefix (`~ ^/api/`) is evaluated. Before,
   every route behind these read unknown.
+- **More Python servers and queues in `drift security`:** aiohttp, Tornado and
+  Falcon routes, with their middleware, hooks and guards
+  (`@tornado.web.authenticated`, `@falcon.before`); Django management commands
+  as `cli`; Django Channels websocket routes; Huey and arq tasks as `job` and
+  `cron`. Listed only: mining and `drift check` read none of it.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise
