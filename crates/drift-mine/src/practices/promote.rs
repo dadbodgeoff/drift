@@ -3508,7 +3508,11 @@ mod tests {
         let conv = convention(&candidate(&api(), "P-auth", None, &[], false).unwrap());
         // withAuth was renamed: every unit is now another way.
         let renamed = report(routes("app/api", 0, 40, "P-user"));
-        let checked = check(
+        // [FIX3-W3] Review fix v1, item 1 (fcd5f71e): units that break it anew (not in
+        // `drift.lock`) are the gate's to stop, never a reason to stop gating. With an
+        // empty lock the 40 renamed units are new violations, in the practice's own
+        // mode, and the practice is not stale (before, it fired on nothing).
+        let fresh = check(
             &RepoFacts::default(),
             &renamed,
             &policy(vec![conv.clone()]),
@@ -3516,7 +3520,44 @@ mod tests {
             Scope::Accepted,
             None,
         );
+        assert!(fresh.stale.is_empty(), "{:?}", fresh.stale);
+        assert_eq!(fresh.violations.len(), 40);
+        assert!(
+            fresh
+                .violations
+                .iter()
+                .all(|v| v.id == conv.id && v.mode == "advise" && !v.baselined)
+        );
+        // In block mode they block: staleness never demotes a violation the change adds.
+        let mut blocking = conv.clone();
+        blocking.mode = Mode::Block;
+        let fresh = check(
+            &RepoFacts::default(),
+            &renamed,
+            &policy(vec![blocking]),
+            &Lock::default(),
+            Scope::Accepted,
+            None,
+        );
+        assert!(fresh.stale.is_empty(), "{:?}", fresh.stale);
+        assert_eq!(fresh.violations.len(), 40);
+        assert!(fresh.violations.iter().all(|v| v.mode == "block" && !v.baselined));
+        // Once those units are legacy (in the lock), no unit follows it and none breaks
+        // it anew: it is stale and fires on nothing.
+        let lock = Lock {
+            entries: baseline(&RepoFacts::default(), &renamed, &policy(vec![conv.clone()])),
+        };
+        assert_eq!(lock.entries.len(), 40);
+        let checked = check(
+            &RepoFacts::default(),
+            &renamed,
+            &policy(vec![conv.clone()]),
+            &lock,
+            Scope::Accepted,
+            None,
+        );
         assert!(checked.violations.is_empty());
+        assert!(checked.fixed.is_empty(), "{:?}", checked.fixed);
         assert_eq!(checked.stale.len(), 1);
         assert_eq!(
             (checked.stale[0].id.as_str(), checked.stale[0].units),
@@ -4012,6 +4053,15 @@ mod tests {
         )
     }
 
+    /// [`checked`] with every unit that breaks `conv` today in the lock (legacy).
+    fn legacy(r: &PracticesReport, conv: &Convention) -> Checked {
+        let p = policy(vec![conv.clone()]);
+        let lock = Lock {
+            entries: baseline(&RepoFacts::default(), r, &p),
+        };
+        check(&RepoFacts::default(), r, &p, &lock, Scope::Accepted, None)
+    }
+
     fn violating(c: &Checked) -> Vec<&str> {
         c.violations.iter().map(|v| v.path.as_str()).collect()
     }
@@ -4349,7 +4399,22 @@ mod tests {
             ..Request::default()
         };
         let conv = convention(&candidate_for(&r, None, &mech).unwrap());
-        let replaced = checked(&signin(routes("app/api", 0, 10, "P-user")), &conv);
+        // [FIX3-W3] Review fix v1, item 1 (fcd5f71e): a unit that breaks it anew (not in
+        // `drift.lock`) is the gate's to stop, never a reason to stop gating. With an
+        // empty lock every replaced unit is a new violation in the practice's own mode
+        // and it is not stale; once they are in the lock (legacy), it is stale and fires
+        // on nothing.
+        let replacing = signin(routes("app/api", 0, 10, "P-user"));
+        let fresh = checked(&replacing, &conv);
+        assert!(fresh.stale.is_empty(), "{:?}", fresh.stale);
+        assert_eq!(fresh.violations.len(), 10);
+        assert!(
+            fresh
+                .violations
+                .iter()
+                .all(|v| v.mode == "advise" && !v.baselined)
+        );
+        let replaced = legacy(&replacing, &conv);
         assert!(replaced.violations.is_empty());
         assert_eq!(replaced.stale.len(), 1);
         // Still used by one unit: not stale, the rest break.
@@ -4367,7 +4432,13 @@ mod tests {
         let conv = convention(&candidate_for(&r, None, &enf).unwrap());
         let mut units = routes("app/api", 0, 9, "P-none");
         units.extend(routes("app/api", 9, 1, "P-open"));
-        let gone = checked(&signin(units), &conv);
+        let open = signin(units);
+        // Not in the lock: ten new violations, not stale (as above).
+        let fresh = checked(&open, &conv);
+        assert!(fresh.stale.is_empty(), "{:?}", fresh.stale);
+        assert_eq!(fresh.violations.len(), 10);
+        assert!(fresh.violations.iter().all(|v| !v.baselined));
+        let gone = legacy(&open, &conv);
         assert!(gone.violations.is_empty());
         assert_eq!(gone.stale.len(), 1);
         // The replay reads the same rule.

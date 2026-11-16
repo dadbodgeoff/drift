@@ -296,6 +296,19 @@ fn procedures_with(public: &str) -> RepoFacts {
         vec![sym("requireMember", SymbolKind::Function, |_| {})],
     ));
     files.extend(background());
+    // [FIX3-W3] Lift is counted among units of the role's own symbol kind (`mine.rs`,
+    // "Lift baseline: frequency among units of the same symbol kind"): the procedures
+    // are values, and the 60 functions of `background` are no baseline for them. With
+    // only the 34 values above, 30 of 34 values in the repository are wrapped in
+    // `memberProcedure`, the role's 30 of 32 has lift 1.06 (under 1.5) and nothing is
+    // mined. 60 plain values elsewhere give the rule its lift (about 2.9).
+    files.extend((0..60).map(|i| {
+        file(
+            &format!("api/src/values/v{i}.ts"),
+            "api",
+            vec![sym(&format!("value{i}"), SymbolKind::Const, |_| {})],
+        )
+    }));
     repo(files)
 }
 
