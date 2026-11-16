@@ -55,7 +55,7 @@ const REQUEST_KEYS: &[&str] = &["req", "request"];
 ///   session (tRPC hands input only as `input` / `rawInput`);
 /// - `next`: tRPC middleware's continuation (`({ ctx, next }) => next()`);
 /// - `signal`: the `AbortSignal` tRPC resolvers and TanStack Query functions get.
-const NON_INPUT_KEYS: &[&str] = &["ctx", "next", "signal"];
+pub(crate) const NON_INPUT_KEYS: &[&str] = &["ctx", "next", "signal"];
 
 /// Methods of a Hono context that build a response: `c.json(rows)`, `c.text("hi")`.
 /// Called with an argument they read nothing (a request's `r.json()` takes none).

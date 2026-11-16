@@ -3736,6 +3736,10 @@ impl<'r> Linker<'r> {
             })
             .collect();
         facts.entry_points = crate::nextjs::entry_points(&facts, self.uses_next(&facts.package));
+        // The routes of a file-convention router below: the framework answers a
+        // request with what the handler returns, so a handler that hands back a
+        // value answers by it ([`drift_core::controls::ANSWERS_BY_RETURN`]).
+        let mut by_return: BTreeSet<String> = BTreeSet::new();
         // A route of a file-convention router other than Next.js: listed since the
         // measured build, with what runs before it (a parent route, a server hook)
         // unread.
@@ -3809,6 +3813,7 @@ impl<'r> Linker<'r> {
                     elsewhere: false,
                     app_middleware,
                 });
+                by_return.insert(e.symbol.clone());
                 facts.entry_points.push(e);
             }
         }
@@ -3970,6 +3975,15 @@ impl<'r> Linker<'r> {
                                 self.canon(rel, class)
                             )
                         }))
+                        // A route of a file-convention router whose handler
+                        // hands back a value: the framework sends it.
+                        .chain(
+                            (by_return.contains(&s.name)
+                                && s.listed_controls
+                                    .iter()
+                                    .any(|c| c == drift_core::controls::RETURNS_VALUE))
+                            .then(|| drift_core::controls::ANSWERS_BY_RETURN.to_string()),
+                        )
                         // ([`crate::lower::RawSymbol::listed_refs`]).
                         .chain(s.listed_refs.iter().map(|(prefix, refs)| {
                             let refs: Vec<String> =

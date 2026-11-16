@@ -501,7 +501,21 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
         {
             let mut own = Reading::default();
             wrap(cx, sfile, &w.wrapper, w.kind, &guards, None, &mut own);
-            r.position(crate::guard_position::read(cx, sfile, s, &w.wrapper), own, &w.wrapper);
+            let verdict = crate::guard_position::read(cx, sfile, s, &w.wrapper);
+            let unknown_here = matches!(verdict, crate::guard_position::Verdict::Unknown(_));
+            let nothing_here = matches!(verdict, crate::guard_position::Verdict::Nothing);
+            // A base a guarded builder is made from by adding the guard: the
+            // route that stands on the base itself is the one left open. Only
+            // where the position could not tell: what it proved stands.
+            if unknown_here && !own.signs_in() && unguarded_base(cx, &w.wrapper) {
+                let base = crate::mine::norm_ref(&w.wrapper).into_owned();
+                r.add(OPENS, &base, source(&base));
+                continue;
+            }
+            r.position(verdict, own, &w.wrapper);
+            if !nothing_here {
+                derived_bases(cx, sfile, s, &w.wrapper, &mut r);
+            }
             continue;
         }
         // Python: what stands at the position is read in one place
@@ -905,6 +919,88 @@ fn source(r: &str) -> VariantSource {
     }
 }
 
+/// The value a builder chain was made from: what stands before its first call's
+/// member (`a.ts#authedProcedure.input().use()` -> `a.ts#authedProcedure`). The
+/// same cut [`crate::guard_position`] makes of a bound builder.
+fn builder_base(derives_from: &str) -> &str {
+    let Some(open) = derives_from.find('(') else {
+        return derives_from;
+    };
+    match derives_from[..open].rfind('.') {
+        Some(dot) => &derives_from[..dot],
+        None => derives_from,
+    }
+}
+
+/// How many bases a derived builder is followed through.
+const MAX_BASES: usize = 4;
+
+/// A wrapper made from another builder of the repository by adding steps
+/// (`authedProcedure.input(..).use(..)`, or a function returning such a chain)
+/// runs its base's steps before its own: a guard the base is proven to be, at
+/// the route's guard position ([`crate::guard_position::read`]), guards the
+/// route too, whatever the added steps do. Each base is followed while it is
+/// itself derived, to [`MAX_BASES`]. A base that is a package's, or one whose
+/// position is not proven a guard, adds nothing: the wrapper's own reading
+/// stands.
+fn derived_bases(cx: &Cx<'_>, sfile: &FileFacts, route: &Symbol, w: &str, r: &mut Reading) {
+    let mut cur = crate::mine::norm_ref(w).into_owned();
+    for _ in 0..MAX_BASES {
+        let Some(d) = cx.context().definition(&cur) else {
+            return;
+        };
+        if d.derives_from.is_empty() {
+            return;
+        }
+        let base = crate::mine::norm_ref(builder_base(&d.derives_from)).into_owned();
+        if base == cur || external(&base) || !base.contains('#') {
+            return;
+        }
+        if let crate::guard_position::Verdict::Guard(instrument) =
+            crate::guard_position::read(cx, sfile, route, &base)
+        {
+            let u = use_of("wrap", &instrument);
+            if !r.uses.contains(&u) {
+                r.add("wrap", &instrument, source(&instrument));
+            }
+            // The nearest proven base answers for the chain below it.
+            return;
+        }
+        cur = base;
+    }
+}
+
+/// The wrapper is the base another builder of the repository is made from, and
+/// that builder is proven a guard at a guard position while the wrapper is not
+/// ([`crate::guard_position::read`]): what the derived builder adds is the
+/// sign-in, so a route standing on the base is the one the repository leaves
+/// open (`publicProcedure`, of which `authedAdminProcedure =
+/// publicProcedure.use(isAdmin)` is made). Read from the derivation and the
+/// proof, never from the wrapper's name.
+fn unguarded_base(cx: &Cx<'_>, w: &str) -> bool {
+    let w = crate::mine::norm_ref(w).into_owned();
+    if external(&w) || !w.contains('#') {
+        return false;
+    }
+    for f in &cx.facts.files {
+        for g in &f.symbols {
+            if g.derives_from.is_empty()
+                || crate::mine::norm_ref(builder_base(&g.derives_from)) != w.as_str()
+            {
+                continue;
+            }
+            let value = format!("{}#{}", f.path, g.name);
+            if matches!(
+                crate::guard_position::read(cx, f, g, &value),
+                crate::guard_position::Verdict::Guard(_)
+            ) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 /// Reads one wrapper; true when it declares the route public (`@Public()`).
 fn wrap(
     cx: &Cx<'_>,
@@ -1277,6 +1373,15 @@ fn role_only_guard(cx: &Cx<'_>, g: &str) -> bool {
     })
 }
 
+/// The one switch for reading a shared-secret refusal
+/// ([`drift_core::controls::REFUSES_SECRET`]) as `service_auth`: a header
+/// compared whole with a value of the environment, the body left where they
+/// differ. Off, such a body reads as it did before this reading (the compare is
+/// no body check the facts record).
+fn shared_secret_refusal_is_service_auth() -> bool {
+    true
+}
+
 /// Reads one body the entry point runs (`py`: a Python one; `request`: of an entry
 /// point a remote caller reaches, [`REQUEST_KINDS`]). `wraps` are the handler's
 /// own wrappers (normalised), which a body call is not ([`security::not_a_body_call`]).
@@ -1298,6 +1403,20 @@ fn body(
     }
     for instrument in &signature.unproven {
         r.call_unknown(UnknownReason::SignatureNotProven, instrument);
+    }
+    // TypeScript: the body leaves wherever a request header differs from a secret
+    // the environment holds, outside every branch
+    // ([`drift_core::controls::REFUSES_SECRET`]): a sending service is checked.
+    if !py && shared_secret_refusal_is_service_auth() {
+        for c in &s.controls {
+            if let Some(header) = c.strip_prefix(drift_core::controls::REFUSES_SECRET) {
+                let instrument = format!("header:{header}");
+                let u = use_of(SERVICE_AUTH, &instrument);
+                if !r.uses.contains(&u) {
+                    r.add(SERVICE_AUTH, &instrument, VariantSource::Usage);
+                }
+            }
+        }
     }
     // [STRICT] TypeScript: a branch on the caller's value hands back what the facts
     // do not read (a refusal builder's response through a local, a status written as

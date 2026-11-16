@@ -2182,6 +2182,38 @@ pub mod controls {
     /// returns is sent back is for the reader to say (an entry point's is).
     /// TypeScript lowering 84; mining never proposes it.
     pub const RETURNS_WHOLE: &str = "returns_whole:";
+    /// A function some `return` of whose own body hands back a value that is no
+    /// function written there (`return {}`, `return data(...)`, `=> ({ ok: true })`).
+    /// Recorded where the file may hold a route of a file-convention router.
+    /// TypeScript lowering, the listed reading only; mining never proposes it.
+    pub const RETURNS_VALUE: &str = "returns_value";
+    /// An entry point's handler that its framework calls by the export the route
+    /// file is listed by, and whose answer is what that export hands back: a React
+    /// Router or Remix `loader` / `action`, a SvelteKit endpoint or `load`, a Nitro
+    /// route's default export. Said by how the route is registered (by the file and
+    /// its export: no call hands it a response to write to), never by a name.
+    /// TypeScript linking, the listed reading only; mining never proposes it.
+    pub const ANSWERS_BY_RETURN: &str = "answers_by_return";
+    /// What starts the control of a body that leaves, for every request that
+    /// reaches it, where a header the request sent differs from a value read from
+    /// the environment (`if (request.headers.get("Authorization") !== "Bearer " +
+    /// process.env.TOKEN) return redirect(...)`, or through a `const` bound to the
+    /// comparison): `refuses_secret:<header>`. The caller is one that holds a
+    /// shared secret, which identifies no user. TypeScript lowering, the listed
+    /// reading only; mining never proposes it.
+    pub const REFUSES_SECRET: &str = "refuses_secret:";
+    /// A function whose one parameter is taken apart into keys, of which those
+    /// that carry request input (`input`, `body`, ...) are bound to names nothing
+    /// reads and the others carry none (`async ({ ctx, input }) => handler({ ctx
+    /// })`), with no input read anywhere else in its body: it takes no input,
+    /// although [`READS_INPUT`] says the key was named. TypeScript lowering, the
+    /// listed reading only; mining never proposes it.
+    pub const INPUT_UNREAD: &str = "input_unread";
+    /// What starts the control of a body that hands what the request sent to a
+    /// call that is not a built-in's: `input_handed:<callee>`, canonical. Whether
+    /// the callee checks it is for a reader to say. TypeScript lowering, the
+    /// listed reading only; mining never proposes it.
+    pub const INPUT_HANDED: &str = "input_handed:";
     /// What starts the control of a body that hands a call what the request sent
     /// and, in another argument (or another property of an object written in
     /// place, or what a function written in place hands back), a value read off a

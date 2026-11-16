@@ -24,6 +24,12 @@ use super::{Assignment, Concern, Cx, UnitRef, UnknownReason, VariantSource};
 pub struct Api;
 
 /// Adapters whose framework turns a handler's return value into the response.
+///
+/// [NAME LIST, fallback only] Kept for the adapters registered by a call or a
+/// decorator, whose lowering records no fact that the framework sends the
+/// return value. A route of a file-convention router is decided from its facts
+/// instead ([`answers_by_return`]); nothing may be added here: an adapter whose
+/// lowering can say it reads by that fact.
 pub const RETURN_VALUE_ADAPTERS: &[&str] = &[
     "fastapi", "nestjs", "trpc", "flask", "ninja", "litestar", "graphql", "drf", "fastify",
     "elysia",
@@ -66,6 +72,9 @@ impl Concern for Api {
             Some(b) => b,
             None => match helper(cx, &bodies, 0).or_else(|| wrapper(cx, s)) {
                 Some(h) => h,
+                // The handler hands back a value and the router answers with what
+                // its handlers return: read from the facts, not the adapter's name.
+                None if answers_by_return(s) => "return_value".to_string(),
                 None if RETURN_VALUE_ADAPTERS.contains(&entry.adapter.as_str()) => {
                     "return_value".to_string()
                 }
@@ -140,6 +149,16 @@ fn annotated_model(cx: &Cx<'_>, adapter: &str, s: &drift_core::Symbol) -> bool {
         && !ancestors
             .iter()
             .any(|a| response(a) || a.starts_with("unresolved:"))
+}
+
+/// The handler returns a value that is no function, and is a route of a router
+/// that answers a request with what its handler returns
+/// ([`drift_core::controls::ANSWERS_BY_RETURN`], said with
+/// [`drift_core::controls::RETURNS_VALUE`] by the listed reading). A handler that
+/// returns nothing, or returns nowhere, sends nothing Drift read: still unknown.
+fn answers_by_return(s: &drift_core::Symbol) -> bool {
+    let has = |c: &str| s.controls.iter().any(|x| x == c);
+    has(drift_core::controls::ANSWERS_BY_RETURN) && has(drift_core::controls::RETURNS_VALUE)
 }
 
 /// The builder of the returned or set responses: the most used (then by name), or
@@ -261,6 +280,22 @@ mod tests {
             key(&of(&all, "app/api/open/route.ts", "GET")),
             "builder:pkg:next#NextResponse.json"
         );
+    }
+
+    /// S15a: a file-router handler that hands back a value reads
+    /// `builder:return_value` from its facts; one that returns nothing it was
+    /// seen to return stays unknown.
+    #[test]
+    fn answers_by_return_from_facts() {
+        let mut s = drift_core::Symbol::default();
+        assert!(!answers_by_return(&s));
+        s.controls
+            .push(drift_core::controls::ANSWERS_BY_RETURN.to_string());
+        // Routed so, but no value returned: nothing read.
+        assert!(!answers_by_return(&s));
+        s.controls
+            .push(drift_core::controls::RETURNS_VALUE.to_string());
+        assert!(answers_by_return(&s));
     }
 
     #[test]
