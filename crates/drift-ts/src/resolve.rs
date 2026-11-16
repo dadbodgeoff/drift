@@ -862,10 +862,22 @@ pub(crate) fn mount_specs(f: &LoweredFile) -> BTreeSet<&str> {
                 .filter_map(|g| g.guard.as_ref()),
         )
         .chain(&f.raw.node_listener_refs)
+        .chain(f.raw.trpc.routers.iter().flat_map(|r| {
+            r.entries.iter().filter_map(|e| match e {
+                crate::lower::trpc_paths::RawRouterEntry::Ref { target, .. } => Some(target),
+                _ => None,
+            })
+        }))
         .filter_map(|r| match &r.base {
             RawBase::Import { spec, .. } => Some(spec.as_str()),
             _ => None,
         })
+        .chain(f.raw.trpc.routers.iter().flat_map(|r| {
+            r.entries.iter().filter_map(|e| match e {
+                crate::lower::trpc_paths::RawRouterEntry::Lazy { spec, .. } => Some(spec.as_str()),
+                _ => None,
+            })
+        }))
         .collect()
 }
 
@@ -1017,6 +1029,9 @@ pub struct Linker<'r> {
     composed: BTreeMap<String, (Vec<String>, Vec<String>)>,
     /// tRPC instances and the procedure builders proven to come from one.
     trpc: TrpcOrigins,
+    /// The tRPC routers of the linked files and what mounts each: the dotted path
+    /// of each procedure, for the listed reading ([`crate::lower::trpc_paths`]).
+    trpc_paths: crate::lower::trpc_paths::TrpcTree,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
     /// Package directory -> what its files say of the conventions the listed
@@ -1388,6 +1403,7 @@ impl<'r> Linker<'r> {
                 .collect(),
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
+            trpc_paths: Default::default(),
             next_packages: Mutex::new(BTreeMap::new()),
             next_listing: Mutex::new(BTreeMap::new()),
             file_routers: Mutex::new(BTreeMap::new()),
@@ -1442,6 +1458,7 @@ impl<'r> Linker<'r> {
         linker.mount_parents = linker.mounts(files);
         linker.handed = linker.handed_calls(files);
         linker.trpc = linker.trpc_origins(files);
+        linker.trpc_paths = linker.trpc_tree(files);
         let composed = files
             .iter()
             .flat_map(|f| {
@@ -1993,6 +2010,29 @@ impl<'r> Linker<'r> {
             }
         }
         origins
+    }
+
+    /// The tRPC routers of `files` and what mounts each. A lazy router
+    /// (`lazy(() => import("./x"))`) is the one export of the module it loads.
+    fn trpc_tree(&self, files: &[LoweredFile]) -> crate::lower::trpc_paths::TrpcTree {
+        let mut memo = crate::PackageMemo::new();
+        crate::lower::trpc_paths::TrpcTree::of(
+            files,
+            |rel, r| self.canon(rel, r),
+            |rel, spec| {
+                let module = self.specs.get(rel)?.get(spec)?;
+                let exports = self.modules.get(module)?;
+                match (
+                    exports.named.keys().next(),
+                    exports.named.len(),
+                    exports.all.is_empty(),
+                ) {
+                    (Some(name), 1, true) => Some(self.origin(module, name)),
+                    _ => None,
+                }
+            },
+            |f| crate::package_of(&self.resolver.root, &f.abs_path, &mut memo),
+        )
     }
 
     /// The modules a proof of the builders of `rel`'s tRPC procedure candidates
@@ -4230,8 +4270,18 @@ impl<'r> Linker<'r> {
                 (s.name.as_str(), s.line, types)
             })
             .collect();
+        // Each tRPC procedure at the dotted paths it is served at: the listed reading
+        // only, as the measured build listed it by its key ([`TrpcTree::listed`]).
+        let trpc_routes = self.trpc_paths.listed(rel, &facts.entry_points, |symbol| {
+            facts
+                .symbols
+                .iter()
+                .find(|s| s.name == symbol)
+                .map(|s| s.line)
+        });
         if !in_place.is_empty()
             || !listed_next.is_empty()
+            || trpc_routes.is_some()
             || !attrs.is_empty()
             || !listed_controls.is_empty()
             || !flows.is_empty()
@@ -4248,6 +4298,9 @@ impl<'r> Linker<'r> {
             })
         {
             let mut measured = facts.clone();
+            if let Some(routes) = trpc_routes {
+                facts.entry_points = routes;
+            }
             for (name, line, types) in attrs {
                 for s in facts
                     .symbols

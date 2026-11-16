@@ -46,7 +46,7 @@ pub(crate) struct Entry {
     /// vouches for.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     skip: Option<SkipReason>,
-    /// The file mounts routers (`app.use("/x", router)`): other files' route prefixes depend on it.
+    /// The file mounts routers (`app.use("/x", router)`, a tRPC router): other files' route prefixes depend on it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     mounts: bool,
     /// The file has module augmentations (`declare module "x" { interface ... }`):
@@ -218,7 +218,9 @@ pub(crate) fn classify(
                         || !raw.nest_applies.is_empty()
                         || !raw.nest_global_guards.is_empty()
                         || !raw.node_listener_refs.is_empty()
-                        || raw.nest_prefixed,
+                        || raw.nest_prefixed
+                        // A tRPC router's composition sets its procedures' paths.
+                        || !raw.trpc.routers.is_empty(),
                     augments: !raw.types.augments.is_empty(),
                     racy,
                     raw: Some(raw),

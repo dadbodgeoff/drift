@@ -184,7 +184,7 @@ The security baseline. Written only by `drift security --write-baseline`; `drift
 # drift security baseline: what `drift security` found when this was written.
 # `drift check` and `drift security --ratchet` report what is found now and is not here.
 # Written by `drift security --write-baseline`; do not edit by hand.
-# inventory: 2
+# inventory: 3
 # fail: <kinds, separated by commas>
 <kind>	<key>
 ```

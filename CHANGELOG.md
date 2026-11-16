@@ -326,6 +326,17 @@ main branch.
   command that mines (`init`, `census`, `setup`, `practices`, `security`) died
   of a stack overflow with no output. The Windows CI job runs every test binary
   (`--no-fail-fast`); it still never fails the run.
+- **tRPC procedures are listed at their dotted path.** `drift security` and the
+  practice map name a procedure by the keys of the routers it is mounted through
+  (`viewer.me.get`, once per path for a router mounted twice), across files and
+  through `mergeRouters`, spreads, named procedures and `lazy` routers; `?` marks
+  what is not read (`admin.?.tick` for a computed key, `?.ping` for a router
+  nothing mounts). Mining still reads the key alone. `drift practices promote
+  --in '<package>:/user.'` holds the procedures under `user.`. The security
+  baseline is now `# inventory: 3`: against an older one, a procedure's finding
+  re-keyed by its path in a file that did not change is new in this Drift and
+  fails nothing until the baseline is written again.
+
 - **Breaking: `drift init` no longer baselines violations of a convention the
   policy already had.** Before, re-running `drift init` baselined the current
   violations of every convention that had no line left in `drift.lock`, so a

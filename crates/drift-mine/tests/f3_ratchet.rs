@@ -39,23 +39,24 @@ const OLDER: &str = "# drift security baseline: what `drift security` found when
 
 #[test]
 fn every_kind_a_reading_widened_is_found_since_the_widening() {
+    for kind in ["risky", "whole-row", "workflow"] {
+        assert_eq!(found_since(kind, "x"), 2, "{kind}");
+    }
+    // Widened again by 3: a tRPC procedure keyed by its dotted path.
     for kind in [
         "guard-gap",
         "no-authorization",
         "no-guard",
-        "risky",
         "scope-gap",
         "unguarded-reaching",
-        "whole-row",
-        "workflow",
     ] {
-        assert_eq!(found_since(kind, "x"), 2, "{kind}");
+        assert_eq!(found_since(kind, "x"), 3, "{kind}");
     }
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");
     }
-    const { assert!(INVENTORY_VERSION >= 2) };
+    const { assert!(INVENTORY_VERSION >= 3) };
 }
 
 #[test]

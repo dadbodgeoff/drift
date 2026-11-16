@@ -654,7 +654,7 @@ export type Rule =
       any_enforcing?: boolean;
       /** The one file the practice holds in (repo-relative), when its place is a file rather than its role's directory (`promote::Place::file`). Absent for a directory (newer drift, policy version 3). */
       in_file?: string;
-      /** The literal route prefix it holds under, in its role's package, each parameter as `[*]` (`/api/workspaces/[*]`, `promote::Place::route`). Absent for a directory (newer drift, policy version 3). */
+      /** The literal route prefix it holds under, in its role's package, each parameter as `[*]` (`/api/workspaces/[*]`, `promote::Place::route`), or the keys of a tRPC procedure path ending in `.` (`viewer.me.`, newer drift). Absent for a directory (newer drift, policy version 3). */
       under_route?: string;
     };
 
@@ -2155,7 +2155,7 @@ export interface PromotePlace {
   dir: string;
   /** One file (repo-relative): a unit is in the place when its file is exactly this one (newer drift; absent otherwise). */
   file?: string;
-  /** A literal route prefix, each parameter as `[*]` (`/api/workspaces/[*]/projects`); shown as `<package>:<route>` (newer drift; absent otherwise). */
+  /** A literal route prefix, each parameter as `[*]` (`/api/workspaces/[*]/projects`), shown as `<package>:<route>`; or the keys of a tRPC procedure path ending in `.` (`viewer.me.`), shown as `<package>:/<keys>.` (newer drift; absent otherwise). */
   route?: string;
 }
 

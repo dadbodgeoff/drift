@@ -288,6 +288,8 @@ Two narrower places can be named too:
 - **One file.** A path that is the file of a unit is that one file (`in_file` in `.drift/conventions.yaml`): "every route in this router signs the caller in this way".
 - **A route prefix.** A package, `:` and a literal route prefix (`apps/api:/api/v2`, `.:/api/workspaces/<slug>` for the root package; `under_route` in the policy) is the routes of that package under the prefix, each parameter matching any parameter and written `[*]`. A unit is in it only when Drift read its route to the end as a literal; one whose route Drift did not read so is never in it and is counted as not read wherever it could be under the prefix (the preview says how many, and `candidate.unread_routes` in `--json`).
 
+- **A tRPC procedure prefix.** A package, `:/` and router keys ending in `.` (`packages/trpc:/viewer.me.`, `.:/user.`; `under_route: user.` in the policy) is the tRPC procedures of that package whose dotted path starts with those keys, compared key by key (`usersettings.list` is not under `user.`). A procedure whose path Drift did not read to the end (`?.ping`, a router nothing mounts) is counted as not read there. HTTP routes are never in a procedure prefix, nor procedures in an HTTP one.
+
 Output names a route place `<package>:<prefix>`, and a command Drift prints puts a file or route place in single quotes when it holds a character a shell reads. A file holding a file or route place is written as `version: 3` (see above). Two places overlap when one holds the other: a directory and a file in it, the same file, one route prefix and a longer one, or a route place and its whole package.
 
 ### More than one accepted way: `--with`

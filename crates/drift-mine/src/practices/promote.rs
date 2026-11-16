@@ -98,7 +98,9 @@ pub struct Place {
     /// [`drift_core::practice::ANY_SEGMENT`] (`/api/workspaces/[*]/projects/[*]`): a
     /// unit is in the place when a route Drift read to the end as a literal has these
     /// first segments. A unit whose route was not read so is never in it, and is
-    /// counted as not read wherever it could be under the prefix.
+    /// counted as not read wherever it could be under the prefix. Or the keys of a
+    /// tRPC procedure path, ending in `.` (`viewer.me.`): a procedure is in the
+    /// place when its dotted path starts with those keys ([`procedure_segments`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub route: Option<String>,
 }
@@ -112,7 +114,8 @@ enum Kind {
 }
 
 /// Where a place is in a `--in` argument: a route prefix follows its package and this
-/// separator (`apps/api:/api/v2`, `.:/api/workspaces/<slug>` for the root package).
+/// separator (`apps/api:/api/v2`, `.:/api/workspaces/<slug>` for the root package), and
+/// so do the keys of a tRPC procedure path, ending in `.` (`packages/trpc:/viewer.me.`).
 pub const ROUTE_SEPARATOR: &str = ":/";
 
 /// The segments of a route as the facts record it that Drift read as literals, each
@@ -160,6 +163,54 @@ fn route_segments(route: Option<&str>) -> (Vec<String>, bool) {
     (out, true)
 }
 
+/// The kind of entry point a tRPC procedure is: its route is its dotted path
+/// (`viewer.me.get`), read by [`procedure_segments`].
+const RPC: &str = "rpc";
+
+/// What ends a route place's prefix when it is a procedure path's (`viewer.me.`),
+/// where an HTTP prefix starts with `/`: the procedures whose path starts with these
+/// keys.
+const PROCEDURE_END: char = '.';
+
+/// The keys of a procedure's dotted path that Drift read, and whether it read them
+/// all: reading stops at a key it could not read (`?`, a router mounted where Drift
+/// does not read it), as [`route_segments`] stops at a segment.
+fn procedure_segments(path: &str) -> (Vec<String>, bool) {
+    let mut out = Vec::new();
+    for key in path.trim().split(PROCEDURE_END) {
+        let literal = !key.is_empty()
+            && key
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'$'));
+        if !literal {
+            return (out, false);
+        }
+        out.push(key.to_string());
+    }
+    (out, true)
+}
+
+/// Whether a stored prefix is a procedure path's ([`PROCEDURE_END`]).
+fn is_procedure_prefix(prefix: &str) -> bool {
+    prefix.ends_with(PROCEDURE_END)
+}
+
+/// The segments of a unit's route for route places, whether they are all of it, and
+/// whether they are a procedure path's: an HTTP route as [`route_segments`] reads
+/// it, a tRPC procedure's dotted path as [`procedure_segments`] does.
+fn unit_segments(kind: Option<&str>, route: Option<&str>) -> (Vec<String>, bool, bool) {
+    match route {
+        Some(r) if kind == Some(RPC) && !r.trim_start().starts_with('/') => {
+            let (segs, whole) = procedure_segments(r);
+            (segs, whole, true)
+        }
+        _ => {
+            let (segs, whole) = route_segments(route);
+            (segs, whole, false)
+        }
+    }
+}
+
 /// The entry-point kinds of `c` (as the facts name them, [`UnitRow::kind`]) that are
 /// served at a path: those of which Drift read at least one unit's route as a path (it
 /// starts with `/`). Read from the units, never from a list of kinds: a kind none of
@@ -193,6 +244,12 @@ fn routed_kinds(c: &ConcernReport) -> BTreeSet<&str> {
 /// practice is reported stale (it fires on nothing).
 pub fn canonical_route(prefix: &str) -> Option<String> {
     let text = prefix.trim();
+    // A procedure path's prefix (`viewer.me.`): its keys, then the end mark.
+    if is_procedure_prefix(text) {
+        let keys = text.trim_start_matches('/').trim_end_matches(PROCEDURE_END);
+        let (segs, whole) = procedure_segments(keys);
+        return (whole && !segs.is_empty()).then(|| format!("{}{PROCEDURE_END}", segs.join(".")));
+    }
     let text = if text.starts_with('/') {
         text.to_string()
     } else {
@@ -204,7 +261,12 @@ pub fn canonical_route(prefix: &str) -> Option<String> {
 
 /// The segments of a stored route prefix.
 fn prefix_segments(prefix: &str) -> Vec<&str> {
-    prefix.split('/').filter(|s| !s.is_empty()).collect()
+    let sep = if is_procedure_prefix(prefix) {
+        PROCEDURE_END
+    } else {
+        '/'
+    };
+    prefix.split(sep).filter(|s| !s.is_empty()).collect()
 }
 
 /// Whether one list of segments starts with the other, either way: a route read up
@@ -520,6 +582,15 @@ impl Place {
         if !package.is_empty() && !packages(report).contains(package.as_str()) {
             return None;
         }
+        // `viewer.me.`: the procedures under those keys.
+        if is_procedure_prefix(prefix.trim()) {
+            let route = canonical_route(prefix)?;
+            return Some(Place {
+                package,
+                route: Some(route),
+                ..Place::default()
+            });
+        }
         let text = format!("/{prefix}");
         let (segs, whole) = route_segments(Some(text.as_str()));
         if !whole || segs.is_empty() {
@@ -548,6 +619,17 @@ impl Place {
             dir: String::new(),
             file: None,
             route: Some(format!("/{}", segs.join("/"))),
+        }
+    }
+
+    /// The place of the tRPC procedures of `package` whose path starts with the keys
+    /// `segs` (`viewer.me.`).
+    fn procedure_in(package: &str, segs: &[String]) -> Place {
+        Place {
+            package: package.to_string(),
+            dir: String::new(),
+            file: None,
+            route: Some(format!("{}{PROCEDURE_END}", segs.join("."))),
         }
     }
 
@@ -604,6 +686,10 @@ impl Place {
             } else {
                 self.package.as_str()
             };
+            // A procedure path's prefix has no `/` of its own to follow the package.
+            if is_procedure_prefix(r) {
+                return format!("{package}{ROUTE_SEPARATOR}{r}");
+            }
             return format!("{package}:{r}");
         }
         if let Some(f) = &self.file {
@@ -665,6 +751,12 @@ impl Place {
             }
             (Kind::Dir, Kind::Route) => self.dir.is_empty(),
             (Kind::File, Kind::File) => self.file == other.file,
+            (Kind::Route, Kind::Route)
+                if is_procedure_prefix(self.route.as_deref().unwrap_or(""))
+                    != is_procedure_prefix(other.route.as_deref().unwrap_or("")) =>
+            {
+                false
+            }
             (Kind::Route, Kind::Route) => {
                 let (a, b) = (
                     prefix_segments(self.route.as_deref().unwrap_or("")),
@@ -680,11 +772,16 @@ impl Place {
     /// `/api/x` of apps/api" for a route place.
     fn words(&self) -> String {
         if let Some(r) = &self.route {
+            let what = if is_procedure_prefix(r) {
+                "procedures"
+            } else {
+                "routes"
+            };
             return if self.package.is_empty() {
-                format!("the routes under {}", sanitize(r, 160))
+                format!("the {what} under {}", sanitize(r, 160))
             } else {
                 format!(
-                    "the routes under {} of {}",
+                    "the {what} under {} of {}",
                     sanitize(r, 160),
                     sanitize(&self.package, 160)
                 )
@@ -1214,7 +1311,7 @@ impl<'a> Reading<'a> {
         let mut places: BTreeMap<Place, Vec<usize>> = BTreeMap::new();
         let mut jobs: BTreeMap<Place, BTreeSet<(&'a str, &'a str)>> = BTreeMap::new();
         // Rows whose route was not read to the end, with what was read of it.
-        let mut pending: Vec<(usize, Vec<String>)> = Vec::new();
+        let mut pending: Vec<(usize, Vec<String>, bool)> = Vec::new();
         let entries = c.unit == "entry_point";
         let routed = routed_kinds(c);
         for (i, u) in c.units.iter().enumerate() {
@@ -1223,16 +1320,26 @@ impl<'a> Reading<'a> {
             // A background job is served at no route, and neither is an entry point of a
             // kind Drift read no route for (a server action, a resolver, a procedure):
             // it is in no route place, neither a member nor unread there.
+            // A tRPC procedure is in the places of its dotted path's keys.
+            let procedure = u.kind.as_deref() == Some(RPC)
+                && u.route
+                    .as_deref()
+                    .is_some_and(|r| !r.trim_start().starts_with('/'));
             if entries
                 && counted[i]
                 && u.kind.as_deref() != Some(JOB)
-                && u.kind.as_deref().is_none_or(|k| routed.contains(k))
+                && (procedure || u.kind.as_deref().is_none_or(|k| routed.contains(k)))
             {
-                let (segs, whole) = route_segments(u.route.as_deref());
-                if whole {
-                    of.extend((1..=segs.len()).map(|k| Place::route_in(&u.package, &segs[..k])));
+                let (segs, whole, procedure) = unit_segments(u.kind.as_deref(), u.route.as_deref());
+                let place = if procedure {
+                    Place::procedure_in
                 } else {
-                    pending.push((i, segs));
+                    Place::route_in
+                };
+                if whole {
+                    of.extend((1..=segs.len()).map(|k| place(&u.package, &segs[..k])));
+                } else {
+                    pending.push((i, segs, procedure));
                 }
             }
             for p in of {
@@ -1251,10 +1358,11 @@ impl<'a> Reading<'a> {
                 .keys()
                 .filter_map(|p| p.route.as_deref().map(|r| (p, prefix_segments(r))))
                 .collect();
-            for (i, read) in &pending {
+            for (i, read, procedure) in &pending {
                 let package = c.units[*i].package.as_str();
                 for (p, segs) in &routes {
-                    if p.package == package && compatible(read, segs) {
+                    let same = is_procedure_prefix(p.route.as_deref().unwrap_or("")) == *procedure;
+                    if p.package == package && same && compatible(read, segs) {
                         unread.entry((*p).clone()).or_default().push(*i);
                     }
                 }
@@ -2503,12 +2611,16 @@ pub fn covers_unit(c: &Convention, f: &FileFacts, symbol: &str) -> bool {
         return true;
     };
     let want = prefix_segments(&prefix);
+    let procedures = is_procedure_prefix(&prefix);
     f.listed_entry_points()
         .iter()
         .filter(|e| e.symbol == symbol && e.kind != JOB)
         .any(|e| {
-            let (segs, whole) = route_segments(e.route.as_deref());
-            whole && segs.len() >= want.len() && compatible(&segs[..], &want[..])
+            let (segs, whole, procedure) = unit_segments(Some(&e.kind), e.route.as_deref());
+            whole
+                && procedure == procedures
+                && segs.len() >= want.len()
+                && compatible(&segs[..], &want[..])
         })
 }
 
