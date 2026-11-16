@@ -355,10 +355,7 @@ pub fn choose(
 
 /// Whether one place holds the other (one package, one directory at or below the other).
 fn places_overlap(a: &Place, b: &Place) -> bool {
-    fn below(x: &str, y: &str) -> bool {
-        x.is_empty() || x == y || y.starts_with(&format!("{x}/"))
-    }
-    a.package == b.package && (below(&a.dir, &b.dir) || below(&b.dir, &a.dir))
+    a.overlaps(b)
 }
 
 /// Whether a role's directory (`app/api/[*]`, [`PACKAGE_WIDE`], `.` for the package's
@@ -1063,6 +1060,7 @@ mod tests {
             place: Place {
                 package: String::new(),
                 dir: dir.to_string(),
+                ..Place::default()
             },
             ways: vec![Way {
                 id: format!("P-{dir}"),
