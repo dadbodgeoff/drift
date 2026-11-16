@@ -119,6 +119,31 @@ How accurate it is, in and out of sample: [ACCURACY.md](ACCURACY.md).
   `drift_investigate_record`, which write. The new ones are
   `drift_investigate_items` (reads) and `drift_investigate_record` (writes).
 
+### New: promote a practice to a convention
+
+- `drift practices promote <P-id> [--in <path>]` makes one practice of the
+  practice map the rule for new code in a place (a package or a directory of
+  one). It writes one accepted convention of the new rule type `practice`, in
+  advise mode and shown to agents (`agents: show`, `promoted_from_practice`),
+  and one `drift.lock` line per unit that differs today, so only new code is
+  reported. `--dry-run` prints the preview and writes nothing; `--list` lists
+  what qualifies; `--json` gives the result as JSON.
+- The rule is checked by the practice map's classifier, by variant key, not by
+  name. A unit the map cannot tell is never reported; `drift check` counts it as
+  not checked. A promoted practice none of whose ways is used any more is
+  reported as stale and fires on nothing.
+- It qualifies from counts only: at least 8 readable units of the concern in the
+  place, the accepted ways at least 80% of them, at most 20% of the place
+  unknown. `--with` adds a further way (a way that marks a route open on purpose
+  is never added unless a person names it); `--force` promotes below 80%, in
+  advise mode only.
+- `--block` is allowed only when, of the 15 units most recently added to the
+  place (by the commit that first added their file) that the map can tell, at
+  least 80% follow it as they stand. It needs git history. A Python place
+  advises only.
+- `drift review` offers the practices that qualify after the proposals (`y`,
+  `b`, `n` remembered, `s`, `q`), and the Studio has the same step.
+
 ### Behaviour changes: what `none`, `internal`, `identified` and setup say
 
 - **`none` and `internal` are worded as what Drift found in what it read.**
@@ -178,6 +203,10 @@ How accurate it is, in and out of sample: [ACCURACY.md](ACCURACY.md).
 ## Upgrading from an earlier build
 
 - Re-run `drift init`: it keeps every decision and id and adds new proposals.
+- **Upgrade every machine and CI before promoting a practice.** A Drift from
+  before promotion cannot read a `.drift/conventions.yaml` that holds a
+  `practice` rule: it stops with a parse error naming the rule type. The file's
+  `version` does not change.
 - **Agents stop seeing default-tier proposals you have not accepted.** Accept
   the ones you want agents told about (`drift review`). Accepted conventions
   are unaffected.

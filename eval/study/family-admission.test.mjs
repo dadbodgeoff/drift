@@ -68,7 +68,7 @@ test("rule kinds map to the study's families, and only to families the Studio na
   for (const [n, fs] of Object.entries(owner)) assert.equal(fs.size, 1, `${n} is in ${[...fs]}`);
   for (const k of RULE_KINDS) if (committed.rule_kinds[k]) assert.ok(STUDIO_FAMILIES[committed.rule_kinds[k]].includes(RULE_KIND_FAMILY[k]), k);
   // Kinds with no study family are never admitted.
-  for (const k of ["throws", "directive", "registered_in", "mirrors_keys"]) assert.equal(committed.rule_kinds[k], null, k);
+  for (const k of ["throws", "directive", "registered_in", "mirrors_keys", "practice"]) assert.equal(committed.rule_kinds[k], null, k);
 });
 
 test("counts are each part's own-language suggestion-tier cards", () => {

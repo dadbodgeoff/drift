@@ -23,7 +23,7 @@ The product terms Drift uses in its output, its files and this wiki, each define
 | **Check (found, not proven)** | A guard or authorization check Drift found in the code but could not prove runs on every request. The route stays `unknown` with the reason `check_not_proven`, and the line says what was found and why it is not proven. Never worded as if the route does it. |
 | **Client leak** | Client-side code (a file marked `use client`, for example) that reaches server-only code or a secret. Listed by `drift security`. |
 | **Concern** | One cross-cutting matter the practice map describes: `authn` (authentication), `authz` (authorization), `errors`, `logging`, `api`, `validation`, `config`, `data_access`, `testing`. |
-| **Convention** | A rule the code already follows, mined from it: members of a role (`role`) do something (`rule`), with evidence. It is a proposal until a person accepts it. |
+| **Convention** | A rule the code already follows: members of a role (`role`) do something (`rule`), with evidence. Either mined by Drift, and a proposal until a person accepts it, or promoted by a person from the practice map, and accepted from the start. |
 | **Coverage (practice map)** | `(known + none) / total` units of a concern. Unknown units count against it and are never hidden. |
 | **Default tier** | Conventions of the kinds that may block: call wrappers and layering on in-repo targets, in TypeScript/JavaScript, in roles of at least 15 members. Reaches agents only once a person accepts it. See "Tier". |
 | **Departure (practice)** | A concern in which a file's entry points do something other than what at least 80% of the entry points around them do, reported as a fact and never as a violation. |
@@ -69,10 +69,12 @@ The product terms Drift uses in its output, its files and this wiki, each define
 | **Outlier** | A member of a role that does not follow a rule. |
 | **Package** | A directory with its own manifest in a workspace (or one set with `packages:`). Conventions, checks and hooks resolve a file's package. |
 | **Plugin** | The Claude Code plugin (`drift@drift`) that adds Drift's hooks, a skill and the MCP server. |
-| **Practice** | What the codebase does for a concern, as a variant with a share. Facts, not rules. |
-| **Practice map** | `drift practices`: the practices of the whole codebase, concern by concern. Read-only; nothing in it is enforced. |
+| **Practice** | What the codebase does for a concern, as a variant with a share. A fact about the code, which nothing checks, until a person promotes it. |
+| **Place** | Where a promoted practice holds: a package, or one directory of a package (`--in`). A unit is in the place when its file is in that directory or below it. |
+| **Practice map** | `drift practices`: the practices of the whole codebase, concern by concern. Read-only; nothing in it is enforced unless a person promotes a practice. |
 | **Preview concern** | A concern (`logging`, `config`, `data_access`, `testing`) shown in a recipe only where at least 60% of the package does the same. |
-| **Promote (withheld card)** | A person's answer to a withheld card that writes it to `.drift/conventions.yaml` as accepted (`promoted_from_hidden: true`). A practice cannot yet be promoted to a convention. |
+| **Promote (practice)** | `drift practices promote`: a person makes a practice the rule for new code in one place. It writes an accepted convention of rule type `practice` (`promoted_from_practice: P-…`) and records today's exceptions in `drift.lock`. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention). |
+| **Promote (withheld card)** | A person's answer to a withheld card that writes it to `.drift/conventions.yaml` as accepted (`promoted_from_hidden: true`). |
 | **Proposal** | A mined convention not yet decided (`status: proposed`); it only ever advises. Also, in `drift setup` and `drift investigate`, an agent's answer that would make Drift say more (a guard, a check, "internal"): it is recorded under `setup.proposed` in `.drift/config.yaml` and changes nothing until a person confirms it in `drift setup --review`. |
 | **Proven** | Read where it is and shown to run on every request. The standard for `known`. |
 | **Recipe** | What new code of one kind of entry point does in a package, concern by concern, each with a file to copy. Given to agents before a new entry-point file is written. |
@@ -80,6 +82,7 @@ The product terms Drift uses in its output, its files and this wiki, each define
 | **Review log** | An opt-in local record of review decisions and cards shown, under `.drift/review-log/`. Never sent anywhere. |
 | **Role** | A set of similar members of the repository: for example "HTTP handlers in `app/api/**` route files". A convention is a rule about a role. |
 | **Role selector** | The frozen description of which members a convention is about (`package`, `dir`, `file`, `entry`, `kind`, ...). Versioned by `selector_version`. |
+| **Replay** | The evidence block mode needs for a promoted practice: of the 15 units most recently added to its place (by the commit that first added their file) that the map can tell, how many follow it as they stand now. At least 80% lets it block. |
 | **Rule** | What a convention says its role's members do: be wrapped by a call, avoid an import, pass a key, throw a class, and so on. The kinds are listed in [Configuration Reference](Configuration-Reference). |
 | **Rule family** | A group of rule kinds with a shared track record (for example `wrapper`, `naming`, `control`, `layering`), used by the show policy and by admission. |
 | **SARIF** | The format of `drift check --format sarif`, for GitHub code scanning and IDEs. |
@@ -89,6 +92,7 @@ The product terms Drift uses in its output, its files and this wiki, each define
 | **Setup question** | One of the few questions only a person can answer, asked by `drift setup`: is a compose file a test stack, which Terraform target group serves a service, is a helper your check. |
 | **Show policy** | A frozen table that decides which suggestions Drift shows at all (at most one outlier, and a family admitted for the language). A suggestion it hides is a withheld card. |
 | **Sink (risky operation)** | A risky operation the inventory lists: raw SQL, a shell command, raw HTML, a computed redirect, an unsafe loader, `eval`. |
+| **Stale (promoted practice)** | A promoted practice none of whose ways any unit of its place uses any more (the guard was renamed or replaced). `drift check` says so, and it fires on nothing. |
 | **Strict** | `drift check --strict`: fail on any new violation, advise mode included, and on files that could not be checked. |
 | **Studio** | Drift Studio, the desktop app in `apps/studio` that reads Drift's JSON and files. |
 | **Suggestion** | A convention outside the default tier. Advice only; blocking one needs `--force`. Not shown to agents unless its family is admitted or a person chose to show it. |

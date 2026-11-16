@@ -117,6 +117,10 @@ function dispatch(c: Channel, args: unknown[], requestId: string | undefined): u
       return s.answer(args[0] as never, args[1] as string, args[2] as string, args[3] as string[], args[4] as string[]);
     case "init":
       return s.init(args[0] as never);
+    case "promotePreview":
+      return s.promotePreview(args[0] as never, args[1] as never, requestId);
+    case "promote":
+      return s.promote(args[0] as never, args[1] as never);
     case "readSource":
       return s.readSource(args[0] as never, args[1] as string);
     case "listSessions":

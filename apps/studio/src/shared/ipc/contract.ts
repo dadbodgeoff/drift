@@ -139,9 +139,27 @@ export type Decision = z.infer<typeof Decision>;
 export const Answer = z.enum(["same", "different", "not-a-convention"]);
 export type Answer = z.infer<typeof Answer>;
 
-/** What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed (`unexempt`), or a block candidate's answer. */
-export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options]);
+/** What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed (`unexempt`), a block candidate's answer, or a practice made a convention (`promote`). */
+export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options, "promote"]);
 export type AuditDecision = z.infer<typeof AuditDecision>;
+
+/** A practice-map variant id (`drift practices --json` `concerns[].variants[].id`): `P-` and 6 hex digits. */
+export const PracticeId = z.string().regex(/^P-[0-9a-f]{6}$/);
+
+/**
+ * A place for `drift practices promote --in`: `.` (the root package) or a directory from the repository root, as
+ * `promotable.place` names it. No `..`, `.` or empty segment, no leading `/` or `-` (it is passed as its own argument),
+ * no backslash or control character (validated again in the main process).
+ */
+export const PromotePlacePath = z
+  .string()
+  .min(1)
+  .max(1024)
+  .refine((p) => p === "." || (!p.startsWith("/") && !p.startsWith("-") && !p.includes("\\") && !/\p{Cc}/u.test(p) && !p.split("/").some((s) => s === ".." || s === "." || s === "")), "`.` or a repo-relative directory");
+
+/** What a person asks to promote: a variant, the place, the other ways accepted with it (`--with`), and block mode (`--block`). */
+export const PromoteRequest = z.object({ id: PracticeId, place: PromotePlacePath, with: z.array(PracticeId).max(50), block: z.boolean() });
+export type PromoteRequest = z.infer<typeof PromoteRequest>;
 
 /** A member as conventions.yaml `exceptions` name it: `path#symbol` with a repo-relative path (validated again in the main process). */
 export const MemberKey = z
@@ -195,6 +213,37 @@ export const QuestionsEnvelope = z
     ),
   })
   .passthrough();
+
+const PromoteWayEnvelope = z.object({ id: z.string(), key: z.string(), label: z.string(), members: z.number() }).passthrough();
+const PromoteExampleEnvelope = z.object({ path: z.string(), symbol: z.string(), line: z.number() }).passthrough();
+
+/** `drift practices promote --json` on success (exit 0): checked at the fields the dialog reads. */
+export const PromoteResultEnvelope = z
+  .object({
+    written: z.boolean(),
+    place: z.string(),
+    convention: z.object({ id: convId, summary: z.string() }).passthrough(),
+    candidate: z
+      .object({
+        concern: z.string(),
+        ways: z.array(PromoteWayEnvelope),
+        other_ways: z.array(PromoteWayEnvelope),
+        follows: z.number(),
+        exceptions: z.array(PromoteExampleEnvelope),
+        unknown: z.number(),
+        total: z.number(),
+      })
+      .passthrough(),
+    baselined: z.number(),
+    replay: z.object({ recent: z.number(), followed: z.number() }).passthrough().nullable(),
+    preview: z.string(),
+  })
+  .passthrough();
+
+/** `drift practices promote --json` when it refuses (exit 2, nothing written): the refusal and its sentence. */
+export const PromoteRefusedEnvelope = z.object({ refused: z.object({ code: z.string() }).passthrough(), message: z.string() }).passthrough();
+
+export const PromoteEnvelope = z.union([PromoteRefusedEnvelope, PromoteResultEnvelope]);
 
 /** One decision made through the Studio (Drift itself keeps no history). */
 export const AuditEntry = z.object({
@@ -273,6 +322,10 @@ export const channels = {
   /** `drift review --answer=<id>=<answer> [--set-apart=<paths>] [--confirm-entry=<path#symbol,...>]`: an explicit write. */
   answer: { req: z.tuple([RepoRef, convId, Answer, z.array(SetApartPath).max(500), z.array(MemberKey).max(500)]), res: AuditEntry },
   init: { req: z.tuple([RepoRef]), res: z.string() },
+  /** `drift practices promote <id> --in <place> [--with <id>]... [--block] --dry-run --json`: what promoting would record, or why it refuses. Writes nothing. */
+  promotePreview: { req: z.tuple([RepoRef, PromoteRequest]), res: PromoteEnvelope },
+  /** The same without `--dry-run`: an explicit write (one accepted convention, and a drift.lock entry per exception). A refusal writes nothing. */
+  promote: { req: z.tuple([RepoRef, PromoteRequest]), res: PromoteEnvelope },
   readSource: { req: z.tuple([RepoRef, relPath]), res: z.string().nullable() },
   listSessions: { req: z.tuple([RepoRef, z.object({ all: z.boolean() })]), res: z.array(SessionSummary) },
   readTranscript: { req: z.tuple([RepoRef, sessionId]), res: z.string() },

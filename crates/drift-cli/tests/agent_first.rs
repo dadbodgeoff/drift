@@ -242,7 +242,9 @@ fn read_only_lookups_are_approved_and_nothing_else_is() {
         assert_eq!(decision(bash(cmd)), "allow", "{cmd}");
     }
     for cmd in [
-        "drift practices promote P-1a2b3c",
+        // Read only what `drift practices promote` would do: asked like any command.
+        "drift practices promote P-1a2b3c --dry-run",
+        "drift practices promote --list",
         "drift card x.ts; rm -rf lib",
         "drift card $(cat x)",
         "drift review --list",
@@ -267,6 +269,9 @@ fn read_only_lookups_are_approved_and_nothing_else_is() {
         "drift card a.ts | drift init",
         "drift findings --branch F-1",
         "drift export claude-settings --write .claude/settings.json",
+        "drift practices promote P-1a2b3c",
+        "drift practices promote P-1a2b3c --in app/api --block",
+        "drift practices --json promote P-1a2b3c",
     ] {
         let out = bash(cmd).unwrap_or_else(|| panic!("{cmd}: no answer"));
         let hso = &out["hookSpecificOutput"];
@@ -346,8 +351,14 @@ fn claude_settings_export_prints_and_merges_the_allow_entries() {
     ] {
         assert!(!allow.contains(&json!(e)), "{e}");
     }
-    // Every command an entry names exists in this build, and nothing is asked of a
-    // command it does not have (`drift practices` has no subcommand).
+    // `Bash(drift practices:*)` covers `drift practices promote`, which writes a
+    // convention: that one form is denied by name, and a deny wins over an allow.
+    assert_eq!(
+        v["permissions"]["deny"],
+        json!(["Bash(drift practices promote:*)"]),
+        "{v}"
+    );
+    // Every command an entry names exists in this build, and nothing is asked.
     assert!(v["permissions"].get("ask").is_none(), "{v}");
     for e in allow.iter().filter_map(|e| e.as_str()) {
         if let Some(cmd) = e
@@ -389,6 +400,10 @@ fn claude_settings_export_prints_and_merges_the_allow_entries() {
             .as_array()
             .unwrap()
             .contains(&json!("Bash(drift card:*)"))
+    );
+    assert_eq!(
+        s["permissions"]["deny"],
+        json!(["Bash(drift practices promote:*)"])
     );
     // Not JSON: nothing is written.
     write(r, ".claude/bad.json", "[1]");

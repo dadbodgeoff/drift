@@ -183,7 +183,20 @@ pub fn card_conventions(
         ),
         None => match project.rules_for_new_file(rel, None, only_accepted) {
             NewFileRules::Matched(convs) => convs,
-            NewFileRules::Grouped(groups) => groups.into_iter().flat_map(|(_, c)| c).collect(),
+            NewFileRules::Grouped(groups) => {
+                // A promoted practice of entry points, for a file of a kind that will
+                // declare them, as the files around it say.
+                let entry_file = Some(crate::agent::new_entry_file(
+                    facts,
+                    project.package_of(rel),
+                    rel,
+                ));
+                groups
+                    .into_iter()
+                    .flat_map(|(_, c)| c)
+                    .filter(|c| crate::agent::kept_for_new_file(c, entry_file))
+                    .collect()
+            }
         },
     };
     drift_mine::tier::order_by_tier(&mut rules, |c| c.tier());
@@ -341,13 +354,24 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                             NewFileRules::Matched(convs) => {
                                 convs.into_iter().map(|c| (None, c)).collect()
                             }
-                            NewFileRules::Grouped(groups) => groups
-                                .into_iter()
-                                .flat_map(|(when, convs)| {
-                                    let when = when.unwrap_or_else(|| "any file".to_string());
-                                    convs.into_iter().map(move |c| (Some(when.clone()), c))
-                                })
-                                .collect(),
+                            NewFileRules::Grouped(groups) => {
+                                // What the file will declare is unknown: a promoted
+                                // practice of entry points only for a file of a kind
+                                // that declares them, as the files around it say.
+                                let entry_file = Some(crate::agent::new_entry_file(
+                                    &facts,
+                                    project.package_of(&rel),
+                                    &rel,
+                                ));
+                                groups
+                                    .into_iter()
+                                    .flat_map(|(when, convs)| {
+                                        let when = when.unwrap_or_else(|| "any file".to_string());
+                                        convs.into_iter().map(move |c| (Some(when.clone()), c))
+                                    })
+                                    .filter(|(_, c)| crate::agent::kept_for_new_file(c, entry_file))
+                                    .collect()
+                            }
                         }
                     }
                 };
@@ -462,7 +486,23 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                     missed.join("; ")
                 );
             }
-            let report = project.check(&facts, only.as_ref());
+            // The practice map kept for these facts, as the hooks and `drift check` read
+            // it: built (or read back) once, for the promoted practices and for the
+            // departures of the files asked about, and only when one of them needs it.
+            let derived = std::cell::OnceCell::new();
+            let map = std::cell::OnceCell::new();
+            let map_of = || {
+                map.get_or_init(|| {
+                    let derived = derived.get_or_init(|| {
+                        crate::derived::Derived::of(
+                            crate::project::cache_dir(&project.root, no_cache),
+                            &facts,
+                        )
+                    });
+                    crate::practices::report_units_kept(&project.root, &facts, derived.as_ref())
+                })
+            };
+            let report = project.check_with_map(&facts, only.as_ref(), map_of);
             let new: Vec<_> = report.new_violations().collect();
             let unsure: Vec<_> = report.unsure().collect();
             let mut out = if new.is_empty() {
@@ -519,19 +559,21 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                 })
                 .collect();
             if !asked.is_empty() {
-                // The map kept for these facts, as the hooks and `drift check` read it.
-                let derived = crate::derived::Derived::of(
-                    crate::project::cache_dir(&project.root, no_cache),
-                    &facts,
-                );
-                let map =
-                    crate::practices::report_units_kept(&project.root, &facts, derived.as_ref());
+                let map = map_of();
+                // A unit listed above as breaking a promoted practice is not said again
+                // as a departure of the same concern.
+                let reported = crate::practices::reported_practice_units(&report, &project.policy);
                 for rel in asked {
+                    let mut found = drift_mine::practices::departures(map, Some(rel.as_str()));
+                    for d in &mut found {
+                        let (concern, path) = (d.concern.clone(), d.path.clone());
+                        d.units.retain(|u| {
+                            !reported.contains(&(concern.clone(), path.clone(), u.symbol.clone()))
+                        });
+                    }
+                    found.retain(|d| !d.units.is_empty());
                     let lines: Vec<String> =
-                        drift_mine::practices::departures(&map, Some(rel.as_str()))
-                            .iter()
-                            .map(|d| format!("- {}", d.line()))
-                            .collect();
+                        found.iter().map(|d| format!("- {}", d.line())).collect();
                     if !lines.is_empty() {
                         if !out.ends_with('\n') {
                             out.push('\n');
@@ -704,11 +746,15 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                     )
                 })?;
             // Members the rule leaves out in the code as it is now, with Drift's reason.
-            // Best effort: without a scan the statement's exceptions still stand.
-            let exempt_now: Vec<String> = scan_kept(project, no_cache)
+            // Best effort: without a scan the statement's exceptions still stand. Only a
+            // role convention leaves members out: a promoted practice has no exempt
+            // members, so neither it nor the practice map is checked for them.
+            let exempt_now: Vec<String> = (!c.rule.is_practice())
+                .then(|| scan_kept(project, no_cache).ok())
+                .flatten()
                 .map(|facts| {
                     project
-                        .check(&facts, None)
+                        .check_conventions(&facts, None)
                         .exempt
                         .iter()
                         .filter(|e| e.id == c.id)
@@ -744,6 +790,30 @@ pub fn explain_text(c: &Convention, exempt_now: &[String]) -> String {
     let exceptions = summary
         .rfind(", except ")
         .map(|i| summary[i + ", except ".len()..].to_string());
+    // A promoted practice has no role whose members it was mined from: it is checked
+    // against the practice map, and its fix is to do the concern as its example does.
+    if let drift_mine::mine::Rule::Practice { concern, .. } = &c.rule {
+        let what = concern_words(concern);
+        let mut out = format!(
+            "[{}] {}\nstatus: {:?}, mode: {}\ntier: {}\nwhy: a person made it the rule for new code; it held in {} of the {} places Drift could read then (read from the practice map: what Drift cannot read is never reported)\n",
+            c.id,
+            summary,
+            c.status,
+            mode_text(c),
+            c.describe_tier(),
+            c.evidence.holders,
+            c.evidence.total,
+        );
+        out.push_str("known exceptions: the code that differed was recorded in drift.lock when it was promoted, and is not reported\n");
+        out.push_str(&format!("example: {}\n", sanitize(&c.example, 160)));
+        out.push_str(&format!("fix: handle {what} the way the example does\n"));
+        out.push_str(if blocks(c) {
+            "if it does not fit: a new violation blocks; fix the code, or, for an intentional exception, add `// drift-ignore <id>: <reason>` (`#` in Python) above the declaration (shown to reviewers).\n"
+        } else {
+            "if it does not fit: no action is needed (no change, no comment); it advises.\n"
+        });
+        return out;
+    }
     let mut out = format!(
         "[{}] {}\nstatus: {:?}, mode: {}\ntier: {}\nwhy: {} of the {} members of its role follow it (lower bound {:.2}, lift {:.1})\n",
         c.id,
@@ -873,6 +943,12 @@ fn verify_card(project: &Project, no_cache: bool, args: &Value) -> anyhow::Resul
     }))
 }
 
+/// A concern of the practice map as a sentence names it: its title, in lower case
+/// ("authentication"), or its id when the map has no such concern.
+pub fn concern_words(concern: &str) -> String {
+    sanitize(drift_mine::practices::plain_concern(concern), 32)
+}
+
 /// A convention's mode as checked once accepted, and why when the policy says
 /// otherwise: `blocks` (a new violation fails `drift check`), `advises`, or `advises`
 /// with the reason a rule set to block does not.
@@ -883,6 +959,11 @@ fn mode_text(c: &Convention) -> String {
         "advises (a new violation is only reported)".to_string()
     } else if c.rule.is_wiring() {
         "advises (set to block, but experimental wiring rules only advise)".to_string()
+    } else if c.rule.is_practice()
+        && (c.evidence.holders as f64)
+            < drift_mine::practices::promote::BLOCK_SHARE * c.evidence.total as f64
+    {
+        "advises (set to block, but it was promoted below the share of its place a practice needs to block)".to_string()
     } else {
         format!(
             "advises (set to block, but its role has {} members, under the {} needed to block)",

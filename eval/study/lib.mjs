@@ -920,6 +920,9 @@ export const RULE_KINDS = [
   "registered_in",
   "mirrors_keys",
   "imports_from",
+  // A practice a person promoted from the practice map (`drift practices promote`): never mined, so no study
+  // family and no admission by family; it is shown to agents because the person who promoted it chose so.
+  "practice",
 ];
 
 // The one rule-family mapping (rounds 8 W0 + W4): apps/studio/src/entities/convention/rule-kind-family.json maps each

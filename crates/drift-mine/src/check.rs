@@ -52,6 +52,11 @@ pub struct Violation {
     /// Layering rules only: the import that breaks the rule. Not serialised when absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub import: Option<ImportHit>,
+    /// Promoted practices only ([`crate::practices::promote`]): the concern the unit
+    /// breaks, so every text that lists the violation can say what to do ("handle
+    /// sign-in the way ... does") without the policy at hand. Not serialised.
+    #[serde(skip)]
+    pub practice: Option<String>,
 }
 
 /// The import a layering violation is about ([`Violation::import`]): its module, and
@@ -339,6 +344,15 @@ pub struct CheckReport {
     /// `suppressed_neighbour`. Omitted when there are none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub suppressed_neighbour: Vec<NeighbourHold>,
+    /// Promoted practices none of whose ways any unit of their place uses any more
+    /// ([`crate::practices::promote::Stale`]): they fire on nothing until a person
+    /// looks at them. Omitted when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stale_practices: Vec<crate::practices::promote::Stale>,
+    /// Per promoted practice, the units of its place the practice map cannot tell:
+    /// not checked, never reported. Omitted when there are none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub practices_not_checked: Vec<crate::practices::promote::NotChecked>,
 }
 
 /// A warning the neighbour gate held back ([`CheckReport::suppressed_neighbour`]).
@@ -386,6 +400,17 @@ impl Exemption {
 }
 
 impl CheckReport {
+    /// Adds what the promoted practices say ([`crate::practices::promote::check`], of
+    /// the same policy, lock, scope and paths as this report): [`check`] leaves them
+    /// out, since they are read from the practice map and not from a role's members.
+    pub fn add_practices(&mut self, checked: crate::practices::promote::Checked) {
+        self.violations.extend(checked.violations);
+        self.violations.sort();
+        self.fixed.extend(checked.fixed);
+        self.stale_practices = checked.stale;
+        self.practices_not_checked = checked.not_checked;
+    }
+
     pub fn new_violations(&self) -> impl Iterator<Item = &Violation> {
         self.violations
             .iter()
@@ -531,6 +556,7 @@ pub fn check_gated(
                                 specifier: String::new(),
                                 line: 0,
                             }),
+                        practice: None,
                     });
                     continue;
                 }
@@ -582,7 +608,12 @@ pub fn check_gated(
             .chain(reviewed)
             .chain(set_apart)
             .collect();
-        let in_scope: BTreeSet<&str> = conventions.iter().map(|c| c.id.as_str()).collect();
+        // A promoted practice's entries are the practice map's to call fixed.
+        let in_scope: BTreeSet<&str> = conventions
+            .iter()
+            .filter(|c| !c.rule.is_practice())
+            .map(|c| c.id.as_str())
+            .collect();
         report.fixed = lock
             .entries
             .iter()
@@ -615,8 +646,12 @@ fn classify(
     every: &[Convention],
     contexts: &Contexts,
 ) -> Option<Verdict> {
-    // Wiring rules are checked against other files than the unit's own, apart.
-    if c.rule.is_wiring() || !u.in_convention_role(&c.role, c.selector_version) {
+    // Wiring rules are checked against other files than the unit's own, apart; a
+    // promoted practice against the practice map ([`CheckReport::add_practices`]).
+    if c.rule.is_wiring()
+        || c.rule.is_practice()
+        || !u.in_convention_role(&c.role, c.selector_version)
+    {
         return None;
     }
     // Its exemptions look up the members its frozen selector holds.
@@ -893,6 +928,7 @@ fn sibling_exemption(
                 && a.role == c.role
                 && a.selector_version == c.selector_version
                 && !a.rule.is_wiring()
+                && !a.rule.is_practice()
         })
         .collect();
     siblings.sort_by(|a, b| a.id.cmp(&b.id));
@@ -1032,6 +1068,7 @@ fn wiring_violations(
                 }),
                 ..m.hint
             }),
+            practice: None,
         };
         if !once || v.baselined || v.suppressed {
             report.violations.push(v);
@@ -1116,13 +1153,14 @@ fn wiring_violations(
                         line: *line,
                     }),
                 }),
+                practice: None,
             });
         }
     }
 }
 
 /// Sorted, distinct declaration lines (symbols other than `(module)`, and models) per file.
-fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
+pub(crate) fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
     let mut out: BTreeMap<&str, BTreeSet<u32>> = BTreeMap::new();
     for f in &repo.files {
         let lines = out.entry(f.path.as_str()).or_default();
@@ -1141,21 +1179,24 @@ fn declaration_starts(repo: &RepoFacts) -> BTreeMap<&str, Vec<u32>> {
         .collect()
 }
 
+/// The lines of the declaration that starts at `start` in `path`: up to the line before
+/// the next declaration there ([`declaration_starts`]), or to the end of the file.
+pub(crate) fn span(starts: &BTreeMap<&str, Vec<u32>>, path: &str, start: u32) -> (u32, u32) {
+    let end = starts
+        .get(path)
+        .and_then(|l| l.get(l.partition_point(|&n| n <= start)))
+        .map_or(u32::MAX, |n| n - 1);
+    (start, end)
+}
+
 fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
-    let span = |path: &str, start: u32| {
-        let end = starts
-            .get(path)
-            .and_then(|l| l.get(l.partition_point(|&n| n <= start)))
-            .map_or(u32::MAX, |n| n - 1);
-        (start, end)
-    };
     match view {
         View::Symbol(f, s) if s.kind != SymbolKind::Module => {
-            let (start, end) = span(&f.path, s.line);
+            let (start, end) = span(starts, &f.path, s.line);
             Extent::Symbol { start, end }
         }
         View::Model(m) => {
-            let (start, end) = span(&m.path, m.line);
+            let (start, end) = span(starts, &m.path, m.line);
             Extent::Model { start, end }
         }
         View::Symbol(..) | View::File(_) | View::Package(_) => Extent::File,
@@ -1182,10 +1223,25 @@ fn extent(view: &View, starts: &BTreeMap<&str, Vec<u32>>) -> Extent {
 ///   about members, in a role without entry points, guarding nothing), broken by a
 ///   symbol that may be a part of the role ([`crate::parts::may_be_part`]), when the
 ///   facts hold no other file of the role: who uses it is known only from the other
-///   files.
+///   files;
+/// - an accepted promoted practice ([`crate::practices::promote::check`]) that covers a
+///   file of the facts ([`crate::practices::promote::covers_file`]): its verdicts are
+///   read from the practice map, which is of the whole repository (whether a place
+///   still uses one of its ways, a unit's guard defined in another file, its lock
+///   entries). A practice of another place says nothing of the file.
 ///
 /// Hooks then scan the repo. Units and context are built once for all.
 pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
+    if policy.conventions.iter().any(|c| {
+        c.status == Status::Accepted
+            && c.rule.is_practice()
+            && repo
+                .files
+                .iter()
+                .any(|f| crate::practices::promote::covers_file(c, f))
+    }) {
+        return true;
+    }
     let parts = policy.by_part();
     let policy: &ConventionsFile = &parts;
     // Conventions whose exemptions may be undecided: wrapper rules, and key rules (a
@@ -1320,6 +1376,13 @@ pub fn needs_full_scan(repo: &RepoFacts, policy: &ConventionsFile) -> bool {
 pub fn effective_mode(c: &crate::policy::Convention) -> &'static str {
     // Experimental wiring rules never block (also enforced when the policy loads).
     if c.rule.is_wiring() {
+        return "advise";
+    }
+    // A practice promoted below the share a place needs, on a person's word, advises.
+    if c.rule.is_practice()
+        && (c.evidence.holders as f64)
+            < crate::practices::promote::BLOCK_SHARE * c.evidence.total as f64
+    {
         return "advise";
     }
     match c.mode {

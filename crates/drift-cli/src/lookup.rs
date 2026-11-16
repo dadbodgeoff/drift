@@ -461,7 +461,8 @@ pub fn hint(index: &HintIndex, input: &Value, root: &Path, cwd: &Path) -> Option
 }
 
 /// Drift subcommands that only read: the plugin's PreToolUse hook approves them so
-/// they never prompt. Every `drift practices` form reads (it has no subcommand).
+/// they never prompt. `drift practices` reads, except its `promote` subcommand, which
+/// writes a convention ([`read_only_drift`] and [`claude_settings`] leave it out).
 pub const READ_ONLY_COMMANDS: &[&str] = &["card", "map", "example", "check", "practices"];
 /// Drift's read-only MCP tools. Not here: the ones that write, `drift_setup_answer`
 /// and `drift_investigate_record` (`.drift/config.yaml`, and an investigation's local
@@ -478,6 +479,10 @@ pub const READ_ONLY_TOOLS: &[&str] = &[
     "drift_setup_questions",
     "drift_investigate_items",
 ];
+
+/// The permission entry that keeps the allow list from covering
+/// `drift practices promote` ([`claude_settings`]).
+pub const PROMOTE_DENY: &str = "Bash(drift practices promote:*)";
 
 /// Whether `cmd` is exactly one read-only Drift lookup (`drift card src/a.ts`): no
 /// shell syntax at all (no `;`, `&`, `|`, redirection, expansion, subshell, glob or
@@ -535,7 +540,9 @@ pub fn claude_settings(server: &str) -> Value {
             .iter()
             .map(|t| format!("mcp__{server}__{t}")),
     );
-    json!({ "permissions": { "allow": allow } })
+    // `Bash(drift practices:*)` would cover `drift practices promote`, which writes a
+    // person's decision: denied by name, and a deny wins over an allow.
+    json!({ "permissions": { "allow": allow, "deny": [PROMOTE_DENY] } })
 }
 
 /// `existing` (a settings.json, possibly empty) with `entries` merged into its
@@ -772,6 +779,8 @@ mod tests {
         assert!(allow.contains(&json!("mcp__drift__drift_card")));
         // Nothing is asked: no entry names a command this build does not have.
         assert!(merged["permissions"].get("ask").is_none());
+        // The one writing form the allow list would cover is denied, once.
+        assert_eq!(merged["permissions"]["deny"], json!([PROMOTE_DENY]));
         assert_eq!(merge_settings(&merged.to_string(), &entries), Some(merged));
         assert_eq!(merge_settings("[]", &entries), None);
     }

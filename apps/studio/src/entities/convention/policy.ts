@@ -37,6 +37,8 @@ export function parseConventions(text: string): ConventionsFile {
       example: String(c.example ?? ""),
       ...(Array.isArray(c.exceptions) ? { exceptions: parseExceptions(c.exceptions) } : {}),
       ...(Array.isArray(c.different_kind) ? { different_kind: parseDifferentKind(c.different_kind) } : {}),
+      // A practice a person promoted from the practice map: the variant id it came from (`P-…`).
+      ...(typeof c.promoted_from_practice === "string" && /^P-[0-9a-f]{6}$/.test(c.promoted_from_practice) ? { promoted_from_practice: c.promoted_from_practice } : {}),
     });
   }
   const fk = (d.file_kinds ?? {}) as Record<string, unknown>;

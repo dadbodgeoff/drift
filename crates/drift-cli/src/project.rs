@@ -45,6 +45,11 @@ pub fn applies_to(role: &RoleSelector) -> Option<String> {
 /// about some files only, the rule's ([`drift_mine::mine::Rule::file_condition`]: "if it
 /// imports one of uuid, nanoid, ..."). `None`: any file there.
 pub fn condition(c: &Convention) -> Option<String> {
+    // A promoted practice's role says nothing of a file: it holds the units of its
+    // concern ("for its entry points").
+    if c.rule.is_practice() {
+        return drift_mine::practices::promote::condition(c);
+    }
     applies_to(&c.role).or_else(|| {
         (c.role.kind == SymbolKind::Module)
             .then(|| c.rule.file_condition())
@@ -374,6 +379,9 @@ impl Project {
             cache_dir: cache_dir(&self.root, false),
             threads: 0,
         };
+        // A promoted practice is checked against the practice map, which one file's facts
+        // cannot draw: `needs_full_scan` asks for the repository only when a practice
+        // covers the file, so an edit anywhere else keeps the one-file check.
         match scan_file(&self.root, &opts, rel) {
             Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
                 crate::agent::trace::took("single_file");
@@ -394,10 +402,66 @@ impl Project {
         }
     }
 
+    /// What the accepted conventions say of `facts`, the promoted practices among them
+    /// included ([`crate::practices::check_with_practices`]). The practice map they are
+    /// read from is kept beside the fact cache ([`crate::derived`]): the hook or tool
+    /// that asks for it next for the same facts reads it back.
     pub fn check(&self, facts: &RepoFacts, only: Option<&BTreeSet<String>>) -> CheckReport {
+        let map = std::cell::OnceCell::new();
+        self.check_with_map(facts, only, || {
+            map.get_or_init(|| {
+                let kept = crate::derived::Derived::of(cache_dir(&self.root, false), facts);
+                crate::practices::report_units_kept(&self.root, facts, kept.as_ref())
+            })
+        })
+    }
+
+    /// [`Project::check`] for a caller that has the practice map of `facts` (with units
+    /// listed) or builds it for something else too: `map` is asked only when an
+    /// accepted convention is a promoted practice.
+    pub fn check_with_map<'m>(
+        &self,
+        facts: &RepoFacts,
+        only: Option<&BTreeSet<String>>,
+        map: impl FnOnce() -> &'m drift_mine::practices::PracticesReport,
+    ) -> CheckReport {
+        let mut report = self.check_conventions(facts, only);
+        self.add_practices(&mut report, facts, only, map);
+        report
+    }
+
+    /// The mined conventions' part of [`Project::check`], without the promoted
+    /// practices: for a caller that adds them once the map is built beside it
+    /// ([`Project::add_practices`]), or that reads only what the role conventions say
+    /// (their exempt members).
+    pub fn check_conventions(
+        &self,
+        facts: &RepoFacts,
+        only: Option<&BTreeSet<String>>,
+    ) -> CheckReport {
         let mut report = check(facts, &self.policy, &self.lock, Scope::Accepted, only);
         drift_mine::check::locate_imports(&mut report, &self.root);
         report
+    }
+
+    /// Adds to `report` ([`Project::check_conventions`] of the same facts and paths)
+    /// what the accepted promoted practices say; `map` is asked only when there is one.
+    pub fn add_practices<'m>(
+        &self,
+        report: &mut CheckReport,
+        facts: &RepoFacts,
+        only: Option<&BTreeSet<String>>,
+        map: impl FnOnce() -> &'m drift_mine::practices::PracticesReport,
+    ) {
+        crate::practices::add_practices(
+            report,
+            facts,
+            &self.policy,
+            &self.lock,
+            Scope::Accepted,
+            only,
+            map,
+        );
     }
 
     pub fn accepted(&self) -> impl Iterator<Item = &Convention> {
@@ -445,9 +509,25 @@ impl Project {
         rel_in(&self.root, path)
     }
 
+    /// Whether the promoted practice `c` applies to the file at `rel`
+    /// ([`drift_mine::practices::promote::covers`]): its place holds the file and, with
+    /// the file's facts (`existing`: read, or lowered from the content about to be
+    /// written), the file declares a unit of its concern. Without them the file is
+    /// held to it as one that will declare one ([`condition`] says so where the rules
+    /// are listed): a rule shown for a helper costs a line, one left out is never heard.
+    fn practice_covers(&self, c: &Convention, rel: &str, existing: Option<&FileFacts>) -> bool {
+        use drift_mine::practices::promote;
+        match existing {
+            Some(f) => promote::covers_file(c, f),
+            None => promote::covers(c, self.package_of(rel), rel, |_| true),
+        }
+    }
+
     /// Conventions (not rejected) whose role covers a file at `rel` (which may not exist
-    /// yet). `existing` and `models` are the file's facts and the models it declares,
-    /// when known.
+    /// yet), and the promoted practices that apply to it (their place holds it and it
+    /// declares, or may declare, a unit of their concern).
+    /// `existing` and `models` are the file's facts and the models it declares, when
+    /// known.
     pub fn conventions_for_path<'a>(
         &'a self,
         rel: &str,
@@ -468,6 +548,11 @@ impl Project {
             // Nearest scope: only conventions of the file's own package.
             .filter(|c| self.in_scope(c, rel))
             .filter(|c| {
+                // A promoted practice's role holds no file: its place and the file's
+                // units say whether it applies.
+                if c.rule.is_practice() {
+                    return self.practice_covers(c, rel, existing);
+                }
                 drift_mine::roles::convention_role_covers_path(
                     &c.role,
                     c.selector_version,

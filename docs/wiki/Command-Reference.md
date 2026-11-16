@@ -28,13 +28,14 @@ drift [--root <ROOT>] [--no-cache] <command> [options]
 | [`setup`](#drift-setup) | Answer the questions only a person can answer | `.drift/config.yaml` |
 | [`investigate`](#drift-investigate) | Every route Drift could not settle, with the evidence; record outcomes | `.drift/config.yaml`, `.drift/findings/`, `.drift/gap-reports/` (only with `--record` or `--answers`) |
 | [`findings`](#drift-findings) | What an agent found: local findings and gap reports; an issue draft or a local branch | `--write FILE`; a local branch `drift/<id>` (`--branch`) |
-| [`review`](#drift-review) | Accept, block, advise, reject; exceptions; review log | `.drift/conventions.yaml`, `.drift/review-log/` |
+| [`review`](#drift-review) | Accept, block, advise, reject; exceptions; promote a practice; review log | `.drift/conventions.yaml`, `drift.lock` (when it promotes), `.drift/review-log/` |
 | [`example`](#drift-example) | The file to copy for a new file | cache |
 | [`check`](#drift-check) | Check code against accepted conventions | cache |
 | [`security`](#drift-security) | Security inventory | cache |
 | [`card`](#drift-card) | One file's place in the repository | cache (with a policy) |
 | [`map`](#drift-map) | Packages, layers, dependencies, roles | nothing |
 | [`practices`](#drift-practices) | What the codebase does for each concern | nothing |
+| [`practices promote`](#drift-practices-promote) | Turn a practice into an accepted convention for one place | `.drift/conventions.yaml`, `drift.lock` (nothing with `--dry-run` or `--list`) |
 | [`hook`](#drift-hook) | Agent hook handler (run by Claude Code) | session state |
 | [`mcp`](#drift-mcp) | MCP server over standard input and output | cache; `drift_setup_answer` and `drift_investigate_record` write `.drift/config.yaml`, `.drift/findings/` and `.drift/gap-reports/` (and the experimental `drift_verify_card`, `.drift/verify-cache.json`) |
 | [`export`](#drift-export) | Agents block, Claude Code permissions | the file you name |
@@ -47,7 +48,7 @@ The full list of files and when each is written is in [Files Drift Writes](Files
 | --- | --- |
 | 0 | Success. For `security`, `practices`, `map`, `card`, `census` and `hook`, always 0 unless there is an error. |
 | 1 | `drift check`: a new violation that fails, or a security finding that is not in the committed baseline (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
-| 2 | Error: a message beginning `drift:` on standard error. Also a command-line usage error (an unknown subcommand or flag, a missing argument). |
+| 2 | Error: a message beginning `drift:` on standard error. Also a command-line usage error (an unknown subcommand or flag, a missing argument). `drift practices promote` also exits 2 when it refuses, with the reason on standard error and nothing written. |
 
 Reading from a pipe that closes early (`drift census | head`) is not an error: Drift exits quietly with the code it had decided (for `check`, the check's).
 
@@ -483,7 +484,7 @@ drift review --answer D-e0a68b=different --set-apart lib/seed.ts
 
 **Output**
 
-Interactive (no flags): needs a terminal. Keys: `y` accept, `b` block, `a` accept and show to agents, `n` reject, `s` skip, `q` quit; a block candidate asks one question instead: `y` yes, `d` no, these are different, `n` not a convention. It shows the default tier, then the five best suggestions (`--suggestions N`, `--all`).
+Interactive (no flags): needs a terminal. Keys: `y` accept, `b` block, `a` accept and show to agents, `n` reject, `s` skip, `q` quit; a block candidate asks one question instead: `y` yes, `d` no, these are different, `n` not a convention. It shows the default tier, then the five best suggestions (`--suggestions N`, `--all`). After the proposals it offers the practices that may be promoted ([`drift practices promote --list`](#drift-practices-promote)), each with its preview: `y` promote in advise mode, `b` promote in block mode (needs the replay), `n` no (remembered: not offered again), `s` skip, `q` quit. See [Conventions and Review](Conventions-and-Review#practices-that-may-be-promoted).
 
 With flags: each decision prints a one-line summary on standard output, `N accepted (M block), P proposed, R rejected`, and the ids you gave must exist or nothing is changed. `--list` and `--show` print cards with their outliers. `--json` prints each block candidate's question as JSON (schema `drift-review-questions`).
 
@@ -495,7 +496,7 @@ A decision flag (`--accept`, `--reject`, `--block`, `--advise`, `--show-to-agent
 
 **Notes**
 
-Edits `.drift/conventions.yaml` (and `drift.lock` when a card is promoted from the withheld ones with `--hidden --answer`, which baselines its current outliers). A convention whose role has fewer than 15 members, or an experimental wiring rule, set to block is accepted as advise instead, with a note on standard error; a suggestion needs `--force` to block. `--log` and `--set-log` write `.drift/review-log/`; `--export-log PATH` writes the file you name. Commit `.drift/conventions.yaml` afterwards.
+Edits `.drift/conventions.yaml` (and `drift.lock` when a card is promoted from the withheld ones with `--hidden --answer`, which baselines its current outliers, or when a practice is promoted in interactive review, which baselines the units that differ). A convention whose role has fewer than 15 members, or an experimental wiring rule, set to block is accepted as advise instead, with a note on standard error; a suggestion needs `--force` to block. `--log` and `--set-log` write `.drift/review-log/`; `--export-log PATH` writes the file you name. Commit `.drift/conventions.yaml` afterwards.
 
 ## drift example
 
@@ -534,7 +535,7 @@ Shows only what agents are shown: accepted conventions of the default tier, sugg
 
 ## drift check
 
-Checks the code against accepted conventions and reports new violations. Legacy violations baselined in `drift.lock` never fail.
+Checks the code against accepted conventions, mined ones and practices a person promoted, and reports new violations. Legacy violations baselined in `drift.lock` never fail.
 
 Where the repository committed a security baseline (`.drift/security.lock`, written by `drift security --write-baseline`), a check of the whole tree or of a diff also lists the security findings that are not in it and exits 1 on any (text: a `Security baseline` section; `--format json`: `security`; `--format github`: one `::error` annotation each; SARIF: a notification each). A check of named files reads no inventory. See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
 
@@ -577,7 +578,22 @@ drift check app/api/orders/route.ts
 
 Text (default): `drift: N new violation(s) (M legacy, baselined)`, then per violation the convention id and summary with its evidence, `at path:line symbol`, a file to copy (`like`), and its mode; a closing line on how to fix it, make an intentional exception or reject a wrong convention. After the violations, under their own heading, the practice map's departures for the files looked at (facts, never part of the exit code). Violations of accepted conventions agents are not shown are listed too, marked `not shown to agents` on their mode line; the legacy count includes theirs.
 
-`--format json`: `violations`, `fixed`, `conventions`, and `practices` and `diff` when present; see [Output and JSON Reference](Output-and-JSON-Reference). `--format sarif`: SARIF 2.1.0 (new violations only; blocking rules at level `error`, other advice at `warning`, suggestions at `note`; members a convention is not about are listed as notes; unchecked files, unsure findings and practice departures are run notifications, not results). `--format github`: GitHub Actions annotations for new violations (`::error` for block mode, `::warning` for advice, `::notice` for suggestions), `::warning` for files not checked, `::notice` for unsure findings, exempt members and practice departures, a final summary line, and a job summary appended to the file `GITHUB_STEP_SUMMARY` names when that variable is set.
+A violation of a promoted practice is listed like any other. Two more kinds of line are about promoted practices, and neither changes the exit code: a **stale** promoted practice (no unit of its place uses any of its ways any more, so it fires on nothing until a person looks at it), and the number of units of a promoted practice's place that were **not checked** because the practice map cannot tell what they do (they are never reported).
+
+```
+drift: 1 new violation(s) (2 legacy, baselined)
+[D-d67d54] Sign-in in app/api: wrapped in withAuth (38/40)
+  at   app/api/new/route.ts:1 GET
+  like app/api/r00/route.ts#GET
+  fix  handle sign-in the way the `like` example does
+  mode advise (suggestion)
+Advice: follow a convention where it fits the code; where it does not, no action is needed (no change, no comment). Wrong convention: `drift review --reject <id>`.
+drift: practices (facts, not rules; they never fail the check): 2 file(s) do a concern differently from the entry points around them
+  app/api/r38/route.ts: authn: 38 of the 40 other entry points in app/api use wrap withAuth [P-0f0acb]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+  app/api/r39/route.ts: authn: 38 of the 40 other entry points in app/api use wrap withAuth [P-0f0acb]; here GET:1 does: none: no guard found in what Drift read (copy app/api/r00/route.ts:3 GET)
+```
+
+`--format json`: `violations`, `fixed`, `conventions`, and `practices`, `diff`, `stale_practices` and `practices_not_checked` when present; see [Output and JSON Reference](Output-and-JSON-Reference). `--format sarif`: SARIF 2.1.0 (new violations only; blocking rules at level `error`, other advice at `warning`, suggestions at `note`; members a convention is not about are listed as notes; unchecked files, unsure findings and practice departures are run notifications, not results). `--format github`: GitHub Actions annotations for new violations (`::error` for block mode, `::warning` for advice, `::notice` for suggestions), `::warning` for files not checked, `::notice` for unsure findings, exempt members and practice departures, a final summary line, and a job summary appended to the file `GITHUB_STEP_SUMMARY` names when that variable is set.
 
 With `--diff-base REF`, only violations introduced since the merge base with REF are reported (in changed lines and added files), and a header says how many files the diff added, changed and deleted. The merge base must be in the local history: in a shallow clone that lacks it, this is an error (use `fetch-depth: 0`).
 
@@ -587,7 +603,7 @@ With `--diff-base`, the practice facts also list the entry points the diff adds 
 
 | Code | Meaning |
 | --- | --- |
-| 0 | No new violation that fails. Advice, legacy violations, practice departures and files that could not be checked (without `--strict`) do not fail. |
+| 0 | No new violation that fails. Advice, legacy violations, practice departures, stale promoted practices, units of a promoted practice not checked, and files that could not be checked (without `--strict`) do not fail. |
 | 1 | A new violation of a convention in block mode (`mode block` as checked: a role of fewer than 15 members advises whatever the file says), or, with `--strict`, any new violation, and any file that could not be checked (not parsed for lack of stack, in the tree or at the merge base). Wiring advice never fails, even with `--strict`. |
 | 2 | Error: no `.drift/conventions.yaml`, an unreadable policy, a path outside the repository, `--diff-base` outside a git work tree or with a ref Git cannot find, or a command-line usage error. |
 
@@ -742,7 +758,7 @@ Writes nothing; the fact cache is used only where `DRIFT_CACHE_DIR` points. A fe
 
 ## drift practices
 
-Reports what the codebase does for each cross-cutting concern (authentication, authorization, errors, logging, API, validation, config, data access, testing): each variant with its share, where it is, what sets it apart, an example to copy, and what is unknown. Facts, not rules: read-only.
+Reports what the codebase does for each cross-cutting concern (authentication, authorization, errors, logging, API, validation, config, data access, testing): each variant with its share, where it is, what sets it apart, an example to copy, and what is unknown. Read-only: it states what the code does and checks nothing. To make a practice the rule for new code, see [`drift practices promote`](#drift-practices-promote).
 
 ```text
 drift practices [OPTIONS]
@@ -791,6 +807,134 @@ An answer is one of three things: a variant (`known`), `none` (a recorded absenc
 **Notes**
 
 Writes nothing; the fact cache is used only where `DRIFT_CACHE_DIR` points. Warnings about `practices:` lines in `.drift/config.yaml` (an unknown concern, a line that names nothing in the repository) go to standard error. Valid `--concern` values: `authn`, `authz`, `errors`, `logging`, `api`, `validation`, `config`, `data_access`, `testing`.
+
+## drift practices promote
+
+Turns a practice from the practice map into an accepted convention for one place: a package, or a directory of one. It writes the convention (rule type `practice`, advise mode, shown to agents) to `.drift/conventions.yaml`, and one `drift.lock` line per unit that differs today, so `drift check` reports only new code. What qualifies and how the rule is checked: [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+
+```text
+drift practices promote <P-ID> [--in <PATH>] [--with <P-ID>]... [--block] [--force] [--dry-run] [--json]
+drift practices promote --list [--json]
+```
+
+| Argument | Meaning |
+| --- | --- |
+| `<P-ID>` | The variant to promote: its id as `drift practices --all` prints it, or `concerns[].variants[].id` in `drift practices --json` |
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `--in <PATH>` | The place: a path from the repository root, a package directory or a directory inside one (`.` the root package). A unit is in the place when its file is in that directory or below | the variant's broadest place that qualifies |
+| `--with <P-ID>` | Another variant of the same concern, accepted as a way with the first. Repeat for more. Nothing is added unless you name it, including a way that marks a route open on purpose |  |
+| `--block` | Write it in block mode. Refused unless the replay allows it: of the 15 units most recently added to the place (by the commit that first added their file) that the map can tell, at least 80% follow it as they stand. Needs git history |  |
+| `--force` | Promote although the accepted ways hold less than 80% of the units Drift could read. Lifts nothing else; a forced practice advises only, and `--block --force` is an error |  |
+| `--dry-run` | Print the preview and write nothing |  |
+| `--list` | List every practice that may be promoted now, without `--force`, one line each with the command to run. Writes nothing |  |
+| `--json` | Print JSON on standard output (below) |  |
+| `--root <ROOT>` | Repository root | `.` |
+| `--no-cache` | Disable the on-disk fact cache |  |
+
+**Examples**
+
+On the sample repository of the [README](https://github.com/dadbodgeoff/drift/blob/main/README.md#a-five-minute-first-run) (40 routes, 38 wrapped in `withAuth`; the variant is `P-0f0acb`):
+
+```bash
+drift practices promote --list
+```
+```bash
+drift practices promote P-0f0acb --in app/api --dry-run
+```
+```bash
+drift practices promote P-0f0acb --in app/api
+```
+```bash
+drift practices promote P-0f0acb --in app/api --block
+```
+```bash
+drift practices promote P-0f0acb --in app/api --json
+```
+
+**Output**
+
+Text: the preview, then `Wrote .drift/conventions.yaml and drift.lock.`, or with `--dry-run`, `Dry run: nothing was written.` The preview says how many units of the place follow the practice, names the ones that differ and will be recorded as they are (at most three by name), how many could not be read and are never reported, what `drift check` reports from now on, the mode and how to change it, and the other ways units of the place use that `--with` could add.
+
+```
+Sign-in in app/api: wrapped in withAuth in 38 of 40 entry points.
+  2 do not, and are recorded as they are (app/api/r38/route.ts:1 GET, app/api/r39/route.ts:1 GET).
+  0 could not be read; those are never reported.
+From now on `drift check` reports a new entry point here that does it another way, or not at all.
+Mode: advise (it never fails a check). `drift practices promote P-0f0acb --in app/api --block` makes it fail one, when the 15 entry points added here most recently follow it.
+Also in .drift/conventions.yaml: D-37416b names the same way for code of this package. Where both are accepted, new code that breaks them is reported under each; `drift review --reject <id>` drops one.
+Wrote .drift/conventions.yaml and drift.lock.
+```
+
+`--list`, text: one line per practice that may be promoted, with the command to run.
+
+```
+3 practice(s) may be promoted now. Each becomes an accepted convention in advise mode, with the code that differs today recorded in drift.lock; the command prints what it records (--dry-run writes nothing):
+  sign-in in .: wrapped in withAuth in 38 of 40 entry points; 2 differ, 0 could not be read
+    drift practices promote P-0f0acb --in .
+  errors in .: left to the framework in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-6123b9 --in .
+  responses in .: built with Response.json in 40 of 40 entry points; 0 differ, 0 could not be read
+    drift practices promote P-9fdb90 --in .
+```
+
+`--json`, on success:
+
+```json
+{
+  "written": true,
+  "place": "app/api",
+  "convention": { "id": "D-d67d54", "summary": "Sign-in in app/api: wrapped in withAuth", "status": "accepted", "mode": "advise", "promoted_from_practice": "P-0f0acb" },
+  "candidate": {
+    "concern": "authn",
+    "unit": "entry_point",
+    "place": { "package": "", "dir": "app/api" },
+    "ways": [ { "id": "P-0f0acb", "key": "wrap:lib/auth.ts#withAuth", "label": "wrap withAuth", "members": 38 } ],
+    "other_ways": [],
+    "follows": 38,
+    "exceptions": [ { "path": "app/api/r38/route.ts", "symbol": "GET", "line": 1 }, { "path": "app/api/r39/route.ts", "symbol": "GET", "line": 1 } ],
+    "unknown": 0,
+    "total": 40,
+    "example": { "path": "app/api/r00/route.ts", "symbol": "GET", "line": 3 },
+    "forced": false
+  },
+  "baselined": 2,
+  "replay": null,
+  "same_way": [ "D-37416b" ],
+  "preview": "…the preview text…"
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `written` | `false` with `--dry-run` |
+| `place` | The place as output names it (`.` for the root package) |
+| `convention` | The convention written (or that would be): `id`, `summary`, `status`, `mode`, `promoted_from_practice` |
+| `candidate` | What was counted: `concern`, `unit` (what one unit is), `place` (`package`, `dir`), `ways` (the accepted ways: `id`, `key`, `label`, `members`), `other_ways` (the other known ways units of the place use, most members first), `follows`, `exceptions` (every unit that differs, sorted by path, line and symbol), `unknown`, `total` (`follows` + exceptions + `unknown`), `example` (a unit that follows, to copy), `forced` |
+| `baselined` | The number of `drift.lock` lines added (with `--dry-run`, that would be added) |
+| `replay` | With `--block`: `{ "recent": 15, "followed": 14 }`, the units the replay read and how many of them follow. Otherwise `null` |
+| `same_way` | The ids of the mined conventions, proposed or accepted, whose rule requires the same thing of code in the same package (empty when there is none). With both accepted, new code that breaks them is reported under each |
+| `preview` | The text preview |
+
+On refusal, exit 2 and on standard output `{ "refused": { "code": "…", … }, "message": "<the sentence>" }`. The codes and their fields: `unknown_variant` (`id`); `not_a_way` (`id`, `why`: the id names `none`, the tail of one-off ways, or a way only declared, with no unit proven to use it); `other_concern` (`id`, `concern`: a `--with` variant of another concern); `no_such_place` (`place`); `no_place` (`id`, `nearest`: the refusal of the place that came nearest, or null); `too_small` (`place`, `units`, `min`); `below_share` (`place`, `follows`, `read`); `too_unknown` (`place`, `unknown`, `total`). Four more come from the command line itself and carry only the code, except the last: `no_variant` (no id and no `--list`), `block_forced` (`--block` with `--force`), `no_policy` (no `.drift/conventions.yaml`: run `drift init` first), and `block_refused` (`id`, `replay`: the replay that was run, or null when there is no history to read, the place is Python, or the practice was forced).
+
+`--list --json`: `{ "candidates": [ { "place": ".", "command": "drift practices promote P-0f0acb --in .", "candidate": { … } } ], "declined": 0, "promoted": [] }`, with `candidate` as above, sorted by concern, place and variant id. A practice already promoted, or one you declined in `drift review`, is not listed again: `promoted` holds the ids of the conventions that cover what would have been listed, and `declined` counts the ones declined. (On the sample repository the broadest place that qualifies is the root package, `.`, so `--list` names that; `--in app/api` names the directory.)
+
+**Exit codes**
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Promoted, or the preview or the list printed |
+| 2 | Refused (the reason in one sentence on standard error; nothing written), or a usage error such as `--block` with `--force` |
+
+**Notes**
+
+- Run it again for the same concern in the same place to change the ways: the convention keeps its id, the ways become the set you give, lock lines are added for units that differ under the new set, and a mode a person chose is kept unless `--block` is given.
+- A promoted practice is an ordinary convention afterwards: `drift review --advise <id>` returns it to advise mode, `drift review --reject <id>` rejects it, and `// drift-ignore <id>: <reason>` above a declaration suppresses one violation.
+- A place of Python code advises only (decision D7).
+- `--block` reads git history: when each file of the place was first committed. Without git, or with fewer than 15 units whose first commit is known, block is refused; advise always works.
+- Commit `.drift/conventions.yaml` and `drift.lock` afterwards. An older Drift cannot read a `.drift/conventions.yaml` that holds a promoted practice: upgrade every machine and CI first ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
 ## drift hook
 
@@ -896,7 +1040,7 @@ drift export claude-settings --write .claude/settings.json
 
 `agents-md`: a block between `<!-- drift:start ... -->` and `<!-- drift:end -->` markers: rules (the default tier and anything set to block) and suggestions, at most 10 in all, each with its evidence (`N/M follow it`), whether it blocks, and an example; then a paragraph pointing to `drift setup --agent-brief` and `drift investigate --agent-brief`, and the rule to run `drift card` before searching. Without `--write` it prints the block; with `--write FILE` it creates the file or replaces only the text between the markers, and prints `created FILE` or `updated FILE`.
 
-`claude-settings`: JSON for `permissions.allow` (`Bash(drift card:*)`, `Bash(drift map:*)`, `Bash(drift example:*)`, `Bash(drift check:*)`, `Bash(drift practices:*)` and the ten read-only MCP tools as `mcp__drift__<tool>`: the eight lookups, `drift_setup_questions` and `drift_investigate_items`), all under `permissions.allow`. With `--write FILE` it merges them into the file, keeping other settings and writing keys sorted.
+`claude-settings`: JSON for `permissions.allow` (`Bash(drift card:*)`, `Bash(drift map:*)`, `Bash(drift example:*)`, `Bash(drift check:*)`, `Bash(drift practices:*)` and the ten read-only MCP tools as `mcp__drift__<tool>`: the eight lookups, `drift_setup_questions` and `drift_investigate_items`), and one entry for `permissions.deny`, `Bash(drift practices promote:*)`: `Bash(drift practices:*)` would otherwise cover the one form of `drift practices` that writes, and a deny wins over an allow. With `--write FILE` it merges them into the file, keeping other settings and writing keys sorted.
 
 **Exit codes**
 
@@ -908,6 +1052,6 @@ Re-run `agents-md` after `drift review`; only the text between the markers chang
 
 ## Commands not in the list
 
-`drift debug` exists and is hidden from `--help`; it prints parser debugging output for Drift's development and is not a supported interface. `drift practices promote` is not a subcommand of this build (it fails with `unexpected argument 'promote'`); a practice cannot yet be turned into a checked convention, so the practice map advises and never blocks.
+`drift debug` exists and is hidden from `--help`; it prints parser debugging output for Drift's development and is not a supported interface.
 
 See also: [Configuration Reference](Configuration-Reference), [Output and JSON Reference](Output-and-JSON-Reference), [MCP Reference](MCP-Reference), [Hooks Reference](Hooks-Reference), [Files Drift Writes](Files-Drift-Writes), [Glossary](Glossary)

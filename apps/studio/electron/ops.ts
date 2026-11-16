@@ -26,6 +26,9 @@ export type DriftOp =
   | { op: "init" }
   /** The practice map (`drift practices --json`): read-only. */
   | { op: "practices" }
+  /** A practice made a convention: what it would record (`--dry-run`, writes nothing), and the write itself. */
+  | { op: "promotePreview"; promote: PromoteArgs }
+  | { op: "promote"; promote: PromoteArgs }
   /** The structural map (`drift map --json`): packages with production and test dependencies apart. */
   | { op: "map" }
   | { op: "version" }
@@ -126,6 +129,58 @@ export function answerFlags(id: string, answer: unknown, setApart: unknown, conf
   return [`--answer=${cid}=${a}`, `--set-apart=${files.join(",")}`, ...(confirm.length ? [`--confirm-entry=${confirm.join(",")}`] : [])];
 }
 
+/** What a person asks to promote (the `promotePreview` and `promote` channels' request). */
+export interface PromoteArgs {
+  /** The variant (`P-…`). */
+  id: string;
+  /** `.` or a directory from the repository root (`promotable.place`). */
+  place: string;
+  /** Other variants of the same concern accepted with it (`--with`). */
+  with: string[];
+  block: boolean;
+}
+
+const PRACTICE_ID = /^P-[0-9a-f]{6}$/;
+
+export function assertPracticeId(id: unknown): string {
+  if (typeof id !== "string" || !PRACTICE_ID.test(id)) throw new InvalidArgument(`not a practice variant id: ${String(id).slice(0, 20)}`);
+  return id;
+}
+
+/**
+ * A place for `--in`: `.` (the root package) or a directory from the repository root. No `..`, `.` or empty segment,
+ * not absolute, never starting with `-` (it is its own argument, so it must not read as a flag), no backslash or
+ * control character, at most 1024 characters.
+ */
+export function assertPlace(p: unknown): string {
+  if (typeof p !== "string" || !p || p.length > 1024 || /\p{Cc}/u.test(p)) throw new InvalidArgument("expected a place: `.` or a repo-relative directory");
+  if (p === ".") return p;
+  if (p.startsWith("/") || p.startsWith("-") || p.includes("\\") || /^[A-Za-z]:/.test(p) || p.split("/").some((s) => s === ".." || s === "." || s === ""))
+    throw new InvalidArgument("expected a place: `.` or a repo-relative directory");
+  return p;
+}
+
+/**
+ * `drift practices promote` arguments after the subcommand: the variant, `--in <place>`, `--with <id>` for each other
+ * way (in the person's order, once each, never the variant itself), `--block` when asked, `--dry-run` for a preview,
+ * and `--json` always. A preview is always `--dry-run`: only the `promote` op writes.
+ */
+export function promoteFlags(a: PromoteArgs, dryRun: boolean): string[] {
+  if (!a || typeof a !== "object" || !Array.isArray(a.with) || a.with.length > 50) throw new InvalidArgument("expected a promotion request");
+  const id = assertPracticeId(a.id);
+  const place = assertPlace(a.place);
+  const others = [...new Set(a.with.map(assertPracticeId))].filter((w) => w !== id);
+  return [id, "--in", place, ...others.flatMap((w) => ["--with", w]), ...(assertBool(a.block, "block") ? ["--block"] : []), ...(dryRun ? ["--dry-run"] : []), "--json"];
+}
+
+/**
+ * Whether an op writes to the repository. The only writes are `drift review` (decisions, exceptions, answers, the
+ * review log setting), `drift init` and `drift practices promote` without `--dry-run`; every other op reads.
+ */
+export function writesRepository(op: DriftOp["op"]): boolean {
+  return op === "review" || op === "exempt" || op === "setLog" || op === "answer" || op === "init" || op === "promote";
+}
+
 /** argv for `drift`, never through a shell. `root` is an absolute repo path the person chose. */
 export function driftArgs(root: string, op: DriftOp): string[] {
   switch (op.op) {
@@ -147,6 +202,10 @@ export function driftArgs(root: string, op: DriftOp): string[] {
       return ["--root", root, "practices", "--json"];
     case "map":
       return ["--root", root, "map", "--json"];
+    case "promotePreview":
+      return ["--root", root, "practices", "promote", ...promoteFlags(op.promote, true)];
+    case "promote":
+      return ["--root", root, "practices", "promote", ...promoteFlags(op.promote, false)];
     case "review":
       return ["--root", root, "review", ...reviewFlags(assertDecision(op.decision), op.ids)];
     case "exempt":
@@ -164,9 +223,12 @@ export function driftArgs(root: string, op: DriftOp): string[] {
   }
 }
 
-/** Exit codes that still carry a valid JSON report (`drift check` exits 1 when something blocks). */
+/**
+ * Exit codes that still carry a valid JSON report: `drift check` exits 1 when something blocks; `drift practices
+ * promote` exits 2 when it refuses, with the refusal as JSON on stdout (or, for bad arguments, nothing there).
+ */
 export function acceptableExit(op: DriftOp["op"], code: number): boolean {
-  return code === 0 || (op === "check" && code === 1);
+  return code === 0 || (op === "check" && code === 1) || ((op === "promote" || op === "promotePreview") && code === 2);
 }
 
 /**

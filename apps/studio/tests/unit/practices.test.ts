@@ -35,8 +35,18 @@ import {
   variantHint,
   variantLabel,
   variantName,
+  exceptionsShown,
+  followsText,
+  promotablePlace,
+  promoteRequest,
+  replayText,
+  toggleWay,
+  unitAt,
+  wayChoices,
 } from "@/features/practices";
-import { PRACTICE_CONCERNS, PRACTICE_PRIMARY, type PracticeConcern, type PracticeFinding, type PracticeVariant, type PracticesReport } from "@/shared/contract/drift";
+import { parseConventions, practiceText, ruleFamily, ruleTargets } from "@/entities/convention";
+import { fixtureConvention, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
+import { PRACTICE_CONCERNS, PRACTICE_PRIMARY, type PracticeConcern, type PracticeFinding, type PracticeVariant, type PracticesReport, type PromoteOutcome, type PromoteResult } from "@/shared/contract/drift";
 import { json } from "./helpers";
 
 const acme = () => json<PracticesReport>("acme/practices.json");
@@ -409,5 +419,98 @@ describe("groups: variants sharing their decisive instrument (concerns[].groups)
     const authn = concern("authn").groups!.find((x) => x.instrument.endsWith("#AuthGuard"))!;
     expect([authn.class, authn.members]).toEqual(["user", 47]);
     expect(groupHint(authn)).toMatch(/^shares apps\/api\/src\/common\/auth\.guard\.ts#AuthGuard · by .* · callers: user$/);
+  });
+});
+
+describe("making a practice a convention (drift practices promote, PROMOTE-A-PRACTICE §5 item 4)", () => {
+  const ok = (o: PromoteOutcome): PromoteResult => {
+    if (isRefused(o)) throw new Error(`refused: ${o.message}`);
+    return o;
+  };
+  const code = (o: PromoteOutcome) => (isRefused(o) ? o.refused.code : null);
+  const req = (id: string, place: string, withIds: string[] = [], block = false) => promoteRequest(id, place, withIds, block);
+
+  it("offers the action only on a known variant Drift marks promotable with a place", () => {
+    const r = acme();
+    const offered = r.concerns.flatMap((c) => c.variants.filter((v) => promotablePlace(v) !== null).map((v) => `${v.id} ${promotablePlace(v)}`)).sort();
+    expect(offered).toEqual(["P-1587e5 apps/web/app/api/admin", "P-1e83ce apps/api", "P-d65fba apps/web", "P-f245bd apps/web/lib/actions"]);
+    expect(promotablePlace(variant({ id: "P-000001", key: "k", members: 9, promotable: { rule: "practice", role: "" } }))).toBeNull();
+    expect(promotablePlace(variant({ id: "P-000001", key: "k", members: 9, kind: "none", promotable: { rule: "practice", role: "", place: "." } }))).toBeNull();
+    expect(promotablePlace(variant({ id: "P-000001", key: "k", members: 9, promotable: { rule: "practice", role: "", place: "." } }))).toBe(".");
+  });
+
+  it("sends each other way once, never the variant itself, in the order ticked", () => {
+    expect(promoteRequest("P-000001", "app/api", ["P-000003", "P-000001", "P-000002", "P-000003"], true)).toEqual({ id: "P-000001", place: "app/api", with: ["P-000003", "P-000002"], block: true });
+    expect(toggleWay(["P-000002"], "P-000003", true)).toEqual(["P-000002", "P-000003"]);
+    expect(toggleWay(["P-000002", "P-000003"], "P-000002", false)).toEqual(["P-000003"]);
+    expect(toggleWay(["P-000002"], "P-000002", true)).toEqual(["P-000002"]);
+    expect(promoteCommand("/work/acme", req("P-d65fba", "apps/web", ["P-288461"], true), true)).toBe("drift --root /work/acme practices promote P-d65fba --in apps/web --with P-288461 --block --dry-run --json");
+  });
+
+  it("previews a directory place from the fixture's map: the follows, the exceptions recorded as they are, nothing unknown", () => {
+    const res = ok(fixturePromote(acme(), req("P-1587e5", "apps/web/app/api/admin"), false));
+    expect(res.written).toBe(false);
+    expect(res.candidate.place).toEqual({ package: "apps/web", dir: "app/api/admin" });
+    expect([res.candidate.follows, res.candidate.exceptions.length, res.candidate.unknown, res.candidate.total]).toEqual([19, 1, 0, 20]);
+    expect(res.candidate.exceptions.map(unitAt)).toEqual(["apps/web/app/api/admin/health/route.ts:3 GET"]);
+    expect(res.baselined).toBe(1);
+    expect(res.replay).toBeNull();
+    expect(replayText(res)).toBeNull();
+    expect(res.convention).toMatchObject({ status: "accepted", mode: "advise", promoted_from_practice: "P-1587e5" });
+    expect(res.convention.id).toMatch(/^D-[0-9a-f]{6}$/);
+    expect(followsText(res)).toBe("19 of the 20 entry points in apps/web/app/api/admin use wrap withAdmin.");
+    // Deterministic: the same request gives the same id and text.
+    expect(fixturePromote(acme(), req("P-1587e5", "apps/web/app/api/admin"), false)).toEqual(res);
+  });
+
+  it("lists the other ways of a package place to tick, and ticking one accepts it: its units follow, they are no longer exceptions", () => {
+    const one = ok(fixturePromote(acme(), req("P-d65fba", "apps/web"), false));
+    expect([one.candidate.follows, one.candidate.total]).toEqual([92, 94]);
+    expect(one.candidate.exceptions.map((e) => e.path)).toEqual(["apps/web/lib/analytics.ts", "apps/web/lib/auth.ts"]);
+    const others = wayChoices(one).map((w) => w.id);
+    expect(others).toContain("P-288461");
+    expect(others).not.toContain("P-d65fba");
+    const two = ok(fixturePromote(acme(), req("P-d65fba", "apps/web", ["P-288461"]), false));
+    expect(two.candidate.ways.map((w) => w.id)).toEqual(["P-d65fba", "P-288461"]);
+    expect(two.candidate.follows).toBe(93);
+    expect(two.candidate.exceptions.map((e) => e.path)).not.toContain("apps/web/lib/auth.ts");
+    // Ticked ways stay listed (ticked) and others stay put: the same choices, in the same order.
+    expect(wayChoices(two).map((w) => w.id)).toEqual(others);
+    expect(followsText(two)).toBe("93 of the 94 symbols in apps/web use one of the 2 accepted ways.");
+  });
+
+  it("lists the first exceptions and counts the rest", () => {
+    const res = ok(fixturePromote(acme(), req("P-d65fba", "apps/web"), false));
+    expect(exceptionsShown(res, 1)).toEqual({ shown: [res.candidate.exceptions[0]], more: 1 });
+    expect(exceptionsShown(res).more).toBe(0);
+  });
+
+  it("refuses as Drift does: an unknown id, no way, another concern, too few units; block without a replay", () => {
+    const r = acme();
+    expect(code(fixturePromote(r, req("P-000000", "apps/web"), false))).toBe("unknown_variant");
+    expect(code(fixturePromote(r, req("P-68fb99", "apps/web"), false))).toBe("not_a_way");
+    expect(code(fixturePromote(r, req("P-1587e5", "apps/web/app/api/admin", ["P-d65fba"]), false))).toBe("other_concern");
+    expect(code(fixturePromote(r, req("P-1587e5", "apps/web/app/api/admin/abuse"), false))).toBe("too_small");
+    const block = fixturePromote(r, req("P-1587e5", "apps/web/app/api/admin", [], true), false);
+    expect(isRefused(block) && block.message).toMatch(/Block mode needs a replay/);
+    for (const o of [block, fixturePromote(r, req("P-000000", "."), false)]) expect(isRefused(o) && o.message.length > 20).toBe(true);
+  });
+
+  it("records the convention as conventions.yaml holds a promoted practice, and says its rule in words", () => {
+    const res = ok(fixturePromote(acme(), req("P-1587e5", "apps/web/app/api/admin"), true));
+    const c = fixtureConvention(res);
+    expect(c).toMatchObject({ id: res.convention.id, status: "accepted", mode: "advise", agents: "show", promoted_from_practice: "P-1587e5" });
+    expect(c.rule).toEqual({ type: "practice", concern: "authn", any_of: [res.candidate.ways[0].key] });
+    expect(c.role).toMatchObject({ package: "apps/web", dir: "app/api/admin" });
+    expect(ruleFamily(c.rule)).toBe("Practices");
+    expect(practiceText(c.rule)).toBe("authn done one of 1 accepted way");
+    expect(ruleTargets({ type: "practice", concern: "authn", any_of: ["a", "b"] })).toEqual(["authn done one of 2 accepted ways"]);
+    expect(practiceText({ type: "has_test" })).toBeNull();
+  });
+
+  it("keeps the variant a convention was promoted from, when conventions.yaml names one well-formed", () => {
+    const yaml = (from: string) => `version: 1\nengine: x\nconventions:\n  - id: D-0000aa\n    status: accepted\n    mode: advise\n    summary: s\n    rule: { type: practice, concern: authn, any_of: ["wrap:lib/auth.ts#withAuth"] }\n    promoted_from_practice: ${from}\n`;
+    expect(parseConventions(yaml("P-0f0acb")).conventions[0]).toMatchObject({ promoted_from_practice: "P-0f0acb", rule: { type: "practice", concern: "authn", any_of: ["wrap:lib/auth.ts#withAuth"] } });
+    expect(parseConventions(yaml("D-0f0acb")).conventions[0]?.promoted_from_practice).toBeUndefined();
   });
 });

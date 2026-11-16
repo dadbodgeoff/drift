@@ -11,7 +11,7 @@ import { DiffScope, type ViolationStatus, VIOLATION_STATUS, byConvention, byFile
 import { symbolLine, useFactsIndex } from "@/entities/facts";
 import { checkTierReasonText, exemptionKind, exemptionKinds, languageText, wireAt, wireFix, wireTitle } from "@/entities/convention";
 import { useApi } from "@/shared/api";
-import type { CheckConvention, CheckExemption, DiffInfo, NeighbourHold, PracticeDeparture, Violation } from "@/shared/contract/drift";
+import type { CheckConvention, CheckExemption, DiffInfo, NeighbourHold, PracticeDeparture, PracticeNotChecked, StalePractice, Violation } from "@/shared/contract/drift";
 import { t } from "@/shared/i18n";
 import { num, plural } from "@/shared/lib/format";
 import { mdCode, mdTable } from "@/shared/lib/markdown";
@@ -319,6 +319,8 @@ export function CheckView() {
             </div>
           )}
           {(report.practices?.departures.length ?? 0) > 0 && <DepartSection departures={report.practices!.departures} />}
+          {(report.stale_practices?.length ?? 0) > 0 && <StalePracticesSection stale={report.stale_practices!} />}
+          {(report.practices_not_checked?.length ?? 0) > 0 && <PracticesNotCheckedSection rows={report.practices_not_checked!} />}
           {holds.length > 0 && <HeldSection holds={holds} />}
           {exempt.length > 0 && <ExemptSection exempt={exempt} q={q} />}
           <section id="ck-fixed" className="ck-fixed" aria-label="Fixed lock entries">
@@ -558,6 +560,75 @@ function UncheckedNote({ paths }: { paths: string[] }) {
  * points do differently from at least 80% of those around them. Drift's facts as it reports them; never a violation,
  * never failing. The Practices view has the whole map.
  */
+/** Sorted by convention id, as Drift lists them; a copy so the report is never reordered in place. */
+const byId = <T extends { id: string }>(xs: readonly T[]) => [...xs].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+/**
+ * Promoted practices none of whose accepted ways any unit of their place uses any more (the guard was renamed or
+ * replaced): they report nothing until a person promotes the practice again with the way the code uses now, or rejects
+ * the convention. Information, never a failure.
+ */
+function StalePracticesSection({ stale }: { stale: StalePractice[] }) {
+  return (
+    <section id="ck-stale-practices" className="ck-exempt ck-stale-practices" aria-labelledby="ck-stale-practices-title">
+      <div className="st-row st-wrap">
+        <h3 id="ck-stale-practices-title" className="ck-exempt__title">
+          <StateLabel tone="info" icon="info">
+            Promoted practices that check nothing
+          </StateLabel>
+        </h3>
+        <span className="ck-key__num">{num(stale.length)}</span>
+        <span className="t-caption t-muted">No unit of the place uses an accepted way any more, so the convention reports nothing. Not a failure.</span>
+      </div>
+      <ul className="ck-exempt__list" aria-label="Stale promoted practices">
+        {byId(stale).map((s) => (
+          <li key={s.id} className="ck-exempt__row">
+            <button type="button" className="st-link dui-mono" onClick={() => navigate("conventions", s.id)}>
+              {s.id}
+            </button>
+            <span className="ck-exempt__reason">
+              <span className="t-body-sm">{s.summary}</span>
+              <span className="t-caption t-secondary ck-exempt__why">
+                {plural(s.units, "unit", "units")} of the concern in its place now, none done an accepted way. Promote the practice again from the{" "}
+                <button type="button" className="st-link" onClick={() => navigate("practices")}>
+                  practice map
+                </button>{" "}
+                with the way the code uses now, or reject it: <span className="dui-mono">drift review --reject {s.id}</span>
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Per promoted practice, the units of its place the practice map cannot tell: not checked and never reported. Information, never a failure. */
+function PracticesNotCheckedSection({ rows }: { rows: PracticeNotChecked[] }) {
+  return (
+    <section id="ck-practices-not-checked" className="ck-exempt ck-practices-not-checked" aria-labelledby="ck-practices-not-checked-title">
+      <div className="st-row st-wrap">
+        <h3 id="ck-practices-not-checked-title" className="ck-exempt__title">
+          <StateLabel tone="info" icon="info">
+            Promoted practices: units Drift could not read
+          </StateLabel>
+        </h3>
+        <span className="t-caption t-muted">Drift cannot tell what these units do for the concern, so it does not check them and never reports them. Not a failure.</span>
+      </div>
+      <ul className="ck-exempt__list" aria-label="Units of promoted practices not checked">
+        {byId(rows).map((r) => (
+          <li key={r.id} className="ck-exempt__row">
+            <button type="button" className="st-link dui-mono" onClick={() => navigate("conventions", r.id)}>
+              {r.id}
+            </button>
+            <span className="t-caption t-secondary">{plural(r.units, "unit", "units")} not checked</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function DepartSection({ departures }: { departures: PracticeDeparture[] }) {
   const openCode = useOpenCode();
   const [limit, setLimit] = useState(PAGE);

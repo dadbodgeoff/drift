@@ -11,6 +11,7 @@ mod mcp;
 mod pr;
 mod practices;
 mod project;
+mod promote;
 mod review_log;
 mod scan;
 mod setup;
@@ -27,7 +28,7 @@ use std::time::Instant;
 use anyhow::{Context, bail};
 use clap::{Parser, Subcommand, ValueEnum};
 use drift_core::{RepoFacts, SymbolKind};
-use drift_mine::check::{CheckReport, Scope, baseline, check};
+use drift_mine::check::{CheckReport, Scope};
 use drift_mine::mine::{
     Candidate, DEFAULT_MAX_PER_REPO, MAX_PER_ROLE, MIN_BLOCK_ROLE_SIZE, MIN_LIFT,
     MIN_LIFT_EXTERNAL_CALL, MIN_LOWER_BOUND, MIN_ROLE_SIZE, MineOptions, Mined, Rule, WithheldCard,
@@ -360,7 +361,9 @@ enum Command {
         /// Reject these convention ids (comma-separated).
         #[arg(long, value_delimiter = ',')]
         reject: Vec<String>,
-        /// Accept these and set them to block (default-tier conventions; see --force).
+        /// Accept these and set them to block (default-tier conventions; see --force). A
+        /// promoted practice blocks only when a replay of the units last added to its
+        /// place (git history) allows it; --force does not lift that.
         #[arg(long, value_delimiter = ',')]
         block: Vec<String>,
         /// With --block: also block suggestion-tier conventions. Roles with fewer
@@ -597,8 +600,11 @@ enum Command {
     /// each variant with its share, where it is, what sets it apart, an example to copy,
     /// and what is unknown. Facts, not rules: read-only, exit 0. By default a recipe per
     /// kind of entry point and the findings; --all gives every concern's variant table.
-    #[command(after_help = PRACTICES_HELP)]
+    /// `drift practices promote` makes one way the rule for new code in one place.
+    #[command(after_help = PRACTICES_HELP, args_conflicts_with_subcommands = true)]
     Practices {
+        #[command(subcommand)]
+        action: Option<PracticesAction>,
         /// Only this concern (`authn`, `authz`, `errors`, `logging`, `api`,
         /// `validation`, `config`, `data_access`, `testing`).
         #[arg(long)]
@@ -720,7 +726,9 @@ const FINDINGS_HELP: &str = "Examples:
 const REVIEW_HELP: &str = "Examples:
   drift review                               interactive: y accept, b block, a accept and show to agents, n reject, s skip, q quit
                                              (the default tier, then the 5 best suggestions); a block candidate
-                                             asks one question: y yes, d no, these are different, n not a convention
+                                             asks one question: y yes, d no, these are different, n not a convention;
+                                             then the practices that may be promoted: y advise, b block (after
+                                             a history replay), n no (not asked again), s skip
   drift review --json                        each block candidate's question: holders, flagged members by file
   drift review --answer D-37416b=same        yes, the same kind of thing: accept it (=not-a-convention rejects it)
   drift review --answer D-37416b=different --set-apart lib/seed.ts
@@ -786,9 +794,13 @@ const PRACTICES_HELP: &str = "Examples:
   drift practices --package apps/web       one package
   drift practices --json                   all of it, as JSON (version 1)
   drift practices --hints                  the config lines that classify what is unknown
+  drift practices promote --list           the practices that may be made the rule for new code
+  drift practices promote P-0f0acb --in app/api
+                                           make one a convention (`drift practices promote --help`)
 
-Facts, not rules: nothing here is enforced. authn, authz, validation, errors and api
-make the recipe; logging, config, data_access and testing are a preview.
+Facts, not rules: nothing here is enforced until a person promotes a practice
+(`drift practices promote`). authn, authz, validation, errors and api make the recipe;
+logging, config, data_access and testing are a preview.
 Unknown units are counted against coverage, never hidden; a `practices:` line in
 .drift/config.yaml (`practices: {authn: {\"lib/auth.ts#withAuth\": withAuth}}`) makes an
 unclassified instrument known.";
@@ -832,6 +844,17 @@ permissions.allow; with --write it merges them into the file (other settings are
 keys are written sorted). The Claude Code plugin approves the same lookups
 from its PreToolUse hook, so this is for teams without the plugin, or for permission
 modes in which a hook cannot approve a tool.";
+
+/// What `drift practices` does besides printing the map.
+#[derive(Subcommand)]
+enum PracticesAction {
+    /// Make a practice the rule for new code in one place: an accepted convention
+    /// (advise mode, shown to agents), with the units that differ today recorded in
+    /// drift.lock so only new code is reported. Exits 2, writing nothing, when the place
+    /// does not qualify.
+    #[command(after_help = promote::PROMOTE_HELP)]
+    Promote(promote::PromoteArgs),
+}
 
 #[derive(Clone, Copy, ValueEnum)]
 enum DebugKind {
@@ -1489,10 +1512,21 @@ fn census_unchecked_note(facts: &RepoFacts, mined: &Mined) -> Option<String> {
 fn print_convention_card(c: &Convention, report: &CheckReport, cap: OutlierCap) {
     println!();
     println!("[{}] {}", c.id, c.summary);
-    println!(
-        "  evidence: {}/{} (lower bound {:.2}, lift {:.1})",
-        c.evidence.holders, c.evidence.total, c.evidence.lower_bound, c.evidence.lift
-    );
+    if c.rule.is_practice() {
+        // Counted by the practice map when it was promoted: no lower bound or lift.
+        println!(
+            "  evidence: {} of {} follow it",
+            c.evidence.holders, c.evidence.total
+        );
+    } else {
+        println!(
+            "  evidence: {}/{} (lower bound {:.2}, lift {:.1})",
+            c.evidence.holders, c.evidence.total, c.evidence.lower_bound, c.evidence.lift
+        );
+    }
+    if let Some(origin) = promote::origin(c) {
+        println!("  origin:   {origin}");
+    }
     println!("  tier:     {}", c.describe_tier());
     println!(
         "  agents:   {}",
@@ -1644,7 +1678,17 @@ fn review_report_on(
     wiring::gate(&cli.root, &mut gated, false)?;
     let lock = Lock::load(&cli.root)?;
     history::attach_key_files(&cli.root, &gated, facts);
-    Ok(check(facts, &gated, &lock, Scope::All, None))
+    // A promoted practice is checked against the practice map: its outliers on a card are
+    // the units that break it now.
+    Ok(practices::check_with_practices(
+        &cli.root,
+        facts,
+        &gated,
+        &lock,
+        Scope::All,
+        None,
+        None,
+    ))
 }
 
 /// A block candidate's answer (`--answer ID=...`, interactive y / d / n).
@@ -2061,6 +2105,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             );
         }
         Command::Practices {
+            action,
             concern,
             package,
             path,
@@ -2069,6 +2114,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             units,
             hints,
         } => {
+            if let Some(PracticesAction::Promote(args)) = action {
+                // It writes the policy, as `drift init` does: the fact cache as usual.
+                return promote::run(root, || load_facts(cli, 0), args);
+            }
             // Read-only, as `drift map`: the fact cache only where DRIFT_CACHE_DIR points.
             let facts = read_only_facts(cli)?;
             let rel = match path {
@@ -2629,7 +2678,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             history::attach_key_files(root, &policy, &mut facts);
             // Baseline only on first init; afterwards the lock only shrinks unless a person edits it.
             let mut lock = Lock::load(root)?;
-            let fresh = baseline(&facts, &policy);
+            // Promoted practices kept from before are baselined as every convention is.
+            let fresh = practices::baseline_with_practices(root, &facts, &policy);
             if had {
                 // New conventions get their current violations baselined; existing entries are kept.
                 let known: BTreeSet<&str> =
@@ -3333,6 +3383,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     if let Some(n) = withheld_note(&withheld_now(root, &facts, &policy)) {
                         println!("{n}");
                     }
+                    // Promoted practices are never proposals: listed with where they came from.
+                    for line in promote::listed(&policy) {
+                        println!("{line}");
+                    }
                     ids
                 } else {
                     show.clone()
@@ -3463,6 +3517,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 // Nothing to ask about: say so in one line, with where the withheld cards are.
                 if review_queue(&policy, cap).0.is_empty() {
                     println!("{}", nothing_to_ask(&withheld));
+                    // The practices that may be promoted are offered all the same.
+                    let map = practices::report_units_kept(root, &facts, None);
+                    drop(facts);
+                    if promote::review_step(root, &map, &mut policy)? {
+                        policy.save(root)?;
+                        println!("{}", review_summary(&policy));
+                    }
                     return Ok(ExitCode::SUCCESS);
                 }
                 if let Some(n) = withheld_note(&withheld) {
@@ -3477,8 +3538,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .into_iter()
                         .map(|q| (q.id.clone(), q))
                         .collect();
-                drop(facts);
-                review_interactive(&mut policy, cap, &report, &questions, more, &mut rlog)?;
+                // After the proposals (unless the person quit), the practices that may
+                // be promoted, one at a time.
+                if review_interactive(&mut policy, cap, &report, &questions, more, &mut rlog)? {
+                    let map = practices::report_units_kept(root, &facts, None);
+                    drop(facts);
+                    promote::review_step(root, &map, &mut policy)?;
+                }
             } else {
                 // Refuse before changing anything: an id that is not in the policy,
                 // or one asked to both advise and block (or be rejected).
@@ -3516,10 +3582,18 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         both.join(", ")
                     );
                 }
+                // Refuse before changing anything: a promoted practice blocks only through
+                // the replay of recent history, which `--force` does not lift.
+                for line in
+                    promote::review_block(root, || load_facts(cli, 0), &policy, block, *force)?
+                {
+                    eprintln!("{line}");
+                }
                 // Refuse before changing anything: a suggestion blocks only when forced.
                 let refused: Vec<String> = block
                     .iter()
                     .filter_map(|id| policy.conventions.iter().find(|c| &c.id == id))
+                    .filter(|c| !c.rule.is_practice())
                     .filter(|c| !force && block_guard(c) == BlockGuard::Suggestion)
                     .map(|c| {
                         format!(
@@ -3555,6 +3629,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             .with_context(|| format!("unknown convention {id}"))?;
                         logged.push(match (status, mode) {
                             (Status::Rejected, _) => ("reject", id),
+                            (_, Some(Mode::Block)) if c.rule.is_practice() => ("block", id),
                             (_, Some(Mode::Block)) if block_guard(c) == BlockGuard::Suggestion => {
                                 ("force_block", id)
                             }
@@ -3578,6 +3653,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                     );
                                     c.mode = Mode::Advise;
                                 }
+                                // Through the replay above, not by tier.
+                                (Mode::Block, _) if c.rule.is_practice() => c.mode = m,
                                 (Mode::Block, BlockGuard::Suggestion) => {
                                     eprintln!("{id}: {} set to block (--force)", c.describe_tier());
                                     c.mode = m;
@@ -3731,7 +3808,27 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(only) = &only {
                 warn_unchecked_paths(root, &facts, only);
             }
-            let mut full = check(&facts, &policy, &lock, Scope::Accepted, only.as_ref());
+            // The practice map of these facts, with units listed: built (or read back from
+            // where it is kept) once, for the promoted practices and for the departures
+            // listed after the report, and only when one of them asks for it.
+            let map_kept = std::cell::OnceCell::new();
+            let map = std::cell::OnceCell::new();
+            let map_of = || {
+                map.get_or_init(|| {
+                    let kept = map_kept.get_or_init(|| {
+                        derived::Derived::of(cache_dir(root, cli.no_cache), &facts)
+                    });
+                    practices::report_units_kept(root, &facts, kept.as_ref())
+                })
+            };
+            let mut full = practices::check_with_map(
+                &facts,
+                &policy,
+                &lock,
+                Scope::Accepted,
+                only.as_ref(),
+                map_of,
+            );
             drift_mine::check::locate_imports(&mut full, root);
             // Experimental: suggestions the host agent verified are shown to agents too.
             let verify = drift_mine::verify::statuses(root, &policy, || Some(&*facts));
@@ -3796,10 +3893,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         s.adds_entry(root, &base_entries, (p, line), (symbol, method, route))
                     })
                 };
+            // A unit the report lists as breaking a promoted practice is not listed again
+            // as a departure of the same concern.
+            let reported = practices::reported_practice_units(&report, &policy);
             let (departures, added) = practices::check_departures(
-                root,
                 &facts,
-                || derived::Derived::of(cache_dir(root, cli.no_cache), &facts),
+                map_of,
                 |p| match (&scope, &only) {
                     (Some(s), _) => s.touches(p),
                     (None, Some(only)) => only.iter().any(|o| {
@@ -3810,6 +3909,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     (None, None) => true,
                 },
                 scope.is_some().then_some(&adds as practices::Adds<'_>),
+                &reported,
             );
             match format {
                 Format::Json => {
@@ -3902,6 +4002,14 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "locations": at(&format!("{prefix}{}", d.path), d.units.first().map_or(1, |u| u.line)),
                         }));
                     }
+                    // Promoted practices that could not say all they hold: notifications
+                    // of the run (no file to point at), never results.
+                    for line in practices::practice_status_lines(&report, &policy) {
+                        notes.push(serde_json::json!({
+                            "level": "note",
+                            "message": { "text": line.trim_start_matches("drift: ") },
+                        }));
+                    }
                     // What the security baseline does not hold fails the check: a
                     // result, so that code scanning shows why, under a rule per kind.
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
@@ -3952,9 +4060,14 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .filter(|c| !drift_mine::verify::convention_view(c, verify.as_ref()).shown)
                         .map(|c| c.id.as_str())
                         .collect();
-                    print_report(&report, &hidden);
+                    print_report(&report, &hidden, &practices::practice_concerns(&policy));
                     if *strict && unread {
                         println!("drift: --strict: files that were not checked fail the check");
+                    }
+                    // Promoted practices that are stale or could not read some units:
+                    // said, never part of the exit code.
+                    for line in practices::practice_status_lines(&report, &policy) {
+                        println!("{line}");
                     }
                     print!("{}", drift_mine::practices::added_text(&added));
                     print!("{}", drift_mine::practices::departures_text(&departures));
@@ -4218,7 +4331,9 @@ fn example_lines(convs: &[&Convention]) -> Vec<String> {
 
 /// `drift check`'s text: every new violation, those of an accepted convention agents
 /// are not shown (`hidden`) marked so; agent visibility hides nothing from people.
-fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>) {
+/// `practice`: the concern of each promoted practice, by convention id: its violation's
+/// fix is to do that concern the way its example does.
+fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&str, &str>) {
     let new: Vec<_> = r.new_violations().collect();
     let legacy = r.violations.iter().filter(|v| v.baselined).count();
     let suppressed: Vec<_> = r.suppressed().filter(|v| !v.baselined).collect();
@@ -4250,6 +4365,12 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>) {
             }
             if let Some(w) = &v.wire {
                 println!("  fix  {}", w.describe(&v.symbol));
+            }
+            if let Some(concern) = practice.get(v.id.as_str()) {
+                println!(
+                    "  fix  handle {} the way the `like` example does",
+                    mcp::concern_words(concern)
+                );
             }
             let notes: Vec<&str> = [
                 (v.tier == Tier::Suggestion).then_some("suggestion"),
@@ -4738,10 +4859,12 @@ fn review_interactive(
     questions: &BTreeMap<String, drift_mine::calibrate::Question>,
     outliers: OutlierCap,
     rlog: &mut review_log::ReviewLog,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     if !std::io::stdin().is_terminal() {
         bail!("`drift review` needs a terminal; use --accept/--reject/--block/--advise in scripts");
     }
+    // Whether the person quit (or the input ended): then nothing more is asked.
+    let mut quit = false;
     let stdin = std::io::stdin();
     let mut lines = stdin.lock().lines();
     // Default tier first, in policy order, then the best suggestions.
@@ -4775,6 +4898,7 @@ fn review_interactive(
                 Ok(lines.next().transpose()?)
             };
             let Some(line) = read("  [y/d/n/b/s/q] > ")? else {
+                quit = true;
                 break;
             };
             let before = rlog.before(c);
@@ -4817,7 +4941,10 @@ fn review_interactive(
                     }
                     rlog.answered(&before, c, q, "different", "accept", Some(&diff));
                 }
-                "q" => break,
+                "q" => {
+                    quit = true;
+                    break;
+                }
                 _ => {
                     println!("  skipped: it stays a candidate");
                     rlog.decision("skip", &before, c, None, None);
@@ -4829,7 +4956,10 @@ fn review_interactive(
         rlog.shown(c, Some(report));
         print!("  [y/b/a/n/s/q] > ");
         std::io::stdout().flush()?;
-        let Some(line) = lines.next() else { break };
+        let Some(line) = lines.next() else {
+            quit = true;
+            break;
+        };
         let mut confirm = |prompt: &str| -> anyhow::Result<String> {
             print!("{prompt}");
             std::io::stdout().flush()?;
@@ -4839,6 +4969,7 @@ fn review_interactive(
         let answer = line?;
         let answer = answer.trim();
         if !review_answer(c, answer, &mut confirm)? {
+            quit = true;
             break;
         }
         rlog.decision(interactive_decision(answer, c), &before, c, None, None);
@@ -4854,7 +4985,7 @@ fn review_interactive(
             "{blocking} accepted conventions block. `drift review --advise <id>` sets one back to advise."
         );
     }
-    Ok(())
+    Ok(!quit)
 }
 
 /// A block candidate's card as its question shows it: the convention, two or three members
@@ -5233,7 +5364,8 @@ fn review_hidden(
     if promoted {
         let mut alone = policy.clone();
         alone.conventions = vec![c.clone()];
-        lock.entries.extend(baseline(&facts, &alone).entries);
+        lock.entries
+            .extend(practices::baseline_with_practices(root, &facts, &alone).entries);
     }
     c.promoted_from_hidden = true;
     let decision = if kind == Answer::NotAConvention {
@@ -5397,6 +5529,7 @@ mod tests {
             exceptions: Vec::new(),
             different_kind: Vec::new(),
             promoted_from_hidden: false,
+            promoted_from_practice: None,
         }
     }
 

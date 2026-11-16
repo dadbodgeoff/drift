@@ -198,12 +198,21 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
         );
     }
     for v in shown {
-        let fix = v.wire.as_ref().map_or_else(String::new, |w| {
-            format!(
+        // What to do: where to register a symbol (wiring), or, for a promoted practice,
+        // to handle its concern as the unit it names to copy does. The classifier, not a
+        // name, decides a practice, so the way to follow it is the example's.
+        let fix = match (&v.wire, &v.practice) {
+            (Some(w), _) => format!(
                 "  fix  {}\n",
                 sanitize(&w.describe(&v.symbol), MAX_PATH + 80)
-            )
-        });
+            ),
+            (None, Some(concern)) => format!(
+                "  fix  handle {} the way {} does\n",
+                sanitize(crate::practices::plain_concern(concern), 32),
+                sanitize(&v.example, MAX_PATH)
+            ),
+            (None, None) => String::new(),
+        };
         let ignore = if offer_ignore && v.mode == "block" {
             format!(
                 "  if intentional: add `{} drift-ignore {}: <reason>` above the declaration (shown to reviewers)\n",
@@ -796,7 +805,24 @@ mod tests {
             extent: crate::check::Extent::Symbol { start: 4, end: 9 },
             wire: None,
             import: None,
+            practice: None,
         }
+    }
+
+    #[test]
+    fn a_practice_violation_says_what_to_do() {
+        let practice = Violation {
+            practice: Some(crate::practices::AUTHN.to_string()),
+            ..v("GET", "app/api/r40/route.ts")
+        };
+        let msg = agent_message(&[&practice], AgentAt::Edit);
+        assert!(
+            msg.contains("  fix  handle sign-in the way app/api/a/route.ts#GET does\n"),
+            "{msg}"
+        );
+        // Any other convention's violation has no such line.
+        let other = agent_message(&[&v("GET", "app/api/r40/route.ts")], AgentAt::Edit);
+        assert!(!other.contains("  fix  handle"), "{other}");
     }
 
     #[test]
