@@ -175,12 +175,45 @@ for rule, view, methods in ROUTES:
 
 Every view such a call may be handed is listed under the unknown prefix (`http ANY /?  shop/views.py:4`; `/v1/?` on a blueprint or router with that prefix), so a route that is served is in the inventory though its path is not known; behind a gateway it is unknown, never internal. The same holds of FastAPI's `add_api_route` in a loop, a comprehension, `getattr(views, name)` and a route decorator called as a function there (`app.route(rule)(view)`). A table handed to a helper in another file (`register(app, ROUTES)`) lists nothing.
 
+### Hosting platforms: what their own files say
+
+A platform that deploys an application and gives it a public URL makes it internet-facing by construction, and the platform's file says so. Drift reads these files, each for what it deploys (a project, a service, a process, a function) and how that is reached, and names the file and line in the row's reason (`boundaries.platforms` in `--json`):
+
+| File | Internet-facing | Internal (on the file's proof) | Unknown |
+| --- | --- | --- | --- |
+| `vercel.json` | the project rooted at the file's directory | | |
+| `netlify.toml` | the site of `[build] base` (relative to the repository root; the file's directory without one), and the functions of `[functions] directory` | | |
+| `fly.toml` | an `[http_service]`, or a `[[services]]` entry with `ports` | an app with neither: the Fly proxy routes nothing from the internet to it | |
+| `render.yaml` | a service of `type: web` | `pserv` (private service), `worker`, `cron` | any other type |
+| `Procfile` beside an `app.json` (Heroku) | the `web` process | a Procfile with no `web` process | |
+| App Engine `app.yaml` | the service (ingress settings made outside the file are not read) | | |
+| Cloud Run service YAML (`serving.knative.dev/v1`) | ingress `all`, or no ingress annotation | ingress `internal` | ingress `internal-and-cloud-load-balancing` |
+| AWS SAM template (`AWS::Serverless::Function`) | a function an `Api` or `HttpApi` event routes every path to (`/{proxy+}`, an HTTP API with no path), or with a `FunctionUrlConfig` | a function with no HTTP event and no function URL, every event of a kind Drift knows (SQS, SNS, S3, Schedule, DynamoDB, Kinesis, ...) | a function routed some paths only (`GET /items only`), or with an event type Drift does not know |
+| `serverless.yml` (Serverless Framework) | as SAM, for `http`, `httpApi`, `websocket` events and a function `url` | as SAM | an `alb` event, as SAM |
+| `wrangler.toml` / `wrangler.json` / `wrangler.jsonc` | a worker with `routes` / `route`, or `workers_dev = true` | | no route and no `workers_dev = true` |
+
+An authorizer on an event (or an API's default authorizer, or a function URL with `AWS_IAM`) is named with the verdict: the route is still internet-facing, and whether the authorizer turns a caller away is not read.
+
+**Which code.** A unit is tied to the code of the repository only by what the file says: a root directory (`rootDir`, `dockerContext`, `[build] base`, `CodeUri`), a workspace package its build or start command selects (`turbo run @acme/web#start`, `--filter web`, `--workspace web`, `yarn workspace web`, `cd apps/web`), a file its command names (`gunicorn app.wsgi`, `node server.js`), or the directory of the file where the platform deploys that directory. Where that directory has entry points of its own, that is what it deploys. Where only packages below it have them and the file names none, the routes stay unknown, even when there is only one such package: the warning names them, and `drift setup` asks which one it is (see [Setup Questions](Setup-Questions)). A Cloud Run service names only an image, so its code is always tied by a person. The answer, or a line you write, goes under `security.platforms`:
+
+```yaml
+# .drift/config.yaml
+security:
+  platforms:
+    - {file: vercel.json, code: apps/web}
+    - {file: "render.yaml#api", code: services/api}   # one service of the file
+```
+
+**Internal only on proof.** An internal verdict from a platform's file stands only where nothing else Drift reads (a compose file, `security:` in the config) speaks for the code, and becomes unknown while a description Drift does not read is in the repository, as a compose verdict does. An internet-facing one is the file's word: no gateway decides its routes one by one. An application below the tied code that is a package of its own is not said to be served by it.
+
+A platform file read to the end, with every unit tied, is a description Drift reads: it is listed among the descriptions an internal verdict rests on, and no longer keeps other routes from being called internal. One with something the reader does not follow stays listed as not read, besides what was read of it: a rewrite or proxy redirect to another host, an image or a Dockerfile of another directory, a SAM resource that may route requests (an API with an OpenAPI definition, an API Gateway, load balancer or function URL resource), a function deployed on a condition, and every Cloudflare Workers file (a worker may pass what it is asked on to any origin). A `Procfile` with no `app.json` is not read as a Heroku app. A `.vercel/project.json` is not read (hidden directories are not entered). None of these readings adds a kind of finding to `.drift/security.lock`: exposure is no part of a finding's key, so a route newly read as internet-facing fails no baseline.
+
 ### What Drift recognises and does not read
 
 Where a deployment description of one of these kinds is in the repository and Drift does not read it, nothing it may route to is called internal. The reason keeps the compose finding and names the files (`boundaries.unread` in `--json`):
 
 - Kubernetes manifests (YAML or JSON), Helm charts, Terraform, CloudFormation and SAM (YAML or JSON), ARM and Bicep templates, Azure Container Apps, an API gateway's OpenAPI document (`x-amazon-apigateway-integration`, `x-google-backend`), CDK, CDK for Terraform, Pulumi and SST apps (by their files or by the dependencies a `package.json`, `requirements*.txt` or `pyproject.toml` names), ECS task definitions, AWS Copilot, Kamal, Cloudflare Workers, App Engine's `dispatch.yaml`, Cloud Build files that deploy, Nomad and kustomizations, anywhere in the repository.
-- Fly.io, Render, Vercel, Netlify, Firebase, App Runner, Railway, Elastic Beanstalk, Serverless, App Engine or a Procfile, for the code of their directory, unless they route elsewhere (a rewrite to another host, a Render Blueprint `rootDir`, a `fly.toml` that builds another directory), which then count as infrastructure.
+- Fly.io, Render, Vercel, Netlify, Firebase, App Runner, Railway, Elastic Beanstalk, Serverless, App Engine or a Procfile, for the code of their directory, unless they route elsewhere (a rewrite to another host, a `fly.toml` that builds another directory), which then count as infrastructure; those of the previous section that are not read to the end stay here too.
 
 ```
 http POST /internal/jobs/lease  api/app/jobs.py:6  unknown (compose service api in docker-compose.yml publishes no ports; but Terraform (infra/main.tf) in the repository is not read and may route to it; security.terraform in .drift/config.yaml can tie this code to the target group that forwards to it)

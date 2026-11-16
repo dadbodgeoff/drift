@@ -33,6 +33,8 @@ main branch.
 
 ### Added
 
+- **Exposure from hosting platforms' own files.** `drift security` reads Vercel (`vercel.json`), Netlify (`netlify.toml`), Fly.io (`fly.toml`), Render (`render.yaml`), Heroku (`Procfile` with `app.json`), App Engine (`app.yaml`), Cloud Run service YAML, AWS SAM templates, Serverless Framework (`serverless.yml`) and Cloudflare Workers (`wrangler.*`) for what they deploy and how it is reached: internet-facing where the file says the thing is served publicly, internal only on the file's proof (a Fly app with no service port, a Render private service or worker, a function with no HTTP event), unknown otherwise, each with the file and line. A unit is tied to its code by what the file says (root directory, a package its command selects, a file it names); a monorepo file that does not say which application it deploys stays unknown, `drift setup` asks (question kind `platform`), and `security.platforms` in `.drift/config.yaml` takes the answer. A file read to the end no longer keeps other routes from being called internal. `security --json` gains `boundaries.platforms`. No finding kind changes: a baseline written before stays as it was.
+
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

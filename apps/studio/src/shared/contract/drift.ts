@@ -1497,6 +1497,23 @@ export interface Boundaries {
    * (`security.terraform`): its listener rules are then read for the tied code directories only (`EntryRow.tied`).
    */
   unread?: { kind: string; files: string[]; count: number }[];
+  /**
+   * What the hosting platforms' own files deploy (Vercel, Netlify, Fly.io, Render, a Heroku `Procfile` with
+   * `app.json`, App Engine, Cloud Run, AWS SAM, Serverless, Cloudflare Workers) and how each is reached, with the file
+   * and line that say so (`says`) and the code directory it runs (`code`, once tied). `untied` says why one is not
+   * tied, and `candidates` lists the applications it may deploy, which `drift setup` asks about (`kind: "platform"`)
+   * (newer drift; absent when none).
+   */
+  platforms?: {
+    file: string;
+    kind: string;
+    name?: string;
+    exposure: Exposure;
+    says: string;
+    code?: string;
+    untied?: string;
+    candidates?: string[];
+  }[];
 }
 
 export interface SinkUse {
@@ -2328,8 +2345,11 @@ export interface DriftSetupProposal {
 export interface DriftSetupQuestion {
   /** `S-` and 4 hex digits, stable for what the question is about. */
   id: string;
-  /** A compose file that may be a test stack; the Terraform target group of a service; a helper to confirm as a check. */
-  kind: "deployment" | "terraform" | "check";
+  /**
+   * A compose file that may be a test stack; the Terraform target group of a service; which application a platform's
+   * file deploys (`platform`, newer drift); a helper to confirm as a check.
+   */
+  kind: "deployment" | "terraform" | "platform" | "check";
   /**
    * `changed`: answered, and the evidence it rests on changed since, so it is asked again. `proposed`: an agent's
    * answer waits for a person (`proposal`). `rejected`: a person rejected an agent's answer on this same evidence (listed
@@ -2592,7 +2612,7 @@ export interface DriftSetupChoice {
   effect: string;
   /** The line(s) it writes to `.drift/config.yaml`, under `writes_under`. */
   writes?: string;
-  /** The key the lines go under (`security.not_deployed`, `security.terraform`, `security.internal`, `practices.authz`). */
+  /** The key the lines go under (`security.not_deployed`, `security.terraform`, `security.platforms`, `security.internal`, `practices.authz`). */
   writes_under?: string;
   /** Routes it moves (0 where none, or not counted before it is picked). */
   moves: number;

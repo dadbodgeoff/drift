@@ -16,6 +16,8 @@ use crate::roles::{NonProduction, is_test_path};
 use crate::vocab::grant;
 use crate::vocab::refuse::names_access_control;
 
+pub mod platforms;
+
 /// Suffix of a guard that is a hook the whole app runs.
 pub const APP_HOOK: &str = " (app hook)";
 
@@ -648,6 +650,9 @@ pub struct Boundaries {
     /// of an inventory changes with it; [`inventory_with`] takes it out.
     #[serde(skip_serializing_if = "Option::is_none")]
     cautious: Option<(Vec<String>, Box<Boundaries>)>,
+    /// What the platforms' own files deploy and how it is reached ([`platforms`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub platforms: Vec<platforms::Unit>,
     /// The symbols a person declared in `.drift/config.yaml` `practices:`, which the
     /// inventory reads as the practice map does ([`crate::policy::DriftConfig::practices`]).
     #[serde(skip)]
@@ -1192,6 +1197,10 @@ impl Boundaries {
             .as_ref()
             .map(|cfg| cfg.security.terraform.clone())
             .unwrap_or_default();
+        let platform_ties = config
+            .as_ref()
+            .map(|cfg| cfg.security.platforms.clone())
+            .unwrap_or_default();
         match config {
             Ok(cfg) => {
                 for (list, exposure, source) in [
@@ -1229,8 +1238,8 @@ impl Boundaries {
                 .iter()
                 .any(|p| p.is_empty() || path == p || path.starts_with(&format!("{p}/")))
         };
-        let found = deployments(root);
-        let files = found.compose;
+        let mut found = deployments(root);
+        let files = std::mem::take(&mut found.compose);
         let dir_of = |rel: &str| rel.rsplit_once('/').map_or("", |(d, _)| d).to_string();
         let file_of = |rel: &str| rel.rsplit('/').next().unwrap_or(rel).to_string();
         let services_of = |text: &str| -> BTreeSet<String> {
@@ -1308,6 +1317,7 @@ impl Boundaries {
                 b.read_compose_with(Some(root), &name, &text, &overrides);
             }
         }
+        b.read_platforms(root, &mut found.unread, &not_deployed, &platform_ties);
         // The Terraform a person tied code to: its listener rules are read for the
         // routes of that code.
         if !ties.is_empty() {
@@ -7700,6 +7710,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     };
     // Before any entry point is given its service's exposure.
     inv.boundaries.set_relays(repo);
+    inv.boundaries.tie_platforms(repo);
     let mut env: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut leaks: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     let mut left_out: BTreeSet<String> = BTreeSet::new();
