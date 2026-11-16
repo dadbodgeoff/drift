@@ -349,16 +349,30 @@ macro_rules! tiered {
             }
 
             pub fn tier(&self) -> Tier {
+                // S21 (`census --gate-candidate`, study use): a proposal only the
+                // `universal` or `small-roles` candidate made advises only. With no
+                // switch on (always outside that census) no id is marked.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return Tier::Suggestion;
+                }
                 tier_of(&self.rule, self.evidence.role_size(), self.language())
             }
 
             /// [`tier_reason`] for this convention.
             pub fn tier_reason(&self) -> Option<&'static str> {
+                // S21: see `tier` above.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return Some("gate_candidate");
+                }
                 tier_reason(&self.rule, self.evidence.role_size(), self.language())
             }
 
             /// [`describe`] for this convention.
             pub fn describe_tier(&self) -> String {
+                // S21: see `tier` above.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return "suggestion (study candidate: advise only)".to_string();
+                }
                 describe(&self.rule, self.evidence.role_size(), self.language())
             }
         }
