@@ -732,7 +732,7 @@ fn the_card_states_a_strong_withheld_card_as_a_fact_not_a_convention() {
     let r = dir.path();
     const HEAD: &str =
         "Regularities here (facts, not rules; not accepted conventions, nothing checks them):\n";
-    const ACCEPTED_HEAD: &str = "Accepted conventions here (a person accepted them and `drift check` checks them; not shown to agents as rules: their rule family is below the admission bar, `drift review --show-to-agents <id>` shows one):\n";
+    const ACCEPTED_HEAD: &str = "Accepted conventions here (a person accepted them and `drift check` checks them; not shown to agents as rules: their rule family is below the admission bar):\n";
     let worker_fact = "  functions in src/workers/** are named '*Worker', 38 of 40 (copy src/workers/k1.ts:1 w1Worker); this file: does\n";
     let frame_fact = "  components in src/notices/** render inside ‹FrameShell›, 29 of 30 (copy src/notices/n0.tsx:3 Notice0); this file: does not (Notice29:1)\n";
     let status = |rel: &str| -> Vec<(String, String)> {

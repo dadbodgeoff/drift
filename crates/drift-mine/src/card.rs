@@ -308,8 +308,10 @@ pub const REGULARITIES_HEAD: &str =
 
 /// The heading of the card's regularities a person accepted: conventions `drift check`
 /// checks, that agents are not shown as rules while their rule family is below the
-/// admission bar (`drift review --show-to-agents <id>` shows one).
-pub const ACCEPTED_HEAD: &str = "Accepted conventions here (a person accepted them and `drift check` checks them; not shown to agents as rules: their rule family is below the admission bar, `drift review --show-to-agents <id>` shows one):";
+/// admission bar (`drift review --show-to-agents <id>` shows one). The heading does not
+/// name that command: agents read the card, and the command that shows them more rules
+/// is a person's.
+pub const ACCEPTED_HEAD: &str = "Accepted conventions here (a person accepted them and `drift check` checks them; not shown to agents as rules: their rule family is below the admission bar):";
 
 /// The card for `rel`, as text. `conventions` are the accepted conventions covering it,
 /// in the order to show them, `regularities` what [`regularities`] gives for it; `root`

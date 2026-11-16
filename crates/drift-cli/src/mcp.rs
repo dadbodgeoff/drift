@@ -813,7 +813,8 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                     drift_mine::map::Limits::default(),
                 )
             };
-            Ok(text(drift_mine::map::render(&v)))
+            // Every name in it is the repository's: made safe to read, as data.
+            Ok(text(drift_mine::map::render_for_agents(&v)))
         }
         "drift_card" => {
             let path = str_arg(args, "path")?
@@ -1060,7 +1061,11 @@ fn call(project: &Project, no_cache: bool, name: &str, args: &Value) -> anyhow::
                     now.standing = report.standing.iter().find(|s| s.id == c.id).cloned();
                 }
             }
-            Ok(text(explain_text(c, &exempt_now, &now)))
+            // Its summary, example and the members left out now quote the repository.
+            Ok(text(format!(
+                "{DATA_LABEL}\n{}",
+                explain_text(c, &exempt_now, &now)
+            )))
         }
         // `tools_call` answers an unknown tool before it gets here.
         other => anyhow::bail!("unknown tool {}", sanitize(other, 64)),
