@@ -11,6 +11,7 @@ import type {
   KeyType,
   Evidence,
   Exempt,
+  FromMap,
   Mode,
   Outlier,
   PolicyDifferentKind,
@@ -23,6 +24,7 @@ import type {
 } from "@/shared/contract/drift";
 import { type RuleFamily, ruleFamily, splitKey } from "./rules";
 import { isWiringRule } from "./wiring";
+import { fromMapOf } from "./policy";
 
 /** `unmined`: in the policy file but not among the current census proposals. */
 export type RowStatus = "accepted" | "proposed" | "rejected" | "not_in_policy";
@@ -83,6 +85,21 @@ export interface ConventionRow {
   differentKind: PolicyDifferentKind[];
   /** A practice a person promoted from the practice map (conventions.yaml `promoted_from_practice`): the variant id it came from; null for every other convention. */
   promotedFromPractice: string | null;
+  /** Proposed from Drift's map of the code (conventions.yaml `from_map`; census `proposals` never carry it), not by the miner: it did not pass through the miner's measured gates. Null for a mined convention. */
+  fromMap: FromMap | null;
+}
+
+/** Which proposals the review list shows by where they come from: all, the miner's, or those from Drift's map of the code. */
+export type SourceFilter = "all" | "mined" | "map";
+
+/** Whether a row passes the source filter: `map` keeps the rows proposed from Drift's map of the code, `mined` every other. */
+export function passesSource(r: Pick<ConventionRow, "fromMap">, f: SourceFilter): boolean {
+  return f === "all" || (f === "map") === (r.fromMap !== null);
+}
+
+/** Whether any row was proposed from Drift's map of the code: the source filter is shown only then. */
+export function hasFromMap(rows: readonly Pick<ConventionRow, "fromMap">[]): boolean {
+  return rows.some((r) => r.fromMap !== null);
 }
 
 /** `path#symbol`: how drift.lock and conventions.yaml `exceptions` name a member. */
@@ -312,7 +329,8 @@ export const MIN_BLOCK_ROLE_SIZE = 15;
  * report without `conventions[]` (an older drift) hides nothing.
  */
 export function hiddenByShowPolicy(c: ConventionsFile["conventions"][number], census: Census | null, check: CheckReport | null): boolean {
-  if (c.status !== "proposed" || c.agents != null || isWiringRule(c.rule) || !Array.isArray(check?.conventions)) return false;
+  // A proposal from Drift's map of the code goes through none of mining's gates, the show policy among them.
+  if (c.status !== "proposed" || c.agents != null || c.from_map != null || isWiringRule(c.rule) || !Array.isArray(check?.conventions)) return false;
   if (check.conventions.some((k) => k.id === c.id)) return false;
   return !(census?.proposals ?? []).some((p) => p.id === c.id);
 }
@@ -389,6 +407,7 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       exceptions: c.exceptions ?? [],
       differentKind: c.different_kind ?? [],
       promotedFromPractice: c.promoted_from_practice ?? null,
+      fromMap: fromMapOf(c.from_map),
     });
     seen.add(c.id);
   }
@@ -428,6 +447,8 @@ export function conventionRows(policy: ConventionsFile | null, census: Census | 
       exceptions: [],
       differentKind: [],
       promotedFromPractice: null,
+      // census --json `proposals` are the miner's: a proposal from the map is read from the policy file only.
+      fromMap: null,
     });
   }
   return rows;

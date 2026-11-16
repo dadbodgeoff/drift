@@ -16,6 +16,56 @@ pub const MAX_REEXPORT_HOPS: usize = 16;
 /// sub-population of their own and stay out.
 pub const REQUEST_KINDS: &[&str] = &["http", "server_action", "graphql", "rpc", "job"];
 
+/// The entry kind of a background job (Celery `@shared_task`, a queue worker, as the
+/// facts name it): it is run by the application, not reached by a request, so no caller
+/// sends it ([`super::Concern::needs_a_caller`]).
+pub const JOB: &str = "job";
+
+/// The keys of the uses a variant key names, one per use (`dependency:a+dependency:b`
+/// names two). None for a key that stands for several ways (the tail of one-off ways,
+/// a folded policy `any_of(A|B)`): it names no use of its own.
+pub fn use_keys(key: &str) -> Vec<&str> {
+    if key.is_empty() || key == super::TAIL || key.starts_with("any_of(") {
+        return Vec::new();
+    }
+    split_uses(key)
+}
+
+/// A variant key cut into its uses' keys, at each `+` that [`super::VariantKey::new`]
+/// put between two uses: one followed by a mechanism (a word of lowercase letters,
+/// digits and `_`) and its `:`. An instrument may hold a `+` itself (a SvelteKit
+/// `src/routes/+page.server.ts`, a route parameter `:path+`), and it is not cut there.
+/// The separator itself stays `+`: changing it would change every stored key and
+/// practice id.
+pub fn split_uses(key: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    for (i, _) in key.match_indices('+') {
+        let rest = &key[i + 1..];
+        let new_use = rest.split_once(':').is_some_and(|(m, _)| {
+            m.bytes().next().is_some_and(|b| b.is_ascii_lowercase())
+                && m.bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
+        });
+        if new_use {
+            out.push(&key[start..i]);
+            start = i + 1;
+        }
+    }
+    out.push(&key[start..]);
+    out
+}
+
+/// The use one use's key names (`wrap:lib/auth.ts#withAuth`), as it is written: the key
+/// is already canonical.
+pub fn use_from_key(key: &str) -> Use {
+    let (mechanism, instrument) = key.split_once(':').unwrap_or((key, ""));
+    Use {
+        mechanism: mechanism.to_string(),
+        instrument: instrument.to_string(),
+    }
+}
+
 /// The entry points of these kinds, each with its handler ([`handler`]), in facts
 /// order. Tests and non-production files are in: the engine moves them to `left_out`.
 pub fn entries<'a>(cx: &Cx<'a>, kinds: &[&str]) -> Vec<UnitRef<'a>> {

@@ -69,6 +69,29 @@ impl Concern for Authz {
         "entry_point"
     }
 
+    /// A route behind the accepted check that also scopes its query to the caller is
+    /// still behind that check: the checks add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
+    /// A known use is a check proven to run on every request and to compare the caller
+    /// with what is asked for ([`obligation`]), except a query scoped to the tenant the
+    /// request names or to a fixed one: neither compares anything of the caller.
+    fn enforces(&self, uses: &[Use]) -> Option<bool> {
+        Some(uses.iter().any(|u| {
+            !matches!(
+                u.mechanism.as_str(),
+                "tenancy_requested" | "tenancy_literal"
+            )
+        }))
+    }
+
+    /// Permissions are the caller's: a background job has no caller.
+    fn needs_a_caller(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
             .into_iter()
@@ -453,11 +476,19 @@ fn read_unit<'a>(
             // `adminProcedure`), it is found by its name, not proven.
             if common::external(g) || role_guard_proven(cx, g) || role_lookup_guard(cx, g) {
                 ev.add("role_guard", g, VariantSource::Usage);
-            } else if membership_guard(cx, g) {
-                // Read from its body, whatever its name says it is for.
-                ev.add("membership_guard", g, VariantSource::Usage);
             } else {
-                ev.by_name("role_guard", g);
+                match membership_guard(cx, g, entry) {
+                    // Read from its body, whatever its name says it is for.
+                    Membership::Proven => ev.add("membership_guard", g, VariantSource::Usage),
+                    Membership::Beside => ev.find(
+                        "membership_guard",
+                        g,
+                        obligation::SIDES_NOT_CALLER_AND_RESOURCE,
+                        "",
+                        false,
+                    ),
+                    Membership::No => ev.by_name("role_guard", g),
+                }
             }
         }
         for g in &positions.roles {
@@ -473,7 +504,7 @@ fn read_unit<'a>(
         let mut bodies = common::bodies(cx, s);
         let object_checked = object_check_runs(cx, sfile, s, &bodies);
         for w in &around {
-            permission_class(cx, &w.wrapper, object_checked, &mut ev);
+            permission_class(cx, &w.wrapper, entry, object_checked, &mut ev);
         }
         let lazy = common::lazy_handlers(cx, sfile, s);
         let unlinked =
@@ -730,8 +761,9 @@ fn read_unit<'a>(
             // name (`require_feature` answering 403 unless the caller's plan has the
             // feature) refuses as the handler's own body would: read for it too.
             if !explained
-                && let Some(what) =
-                    refusal(r.node, r.quiet).or_else(|| caller_refusal(cx, r, &ev))
+                && let Some(what) = refusal(r.node, r.quiet)
+                    .or_else(|| cut_short(r.node))
+                    .or_else(|| caller_refusal(cx, r, &ev))
             {
                 let at = if r.depth == 0 { what } else { r.callee.clone() };
                 if refused.as_ref().is_none_or(|x| at < *x) {
@@ -839,6 +871,17 @@ fn read_unit<'a>(
         {
             kept_rows(cx, &reach, &mut ev);
         }
+        // Python: a guard around the unit that lets a request through only after a
+        // query of the caller's membership filtered by a value of the URL held ties
+        // that value to the caller ([`tie_found`]): a filter of the unit's own by the
+        // route's parameter is then the caller's, not one found and not proven.
+        if ev.uses.is_empty()
+            && !ev.found.is_empty()
+            && ev.python
+            && cx.context().since_measured()
+        {
+            tie_found(cx, entry.route.as_deref(), &around, &reach, &mut ev);
+        }
         // Nothing proven, and a check found: the unit is unknown, and what was found
         // is said with it. One read where it is says more than one read by its name.
         if ev.uses.is_empty() && !ev.found.is_empty() {
@@ -885,7 +928,24 @@ fn read_unit<'a>(
             if let Some(h) = header {
                 ev.unknown(UnknownReason::NotFollowed, format!("header:{h}"));
             } else if let Some(p) = param {
-                ev.unknown(UnknownReason::NotFollowed, format!("param:{p}"));
+                // A callee may enforce the tenant the route names: unknown, unless
+                // every body the request runs was read to the end and nothing read
+                // checks or scopes it ([`unscoped`]). Then the unit is a recorded
+                // absence (if nothing else stands in the way below), and the key is
+                // the unscoped key its finding names: a signed-in caller can name
+                // any value of it.
+                let read_through = ev.uses.is_empty()
+                    && reading.signs_in()
+                    && unscoped(
+                        cx,
+                        unit,
+                        &[],
+                        package_middleware(cx, &sfile.package).as_deref(),
+                    )
+                    .is_some_and(|k| k == p);
+                if !read_through {
+                    ev.unknown(UnknownReason::NotFollowed, format!("param:{p}"));
+                }
             }
         }
         // Python: a handler that hands back who calls and touches nothing else
@@ -2110,6 +2170,16 @@ impl<'a> Reach<'a> {
                     .enumerate()
                     .find_map(|(i, o)| effect(cx, from, o, 0, &mut seen).map(|call| (i, call)))
             };
+            // The list was cut at its cap ([`drift_core::AFTER_MORE`] at its end, or
+            // `order` in the listed reading's `truncated`): a callee it does not hold
+            // was first called past the cap, after calls the list does not hold,
+            // any of which may change data. Whether it runs before the write is not
+            // read, never "it does".
+            let cut = order.iter().any(|o| o == drift_core::AFTER_MORE)
+                || match from {
+                    Node::Sym(s) => !quiet && s.truncated.iter().any(|t| t == "order"),
+                    Node::Member(_) => false,
+                };
             for c in from.callees() {
                 let c = c.trim_end_matches("(ref)");
                 // A method of the bound class's line called on `self`: the one that
@@ -2160,9 +2230,11 @@ impl<'a> Reach<'a> {
                         .position(|o| o == c)
                         .is_some_and(|i| i > *at)
                 });
+                let past_cut = cut && !order.iter().any(|o| o == c);
                 let edge = from
                     .conditional_to(c, node)
-                    .or(late.then_some(obligation::AFTER_EFFECT));
+                    .or(late.then_some(obligation::AFTER_EFFECT))
+                    .or(past_cut.then_some(obligation::PATH_UNREAD));
                 if let Some(to) = self.nodes.iter().position(|x| x.node.same(node)) {
                     self.edges.push((at, to, edge.is_some()));
                     continue;
@@ -2763,7 +2835,7 @@ fn data_call(cx: &Cx<'_>, callee: &str) -> bool {
 /// from beside that directory, `unresolved:../generated/prisma/client`), or a name
 /// a module of the repository hands on from one (`export * from
 /// "../generated/prisma/client"`, `import { PrismaClient } from ...` named again).
-fn generated_client(cx: &Cx<'_>, r: &str) -> bool {
+pub(super) fn generated_client(cx: &Cx<'_>, r: &str) -> bool {
     let generated = &cx.facts.generated_clients;
     if generated.is_empty() {
         return false;
@@ -3006,13 +3078,34 @@ fn built<'a>(cx: &Cx<'a>, from: Node<'a>, class: &str, d: &'a Symbol) -> Callee<
 /// A permission class or guard wrapper by what it is for: named for a tenant
 /// (`HasOrgContext`) or a role, and either proven to reject ([`security::authenticates`])
 /// or a DRF permission class (DRF answers 403 when `has_permission` is false).
-fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidence) {
+fn permission_class(
+    cx: &Cx<'_>,
+    w: &str,
+    entry: &drift_core::EntryPoint,
+    object_checked: bool,
+    ev: &mut Evidence,
+) {
     let ctx = cx.context();
     // What lets a request through only where the caller is found in what the
-    // request names is that check, whatever it is called ([`membership_guard`]).
-    if membership_guard(cx, w) {
-        ev.add("membership_guard", w, VariantSource::Usage);
-        return;
+    // request names is that check, whatever it is called ([`membership_guard`]);
+    // one that finds the caller in a value the route does not name is found, not
+    // proven, and read no further.
+    match membership_guard(cx, w, entry) {
+        Membership::Proven => {
+            ev.add("membership_guard", w, VariantSource::Usage);
+            return;
+        }
+        Membership::Beside => {
+            ev.find(
+                "membership_guard",
+                w,
+                obligation::SIDES_NOT_CALLER_AND_RESOURCE,
+                "",
+                false,
+            );
+            return;
+        }
+        Membership::No => {}
     }
     // And what lets one through only where the caller is found among rows a
     // literal picks is a role, read the same way ([`role_lookup_guard`]).
@@ -3087,8 +3180,38 @@ fn permission_class(cx: &Cx<'_>, w: &str, object_checked: bool, ev: &mut Evidenc
 /// requests, the view called under no test) is no such body, nor is one whose
 /// query the caller is no part of, or that names nothing of the request (any row
 /// of the caller's anywhere).
-fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
-    passes_by(cx, facts, prefix, false)
+fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str, named: Named<'_>) -> bool {
+    passes_by_naming(cx, facts, prefix, false, named)
+}
+
+/// What a guard's lookup may take a value of the request from, for it to be the
+/// object the route is about ([`membership_guard`]).
+#[derive(Debug, Clone, Copy)]
+enum Named<'r> {
+    /// A parameter of the guard, or what is read off one, or a value read off the
+    /// request: as the guard is read alone, wherever it runs.
+    Request,
+    /// Only a parameter of the guard the route names among its path parameters
+    /// (these). A FastAPI dependency is handed, under a parameter the path declares,
+    /// that segment of the URL, and under any other parameter a query, body or
+    /// header value the caller sends beside the URL (FastAPI's documented reading
+    /// of a function's parameters, dependencies included). A value read off the
+    /// request object itself may be either, and so may whatever a lookup read off
+    /// a model's rows was asked by ([`drift_core::controls::ROWS_ASKED`] names no
+    /// parameter): the facts do not say which, so neither is one.
+    Path(&'r [&'r str]),
+}
+
+impl Named<'_> {
+    fn holds(self, side: &str) -> bool {
+        match self {
+            Named::Request => side.starts_with("param") || side == "request",
+            Named::Path(segments) => side
+                .strip_prefix("param ")
+                .and_then(|p| p.split(' ').next())
+                .is_some_and(|p| segments.contains(&p)),
+        }
+    }
 }
 
 /// [`passes_by_lookup`], or (`fixed`) a body that lets a request through only where
@@ -3098,6 +3221,17 @@ fn passes_by_lookup(cx: &Cx<'_>, facts: &[String], prefix: &str) -> bool {
 /// model and the keys are called. A lookup of the caller under no other key (any
 /// row of the caller's) says only that the caller has one.
 fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
+    passes_by_naming(cx, facts, prefix, fixed, Named::Request)
+}
+
+/// [`passes_by`], with what of the request a lookup may name read as `named` says.
+fn passes_by_naming(
+    cx: &Cx<'_>,
+    facts: &[String],
+    prefix: &str,
+    fixed: bool,
+    named: Named<'_>,
+) -> bool {
     let mut sites = facts
         .iter()
         .filter_map(|f| f.strip_prefix(prefix))
@@ -3109,7 +3243,7 @@ fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
     let queries: Vec<(&str, Vec<(&str, &str)>)> = arg_calls(facts.iter())
         .filter(|(_, given)| !given.is_empty())
         .collect();
-    let requested = |side: &str| side.starts_with("param") || side == "request";
+    let requested = |side: &str| named.holds(side);
     // The result of a query that narrows by what it is given (not one that leaves
     // out what matches), every call of which looks the caller up in what the
     // request names.
@@ -3117,10 +3251,14 @@ fn passes_by(cx: &Cx<'_>, facts: &[String], prefix: &str, fixed: bool) -> bool {
     let lookup = |result: &str| {
         // A lookup the lowering read off the rows of a model
         // ([`drift_core::controls::LOOKUP_OF`]): every statement of the body that
-        // reads that model is one, by a caller the facts prove.
+        // reads that model is one, by a caller the facts prove. What of the request
+        // such a statement also filters by is not recorded
+        // ([`drift_core::controls::ROWS_ASKED`]), so where only a value the route
+        // names will do ([`Named::Path`]) it cannot be told: not one.
         if let Some(model) = result.strip_suffix(drift_core::controls::LOOKUP_OF) {
             let mut reads = census.iter().filter(|(m, _)| *m == model).peekable();
             return !fixed
+                && matches!(named, Named::Request)
                 && reads.peek().is_some()
                 && reads.all(|(_, by)| {
                     matches!(by, RowsBy::Own(_, side, true) if side_is_caller_self(cx, side))
@@ -3224,7 +3362,46 @@ fn role_lookup_guard(cx: &Cx<'_>, g: &str) -> bool {
 /// whatever it is called: a decorator's wrapper, wherever it calls the view; a
 /// function that refuses, wherever it returns without refusing; a DRF permission
 /// class, wherever its `has_permission` may answer true.
-fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
+///
+/// Of the unit `entry`: where the framework says which of the guard's parameters
+/// hold the URL's values ([`Named::Path`], a FastAPI dependency), the lookup must be
+/// of one of those. A guard that finds the caller in what a query or body value names,
+/// beside a route about the object its path names (`/workspaces/{slug}` behind
+/// `def allow(workspace: str)`), checks the caller against an object the caller
+/// chose: a caller of any workspace passes it by naming their own. Such a guard is
+/// [`Membership::Beside`], found and not proven, never known.
+fn membership_guard(cx: &Cx<'_>, g: &str, entry: &drift_core::EntryPoint) -> Membership {
+    if !membership_lookup(cx, g, Named::Request) {
+        return Membership::No;
+    }
+    if entry.adapter != "fastapi" {
+        return Membership::Proven;
+    }
+    let route = entry.route.as_deref().unwrap_or_default();
+    let segments: Vec<&str> = route.split('/').filter_map(segment_param).collect();
+    if membership_lookup(cx, g, Named::Path(&segments)) {
+        Membership::Proven
+    } else {
+        Membership::Beside
+    }
+}
+
+/// What [`membership_guard`] reads of a guard at a unit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Membership {
+    /// It lets the request through only after the caller is found in what the
+    /// route names.
+    Proven,
+    /// It would be, but what it finds the caller in is a value the route does not
+    /// name: found, not proven ([`obligation::SIDES_NOT_CALLER_AND_RESOURCE`]).
+    Beside,
+    /// No such body.
+    No,
+}
+
+/// Whether the guard's body lets a request through only after a lookup of the caller
+/// in what `named` says the request names ([`passes_by_lookup`]).
+fn membership_lookup(cx: &Cx<'_>, g: &str, named: Named<'_>) -> bool {
     use drift_core::controls::{HANDED_AFTER, LEAVES_AFTER, TRUE_AFTER};
     let ctx = cx.context();
     if common::external(g) || !ctx.since_measured() {
@@ -3235,14 +3412,14 @@ fn membership_guard(cx: &Cx<'_>, g: &str) -> bool {
     };
     match d.kind {
         SymbolKind::Function => {
-            passes_by_lookup(cx, &d.controls, HANDED_AFTER)
-                || passes_by_lookup(cx, &d.controls, LEAVES_AFTER)
+            passes_by_lookup(cx, &d.controls, HANDED_AFTER, named)
+                || passes_by_lookup(cx, &d.controls, LEAVES_AFTER, named)
         }
         SymbolKind::Class => d
             .members
             .iter()
             .find(|m| m.name == "has_permission")
-            .is_some_and(|m| passes_by_lookup(cx, &m.unread, TRUE_AFTER)),
+            .is_some_and(|m| passes_by_lookup(cx, &m.unread, TRUE_AFTER, named)),
         _ => false,
     }
 }
@@ -4198,6 +4375,21 @@ fn refusal(n: Node<'_>, around: bool) -> Option<String> {
     }
 }
 
+/// A body whose checks, raises or responses were cut short ([`Symbol::truncated`]):
+/// what refuses may be among those not kept, so it is never read as a body that
+/// refuses no one; the unit is unknown, not "none". The field, named as
+/// [`common::truncated`] names it. Not a proof of anything: only the unknown path
+/// reads it.
+fn cut_short(n: Node<'_>) -> Option<String> {
+    let Node::Sym(s) = n else {
+        return None;
+    };
+    ["body_checks", "raise_checks", "responses"]
+        .into_iter()
+        .find(|f| common::symbol_truncated(s, f))
+        .map(|f| format!("truncated:{f}"))
+}
+
 /// [STRICT] Python: a raise of any class on a comparison one side of which is a
 /// value of the caller, by where the lowering says each side comes from
 /// ([`drift_core::controls::SIDES`], [`origin`]): `if row.estate_id != value: raise
@@ -5100,14 +5292,14 @@ fn same_value(source: &str, compares: &str) -> bool {
 /// ([`drift_core::BodyCheck::compares_path`]); where neither says the caller, the
 /// comparison is of the row and the request, or of two things the request sent, and
 /// a caller of any tenant passes it by sending the value it is compared with.
-fn caller_side(c: &drift_core::BodyCheck) -> bool {
+pub(super) fn caller_side(c: &drift_core::BodyCheck) -> bool {
     whose(&c.source, &c.reads) == Whose::Caller
         || whose(&c.compares, &c.compares_path) == Whose::Caller
 }
 
 /// Whose a value is, by what it is read from and the path read ([`whose`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Whose {
+pub(super) enum Whose {
     /// Read off the caller: a session, a user, a token.
     Caller,
     /// What the request sent: a body, a query, a path parameter, a header.
@@ -5129,7 +5321,7 @@ enum Whose {
 /// The last member is the value itself, and names nothing (`req.body.userId`). What
 /// the request sent: a header, and a member that holds input (`req.query.orgId`,
 /// `params.orgId`). A literal and a value that could not be read are neither.
-fn whose(root: &str, path: &str) -> Whose {
+pub(super) fn whose(root: &str, path: &str) -> Whose {
     /// Members that hold what the request sent.
     const SENT: &[&str] = &[
         "body",
@@ -5206,12 +5398,45 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             Node::Member(m) => &m.args,
         },
     );
+    // TypeScript: the filters the scoped queries below were read for (the listed
+    // reading writes them, [`drift_core::Symbol::scoped_queries`]); the keys of
+    // `args` read below leave them alone.
+    let mut taken: std::collections::BTreeSet<(&str, &str)> = std::collections::BTreeSet::new();
     for q in &scoped {
         // Python: by where the value comes from, as the lowering recorded it
         // ([`python_filter`]): the caller's, the caller's tenant; what the request
         // sent, the tenant it asked for; a literal, one tenant named; anything
         // else, a filter found and not proven.
         if let Some(o) = python_filter(cx, r, ev, &q.callee, &q.key) {
+            // TypeScript: a filter by the caller's value that `args` also hold is
+            // read below, as it was before the scoped queries were written (what
+            // other reads of the unit select is asked there). One `args` do not
+            // hold is read here, and is found, not proven, beside another read of
+            // the unit that selects rows by nothing of the caller.
+            if !ev.python && o == Origin::Caller {
+                let in_args = args.iter().any(|a| {
+                    a.rsplit_once('@')
+                        .and_then(|(c, rest)| rest.split_once(':').map(|(_, k)| (c, k)))
+                        .is_some_and(|(c, k)| k == q.key && crate::mine::norm_ref(c) == q.callee)
+                });
+                if in_args {
+                    continue;
+                }
+                if let Some(other) = ev.unscoped_read.clone() {
+                    taken.insert((q.callee.as_str(), q.key.as_str()));
+                    ev.find(
+                        "tenancy_filter",
+                        &format!("{} (session)", q.key),
+                        obligation::OTHER_READ_UNSCOPED,
+                        &common::short(&other).replace("()", ""),
+                        false,
+                    );
+                    continue;
+                }
+            }
+            if !ev.python {
+                taken.insert((q.callee.as_str(), q.key.as_str()));
+            }
             // What the request sent, handed on to a method below the handler, is
             // found and not proven there, as a method's parameter always was; to a
             // function, it is the tenant the request asked for, as before.
@@ -5277,6 +5502,13 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         }
         ev.add(mechanism, &q.label(), VariantSource::Usage);
     }
+    // Whether the scoped queries said what this filter is: Python's, of the whole
+    // body; TypeScript's, of the filter the loop above read.
+    let python = ev.python;
+    let scoped_here = |callee: &str, key: &str| match python {
+        true => !scoped.is_empty(),
+        false => taken.contains(&(crate::mine::norm_ref(callee).as_ref(), key)),
+    };
     for a in args {
         let Some((callee, key)) = a
             .rsplit_once('@')
@@ -5315,7 +5547,7 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
                         true => "tenancy_filter",
                         false => "owner_filter",
                     };
-                    if !names_tenant(last) || scoped.is_empty() {
+                    if !names_tenant(last) || !scoped_here(callee, key) {
                         ev.find(
                             mechanism,
                             &format!("{key} (session)"),
@@ -5329,9 +5561,31 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
                 by_caller
             }
             true => {
-                cx.context().since_measured()
-                    && !ev.reads_unscoped
-                    && given_callers(cx, n, callee, key)
+                let given = cx.context().since_measured() && given_callers(cx, n, callee, key);
+                // [STRICT]: filtered by the caller (an alias of the request's user
+                // followed: `user = request.user` then `filter(user=user)`), and
+                // another query of the unit reads rows by nothing of the caller
+                // ([`reads_unscoped`]): this query is scoped, what the route reads
+                // is not proven to be. Said as that, not as sides not proven.
+                if given
+                    && ev.reads_unscoped
+                    && ev.cond.is_none()
+                    && (!names_tenant(last) || scoped.is_empty())
+                {
+                    let mechanism = match names_tenant(last) {
+                        true => "tenancy_filter",
+                        false => "owner_filter",
+                    };
+                    ev.find(
+                        mechanism,
+                        &format!("{key} (session)"),
+                        obligation::OTHER_READ_UNSCOPED,
+                        "",
+                        false,
+                    );
+                    continue;
+                }
+                given && !ev.reads_unscoped
             }
         };
         if !names_tenant(last) && !names_owner(last) {
@@ -5387,7 +5641,7 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             // its value came from (`where: { orgId }` with `orgId` from the query
             // string, the body, a cookie or a constant filters by what the request
             // chose): found, not proven.
-            if scoped.is_empty() {
+            if !scoped_here(callee, key) {
                 match callers {
                     true => ev.add(
                         "tenancy_filter",
@@ -6193,6 +6447,409 @@ pub fn request_key(route: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+// ---------- a guard that ties a parameter of the URL to the caller ----------
+
+/// The columns a guard ties to the caller, each with the parameter whose value the
+/// guard filters it by (`param slug`, `param view`, `param kwargs`: its name).
+type Ties = std::collections::BTreeMap<String, String>;
+
+/// What a guard around a unit (a decorator of the handler, a dependency, a
+/// permission class of the view) ties to the caller: the columns that every way it
+/// lets a request through has passed a query of the caller's own rows filtered by.
+///
+/// - Where it lets the request through: a decorator's or a wrapper's call of what it
+///   wraps ([`drift_core::controls::HANDED_AFTER`]); else, of a function, each return
+///   that does not refuse ([`drift_core::controls::LEAVES_AFTER`]); of a permission
+///   class, each return of `has_permission` that may answer true
+///   ([`drift_core::controls::TRUE_AFTER`]). Each lists the callees whose value held
+///   on every path to it.
+/// - A callee ties a column where every call of its query that the guard records
+///   ([`drift_core::controls::ARG_VALUE`]) filters by the caller itself or the key of
+///   the caller's record (`member=request.user`) and filters the column by a value of
+///   one of the guard's parameters (`workspace__slug=kwargs["slug"]`): rows exist only
+///   for a caller who belongs to what the parameter names.
+/// - A column is tied where every way through has a callee that ties it, by the same
+///   parameter. A way through where nothing held ties nothing.
+///
+/// `None` where nothing is tied, and for a guard that is not the repository's.
+fn guard_ties(cx: &Cx<'_>, wrapper: &str) -> Option<Ties> {
+    /// A function lets a request through where it hands it on, else where it
+    /// returns without refusing; a permission class, where it answers true.
+    const FUNCTION_WAYS: &[&str] = &[
+        drift_core::controls::HANDED_AFTER,
+        drift_core::controls::LEAVES_AFTER,
+    ];
+    const CLASS_WAYS: &[&str] = &[drift_core::controls::TRUE_AFTER];
+    let w = crate::mine::norm_ref(wrapper).into_owned();
+    if common::external(&w) {
+        return None;
+    }
+    let d = cx
+        .context()
+        .definition(&w)
+        .filter(|d| d.name == common::short(&w))?;
+    let (facts, prefixes): (&[String], &[&str]) = match d.kind {
+        SymbolKind::Function => (d.controls.as_slice(), FUNCTION_WAYS),
+        SymbolKind::Class => (
+            d.members
+                .iter()
+                .find(|m| m.name == "has_permission")?
+                .unread
+                .as_slice(),
+            CLASS_WAYS,
+        ),
+        _ => return None,
+    };
+    // The ways through, by the first kind of them the guard records.
+    let sites: Vec<Vec<&str>> = prefixes.iter().find_map(|prefix| {
+        let sites: Vec<Vec<&str>> = facts
+            .iter()
+            .filter_map(|f| f.strip_prefix(*prefix))
+            .map(|rest| rest.split('\t').filter(|c| !c.is_empty()).collect())
+            .collect();
+        (!sites.is_empty()).then_some(sites)
+    })?;
+    let mut tied: Option<Ties> = None;
+    for site in &sites {
+        let mut here = Ties::new();
+        for held in site {
+            for (column, param) in callee_ties(cx, facts, held) {
+                here.entry(column).or_insert(param);
+            }
+        }
+        tied = Some(match tied {
+            None => here,
+            Some(before) => before
+                .into_iter()
+                .filter(|(column, param)| here.get(column) == Some(param))
+                .collect(),
+        });
+    }
+    tied.filter(|t| !t.is_empty())
+}
+
+/// The columns one held callee of a guard ties to the caller ([`guard_ties`]): the
+/// query it is a method of (`Member.objects.filter().exists` asks
+/// `Member.objects.filter`), every recorded call of which filters by the caller itself
+/// and filters the column by the same parameter of the guard.
+fn callee_ties(cx: &Cx<'_>, facts: &[String], held: &str) -> Ties {
+    let query = held.split("()").next().unwrap_or(held);
+    let calls: Vec<Vec<(&str, &str)>> = arg_calls_own(facts.iter())
+        .filter(|(callee, _)| *callee == query)
+        .map(|(_, given)| given)
+        .collect();
+    let mut out: Option<Ties> = None;
+    for given in &calls {
+        let by_caller = given
+            .iter()
+            .any(|(_, side)| side_is_caller_self(cx, side));
+        if !by_caller {
+            return Ties::new();
+        }
+        let here: Ties = given
+            .iter()
+            .filter(|(column, _)| !column.starts_with('#') && filter_key(column))
+            .filter(|(column, _)| query_call(cx, query, column))
+            .filter_map(|(column, side)| {
+                let param = side.strip_prefix("param ")?.split(' ').next()?;
+                Some((column.to_string(), param.to_string()))
+            })
+            .collect();
+        out = Some(match out {
+            None => here,
+            Some(before) => before
+                .into_iter()
+                .filter(|(column, param)| here.get(column) == Some(param))
+                .collect(),
+        });
+    }
+    out.unwrap_or_default()
+}
+
+/// The parameter of the route every filter of the unit's own bodies under `column`
+/// takes its value from ([`drift_core::controls::ARG_VALUE`], side `param <name>`, in a
+/// body the request runs itself): `None` where one takes it from anything else, where
+/// a body below the unit's own filters by the column, or where no filter of the
+/// unit's own is recorded under it.
+fn route_param_of<'a>(reach: &Reach<'a>, column: &str, segments: &[&str]) -> Option<String> {
+    let mut found: Option<String> = None;
+    for r in reach.nodes.iter().filter(|r| !r.quiet) {
+        let facts: &[String] = match r.node {
+            Node::Sym(s) => &s.controls,
+            Node::Member(m) => &m.unread,
+        };
+        for (_, given) in arg_calls_own(facts.iter()) {
+            for (key, side) in given {
+                if key != column {
+                    continue;
+                }
+                if r.depth != 0 {
+                    return None;
+                }
+                let param = side.strip_prefix("param ")?.split(' ').next()?;
+                if !segments.contains(&param)
+                    || found.as_deref().is_some_and(|f| f != param)
+                {
+                    return None;
+                }
+                found = Some(param.to_string());
+            }
+        }
+    }
+    found
+}
+
+/// Found filters ([`Evidence::found`]) whose value is not proven to be the caller's
+/// ([`obligation::SIDES_NOT_CALLER_AND_RESOURCE`]) and that a guard around the unit
+/// ties to the caller ([`guard_ties`]) become the unit's: a tenant or owner filter of
+/// the unit's own under a column, by a parameter of the route ([`route_param_of`]),
+/// that a guard ties by a parameter of the same name, which the framework gives the
+/// guard from the same segment of the URL. Units move from a check found and not
+/// proven to known, never the other way.
+///
+/// A guard's parameter the route does not name ties nothing (review R5, row 3): of
+/// a FastAPI dependency it is a query or body value (`def allow_member(workspace:
+/// str)`), which the caller sends beside the URL's, so the guard and the handler may
+/// check two objects. Nor does what a guard reads the URL's parameters off (a DRF
+/// `view`, a decorator's `**kwargs`): the facts do not say which key it read.
+/// [STRICT] Neither is a guard's parameter of the route's name that the guard
+/// declares to come from elsewhere (`slug: str = Query()`): the facts do not hold
+/// where a parameter's value comes from.
+fn tie_found<'a>(
+    cx: &Cx<'a>,
+    route: Option<&str>,
+    around: &[&drift_core::Wrap],
+    reach: &Reach<'a>,
+    ev: &mut Evidence,
+) {
+    let Some(route) = route else {
+        return;
+    };
+    let segments: Vec<&str> = route.split('/').filter_map(segment_param).collect();
+    if segments.is_empty() {
+        return;
+    }
+    let guards: Vec<(String, Ties)> = around
+        .iter()
+        .filter(|w| {
+            matches!(
+                w.kind,
+                drift_core::WrapKind::Decorator | drift_core::WrapKind::Call
+            )
+        })
+        .filter_map(|w| {
+            let t = guard_ties(cx, &w.wrapper)?;
+            Some((crate::mine::norm_ref(&w.wrapper).into_owned(), t))
+        })
+        .collect();
+    if guards.is_empty() {
+        return;
+    }
+    let mut kept = Vec::new();
+    for u in std::mem::take(&mut ev.found) {
+        let unproven_sides =
+            u.obligation == obligation::SIDES_NOT_CALLER_AND_RESOURCE && u.when.is_empty();
+        let tied = unproven_sides
+            .then(|| u.check.split_once(':'))
+            .flatten()
+            .filter(|(mechanism, _)| matches!(*mechanism, "tenancy_filter" | "owner_filter"))
+            .and_then(|(mechanism, rest)| {
+                let column = rest.split(" (").next().unwrap_or(rest);
+                let param = route_param_of(reach, column, &segments)?;
+                let (guard, _) = guards
+                    .iter()
+                    .find(|(_, t)| t.get(column).is_some_and(|by| by == &param))?;
+                Some((
+                    mechanism.to_string(),
+                    format!("{column} ({param}, tied by {guard})"),
+                ))
+            });
+        match tied {
+            Some((mechanism, label)) => {
+                ev.uses.push(use_of(&mechanism, &label));
+                ev.sources.push(VariantSource::Usage);
+            }
+            None => kept.push(u),
+        }
+    }
+    ev.found = kept;
+}
+
+// ---------- the keys this repository scopes by (learned) ----------
+
+/// Bodies, at least, whose queries filter rows by a key with a value of the caller
+/// for that key to be one this repository scopes by ([`scope_keys`]).
+const LEARNED_SCOPE_BODIES: usize = 3;
+/// Rows of different queries (`Note.objects`, `db.post`), at least, filtered so: a key
+/// one query alone filters by the caller (`User.objects.filter(id=request.user.id)`)
+/// looks the caller's own record up, it scopes nothing else.
+const LEARNED_SCOPE_TARGETS: usize = 3;
+
+/// A query key or a route parameter as the two are compared: the whole filter path
+/// but a leading `where`, lower-cased, its letters and digits only (`where.userId`,
+/// `user_id`, `{userId}` all read `userid`). Not its last member: a filter through
+/// a relation (`where: { author: { id } }`, `author__id`) reads `authorid`, never
+/// `id`, which would make every `{id}` of a route a key the repository scopes rows
+/// by (review R5, row 5).
+fn scope_word(key: &str) -> String {
+    let key = key.strip_prefix("where.").unwrap_or(key);
+    key.chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|c| c.to_ascii_lowercase())
+        .collect()
+}
+
+/// What a query reads rows of: its callee before the first call's parentheses,
+/// without the method (`app/models.py#Note.objects.filter().exists` reads
+/// `app/models.py#Note.objects`, `lib/db.ts#db.note.findMany` reads `lib/db.ts#db.note`).
+fn query_target(callee: &str) -> String {
+    let head = callee.split('(').next().unwrap_or(callee);
+    match head.rsplit_once('.') {
+        Some((target, _)) if !target.ends_with('#') => target.to_string(),
+        _ => head.to_string(),
+    }
+}
+
+/// The keys this repository scopes rows to the caller by, learned from its own
+/// queries: a key ([`scope_word`]) that at least [`LEARNED_SCOPE_BODIES`] bodies of
+/// production code filter by a value of the caller, over at least
+/// [`LEARNED_SCOPE_TARGETS`] different rows ([`query_target`]). A value of the
+/// caller is what the lowering says it is: a scoped query whose value is the
+/// session's ([`drift_core::ScopeSource::Session`]), a filter whose value is the
+/// caller's ([`drift_core::controls::FILTER_VALUE`]), and an argument of a query
+/// call that is the caller's or the caller itself ([`drift_core::controls::ARG_VALUE`],
+/// [`side_is_callers`], [`side_is_caller_self`]). No name decides: the repository's
+/// own code says which keys tie its rows to the caller. Each package's own, written
+/// `package\tkey` ([`scope_param`] reads them). Found once for the run
+/// ([`Cx::scope_keys`]).
+pub(crate) fn scope_keys<'c>(cx: &'c Cx<'_>) -> &'c std::collections::BTreeSet<String> {
+    cx.scope_keys(learn_scope_keys)
+}
+
+fn learn_scope_keys(cx: &Cx<'_>) -> std::collections::BTreeSet<String> {
+    use std::collections::{BTreeMap, BTreeSet};
+    // Per key: the bodies and the rows filtered by it with a value of the caller.
+    let mut by: BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)> = BTreeMap::new();
+    // Learned per package (`package\tword`): in a monorepo one package's queries
+    // say nothing of another's keys (review R5, row 6).
+    let mut note = |package: &str, key: &str, callee: &str, body: &str| {
+        let word = scope_word(key);
+        if word.is_empty() {
+            return;
+        }
+        let e = by.entry(format!("{package}\t{word}")).or_default();
+        e.0.insert(body.to_string());
+        e.1.insert(query_target(callee));
+    };
+    for f in &cx.facts.files {
+        if crate::roles::is_test_path(&f.path) {
+            continue;
+        }
+        for s in &f.symbols {
+            let body = format!("{}#{}", f.path, s.name);
+            let bodies = std::iter::once((body.clone(), &s.controls, &s.scoped_queries)).chain(
+                s.members
+                    .iter()
+                    .map(|m| (format!("{body}.{}", m.name), &m.unread, &m.scoped_queries)),
+            );
+            for (body, facts, queries) in bodies {
+                for q in queries {
+                    if q.source == drift_core::ScopeSource::Session {
+                        note(
+                            f.package.as_str(),
+                            q.key.as_str(),
+                            q.callee.as_str(),
+                            body.as_str(),
+                        );
+                    }
+                }
+                for x in facts {
+                    if let Some(rest) = x.strip_prefix(drift_core::controls::FILTER_VALUE) {
+                        let parts: Vec<&str> = rest.split('\t').collect();
+                        if let [callee, key, side] = parts.as_slice()
+                            && side_is_callers(cx, side)
+                        {
+                            note(f.package.as_str(), key, callee, body.as_str());
+                        }
+                    }
+                }
+                for (callee, given) in arg_calls_own(facts.iter()) {
+                    if writes(callee) {
+                        continue;
+                    }
+                    for (key, side) in given {
+                        // TypeScript writes an argument by its position and the path
+                        // of its keys (`#0.where.userId`); a position alone filters
+                        // by nothing named.
+                        let key = match key.strip_prefix('#') {
+                            Some(rest) => match rest.split_once('.') {
+                                Some((_, path)) => path,
+                                None => continue,
+                            },
+                            None => key,
+                        };
+                        let callers = side_is_caller_self(cx, side) || side_is_callers(cx, side);
+                        if callers && filter_key(key) && query_call(cx, callee, key) {
+                            note(f.package.as_str(), key, callee, body.as_str());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    by.into_iter()
+        .filter(|(_, (bodies, targets))| {
+            bodies.len() >= LEARNED_SCOPE_BODIES && targets.len() >= LEARNED_SCOPE_TARGETS
+        })
+        .map(|(word, _)| word)
+        .collect()
+}
+
+/// The first dynamic segment of `route` that is a key `package` scopes rows to the
+/// caller by: one of the keys it learned ([`scope_keys`]) where its queries show
+/// any; otherwise, and only then, one named for a tenant or an owner
+/// ([`request_key`]: the name lists of [`super::libraries`], kept as the fallback
+/// for a package whose own queries say nothing).
+pub fn scope_param(cx: &Cx<'_>, package: &str, route: &str) -> Option<String> {
+    let prefix = format!("{package}\t");
+    let learned: std::collections::BTreeSet<&str> = scope_keys(cx)
+        .iter()
+        .filter_map(|k| k.strip_prefix(prefix.as_str()))
+        .collect();
+    if learned.is_empty() {
+        return request_key(route);
+    }
+    route
+        .split('/')
+        .filter_map(segment_param)
+        .find(|name| learned.contains(scope_word(name).as_str()))
+        .map(str::to_string)
+}
+
+/// The package's middleware, by its own symbol, as the engine finds it (the first
+/// file of the package by path with a middleware entry point): what runs before
+/// every route of the package it covers, read with the unit's own bodies
+/// ([`unscoped`]).
+fn package_middleware(cx: &Cx<'_>, package: &str) -> Option<String> {
+    let mut files: Vec<&drift_core::FileFacts> = cx
+        .facts
+        .files
+        .iter()
+        .filter(|f| {
+            f.package == package && f.entry_points.iter().any(|e| e.kind == "middleware")
+        })
+        .collect();
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    let f = files.first()?;
+    let e = f.entry_points.iter().find(|e| e.kind == "middleware")?;
+    Some(
+        crate::entries::entry_symbol(cx.facts, f, e).map_or_else(
+            || format!("{}#{}", f.path, e.symbol),
+            |(df, s)| format!("{}#{}", df.path, s.name),
+        ),
+    )
+}
+
 // ---------- the unscoped key (a finding, not a variant) ----------
 
 /// The mechanism of a query filtered by the tenant the caller asked for.
@@ -6206,9 +6863,11 @@ const CLOSURE_NODES: usize = 48;
 /// the unit's known authz uses, empty for a recorded absence.
 ///
 /// Stricter than a `none`, because it is said as a fact about one line. All of:
-/// - the unit's authz is a recorded absence and its route names a tenant or an owner
-///   ([`request_key`]), or its only uses are queries filtered by the tenant the caller
-///   asked for (`tenancy_requested`): the key is the route's, or the query's;
+/// - the unit's authz is a recorded absence and its route names a key this
+///   repository scopes rows by ([`scope_param`]: learned from its own queries, the
+///   name lists only where they say nothing), or its only uses are queries filtered
+///   by the tenant the caller asked for (`tenancy_requested`): the key is the
+///   route's, or the query's;
 /// - every body the request runs was read to the end ([`closure`]): the handler, what
 ///   it calls and what those call, its wrappers, decorators and dependencies and the
 ///   package's middleware. A call into a class's method (the facts hold no method's
@@ -6216,7 +6875,9 @@ const CLOSURE_NODES: usize = 48;
 ///   decides in a method), a call through a parameter or a binding that is no
 ///   library's, into an unresolved import or into code the facts do not define ends
 ///   the reading, and so does a value handed to a call the facts did not record
-///   ([`drift_core::controls::UNREAD_CALL`]): nothing is said;
+///   ([`drift_core::controls::UNREAD_CALL`]): nothing is said. A constructor
+///   function of the repository, built, and the functions it assigns on `this` are
+///   read where they are written ([`constructor_method`], [`enclosing_function`]);
 /// - nothing read turns away a caller who is signed in ([`rejects_signed_in`]): a
 ///   check the vocabulary cannot name may be the scope.
 fn unscoped<'a>(
@@ -6251,16 +6912,33 @@ fn unscoped<'a>(
         .collect();
     let ctx = cx.context();
     let classes = common::owning_classes(sfile, s);
-    let wraps = s.wraps.iter().chain(classes.iter().flat_map(|c| &c.wraps));
+    // What the unit's own mount adds, and the application's middleware, run too
+    // (review R5, row 11): read as `read_unit` reads them, a package's left to the
+    // reading of the unit.
+    let wraps = unit
+        .mount_wraps()
+        .iter()
+        .chain(&s.wraps)
+        .chain(classes.iter().flat_map(|c| &c.wraps));
+    let app = s
+        .app_middleware
+        .iter()
+        .chain(unit.mount_middleware())
+        .map(|m| m.trim_start_matches('?'));
     let around = wraps
         .filter(|w| w.kind != drift_core::WrapKind::Try)
         .map(|w| w.wrapper.as_str())
+        .chain(app)
         .chain(middleware);
     for w in around {
         if w.starts_with("unresolved:") {
             return None;
         }
         if common::external(w) {
+            // A package's wrapper no list of Drift's knows may be the scope ([`closure`]).
+            if super::basis::unlisted_package(w) {
+                return None;
+            }
             continue;
         }
         match ctx.definition(w) {
@@ -6279,7 +6957,10 @@ fn unscoped<'a>(
         return None;
     }
     if uses.is_empty() {
-        return entry.route.as_deref().and_then(request_key);
+        return entry
+            .route
+            .as_deref()
+            .and_then(|r| scope_param(cx, &sfile.package, r));
     }
     nodes
         .iter()
@@ -6294,7 +6975,15 @@ fn unscoped<'a>(
                 drift_core::ScopeSource::Param | drift_core::ScopeSource::Header
             )
         })
-        .map(|q| q.key.clone())
+        // A TypeScript key is the path of the filter (`where.team.orgId`): the
+        // key the caller names is the field named for the tenant on it.
+        .map(|q| {
+            q.key
+                .rsplit('.')
+                .find(|seg| names_tenant(seg))
+                .unwrap_or(&q.key)
+                .to_string()
+        })
         .min()
 }
 
@@ -6317,23 +7006,50 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
         }
         let n = nodes[i];
         i += 1;
-        // The body hands a value to a call the facts did not record.
+        // The body hands a value to a call the facts did not record. A function
+        // written in a constructor function's body and read by its own name
+        // (`this.show = (req, res) => { dao.find(req.params.userId) }` in `function
+        // Handler(db) { const dao = new DAO(db); ... }`) calls a method of a local the
+        // outer body binds: the outer body holds the inner one's calls, by what the
+        // local was built from. Where the outer body records every call it hands a
+        // value to, it is read too (more than the request runs, never less).
+        // (A body every such call of which writes the response hands the value to
+        // the framework, which sends it: [`drift_core::controls::UNREAD_RESPONDS`].)
         if let Node::Sym(s) = n
             && s.controls
                 .iter()
                 .any(|c| c == drift_core::controls::UNREAD_CALL)
+            && !(ctx.since_measured()
+                && s.controls
+                    .iter()
+                    .any(|c| c == drift_core::controls::UNREAD_RESPONDS))
         {
-            return None;
+            let outer = enclosing_function(cx, s).filter(|o| {
+                !o.controls
+                    .iter()
+                    .any(|c| c == drift_core::controls::UNREAD_CALL)
+            })?;
+            let next = Node::Sym(outer);
+            if !nodes.iter().any(|x| x.same(next)) {
+                nodes.push(next);
+            }
         }
         // A method called on a local or on what a dependency injects, that is no
         // library's and no database client's: what it does is in a class the closure
-        // does not read.
-        if n
-            .receiver_calls()
-            .iter()
-            .any(|c| !matches!(resolve(cx, n, c), Callee::Read))
-        {
-            return None;
+        // does not read. A method of what a constructor function of the repository
+        // built (`new DAO(db)`, then `dao.find(...)`) is read where it is written
+        // ([`constructor_method`]).
+        for c in n.receiver_calls() {
+            if let Some(body) = constructor_method(cx, c) {
+                let next = Node::Sym(body);
+                if !nodes.iter().any(|x| x.same(next)) {
+                    nodes.push(next);
+                }
+                continue;
+            }
+            if !matches!(resolve(cx, n, c), Callee::Read) {
+                return None;
+            }
         }
         let logs: Vec<&str> = match n {
             Node::Sym(s) => s.log_calls.iter().map(|l| l.callee.as_str()).collect(),
@@ -6344,7 +7060,16 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
             if c.starts_with("unresolved:") || c.starts_with("param:") {
                 return None;
             }
-            if common::external(c) || logs.contains(&c) {
+            if logs.contains(&c) {
+                continue;
+            }
+            if common::external(c) {
+                // An export of a package no list of Drift's knows ([`super::basis::
+                // unlisted_package`]: what a none lists as not read) is code the facts
+                // do not define: it may check or scope the key. The reading ends.
+                if super::basis::unlisted_package(c) {
+                    return None;
+                }
                 continue;
             }
             let built = c.strip_suffix("(new)");
@@ -6352,6 +7077,14 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
             let d = ctx.definition(r)?;
             match d.kind {
                 SymbolKind::Function if built.is_none() => {
+                    let next = Node::Sym(d);
+                    if !nodes.iter().any(|x| x.same(next)) {
+                        nodes.push(next);
+                    }
+                }
+                // A constructor function of the repository, built (`new DAO(db)`):
+                // its body runs, and holds the functions it assigns on `this`.
+                SymbolKind::Function if d.name == common::short(r) => {
                     let next = Node::Sym(d);
                     if !nodes.iter().any(|x| x.same(next)) {
                         nodes.push(next);
@@ -6387,6 +7120,55 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
     Some(nodes)
 }
 
+/// The constructor function a function is written in, where the lowering reads the
+/// inner one by its own name (`Handler.show` of `this.show = ...` in `function
+/// Handler()`): a function of the same file named by the inner one's first segment.
+/// A class's method (`Class.method`) has a class there, and is none.
+fn enclosing_function<'a>(cx: &Cx<'a>, inner: &'a Symbol) -> Option<&'a Symbol> {
+    let (outer, _) = inner.name.split_once('.')?;
+    let file = cx
+        .facts
+        .files
+        .iter()
+        .find(|f| f.symbols.iter().any(|s| std::ptr::eq(s, inner)))?;
+    file.symbols
+        .iter()
+        .find(|s| s.kind == SymbolKind::Function && s.name == outer)
+}
+
+/// What a method call on an instance a constructor function of the repository built
+/// runs (`<module>#DAO().find`, of `const dao = new DAO(db)`): the function the
+/// constructor assigns there, where the lowering reads it by its own name
+/// (`DAO.find`). `None` where the constructor assigns no function of that name, as
+/// where the method comes from elsewhere (`util.inherits(DAO, Base)`,
+/// `Object.assign(DAO.prototype, mixin)`, a constructor that returns another
+/// object: review R5, row 4), where the module assigns methods on the
+/// constructor's prototype (`DAO.prototype.find = ...`, outside its body), or where
+/// the call is anything else: the caller reads it as before.
+fn constructor_method<'a>(cx: &Cx<'a>, c: &str) -> Option<&'a Symbol> {
+    let (module, rest) = c.split_once('#')?;
+    let (head, method) = rest.split_once("().")?;
+    let plain = |s: &str| !s.is_empty() && !s.contains(['.', '(']);
+    if !plain(head) || !plain(method) || common::external(c) {
+        return None;
+    }
+    let ctx = cx.context();
+    ctx.definition(&format!("{module}#{head}"))
+        .filter(|d| d.kind == SymbolKind::Function && d.name == head)?;
+    let file = cx.facts.files.iter().find(|f| f.path == module)?;
+    if file
+        .symbols
+        .iter()
+        .any(|s| s.name.starts_with(&format!("{head}.prototype")))
+    {
+        return None;
+    }
+    let own = format!("{head}.{method}");
+    file.symbols
+        .iter()
+        .find(|s| s.kind == SymbolKind::Function && s.name == own)
+}
+
 /// A binding built from a library the map names for what it is (a schema, a logger, a
 /// database client, a config reader) and from nothing of the repository's: a call on
 /// it is that library's. Any other binding may hold anything (`ServiceDep =
@@ -6420,6 +7202,14 @@ fn rejects_signed_in(n: Node<'_>) -> bool {
     let Node::Sym(s) = n else {
         return false;
     };
+    // Checks or responses cut short (`truncated`): a 403 may be among those not
+    // kept, so it may turn a caller away; never read as one that does not.
+    if s.truncated
+        .iter()
+        .any(|t| t == "body_checks" || t == "responses")
+    {
+        return true;
+    }
     let signs_in = checks.iter().any(|c| {
         matches!(
             c.outcome,
@@ -7008,14 +7798,6 @@ mod tests {
             &[USER, DB, "svc/deps.py#require_org_member"],
             settings("org_audit", &["svc/crud.py#load_settings"]),
         );
-        // A tenant in the route that nothing scopes is unknown to authz (a callee may
-        // enforce it), and an unknown is never a fact.
-        let raw = route(
-            "raw",
-            "/orgs/{org_id}/raw",
-            &[USER, DB],
-            settings("org_raw", &["svc/crud.py#load_settings"]),
-        );
         // The handler's own 403 response, on a condition the facts did not record:
         // unknown to authz, as the helper's refusal is.
         let mut gated = settings("user_gated", &["svc/crud.py#load_settings"]);
@@ -7074,7 +7856,7 @@ mod tests {
             settings("user_permitted", &["svc/crud.py#load_settings"]),
         );
         let r = with_units(vec![
-            profile, prefs, export, through, public, plan, audit, raw, gated, item, wrapped,
+            profile, prefs, export, through, public, plan, audit, gated, item, wrapped,
             handed, guards, guarded, permitted,
         ]);
         assert_eq!(unscoped_keys(&r), [], "{:#?}", r.findings);
@@ -7088,7 +7870,6 @@ mod tests {
             // The dependency's refusal may be the authorization: not a none.
             ("user_plan", "unknown"),
             ("org_audit", "known"),
-            ("org_raw", "unknown"),
             ("user_gated", "unknown"),
             ("read_item", "none"),
             ("user_wrapped", "unknown"),
@@ -7098,6 +7879,424 @@ mod tests {
         ] {
             assert_eq!(authz_of(&r, symbol), assignment, "{symbol}");
         }
+    }
+
+    // ---------- S4: tenant keys, the guard that ties them, constructor functions ----------
+
+    /// The authz unit row of `symbol`.
+    fn unit_row<'r>(r: &'r PracticesReport, symbol: &str) -> &'r super::super::UnitRow {
+        r.concerns
+            .iter()
+            .find(|c| c.id == super::super::AUTHZ)
+            .expect("authz")
+            .units
+            .iter()
+            .find(|u| u.symbol == symbol)
+            .expect("unit")
+    }
+
+    /// Pins: a tenant the route names, in a unit every body of which was read to the
+    /// end and where nothing checks or scopes it, is a recorded absence with that key
+    /// unscoped, in the finding and on the unit's exported row. Before, the unit was
+    /// unknown (`not_followed`, "a callee may enforce it") and the row's `unscoped`
+    /// was never filled.
+    #[test]
+    fn a_tenant_route_param_read_to_the_end_is_an_unscoped_key() {
+        let r = with_units(vec![route(
+            "raw",
+            "/orgs/{org_id}/raw",
+            &[USER, DB],
+            func("org_raw", 10, &["svc/crud.py#load_settings"]),
+        )]);
+        assert_eq!(authz_of(&r, "org_raw"), "none");
+        assert_eq!(
+            unscoped_keys(&r),
+            [("org_id".to_string(), 1, "org_raw".to_string())]
+        );
+        assert_eq!(unit_row(&r, "org_raw").unscoped.as_deref(), Some("org_id"));
+    }
+
+    /// Pins: a call on the way that the facts do not define keeps a tenant route's
+    /// unit unknown, and no finding is said: an unknown is never a violation.
+    #[test]
+    fn an_unread_call_on_the_way_keeps_a_tenant_route_unknown() {
+        let r = with_units(vec![route(
+            "x",
+            "/orgs/{org_id}/x",
+            &[USER, DB],
+            func("org_x", 10, &["svc/crud.py#missing"]),
+        )]);
+        assert_eq!(authz_of(&r, "org_x"), "unknown");
+        assert_eq!(unscoped_keys(&r), []);
+        assert_eq!(unit_row(&r, "org_x").unscoped, None);
+    }
+
+    /// Pins (G2): a dependency that lets the request through only after a query of
+    /// the caller's own membership filtered by the route's `slug` ties `slug` to the
+    /// caller, so the handler's filter by `slug` is the caller's: known, no finding.
+    /// Before, the filter was found and not proven (`check_not_proven`). Without the
+    /// guard it still is.
+    #[test]
+    fn a_guard_that_ties_the_route_param_makes_the_filter_the_callers() {
+        const MEMBERS: &str = "svc/models.py#Member.objects.filter";
+        const ITEMS: &str = "svc/models.py#Item.objects.filter";
+        let mut guard = func("allow_member", 20, &["pkg:fastapi#HTTPException"]);
+        guard.controls = vec![
+            "rejects_caller".into(),
+            "throw".into(),
+            format!("{}{MEMBERS}().exists", drift_core::controls::LEAVES_AFTER),
+            format!(
+                "{}{MEMBERS}\tmember\town caller\tworkspace__slug\tparam slug",
+                drift_core::controls::ARG_VALUE
+            ),
+        ];
+        guard.body_checks = vec![check(USER, CheckOutcome::Forbidden)];
+        let handler = |name: &str| {
+            let mut h = func(name, 10, &[]);
+            h.args = vec![format!("{ITEMS}@0:workspace__slug")];
+            h.controls = vec![format!(
+                "{}{ITEMS}\tworkspace__slug\tparam slug",
+                drift_core::controls::ARG_VALUE
+            )];
+            h
+        };
+        let r = with_units(vec![
+            module("svc/perm.py", vec![guard]),
+            route(
+                "items",
+                "/workspaces/{slug}/items",
+                &[USER, DB, "svc/perm.py#allow_member"],
+                handler("ws_items"),
+            ),
+            route(
+                "loose",
+                "/workspaces/{slug}/loose",
+                &[USER, DB],
+                handler("ws_loose"),
+            ),
+        ]);
+        assert_eq!(authz_of(&r, "ws_items"), "known");
+        assert_eq!(authz_of(&r, "ws_loose"), "unknown");
+        assert_eq!(unscoped_keys(&r), [], "{:#?}", r.findings);
+    }
+
+    /// The NodeGoat shape: `function Handler(db) { const dao = new DAO(db);
+    /// this.show = (req, res) => dao.find(req.params.userId) }`, with `DAO` a
+    /// constructor function of the module that assigns `this.find`. The lowering reads
+    /// `Handler.show` by its own name, with a value handed to a call it did not
+    /// record (`dao.find`), and records that call in `Handler`.
+    fn nodegoat(dao_calls: &[&str], dao_unread: bool, outer_unread: bool) -> RepoFacts {
+        let js = |path: &str, symbols: Vec<Symbol>| FileFacts {
+            path: path.into(),
+            lang: "js".into(),
+            package: "app".into(),
+            parse_ok: true,
+            symbols,
+            ..FileFacts::default()
+        };
+        let mut show = func("Handler.show", 12, &[]);
+        show.controls = vec![drift_core::controls::UNREAD_CALL.into()];
+        let mut outer = func("Handler", 3, &["app/data/dao.js#DAO(new)"]);
+        outer.receiver_calls = vec!["app/data/dao.js#DAO().find".into()];
+        if outer_unread {
+            outer.controls = vec![drift_core::controls::UNREAD_CALL.into()];
+        }
+        let mut dao = func("DAO", 2, dao_calls);
+        if dao_unread {
+            dao.controls = vec![drift_core::controls::UNREAD_CALL.into()];
+        }
+        let find = func("DAO.find", 5, &["pkg:mongodb#Collection.find"]);
+        RepoFacts {
+            schema_version: drift_core::FACTS_SCHEMA_VERSION,
+            files: vec![
+                js("app/data/dao.js", vec![dao, find]),
+                js("app/routes/allocations.js", vec![outer, show]),
+            ],
+            ..RepoFacts::default()
+        }
+    }
+
+    /// Pins (recall): the handler written in a constructor function and the DAO it
+    /// builds are read to the end: the closure holds the outer body, the DAO and the
+    /// method it assigns. Before, the handler's unread call ended the reading. Where
+    /// the DAO queries through its untyped parameter (`db.find`, what NodeGoat's
+    /// facts hold today), records an unread call itself, or the outer body does,
+    /// nothing is read to the end and nothing can be said.
+    #[test]
+    fn the_nodegoat_dao_shape_is_read_through_constructor_functions() {
+        let d = empty();
+        let names = |facts: &RepoFacts| -> Option<Vec<String>> {
+            let cx = Cx::new(facts, &d);
+            let show = facts.files[1]
+                .symbols
+                .iter()
+                .find(|s| s.name == "Handler.show")
+                .unwrap();
+            let nodes = closure(&cx, vec![Node::Sym(show)])?;
+            let mut out: Vec<String> = nodes
+                .iter()
+                .filter_map(|n| match n {
+                    Node::Sym(s) => Some(s.name.clone()),
+                    Node::Member(_) => None,
+                })
+                .collect();
+            out.sort();
+            Some(out)
+        };
+        let read = nodegoat(&["pkg:mongodb#MongoClient"], false, false);
+        assert_eq!(
+            names(&read),
+            Some(vec![
+                "DAO".to_string(),
+                "DAO.find".to_string(),
+                "Handler".to_string(),
+                "Handler.show".to_string(),
+            ])
+        );
+        assert_eq!(names(&nodegoat(&["param:db.find"], false, false)), None);
+        assert_eq!(names(&nodegoat(&["pkg:mongodb#MongoClient"], true, false)), None);
+        assert_eq!(names(&nodegoat(&["pkg:mongodb#MongoClient"], false, true)), None);
+    }
+
+    /// Pins (no name list): where the repository's own queries scope rows to the
+    /// caller by `org_id` in three bodies over three models, `org_id` is the key it
+    /// scopes by, and `user_id` in a route is no longer one by its name alone: no
+    /// finding for it, while one for `org_id` is still said. Before, both were
+    /// found by the name lists.
+    #[test]
+    fn scope_keys_are_learned_from_the_repositorys_own_queries() {
+        let by_caller = |name: &str, model: &str| {
+            let mut f = func(name, 3, &[]);
+            f.scoped_queries = vec![ScopedQuery {
+                condition: String::new(),
+                callee: format!("svc/models.py#{model}.objects.filter"),
+                key: "org_id".into(),
+                source: ScopeSource::Session,
+            }];
+            f
+        };
+        let repo = module(
+            "svc/repo.py",
+            vec![
+                by_caller("list_notes", "Note"),
+                by_caller("list_tags", "Tag"),
+                by_caller("list_teams", "Team"),
+            ],
+        );
+        let r = with_units(vec![
+            repo,
+            route(
+                "user",
+                "/users/{user_id}/settings",
+                &[USER, DB],
+                func("user_settings", 10, &["svc/crud.py#load_settings"]),
+            ),
+            route(
+                "org",
+                "/orgs/{org_id}/settings",
+                &[USER, DB],
+                func("org_settings", 10, &["svc/crud.py#load_settings"]),
+            ),
+        ]);
+        assert_eq!(
+            unscoped_keys(&r),
+            [("org_id".to_string(), 1, "org_settings".to_string())]
+        );
+        assert_eq!(unit_row(&r, "user_settings").unscoped, None);
+    }
+
+    /// Pins (review R5, row 3): a guard ties the route's value only by a parameter of
+    /// the same name. One that filters by `param workspace`, which the route
+    /// `/workspaces/{slug}` does not name (a FastAPI dependency's query or body
+    /// value), ties nothing: no `tenancy_filter` of the handler's own is made the
+    /// caller's through it. Before, a guard parameter the route does not name was
+    /// taken as the URL's. A guard with a way through where nothing held ties nothing
+    /// either (sibling case), and that unit stays a check found and not proven.
+    ///
+    /// The first guard's own body lets the request through only after a lookup of
+    /// the caller in what the request names, but what it names is `workspace`, a
+    /// query or body value beside the URL's `slug`: a caller of any workspace passes
+    /// it by naming their own. So it is found, not proven ([`membership_guard`],
+    /// [`Membership::Beside`]), and the unit is unknown (gap promote-membership,
+    /// hole 2). Before, the unit was known by that guard alone, read the same by the
+    /// pre-sprint binary.
+    #[test]
+    fn a_guard_tied_by_a_value_beside_the_url_ties_nothing() {
+        const MEMBERS: &str = "svc/models.py#Member.objects.filter";
+        const ITEMS: &str = "svc/models.py#Item.objects.filter";
+        let guard = |name: &str, param: &str, ways: &[&str]| {
+            let mut g = func(name, 20, &["pkg:fastapi#HTTPException"]);
+            g.controls = vec!["rejects_caller".into(), "throw".into()];
+            g.controls.extend(
+                ways.iter()
+                    .map(|w| format!("{}{w}", drift_core::controls::LEAVES_AFTER)),
+            );
+            g.controls.push(format!(
+                "{}{MEMBERS}\tmember\town caller\tworkspace__slug\tparam {param}",
+                drift_core::controls::ARG_VALUE
+            ));
+            g.body_checks = vec![check(USER, CheckOutcome::Forbidden)];
+            g
+        };
+        let held = format!("{MEMBERS}().exists");
+        let handler = |name: &str| {
+            let mut h = func(name, 10, &[]);
+            h.args = vec![format!("{ITEMS}@0:workspace__slug")];
+            h.controls = vec![format!(
+                "{}{ITEMS}\tworkspace__slug\tparam slug",
+                drift_core::controls::ARG_VALUE
+            )];
+            h
+        };
+        let r = with_units(vec![
+            module(
+                "svc/perm.py",
+                vec![
+                    guard("by_query", "workspace", &[held.as_str()]),
+                    guard("one_way", "slug", &[held.as_str(), ""]),
+                    guard("by_path", "slug", &[held.as_str()]),
+                ],
+            ),
+            route(
+                "path",
+                "/workspaces/{slug}/path",
+                &[USER, DB, "svc/perm.py#by_path"],
+                handler("ws_path"),
+            ),
+            route(
+                "query",
+                "/workspaces/{slug}/query",
+                &[USER, DB, "svc/perm.py#by_query"],
+                handler("ws_query"),
+            ),
+            route(
+                "branch",
+                "/workspaces/{slug}/branch",
+                &[USER, DB, "svc/perm.py#one_way"],
+                handler("ws_branch"),
+            ),
+        ]);
+        assert_eq!(authz_of(&r, "ws_query"), "unknown");
+        assert_eq!(
+            unit_row(&r, "ws_query").reason,
+            Some(UnknownReason::CheckNotProven)
+        );
+        assert_eq!(authz_of(&r, "ws_branch"), "unknown");
+        // The same lookup of the value the URL names is the check.
+        assert_eq!(authz_of(&r, "ws_path"), "known");
+        assert_eq!(
+            unit_row(&r, "ws_path").key.as_deref(),
+            Some("membership_guard:svc/perm.py#by_path")
+        );
+    }
+
+    /// Pins (review R5, row 4): a method the constructor function does not assign
+    /// (it may come from `util.inherits`, a mixin, a returned object) is not read as
+    /// the constructor's whole body: nothing is read to the end. Before, `DAO().find`
+    /// with no `DAO.find` read `DAO`'s body in its place.
+    #[test]
+    fn a_method_no_constructor_assigns_is_not_read_through_it() {
+        let d = empty();
+        let mut facts = nodegoat(&["pkg:mongodb#MongoClient"], false, false);
+        facts.files[0].symbols.retain(|s| s.name != "DAO.find");
+        let cx = Cx::new(&facts, &d);
+        let show = facts.files[1]
+            .symbols
+            .iter()
+            .find(|s| s.name == "Handler.show")
+            .unwrap();
+        assert!(closure(&cx, vec![Node::Sym(show)]).is_none());
+    }
+
+    /// Pins (review R5, row 5): a filter through a relation is learned by its whole
+    /// path, so `where.author.id` is never the key `id`. Before, it read `id`.
+    #[test]
+    fn a_relation_filter_is_learned_by_its_whole_path() {
+        assert_eq!(scope_word("where.author.id"), "authorid");
+        assert_eq!(scope_word("author__id"), "authorid");
+        assert_eq!(scope_word("where.userId"), "userid");
+        assert_eq!(scope_word("user_id"), "userid");
+        assert_eq!(scope_word("authorId"), "authorid");
+    }
+
+    /// Pins (review R5, row 6): keys are learned per package. The `org_id` that
+    /// package `svc` scopes by says nothing of package `web`, whose `user_id` route
+    /// is still read by the name lists. Before, one package's learned keys turned
+    /// the fallback off for every package.
+    #[test]
+    fn scope_keys_are_learned_per_package() {
+        let by_caller = |name: &str, model: &str| {
+            let mut f = func(name, 3, &[]);
+            f.scoped_queries = vec![ScopedQuery {
+                condition: String::new(),
+                callee: format!("svc/models.py#{model}.objects.filter"),
+                key: "org_id".into(),
+                source: ScopeSource::Session,
+            }];
+            f
+        };
+        let repo = module(
+            "svc/repo.py",
+            vec![
+                by_caller("list_notes", "Note"),
+                by_caller("list_tags", "Tag"),
+                by_caller("list_teams", "Team"),
+            ],
+        );
+        let mut web = route(
+            "web_user",
+            "/users/{user_id}/settings",
+            &[USER, DB],
+            func("web_settings", 10, &["svc/crud.py#load_settings"]),
+        );
+        web.package = "web".into();
+        let r = with_units(vec![repo, web]);
+        assert_eq!(
+            unscoped_keys(&r),
+            [("user_id".to_string(), 1, "web_settings".to_string())]
+        );
+    }
+
+    /// Pins (review R5, row 11): what the application runs before the unit is read
+    /// with it. A middleware class of the repository decides in a method the closure
+    /// does not read, so nothing is said of the key. Before, the unit's own wraps
+    /// alone were read.
+    #[test]
+    fn the_applications_middleware_is_read_before_a_key_is_unscoped() {
+        let d = empty();
+        let build = |middleware: &[&str]| {
+            let mut h = func("user_settings", 10, &["svc/crud.py#load_settings"]);
+            h.app_middleware = middleware.iter().map(|m| m.to_string()).collect();
+            let mut mw = func("TenantScope", 2, &[]);
+            mw.kind = SymbolKind::Class;
+            let mut files = vec![
+                route("settings", "/users/{user_id}/settings", &[USER, DB], h),
+                module("svc/mw.py", vec![mw]),
+            ];
+            files.extend(shared());
+            files.sort_by(|a, b| a.path.cmp(&b.path));
+            RepoFacts {
+                schema_version: drift_core::FACTS_SCHEMA_VERSION,
+                files,
+                ..RepoFacts::default()
+            }
+        };
+        let key_of = |facts: &RepoFacts| {
+            let cx = Cx::new(facts, &d);
+            let file = facts
+                .files
+                .iter()
+                .find(|f| f.path == "svc/api/settings.py")
+                .unwrap();
+            let unit = UnitRef::Entry {
+                file,
+                entry: &file.entry_points[0],
+                symbol: file.symbols.first(),
+            };
+            unscoped(&cx, &unit, &[], None)
+        };
+        assert_eq!(key_of(&build(&[])).as_deref(), Some("user_id"));
+        assert_eq!(key_of(&build(&["svc/mw.py#TenantScope"])), None);
     }
 
     // ---------- a service class's method ----------
@@ -8137,12 +9336,12 @@ mod tests {
                     "known".into(),
                     "tenancy_guard:svc/guards.py#check_scope".into()
                 ),
-                // The tenant in the route, and nothing read enforces it.
-                (
-                    "by_name".into(),
-                    "unknown:NotFollowed".into(),
-                    "param:org_id".into()
-                ),
+                // The tenant in the route, and nothing read enforces it. Since S4 every
+                // body this request runs was read to the end (`unscoped`), so it is a
+                // recorded absence with `org_id` unscoped, no longer `NotFollowed` ("a
+                // callee may enforce it"): S4's own pin is
+                // `a_tenant_route_param_read_to_the_end_is_an_unscoped_key`.
+                ("by_name".into(), "none".into(), String::new()),
             ]
         );
     }

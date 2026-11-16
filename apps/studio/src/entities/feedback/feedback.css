@@ -1,0 +1,21 @@
+/* ---------- Feedback marks (drift feedback mark) ---------- */
+.fb-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+.fb-mark__row {
+  gap: 8px;
+  align-items: center;
+}
+.fb-mark__out {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.fb-cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

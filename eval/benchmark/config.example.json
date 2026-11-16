@@ -1,0 +1,49 @@
+{
+  "//": "Example operator config for harness.py and grade.py. Copy it outside the repository, fill every <...>, and keep it with the results. Relative paths are relative to this file. No secret goes in here: name environment variables in agent.pass_env instead.",
+  "benchmark": "drift-agent-benchmark-v1",
+  "seed": "<the registered seed: see PREREG-DRAFT.md section 9>",
+  "tasks_dir": "<directory written by select_tasks.py draw: holds tasks/ and, after freeze, reference/>",
+  "mirrors": {
+    "<owner/name>": "<local mirror of the repository, for example made with git clone --mirror>"
+  },
+  "runs_root": "<results directory: manifest.json and runs/>",
+  "work_root": "<optional: where working copies are made; default runs_root/work>",
+  "arms": ["none", "plain", "agents-md", "hooks"],
+  "runs_per_arm": 3,
+  "model": "<the model identifier exactly as the agent is told to use it; recorded in the manifest>",
+  "agent": {
+    "command": ["<path to the operator's wrapper for the agent under test>",
+                "--workdir", "{workdir}", "--prompt-file", "{prompt_file}",
+                "--transcript", "{transcript}", "--usage", "{usage}",
+                "--model", "{model}", "--budget", "{budget}", "--timeout", "{timeout_s}"],
+    "version_command": ["<path to the agent>", "--version"],
+    "timeout_s": 1800,
+    "budget": "<per-run budget in whatever unit the wrapper enforces, passed through as text>",
+    "budget_exit_codes": [75],
+    "env": {},
+    "pass_env": ["<NAME_OF_THE_API_KEY_VARIABLE>"],
+    "path": ["/usr/local/bin", "/usr/bin", "/bin"],
+    "home_template": null
+  },
+  "drift": {
+    "binary": "<path to the pinned drift binary>"
+  },
+  "instructions_file": "AGENTS.md",
+  "plain_instructions_dir": "<directory of <task id>.md files: the plain generated instructions, one per task, made before any run>",
+  "accept": {
+    "rule": "default-tier",
+    "mode": "advise",
+    "lists": {}
+  },
+  "hooks": {
+    "files": [
+      {"src": "<the hook configuration for the agent under test, built from integrations/>", "dest": "<where that agent reads project hooks, relative to the repository root>"}
+    ],
+    "with_agents_md": true
+  },
+  "drift_on_path": {"none": false, "plain": false, "agents-md": false, "hooks": true},
+  "tests": {"enabled": true, "timeout_s": 900},
+  "history_depth": null,
+  "total_cost_limit": null,
+  "retry_harness_errors": 1
+}

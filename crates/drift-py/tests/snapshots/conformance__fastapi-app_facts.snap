@@ -570,7 +570,59 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "route": "/api/v1/admin/users/{user_id}",
           "adapter": "fastapi"
         }
-      ]
+      ],
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "delete_user",
+            "kind": "http",
+            "method": "DELETE",
+            "route": "/api/v1/admin/users/{user_id}",
+            "adapter": "fastapi"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "delete_user",
+            "kind": "function",
+            "exported_as": [
+              "delete_user"
+            ],
+            "line": 6,
+            "wraps": [
+              {
+                "wrapper": "app/api/deps.py#get_current_superuser",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/api/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/api/deps.py#get_db",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "input_typed",
+              "reads_input",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return"
+            ],
+            "string_literals": 0,
+            "app_middleware": [
+              "pkg:fastapi#middleware.cors.CORSMiddleware"
+            ]
+          }
+        ]
+      }
     },
     {
       "path": "app/api/routes/items.py",
@@ -886,7 +938,125 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "adapter": "fastapi"
         }
       ],
-      "has_test": true
+      "has_test": true,
+      "listed": {
+        "entry_points": [
+          {
+            "symbol": "read_items",
+            "kind": "http",
+            "method": "GET",
+            "route": "/api/v1/items",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "sync_item",
+            "kind": "http",
+            "method": "PATCH",
+            "route": "/api/v1/items/{item_id}/sync",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "sync_item",
+            "kind": "http",
+            "method": "PUT",
+            "route": "/api/v1/items/{item_id}/sync",
+            "adapter": "fastapi"
+          },
+          {
+            "symbol": "update_item",
+            "kind": "http",
+            "method": "POST",
+            "route": "/api/v1/items/{item_id}",
+            "adapter": "fastapi"
+          }
+        ],
+        "symbols": [
+          {
+            "name": "read_items",
+            "kind": "function",
+            "exported_as": [
+              "read_items"
+            ],
+            "line": 11,
+            "wraps": [
+              {
+                "wrapper": "app/api/deps.py#get_db",
+                "kind": "call"
+              },
+              {
+                "wrapper": "app/api/deps.py#get_current_user",
+                "kind": "call"
+              },
+              {
+                "wrapper": "pkg:fastapi#security.OAuth2PasswordBearer",
+                "kind": "call"
+              }
+            ],
+            "calls": [
+              "app/api/deps.py#SessionDep.exec"
+            ],
+            "renders": [],
+            "args": [
+              "pkg:fastapi#APIRouter.api_route@99:response_model"
+            ],
+            "controls": [
+              "arg_value:app/api/deps.py#SessionDep.exec\t#0\tparam skip #2",
+              "input_typed",
+              "param_flows",
+              "reads_input",
+              "returns_unread",
+              "shape:pkg:fastapi#security.OAuth2PasswordBearer(tokenUrl=lit)",
+              "typed_return",
+              "uses_any"
+            ],
+            "string_literals": 0,
+            "order": [
+              "app/api/deps.py#SessionDep.exec"
+            ],
+            "responses": [
+              {
+                "status": 0,
+                "via": "declared",
+                "builder": "",
+                "model": "app/models.py#Item",
+                "keys": [],
+                "in_catch": false
+              }
+            ],
+            "app_middleware": [
+              "pkg:fastapi#middleware.cors.CORSMiddleware"
+            ]
+          },
+          {
+            "name": "sync_item",
+            "kind": "function",
+            "exported_as": [
+              "sync_item"
+            ],
+            "line": 25,
+            "wraps": [
+              {
+                "wrapper": "app/api/deps.py#get_db",
+                "kind": "call"
+              }
+            ],
+            "calls": [],
+            "renders": [],
+            "args": [],
+            "controls": [
+              "input_typed",
+              "reads_input",
+              "returns_request",
+              "typed_return",
+              "uses_any"
+            ],
+            "string_literals": 0,
+            "app_middleware": [
+              "pkg:fastapi#middleware.cors.CORSMiddleware"
+            ]
+          }
+        ]
+      }
     },
     {
       "path": "app/core/__init__.py",

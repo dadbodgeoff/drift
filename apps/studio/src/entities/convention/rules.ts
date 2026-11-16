@@ -1,6 +1,7 @@
 // Presentation helpers for Drift's rule and reference strings. No analysis:
 // these only name and group what Drift already decided.
 import type { Rule } from "@/shared/contract/drift";
+import { t } from "@/shared/i18n";
 import ruleKindFamily from "./rule-kind-family.json";
 
 /**
@@ -71,6 +72,7 @@ export type RuleFamily =
   | "Wiring"
   | "Import sources"
   | "Practices"
+  | "Declared dependencies"
   | "Other";
 
 const WRAP_FAMILY: Record<string, RuleFamily> = {
@@ -126,6 +128,8 @@ export function ruleFamily(rule: Rule): RuleFamily {
       return "Import sources";
     case "practice":
       return "Practices";
+    case "imports_declared":
+      return "Declared dependencies";
     default:
       // A rule kind newer than this Studio: shown as data (CI fails until it is handled).
       return "Other";
@@ -163,14 +167,30 @@ export function importSource(rule: Rule): { name: string; from: string; not: str
   return rule.type === "imports_from" ? { name: rule.name, from: sourceModule(rule.source), not: (rule.instead_of ?? []).map(sourceModule) } : null;
 }
 
+/** A mechanism as the classifier names it, for people: `role_guard` -> `role guard`. */
+export const mechanismWords = (m: string): string => m.replace(/_/g, " ");
+
 /**
  * A promoted practice in words, as a chip: "authn done one of 2 accepted ways" (its ways are practice-map variant
- * keys, which the convention's summary names in the map's labels). Null for other kinds.
+ * keys, which the convention's summary names in the map's labels), "authn done by mechanism wrap, whichever instrument
+ * it names" (`any_mechanism`), "authn done any way that enforces it" (`any_enforcing`), joined with ", or " when a rule
+ * accepts more than one of these. A rule from an older Drift has neither new field and reads as before. Null for other
+ * kinds.
  */
 export function practiceText(rule: Rule): string | null {
   if (rule.type !== "practice") return null;
   const n = rule.any_of.length;
-  return `${rule.concern} done one of ${n} accepted ${n === 1 ? "way" : "ways"}`;
+  const mechanisms = rule.any_mechanism ?? [];
+  const parts: string[] = [];
+  // Named ways, as before; a rule that accepts nothing else always says how many ways it names (0 included).
+  if (n > 0 || (!mechanisms.length && !rule.any_enforcing)) parts.push(n === 1 ? t("conventions.practice.oneWay") : t("conventions.practice.ways", { n }));
+  if (mechanisms.length) parts.push(t("conventions.practice.mechanism", { mechanisms: mechanisms.map(mechanismWords).join(t("conventions.practice.mechanismOr")) }));
+  if (rule.any_enforcing) parts.push(t("conventions.practice.enforcing"));
+  const done = t("conventions.practice.done", { concern: rule.concern, parts: parts.join(t("conventions.practice.or")) });
+  // A place narrower than the role's directory (newer drift): one file, or the routes under a literal prefix.
+  if (rule.in_file) return `${done}${t("conventions.practice.inFile", { file: rule.in_file })}`;
+  if (rule.under_route) return `${done}${t("conventions.practice.underRoute", { route: rule.under_route })}`;
+  return done;
 }
 
 /** `import:<area>` signals (not `import:pkg:`) are layering rules. */
@@ -223,6 +243,8 @@ export function ruleTargets(rule: Rule): string[] {
     }
     case "practice":
       return [practiceText(rule)!];
+    case "imports_declared":
+      return ["imports only what its package.json declares"];
     case "has_test":
       return [];
     default:

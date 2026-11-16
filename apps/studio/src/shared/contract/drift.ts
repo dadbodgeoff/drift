@@ -562,13 +562,17 @@ export type GuardCallArg =
   | { ref: string }
   | { call: GuardCall };
 
-/** Why a file was not analysed. `too_deep`: nesting beyond Drift's limit (it would overflow the parser), so Drift fails closed. `too_costly`: syntax that makes the TypeScript/JavaScript parser re-read large spans (or a parse that ran out of its memory budget) would take far more memory than the file's size, so Drift fails closed. `stack_unavailable`: the scan could not reserve a stack large enough to parse the file safely (an address-space or memory limit on that run), so it fails closed for that run; not cached, a later scan with room parses it. `flow_syntax`: JavaScript with Flow type annotations that cannot be read, or removed with certainty to leave plain JavaScript, so Drift fails closed. */
-export type SkipReason = "too_large" | "generated" | "minified" | "declaration" | "not_utf8" | "too_deep" | "too_costly" | "stack_unavailable" | "flow_syntax";
+/** Why a file was not analysed. `too_deep`: nesting beyond Drift's limit (it would overflow the parser), so Drift fails closed. `too_costly`: syntax that makes the TypeScript/JavaScript parser re-read large spans (or a parse that ran out of its memory budget) would take far more memory than the file's size, so Drift fails closed. `stack_unavailable`: the scan could not reserve a stack large enough to parse the file safely (an address-space or memory limit on that run), so it fails closed for that run; not cached, a later scan with room parses it. `flow_syntax`: JavaScript with Flow type annotations that cannot be read, or removed with certainty to leave plain JavaScript, so Drift fails closed. `component_script`: a Vue, Svelte or Astro component whose script blocks cannot be delimited with certainty; in `listed_skipped` only. */
+export type SkipReason = "too_large" | "generated" | "minified" | "declaration" | "not_utf8" | "too_deep" | "too_costly" | "stack_unavailable" | "flow_syntax" | "component_script";
 
 export interface RepoFacts {
   schema_version: number;
   files: FileFacts[];
   skipped: { path: string; reason: SkipReason }[];
+  /** The scripts of Vue, Svelte and Astro components (TypeScript lowering 87): the listed reading only, which `drift security` and the practice map read and mining does not. Omitted when empty. */
+  listed_files?: FileFacts[];
+  /** Components skipped, and why (`listed_files`). Omitted when empty. */
+  listed_skipped?: { path: string; reason: SkipReason }[];
   models?: { path: string; name: string; source: string; line: number; fields: string[] }[];
   packages?: {
     path: string;
@@ -644,7 +648,27 @@ export type Rule =
    * `any_of` (practice-map variant keys, never names). Checked by the classifier that draws the map: a unit it cannot
    * tell is never a violation. Always a suggestion.
    */
-  | { type: "practice"; concern: string; any_of: string[] };
+  | {
+      type: "practice";
+      concern: string;
+      any_of: string[];
+      /** Mechanisms accepted whole, in the classifier's vocabulary (`wrap`, `dependency`, `permission`, ...: the part of a variant key before its first `:`): a unit doing the concern by one of them follows, whichever instrument it names. Absent when none (newer drift). */
+      any_mechanism?: string[];
+      /** Any way the classifier says enforces the concern follows ("every entry point here signs the caller in, however"). Absent when not set (newer drift). */
+      any_enforcing?: boolean;
+      /** The one file the practice holds in (repo-relative), when its place is a file rather than its role's directory (`promote::Place::file`). Absent for a directory (newer drift, policy version 3). */
+      in_file?: string;
+      /** The literal route prefix it holds under, in its role's package, each parameter as `[*]` (`/api/workspaces/[*]`, `promote::Place::route`), or the keys of a tRPC procedure path ending in `.` (`viewer.me.`, newer drift). Absent for a directory (newer drift, policy version 3). */
+      under_route?: string;
+    }
+  /**
+   * Code of the convention's package imports only the packages its own `package.json` declares, in any dependency
+   * section (crates/drift-mine/src/imports_declared.rs; proposed from the map as `from_map: manifest`, never mined).
+   * Node built-ins, the package's own code and `@types/` for type-only imports hold; an import Drift cannot tell
+   * (unresolved, a package no manifest declares, an unread manifest) is never a violation. A file holding one is policy
+   * version 4. Always a suggestion (newer drift).
+   */
+  | { type: "imports_declared" };
 
 /**
  * Where a wiring fix goes (crates/drift-mine/src/check.rs `WireHint`): `register` a symbol in a
@@ -751,8 +775,17 @@ export interface Exempt extends Outlier {
 
 // ---------- drift census --json (crates/drift-cli/src/main.rs, schema 1) ----------
 
+/**
+ * Where a convention proposed from Drift's map of the code comes from (`policy::Convention::from_map`): `layering`
+ * (crates/drift-mine/src/from_map.rs `layering`), `manifest`, or `practice`. Such a proposal did not pass through the
+ * miner's measured gates. Absent on everything the miner proposed.
+ */
+export type FromMap = "practice" | "layering" | "manifest";
+
 export interface CensusProposal {
   id: string;
+  /** Study use only (`census --gate-candidate NAME`): the candidate change to a mining gate without which this proposal would not exist. Absent with no switch on, which is how the Studio runs census. */
+  gate_candidate?: string;
   /** Position in the human views: the default tier first, then suggestions best first (newer drift: `drift_mine::rank`; older drift: mining order). */
   rank: number;
   /** False for a suggestion past `suggestion_cap`: listed only with `--all` (newer drift; absent before W4). The cap never hides it from check or agents (what agents see is `agents`, W0). */
@@ -842,6 +875,101 @@ export interface Census {
   largest_role?: { role: RoleSelector; members: number; summary: string } | null;
   /** Files not parsed for lack of stack, left out of every count (newer drift; absent when empty). */
   unchecked?: string[];
+  /**
+   * With `--from-map` only (the Studio does not pass it): the proposals from Drift's map of the code, then what qualified
+   * and is not proposed, with why (crates/drift-cli/src/from_map_cli.rs `census_json`). A proposal from the map never
+   * appears in `proposals`, which are the miner's: it reaches the Studio through `.drift/conventions.yaml` (`from_map`).
+   */
+  from_map?: CensusFromMapEntry[];
+}
+
+/** One entry of `census --from-map --json` `from_map` (from_map_cli.rs `census_json`). */
+export type CensusFromMapEntry =
+  | {
+      proposed: true;
+      id: string;
+      /** `practice`, `layering` or `manifest`. */
+      kind: FromMap;
+      summary: string;
+      /** The convention as `.drift/conventions.yaml` would hold it (`from_map` set). */
+      convention: Convention;
+      /** Conventions already in the policy or mined that say the same rule. */
+      same_rule: { id: string; summary: string; status: "accepted" | "proposed" }[];
+      /** Units (practice) or files (layering; manifest: files that import a package) that follow it. */
+      follows: number;
+      /** Units recorded as differing today (0 for layering; manifest: files that import an undeclared package). */
+      differ: number;
+      unknown: number;
+      /** A practice proposal: what promoting it records, and how many current departures it would settle. */
+      candidate?: PromoteCandidate;
+      settles?: number;
+      /** A layering proposal: what the structure map shows (from_map.rs `LayeringEvidence`). */
+      layering?: FromMapLayeringEvidence;
+      /** A manifest proposal: what the package's imports show (from_map.rs `ManifestEvidence`; newer drift). */
+      manifest?: FromMapManifestEvidence;
+    }
+  | {
+      proposed: false;
+      id: string;
+      kind: FromMap;
+      summary: string;
+      /** Why it is not proposed (from_map_cli.rs `Reason::code`). */
+      reason: "passive" | "preview_concern" | "python_off" | "overlaps" | "same_as_mined" | "not_shown" | "over_cap" | (string & {});
+      /** The same, in words. */
+      why: string;
+    }
+  /** A note with no convention: the Python manifests not proposed, and why (from_map_cli.rs `manifest_into`; newer drift). */
+  | {
+      proposed: false;
+      note: "python_not_proposed" | (string & {});
+      kind: FromMap;
+      manifests: string[];
+      why: string;
+    };
+
+/** What a manifest proposal from the map rests on (crates/drift-mine/src/from_map.rs `ManifestEvidence`). */
+export interface FromMapManifestEvidence {
+  /** The manifest (`apps/web/package.json`). */
+  manifest: string;
+  /** The package's directory (`""` for the root) and name. */
+  package: string;
+  name: string;
+  /** Production files of the package (the rule's role). */
+  members: number;
+  /** Members Drift read that import a package. */
+  importing: number;
+  follows: number;
+  breaking_files: number;
+  breaking_imports: number;
+  /** Each package imported without being declared, most imports first. */
+  undeclared: {
+    package: string;
+    imports: number;
+    files: number;
+    /** The manifests that declare it (`package.json` for the root); empty when none does. */
+    declared_in: string[];
+    /** The workspace package's directory, when it is one. */
+    workspace?: string;
+  }[];
+  /** Members Drift could not check: never reported. */
+  not_read: number;
+  example: string;
+}
+
+/** What a layering proposal from the map rests on (crates/drift-mine/src/from_map.rs `LayeringEvidence`). */
+export interface FromMapLayeringEvidence {
+  layer: string;
+  target: string;
+  importing: number;
+  members: number;
+  importing_target: number;
+  target_files: number;
+  reverse_files: number;
+  reverse_declared: boolean;
+  /** The third layer the target reaches the layer through; absent when none. */
+  through?: string;
+  lint_forbids: boolean;
+  example: string;
 }
 
 /**
@@ -945,6 +1073,10 @@ export interface Convention {
   different_kind?: PolicyDifferentKind[];
   /** A person promoted it from the practice map (`drift practices promote`): the variant id (`P-…`) it came from. Its rule is a `practice` rule. Absent for every other convention. */
   promoted_from_practice?: string;
+  /** Proposed from Drift's map of the code, not by the miner: it did not pass through the miner's measured gates. Absent on every mined convention (newer drift). */
+  from_map?: FromMap;
+  /** What a person saw when they accepted it (`policy::AcceptedEvidence`): the role's size, holders of total, the lower bound. Absent when not recorded (newer drift). */
+  accepted_evidence?: { role_size: number; holders: number; total: number; lower_bound: number };
 }
 
 /**
@@ -1054,7 +1186,7 @@ export interface Violation {
   import?: ImportHit;
 }
 
-/** The import a layering violation is about (crates/drift-mine/src/check.rs `ImportHit`). */
+/** The import a layering or manifest violation is about (crates/drift-mine/src/check.rs `ImportHit`). */
 export interface ImportHit {
   /** Canonical module id (`app/board/board-context.ts`). */
   module: string;
@@ -1062,6 +1194,17 @@ export interface ImportHit {
   specifier?: string;
   /** 1-based line; 0 when not found. */
   line?: number;
+  /** A manifest violation (`imports_declared`): the package, the manifest that should declare it and where it is declared instead (newer drift). */
+  undeclared?: {
+    package: string;
+    manifest: string;
+    /** Absent when no manifest declares it. */
+    declared_in?: string[];
+    /** The workspace package's directory, when it is one. */
+    workspace?: string;
+    /** The import is type-only: the `@types/` package would do too. */
+    type_only?: boolean;
+  };
 }
 
 /** A warning the neighbour gate held back (`check --format json` `suppressed_neighbour`, crates/drift-mine/src/check.rs `NeighbourHold`). */
@@ -1150,6 +1293,48 @@ export interface CheckReport {
   stale_practices?: StalePractice[];
   /** Per promoted practice, the units of its place the practice map cannot tell: not checked, never reported (newer drift; omitted when empty). Never a failure. */
   practices_not_checked?: PracticeNotChecked[];
+  /** Per accepted mined convention, what the check read of its members (check.rs `Standing`), by id (newer drift; omitted when none). */
+  standing?: CheckStanding[];
+  /** With `--diff-base` and no security baseline: what the change adds that a baseline would hold, as advice (ratchet.rs `Advice`). Never part of the exit code; absent when none. */
+  security_advice?: SecurityAdvice[];
+  /** With the experimental `probation`: the promoted practices on probation and their counts (absent when none, and where files are named). Never part of the exit code. */
+  probation?: ProbationCount[];
+}
+
+/** What `drift check` read of one accepted mined rule's members (crates/drift-mine/src/check.rs `Standing`). */
+export interface CheckStanding {
+  id: string;
+  /** Whether the counts are of the whole repository (a check of named files counts only theirs, and decides no staleness). */
+  whole: boolean;
+  /** Units in its role now, exempt ones included. */
+  role: number;
+  /** Members the rule is about: those that follow it, those that break it and those not checked. */
+  members: number;
+  holders: number;
+  /** Members Drift could not tell: never reported, their lock entries stay. */
+  not_checked: number;
+  /** Why, with how many members each; absent when none. */
+  not_checked_why?: Record<string, number>;
+  /** Why the rule is stale (it then advises until a person looks); absent when it is not. */
+  stale?: string;
+  /** The mode it is checked with now. */
+  mode: Mode;
+  /** `was block, now advise because …` when that mode is not the file's; absent otherwise. */
+  mode_note?: string;
+}
+
+/** One thing a change adds that `drift check --diff-base` advises on where there is no security baseline (ratchet.rs `Advice`). */
+export interface SecurityAdvice {
+  /** `no-guard`, `unguarded-reaching` or `unscoped-key`. */
+  kind: string;
+  /** The entry point, keyed as a baseline keys it. */
+  key: string;
+  /** `path:line`. */
+  at: string;
+  /** What Drift read: the basis of "no guard found", or of the unscoped key. */
+  read: string;
+  /** The operations fed by the request it reaches, by kind; absent when none. */
+  reaches?: string[];
 }
 
 /** One of `CheckReport.stale_practices` (crates/drift-mine/src/practices/promote.rs `Stale`). */
@@ -1228,6 +1413,8 @@ export interface PracticeDeparture {
   /** A unit of the place that uses the dominant variant, to copy. */
   example?: PracticeExample;
   units: DepartingUnit[];
+  /** The command that makes the place's way the rule for new code there (`drift practices promote <id> --in <place>`), only when Drift would take it as the code stands; absent otherwise (newer drift). For people: an agent may not promote. */
+  promote?: string;
 }
 
 // ---------- drift security --json (crates/drift-mine/src/security.rs) ----------
@@ -1374,6 +1561,23 @@ export interface Boundaries {
    * (`security.terraform`): its listener rules are then read for the tied code directories only (`EntryRow.tied`).
    */
   unread?: { kind: string; files: string[]; count: number }[];
+  /**
+   * What the hosting platforms' own files deploy (Vercel, Netlify, Fly.io, Render, a Heroku `Procfile` with
+   * `app.json`, App Engine, Cloud Run, AWS SAM, Serverless, Cloudflare Workers) and how each is reached, with the file
+   * and line that say so (`says`) and the code directory it runs (`code`, once tied). `untied` says why one is not
+   * tied, and `candidates` lists the applications it may deploy, which `drift setup` asks about (`kind: "platform"`)
+   * (newer drift; absent when none).
+   */
+  platforms?: {
+    file: string;
+    kind: string;
+    name?: string;
+    exposure: Exposure;
+    says: string;
+    code?: string;
+    untied?: string;
+    candidates?: string[];
+  }[];
 }
 
 export interface SinkUse {
@@ -1442,10 +1646,21 @@ export interface Inventory {
   env: Record<string, string[]>;
   /** Files not parsed for lack of stack: their entry points, risky operations and env reads are unknown (newer drift; absent when empty). */
   unchecked?: string[];
+  /**
+   * Production files nothing Drift read reaches (security.rs `UnreachedFile`): their risky operations (`sinks`) and
+   * route-like registrations (`unlisted`, lines) are listed here, not as production code. `parsed` is false where the
+   * parser reported errors. Sorted (newer drift; absent when empty).
+   */
+  unreached?: { path: string; parsed: boolean; sinks?: string[]; unlisted?: number[] }[];
+  /** With `--top N` only (the Security view's "Look at these first" runs it apart): the findings to look at first, ranked (security_summary.rs `Top`). */
+  top?: SecurityTop;
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
-  /** Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty). */
-  unlisted?: { path: string; line: number; symbol?: string }[];
+  /**
+   * Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty).
+   * `reason` (security.rs `Unlisted.reason`, drift-core `UnlistedReason`) says why: `receiver_not_read`, `handler_not_read`, `not_found`, `package_handler`, `target_not_read`, `path_not_read`, `not_mounted`, `table_not_read`, `handler_not_reached` (with `symbol`), or `deployment_not_read` (with `symbol`: what a deployment file says). Absent from an older drift.
+   */
+  unlisted?: { path: string; line: number; symbol?: string; reason?: string }[];
   /** What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none (newer drift; absent when empty). */
   scope_gaps?: {
     resource: string;
@@ -1457,6 +1672,14 @@ export interface Inventory {
   }[];
   /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). Newer kinds: `unpinned_action` (another owner's action named by a tag, in a job that holds secrets or may write) and `piped_download` (a download handed to an interpreter). */
   workflows?: { kind: string; path: string; line: number; job: string; detail: string }[];
+  /** What a workflow an outsider can start leaves unstated (newer drift; absent when empty): a job on `pull_request_target`, `workflow_run` or `issue_comment` where neither it nor the workflow states `permissions` (`unstated_permissions`; `grade` is `runs_pull_request_code`, `event_text_in_script`, or absent), and a job on an event a fork can start whose `runs-on` names `self-hosted` (`self_hosted_runner`). `on` is the events, as written. Baseline kind `workflow-hardening` (advises by default). */
+  workflow_hardening?: { kind: string; path: string; line: number; job: string; detail: string; on: string; grade?: string }[];
+  /** What an image the repository builds to deploy holds (newer drift; absent when empty): a compose service's built stage that runs as root (`root_user`; `path` is the Dockerfile, or the compose file whose `user:` decides) and a secret given as a build argument that a shipped stage reads in `ENV` or `RUN` (`build_secret`). `built_by` is `compose.yaml service api` or `.github/workflows/x.yml job build`. Baseline kind `image-hardening` (advises by default). */
+  image_hardening?: { kind: string; path: string; line: number; built_by: string; detail: string }[];
+  /** What those two readings could not tell (a `runs-on` expression, a base image that may set a user, a workflow of another repository): unknown, never a finding. `kind` is the finding kind it could not tell. Newer drift; absent when empty. */
+  hardening_not_checked?: { kind: string; path: string; line: number; subject: string; why: string }[];
+  /** CI files not read, or read only in part, with why in Drift's words (a file that does not parse, one too large, an include not found, a `Jenkinsfile` beyond its `sh` steps): what their jobs run is unknown, not nothing. `workflows` rows also come from GitLab CI, CircleCI, Azure Pipelines, Bitbucket Pipelines and a `Jenkinsfile` (paths outside `.github/`; `job` is `include` or `orbs` for what a pipeline includes). Newer drift; absent when empty. */
+  ci_not_read?: { path: string; why: string }[];
   /** What the repository's manifests install that nothing fixes: a repository named by a branch, a tag or nothing with no lockfile recording its commit (`mutable_git`), an archive at a URL with no digest (`unpinned_url`), a source over plain HTTP or with the certificate check off (`plain_http`), a second package index (`second_index`), a download handed to an interpreter in an image build or an install script (`piped_download`). `name` is empty where the file says it of every dependency. Absent when there are none. */
   /** The bodies that send rows back whole where other code of the repository withholds a field of the same rows (a query's `omit`, a field taken apart from the rest and never read, one deleted or blanked, by the body or by a function the row is handed to). `rows` is the name the code reads them under (`user`), `from` the call that handed them back, `fields` what other code withholds and this body does not, `withheld_at` the first places that withhold one (`path#symbol`) of `withheld_count`. Python (newer drift): a class over a model that takes the whole of it (`from` is `fields = "__all__"` or `exclude`) where another class of its kind withholds a field, and a route whose declared response is the table class itself (`from` is `response_model` or `the return annotation`) where another route's is that class with fields left out; `rows` is then the class (`app/models.py#User`). Absent when there are none. */
   whole_rows?: {
@@ -1480,12 +1703,19 @@ export interface Inventory {
 
 /** What a run found against the security baseline (`.drift/security.lock`). Newer drift. */
 export interface SecurityRatchet {
-  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `workflow`, `leak`): the finding's key (handler, method, route; never a line) and where it is. */
+  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `workflow`, `leak`; newer drift also `workflow-hardening` and `image-hardening`, which advise by default): the finding's key (handler, method, route; never a line) and where it is. */
   added: Record<string, { key: string; at: string }[]>;
   /** In the baseline and no longer found. */
   gone: { kind: string; key: string }[];
   /** How many findings of the baseline are still found. */
   kept: number;
+  /**
+   * `drift check --diff-base` only: findings the change adds to the code (not found at the merge base, keyed as now)
+   * and also writes into `.drift/security.lock` itself (lines the merge base's lock did not have), by kind. They are in
+   * the baseline, so they fail nothing: a notice for the reviewer. A lock written again for code that was there, or
+   * lines that only moved with a renamed file, are not listed. Newer drift; absent when empty.
+   */
+  baselined_by_change?: Record<string, { key: string; at: string }[]>;
 }
 
 // ---------- drift card <path> --json (crates/drift-mine/src/card.rs `Card`, schema 1) ----------
@@ -1568,6 +1798,44 @@ export interface MapPackage {
   dependencies_test?: MapDependency[];
   /** Packages depending on this one in production. */
   depended_on_by: number;
+  /** Entry points of the package with every listing Drift makes (what `drift security` reads), beside the measured `entry_points` (newer drift). */
+  entry_points_listed?: number;
+}
+
+/** `drift security --top N --json` `top` (crates/drift-mine/src/security_summary.rs `Top`). */
+export interface SecurityTop {
+  /** The first N ranked findings. */
+  shown: SecurityRanked[];
+  /** How many ranked findings are not shown. */
+  more: number;
+  /** The findings not ranked, by why, each counted once. */
+  not_ranked: { no_remote_caller: number; no_caller: number; test_or_example: number; settings: number; not_fed: number; guard_unknown: number };
+}
+
+/** One ranked finding: every entry point reaching the same operation with the same kind of caller and validation reading (security_summary.rs `Ranked`). */
+export interface SecurityRanked {
+  kind: string;
+  /** The operation's function (`path#Symbol`). */
+  sink: string;
+  sink_line?: number;
+  /** Who can reach the operation (security_summary.rs `Caller`): `hook_not_read` and `unread` rest on what Drift did not read. */
+  caller: "anyone" | "hook_not_read" | "passes_guard" | "service" | "unread";
+  validation: "not_found" | "not_read" | "found";
+  /** `schema_in_body`: the validation found is a schema seen in the body (absent when false). */
+  places: { path: string; line: number; method: string | null; route: string | null; symbol: string; exposure: Exposure; guard: string; guard_not_read?: number; schema_in_body?: boolean; via: string[] }[];
+}
+
+/**
+ * `drift map --json` at the top level (crates/drift-mine/src/map.rs `overview`; the Studio reads `packages` only).
+ * `entry_point_counts` says the two readings of the entry points apart: `measured` (the listings mining reads, each
+ * package's `entry_points`) and `listed` (every listing, what `drift security` and the practice map read).
+ */
+export interface MapOverview {
+  schema: number;
+  packages: MapPackage[];
+  entry_point_counts?: { measured: number; listed: number; counts: string };
+  /** With `--json`: the area graph layering proposals rest on (from_map.rs `AreaGraph`), sorted (newer drift). */
+  areas?: { edges: { from: string; to: string; files: number }[]; one_way: { layer: string; never_imports: string; target_files: number; reverse_files: number; through?: string }[] };
 }
 
 // ---------- drift security --diff-base REF --json (security.rs `Regressions`, #167) ----------
@@ -1619,9 +1887,24 @@ export interface SecurityDiff {
    * have, in a file it added or changed) where Drift found no guard in what it read, or cannot tell (`opaque` set),
    * whatever their siblings do and whatever they reach. Those listed under `guard_gaps` or `unguarded_reaching` are not
    * repeated, and one the practice map knows to be open on purpose (a probe, `AllowAny`, a webhook's signature) is not
-   * listed (newer drift; absent from older drift).
+   * listed. One whose guard Drift cannot read is not listed here but under `guard_unknown` (newer drift; absent from
+   * older drift).
    */
   added_without_guard?: EntryRow[];
+  /** The entry points the change adds, counted as `added_without_guard` counts them, whose guard Drift cannot read (`opaque`): unknown, never a finding, listed apart (newer drift; absent when empty). */
+  guard_unknown?: EntryRow[];
+  /**
+   * Every finding the change adds, of every kind the security baseline holds (`unguarded-reaching`, `no-guard`,
+   * `guard-gap`, `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `dependency`,
+   * `kubernetes`, `leak`, and any kind a newer reading adds), keyed as `.drift/security.lock` keys it: found now and not
+   * at the merge base (a finding that only moved with a renamed file is not one). The sections above explain the rows
+   * they can and list only rows found here. `--fail-on` counts these. Newer drift (absent from older drift).
+   */
+  added?: Record<string, { key: string; at: string }[]>;
+  /** Gap exceptions found now in files the change did not touch, that other entry points made (they lacked the guard or scope before). Not the change's. Absent when empty. */
+  outside_change?: Record<string, { key: string; at: string }[]>;
+  /** Kinds, or findings, that could not be compared with the merge base, and why (the practice map unread on one side; a file the merge base could not parse, with its `rows`). Never counted as added; `--fail-on` naming the kind fails. Absent when everything was compared. */
+  not_compared?: { kind: string; why: string; rows?: { key: string; at: string }[] }[];
   diff: SecurityDiffInfo;
 }
 
@@ -1839,7 +2122,7 @@ export interface PracticeConcern {
    */
   groups?: PracticeGroup[];
   /** With `--units` only: every unit with its assignment, sorted by package, variant, path, symbol, line. */
-  units?: { package: string; variant: string; path: string; symbol: string; line: number; method?: string; assignment: "known" | "identified" | "none" | "unknown"; reason?: PracticeUnknownReason; /** What the unit itself does, where its variant stands for several ways (the tail, a folded policy); absent when the variant's label is the unit's. */ does?: string; /** The key of the unit's own uses, with `does`. */ key?: string; /** The entry point's route, when it has one: a handler mounted more than once is a unit for each mount (newer drift; absent before). */ route?: string; /** Of a unit known by a person's word, not by proof: its label with the symbols declared ("rule access (declared in .drift/config.yaml: RuleBook._ensure_access)"); newer drift. */ declared?: string; /** Of a unit unknown as `check_not_proven`: the check found and what is not proven of it. */ not_proven?: PracticeNotProven; /** Of a `none` unit of authn or authz: what was read and what was seen and not read (newer drift). */ basis?: AnswerBasis }[];
+  units?: { package: string; variant: string; path: string; symbol: string; line: number; method?: string; assignment: "known" | "identified" | "none" | "unknown"; reason?: PracticeUnknownReason; /** What the unit itself does, where its variant stands for several ways (the tail, a folded policy); absent when the variant's label is the unit's. */ does?: string; /** The key of the unit's own uses, with `does`. */ key?: string; /** The entry point's route, when it has one: a handler mounted more than once is a unit for each mount (newer drift; absent before). */ route?: string; /** Of a unit known by a person's word, not by proof: its label with the symbols declared ("rule access (declared in .drift/config.yaml: RuleBook._ensure_access)"); newer drift. */ declared?: string; /** Of a unit unknown as `check_not_proven`: the check found and what is not proven of it. */ not_proven?: PracticeNotProven; /** Of a `none` unit of authn or authz: what was read and what was seen and not read (newer drift). */ basis?: AnswerBasis; /** The entry point's kind as the facts name it (`http`, `server_action`, `job`, ...), for a concern whose unit is an entry point (newer drift). */ kind?: string; /** The key of each of the unit's known uses, one per use, sorted (newer drift; absent when none). */ uses?: string[]; /** Whether the classifier says what the unit does enforces the concern (newer drift). */ enforces?: boolean; /** Of an authorization unit: the tenant or owner key the entry point takes from the request and neither checks nor scopes, in a body read to the end (newer drift). */ unscoped?: string }[];
 }
 
 /** Variants sharing their decisive instrument, or one `none` variant (practices/mod.rs `VariantGroup`). */
@@ -1973,10 +2256,18 @@ export interface PracticeFinding {
 
 // ---------- drift practices promote --json (crates/drift-mine/src/practices/promote.rs) ----------
 
-/** Where a promoted practice holds (`promote::Place`): a package ("" the root package), or one directory of it ("" the whole package). */
+/**
+ * Where a promoted practice holds (`promote::Place`): a package ("" the root package), one directory of it ("" the
+ * whole package), one file of it, or the routes of it under a literal route prefix. At most one of `file` and `route`.
+ */
 export interface PromotePlace {
   package: string;
+  /** Of a file place, the file's directory; of a route place, "". */
   dir: string;
+  /** One file (repo-relative): a unit is in the place when its file is exactly this one (newer drift; absent otherwise). */
+  file?: string;
+  /** A literal route prefix, each parameter as `[*]` (`/api/workspaces/[*]/projects`), shown as `<package>:<route>`; or the keys of a tRPC procedure path ending in `.` (`viewer.me.`), shown as `<package>:/<keys>.` (newer drift; absent otherwise). */
+  route?: string;
 }
 
 /** One way of doing a concern in a place (`promote::Way`): a known variant of the map, with the units of the place that do it. */
@@ -2012,6 +2303,54 @@ export interface PromoteCandidate {
   example: PracticeExample | null;
   /** Promoted below the 80% share on a person's word (`--force`): advise only. */
   forced: boolean;
+  /** Mechanisms accepted whole, sorted (`any_mechanism`): absent for a practice of named ways (newer drift). */
+  mechanisms?: string[];
+  /** Any way the classifier says enforces the concern follows (`any_enforcing`); absent when not (newer drift). */
+  any_enforcing?: boolean;
+  /** What it accepts is what code does by doing nothing (errors left to the framework, ...): new code follows it without trying. Absent when not (newer drift). */
+  passive?: boolean;
+  /** Units of the place not counted because they take no request (background jobs); absent when 0 (newer drift). */
+  jobs?: number;
+  /** The one cause outside the units that every unit Drift could not read shares, when they all share one (newer drift). */
+  unknown_cause?: PromoteUnknownCause;
+  /** Of a route place: the units of `unknown` there because Drift did not read their route as a literal to the end, so whether they are under the prefix is not known. Absent when 0 (newer drift). */
+  unread_routes?: number;
+}
+
+/** Why every unknown unit of a place is unknown, when one cause outside them explains all of them (`promote::UnknownCause`). */
+export interface PromoteUnknownCause {
+  /** One of the reasons outside a unit: `body_unreadable`, `opaque_wrapper`, `unresolved`, `partly_read`, `unparsed`. */
+  reason: PracticeUnknownReason;
+  /** What was not read, as the unknown units name it. */
+  instrument: string;
+  /** The units unknown for it. */
+  units: number;
+  /** The `.drift/config.yaml` line that would let Drift read it, when a line can. */
+  hint?: string;
+}
+
+/** `drift practices promote --list --json` (drift-cli promote.rs `list`, exit 0): every practice that may be promoted now. */
+export interface PromoteList {
+  /** The candidates that hold code to something, those that would settle the most current departures first (newer drift); an older Drift listed the passive ones here too, marked `passive`. */
+  candidates: PromoteListItem[];
+  /** The candidates code follows by doing nothing (`candidate.passive`), ranked the same way, listed apart (newer drift; absent from an older one). */
+  passive?: PromoteListItem[];
+  /** Candidates left out because a person declined them (their convention is rejected). */
+  declined: number;
+  /** The promoted conventions that left candidates out, sorted. */
+  promoted: string[];
+  /** With the experimental `probation`: the promoted practices on probation, by id (absent when none). */
+  probation?: ProbationCount[];
+}
+
+export interface PromoteListItem {
+  /** The place as Drift names it (`app/api`, `.` the root package). */
+  place: string;
+  /** The command that promotes it (`--concern <id>` in place of a variant id for a candidate of no named way, newer drift). */
+  command: string;
+  /** How many of the departures `drift check` points out today (outside tests) it would settle: what the list is ranked by (newer drift). */
+  departures?: number;
+  candidate: PromoteCandidate;
 }
 
 /**
@@ -2022,16 +2361,72 @@ export interface PromoteResult {
   written: boolean;
   /** The place as Drift names it (`app/api`, `.` the root package). */
   place: string;
-  convention: { id: string; summary: string; status: Status; mode: Mode; promoted_from_practice: string };
+  /** `promoted_from_practice`: the first way named; null for a practice of a mechanism or of any enforcing way, which names none. */
+  convention: { id: string; summary: string; status: Status; mode: Mode; promoted_from_practice: string | null };
   candidate: PromoteCandidate;
   /** drift.lock entries added (with `--dry-run`: that would be added), one per exception. */
   baselined: number;
   /** With `--block`: of the `recent` units most recently added to the place that the map can tell, how many follow the practice as they stand. Null otherwise. */
-  replay: { recent: number; followed: number } | null;
+  /** `readable`: the units of the place the map can tell, dated or not (fewer than the replay reads means the place cannot block). `by_line`: of a file place, each unit was dated by the last commit that changed its declaring line. Both absent from an older Drift. */
+  replay: { recent: number; followed: number; readable?: number; by_line?: boolean } | null;
   /** The mined conventions (proposed or accepted) whose rule requires the same of code in the same package: with both accepted, new code that breaks them is reported under each. Absent from an older Drift. */
   same_way?: string[];
+  /**
+   * The practice blocked before and is promoted again on new evidence the block gate no longer allows: why it
+   * advises now (the gate's sentence). Null when it does not apply; absent from an older Drift.
+   */
+  block_dropped?: string | null;
+  /**
+   * The accepted practices of the same concern in exactly this place, of another form (a named way where a mechanism
+   * was accepted whole, or the other way round), that this promotion replaces (with `--dry-run`: would replace).
+   * Empty when none; absent from an older Drift.
+   */
+  replaces?: PromoteReplaced[];
   /** The text `drift practices promote` prints before it writes. */
   preview: string;
+  /**
+   * With the experimental `probation` and `--block`: `on_probation` true when there was no history to replay and it
+   * was accepted in advise mode on probation instead (`why`: the refusal of the replay; `written`: `.drift/probation.lock`
+   * was written now, false when it was on probation already), false when its count let it block. Absent otherwise.
+   */
+  probation?: { on_probation: boolean; why: string | null; written: boolean; count: ProbationCount | null };
+}
+
+/**
+ * One promoted practice on probation (crates/drift-cli/src/probation.rs `Listed`, drift-mine practices/probation.rs
+ * `Count`): what the units added to its place since it was put on probation say. Never part of an exit code.
+ */
+export interface ProbationCount {
+  /** The convention's id (`D-…`). */
+  id: string;
+  /** `void`: its rule or place changed after it was put on probation, so nothing counts. */
+  state: "waiting" | "eligible" | "broken" | "void";
+  /** How many must be told, all following, before it may block (15). */
+  of: number;
+  /** Units added since that Drift can tell and that count. */
+  counted: number;
+  followed: number;
+  /** Those that break it (`path#symbol`, sorted). */
+  broke: string[];
+  /** Units added since that Drift cannot tell: counted for neither side. */
+  unknown: number;
+  /** Units in files touched by a change that also edits `.drift/probation.lock`: not counted. */
+  held_back: number;
+  /** Units there when it was put on probation (never counted). */
+  at_start: number;
+  /** The sentence a person reads. */
+  message: string;
+  /** When `eligible`: the command a person runs to set it to block (`drift review --block <id>`). */
+  command?: string;
+}
+
+/** A practice of another form a promotion replaces (drift-cli promote.rs `Replaced::json`). */
+export interface PromoteReplaced {
+  /** The replaced convention's id (`D-…`). */
+  id: string;
+  summary: string;
+  /** The units of its place that follow it and break the new one (`path#symbol`, sorted): recorded in drift.lock as they are. */
+  narrowed: string[];
 }
 
 /** Why a practice cannot be promoted (`promote::Refusal`, serde-tagged by `code`). */
@@ -2043,13 +2438,34 @@ export type PromoteRefusal =
   | { code: "no_place"; id: string; nearest: PromoteRefusal | null }
   | { code: "too_small"; place: string; units: number; min: number }
   | { code: "below_share"; place: string; follows: number; read: number }
-  | { code: "too_unknown"; place: string; unknown: number; total: number };
+  | { code: "too_unknown"; place: string; unknown: number; total: number; cause?: PromoteUnknownCause }
+  | { code: "nothing_accepted" }
+  | { code: "unknown_concern"; concern: string }
+  | { code: "not_a_mechanism"; concern: string; mechanism: string }
+  | { code: "no_enforcing"; concern: string };
+
+/**
+ * The command line's own refusals (drift-cli promote.rs `usage`, `block_refused`), before or after the engine's: no
+ * variant and no concern (`no_variant`), a mechanism or any enforcing way with neither (`no_concern`), `--block` with
+ * `--force` (`block_forced`), no conventions file (`no_policy`), another accepted practice of the concern in a place
+ * that overlaps (`covered`: the message names it), and block mode the gate refuses (`block_refused`: the convention
+ * it would be and the replay, when one ran).
+ */
+export type PromoteUsageRefusal =
+  | { code: "no_variant" }
+  | { code: "no_concern" }
+  | { code: "block_forced" }
+  | { code: "no_policy" }
+  | { code: "covered" }
+  | { code: "block_refused"; id: string; replay: NonNullable<PromoteResult["replay"]> | null };
 
 /** `drift practices promote --json` when it refuses (exit 2, nothing written): the refusal and the sentence a person reads. */
 export interface PromoteRefused {
-  /** Typed by the codes this Studio knows; another code (block refused for want of a replay, ...) still has its `message`. */
-  refused: PromoteRefusal | { code: string };
+  /** Typed by the codes this Studio knows; another code still has its `message`. */
+  refused: PromoteRefusal | PromoteUsageRefusal | { code: string };
   message: string;
+  /** A `block_refused` for want of history: the line that names the experimental `probation` (and, in a shallow clone, how to read the history). Absent otherwise. */
+  hint?: string;
 }
 
 /** What one `drift practices promote --json` run gives: what it records (or would), or why it refuses. */
@@ -2099,8 +2515,12 @@ export interface DriftSetupProposal {
 export interface DriftSetupQuestion {
   /** `S-` and 4 hex digits, stable for what the question is about. */
   id: string;
-  /** A compose file that may be a test stack; the Terraform target group of a service; a helper to confirm as a check. */
-  kind: "deployment" | "terraform" | "check";
+  /**
+   * A compose file that may be a test stack; the Terraform target group of a service; which application a platform's
+   * file deploys (`platform`, newer drift); the Kubernetes workload that runs a service (`security.kubernetes`, newer
+   * drift); a helper to confirm as a check.
+   */
+  kind: "deployment" | "terraform" | "platform" | "kubernetes" | "check";
   /**
    * `changed`: answered, and the evidence it rests on changed since, so it is asked again. `proposed`: an agent's
    * answer waits for a person (`proposal`). `rejected`: a person rejected an agent's answer on this same evidence (listed
@@ -2363,7 +2783,7 @@ export interface DriftSetupChoice {
   effect: string;
   /** The line(s) it writes to `.drift/config.yaml`, under `writes_under`. */
   writes?: string;
-  /** The key the lines go under (`security.not_deployed`, `security.terraform`, `security.internal`, `practices.authz`). */
+  /** The key the lines go under (`security.not_deployed`, `security.terraform`, `security.platforms`, `security.internal`, `practices.authz`). */
   writes_under?: string;
   /** Routes it moves (0 where none, or not counted before it is picked). */
   moves: number;
@@ -2373,3 +2793,66 @@ export interface DriftSetupChoice {
    */
   needs_person: boolean;
 }
+
+// ---------- drift census --why --json (crates/drift-mine/src/funnel.rs `why_json`, schema 1) ----------
+
+/** Where a gate's constant comes from (funnel.rs `Origin`): only `study` was measured by a study. */
+export type FunnelOrigin = "study" | "pre-registered" | "engineering, no study" | "engineering, rationale written but not measured";
+
+/** One gate of the miner (funnel.rs `GATES`), with how many candidates it dropped in this repository. */
+export interface FunnelGate {
+  name: string;
+  /** The constant it tests against, as the source names it ("" for a gate without one). */
+  constant: string;
+  /** What a candidate must be to pass it. */
+  passes: string;
+  origin: FunnelOrigin | (string & {});
+  /** Where the gate is decided (a study, a document, a source file). */
+  source: string;
+  dropped: number;
+}
+
+/** Where a dropped candidate's target is defined (funnel.rs `Target`). */
+export type FunnelTarget = "repository" | "dependency" | "built_in" | "unresolved" | "mixed" | "none";
+
+/** A candidate a gate dropped. */
+export interface FunnelDropped {
+  gate: string;
+  id: string;
+  role: string;
+  rule: string;
+  family: string;
+  lang: "ts" | "py";
+  holders: number;
+  members: number;
+  /** The measured value the gate tested (rounded to 3 places); null when the gate measures none. */
+  value: number | null;
+  threshold: number | null;
+  detail: string;
+  target: FunnelTarget | (string & {});
+  /** Whether the rule would be in the default tier had it passed. */
+  default_tier: boolean;
+}
+
+/**
+ * `drift census --why [GATE] --json`. Observation only: nothing here is proposed, checked or shown to agents, and the
+ * proposals are exactly those of `drift census`.
+ */
+export interface CensusWhy {
+  /** 1 (a newer schema is refused by the Studio's version check). */
+  schema: number;
+  /** Always true: nothing listed is proposed, checked or shown to agents. */
+  observation_only: boolean;
+  /** The gate asked for (`--why GATE`); null for every gate. */
+  gate: string | null;
+  /** Candidates that reached each stage (`roles`, `role_mined`, `observed`, `drafted`, `mined`, `proposed`); may be empty. */
+  reached: Partial<Record<FunnelStage, number>>;
+  gates: FunnelGate[];
+  dropped: FunnelDropped[];
+  /** When mining's caps cut default-tier drafts, how many (less those a person rejected), as a sentence; null otherwise (main.rs `census_why`; absent from an older Drift). */
+  cap_note?: string | null;
+}
+
+/** The funnel's stages, in order (funnel.rs `REACHED`). */
+export const FUNNEL_STAGES = ["roles", "role_mined", "observed", "drafted", "mined", "proposed"] as const;
+export type FunnelStage = (typeof FUNNEL_STAGES)[number];

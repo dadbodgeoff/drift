@@ -1,6 +1,8 @@
 //! `drift export agents-md`: keep a short, generated block of accepted
 //! conventions in AGENTS.md (or CLAUDE.md) so every agent reads them up front.
 
+use std::path::Path;
+
 use crate::project::{Project, blocks, is_suggestion};
 use drift_mine::report::sanitize;
 
@@ -60,10 +62,15 @@ pub fn block(p: &Project) -> String {
             sanitize(&c.example, 160)
         ));
     }
+    // The cut line says how many of the rules left out block (the sort above puts
+    // them first, so only more than MAX_RULES blocking rules leave any out), in the
+    // words of every other capped list (`drift_mine::report::cut_note`).
     if accepted.len() > MAX_RULES {
+        let left = accepted.len() - MAX_RULES;
+        let blocking_left = blocking.saturating_sub(MAX_RULES);
         out.push_str(&format!(
-            "- …and {} more: run `drift check` before finishing.\n",
-            accepted.len() - MAX_RULES
+            "- …and {left} more{}: run `drift check` before finishing.\n",
+            drift_mine::report::cut_note(blocking_left, left - blocking_left)
         ));
     }
     out.push_str(
@@ -84,8 +91,152 @@ pub fn block(p: &Project) -> String {
     out
 }
 
+/// Whether the block found in a file (`found`, from [`START`] to [`END`]) is `ours`,
+/// whatever its line endings: [`splice`] writes a CRLF file's block with CRLF, so a
+/// block compared byte for byte with the LF one [`block`] builds would never read as
+/// current there, and the advice to refresh it would write the same CRLF bytes again.
+pub fn same_block(found: &str, ours: &str) -> bool {
+    found.replace("\r\n", "\n") == ours.replace("\r\n", "\n")
+}
+
+/// Refuse a path a person named for a file Drift writes (`drift feedback export --out`,
+/// `drift export agents-md --write`, `drift export claude-settings --write`, `drift
+/// review --export-log`) when it is Drift's policy or state: anything under a `.drift/`
+/// directory but `inside` (a directory under the root that may be written, such as the
+/// feedback directory), or a file named `drift.lock`, `conventions.yaml` or
+/// `security.lock` anywhere. `what` names the file in the refusal.
+///
+/// Checked on the path as it will be written, not as it is spelled: `..` is resolved
+/// (lexically, where nothing is there yet, as creating the directories would resolve
+/// it), the part that exists is resolved through its links (a link the write would
+/// follow), and names are compared ignoring ASCII case, since on a case-insensitive
+/// file system `.DRIFT/Conventions.yaml` is the policy.
+pub fn refuse_policy_path(
+    root: &Path,
+    out: &Path,
+    inside: Option<&str>,
+    what: &str,
+) -> anyhow::Result<()> {
+    let abs = lexical(&std::path::absolute(out)?);
+    let real = resolved(&std::path::absolute(out)?);
+    let mut roots = vec![lexical(&std::path::absolute(root)?)];
+    if let Ok(r) = drift_core::fsutil::canonical(root) {
+        roots.push(r);
+    }
+    let names = [
+        drift_mine::policy::LOCK_FILE,
+        file_name_of(drift_mine::policy::CONVENTIONS_FILE),
+        file_name_of(drift_mine::ratchet::SECURITY_LOCK),
+    ];
+    let refused = |p: &Path| {
+        if p.file_name()
+            .is_some_and(|f| names.iter().any(|n| f.eq_ignore_ascii_case(*n)))
+        {
+            return true;
+        }
+        // Inside the repository only what is below its root counts (a checkout may
+        // itself sit in a directory named `.drift`); outside it, any `.drift/` is
+        // some repository's state.
+        let Some(rel) = roots.iter().find_map(|r| strip_prefix_ci(p, r)) else {
+            return p.components().any(|c| is_drift_dir(&c));
+        };
+        let rel: Vec<_> = rel.components().collect();
+        if !rel.iter().any(is_drift_dir) {
+            return false;
+        }
+        // Under `.drift/`: allowed only strictly inside `inside`.
+        let Some(inside) = inside else {
+            return true;
+        };
+        let allowed: Vec<_> = Path::new(inside).components().collect();
+        let within = rel.len() > allowed.len()
+            && rel
+                .iter()
+                .zip(&allowed)
+                .all(|(a, b)| a.as_os_str().eq_ignore_ascii_case(b.as_os_str()))
+            && !rel[allowed.len()..].iter().any(is_drift_dir);
+        !within
+    };
+    if refused(&abs) || refused(&real) {
+        anyhow::bail!(
+            "{} is Drift's policy or state (.drift/, drift.lock, conventions.yaml, security.lock): {what} is never written there",
+            out.display()
+        );
+    }
+    Ok(())
+}
+
+/// Whether a path component is a `.drift` directory, in any ASCII case.
+fn is_drift_dir(c: &std::path::Component<'_>) -> bool {
+    c.as_os_str().eq_ignore_ascii_case(".drift")
+}
+
+/// The last part of a `/`-separated constant path.
+fn file_name_of(path: &'static str) -> &'static str {
+    path.rsplit('/').next().unwrap_or(path)
+}
+
+/// `path` with `.` dropped and each `..` taking off the part before it (never above
+/// the root), without looking at the file system.
+fn lexical(path: &Path) -> std::path::PathBuf {
+    use std::path::Component;
+    let mut out = std::path::PathBuf::new();
+    for c in path.components() {
+        match c {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                // At the root (or a drive's root) `..` is the root itself.
+                if out.parent().is_some() {
+                    out.pop();
+                }
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
+/// An absolute `path` as the file system resolves it: the longest leading part that
+/// exists, canonical (every link on it followed, `..` taken physically), then the rest
+/// [`lexical`]ly. A dangling final link stays as its own name (the write replaces it).
+fn resolved(path: &Path) -> std::path::PathBuf {
+    let parts: Vec<_> = path.components().collect();
+    for n in (1..=parts.len()).rev() {
+        let head: std::path::PathBuf = parts[..n].iter().collect();
+        if let Ok(mut real) = drift_core::fsutil::canonical(&head) {
+            for p in &parts[n..] {
+                real.push(p.as_os_str());
+            }
+            return lexical(&real);
+        }
+    }
+    lexical(path)
+}
+
+/// `path` with the leading components of `prefix` taken off, comparing names ignoring
+/// ASCII case; `None` when `prefix` does not lead it.
+fn strip_prefix_ci<'a>(path: &'a Path, prefix: &Path) -> Option<&'a Path> {
+    let mut rest = path.components();
+    for want in prefix.components() {
+        let got = rest.next()?;
+        if !got.as_os_str().eq_ignore_ascii_case(want.as_os_str()) {
+            return None;
+        }
+    }
+    Some(rest.as_path())
+}
+
 /// Replace the generated block in `existing`, or append it.
 pub fn splice(existing: &str, block: &str) -> String {
+    if existing.contains("\r\n") {
+        // A CRLF file (saved on Windows) stays CRLF: no mixed line endings.
+        return splice_lf(&existing.replace("\r\n", "\n"), block).replace('\n', "\r\n");
+    }
+    splice_lf(existing, block)
+}
+
+/// [`splice`] of a file with LF line endings.
+fn splice_lf(existing: &str, block: &str) -> String {
     match (existing.find(START), existing.find(END)) {
         (Some(s), Some(e)) if e > s => {
             format!("{}{}{}", &existing[..s], block, &existing[e + END.len()..])
@@ -129,6 +280,22 @@ mod tests {
         }
     }
 
+    /// Pins: `..` is taken off lexically and never climbs above the root, and a block
+    /// differs from ours only by its line endings reads as the same.
+    #[test]
+    fn paths_are_read_as_written_and_blocks_newline_blind() {
+        let p = |s: &str| std::path::PathBuf::from(s);
+        assert_eq!(
+            lexical(&p("/r/.drift/feedback/../conventions.yaml")),
+            p("/r/.drift/conventions.yaml")
+        );
+        assert_eq!(lexical(&p("/r/x/./../drift.lock")), p("/r/drift.lock"));
+        assert_eq!(lexical(&p("/../../a")), p("/a"));
+        let b = format!("{START}\nnew\n{END}");
+        assert!(same_block(&b.replace('\n', "\r\n"), &b));
+        assert!(!same_block(&b.replace("new", "old"), &b));
+    }
+
     #[test]
     fn splice_replaces_or_appends() {
         let b = format!("{START}\nnew\n{END}");
@@ -136,5 +303,22 @@ mod tests {
         assert_eq!(splice("# Agents\n", &b), format!("# Agents\n\n{b}\n"));
         let old = format!("# Agents\n\n{START}\nold\n{END}\n\nmore\n");
         assert_eq!(splice(&old, &b), format!("# Agents\n\n{b}\n\nmore\n"));
+    }
+
+    /// Pins CRLF: before, an LF block went into a CRLF AGENTS.md (mixed endings).
+    #[test]
+    fn splice_keeps_a_crlf_file_crlf() {
+        let b = format!("{START}\nnew\n{END}");
+        let old = format!("# Agents\r\n\r\n{START}\r\nold\r\n{END}\r\n\r\nmore\r\n");
+        let got = splice(&old, &b);
+        assert_eq!(
+            got,
+            format!("# Agents\n\n{b}\n\nmore\n").replace('\n', "\r\n")
+        );
+        assert!(!got.replace("\r\n", "").contains('\n'), "{got:?}");
+        assert_eq!(
+            splice("# Agents\r\n", &b),
+            format!("# Agents\n\n{b}\n").replace('\n', "\r\n")
+        );
     }
 }

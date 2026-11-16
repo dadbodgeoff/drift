@@ -1,8 +1,10 @@
 // The renderer's only way to get data: a named-operation API over the IPC
 // contract (shared/ipc/contract.ts). In Electron it is backed by the preload
 // bridge; in a plain browser by fixtures that the real drift binary produced.
-import type { AbRow, Census, CheckReport, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { AbRow, Census, CensusWhy, CheckReport, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
+import type { FeedbackMarks, UpgradeOutcome } from "@/shared/contract/screens";
+import type { Verdict } from "@/shared/ipc/contract";
 
 export type { Answer, AuditEntry, Decision, DriftInfo, History, LogEntry, PolicyFiles, PromoteRequest, Provenance, RepoChange, RepoRef, SessionSummary, Snapshot };
 
@@ -61,10 +63,28 @@ export interface StudioApi {
   security(repo: RepoRef, opts?: RunOpts): Promise<Loaded<Inventory>>;
   /** `drift security --json --diff-base <base>`: only what the change since the merge base introduces (exit 0: facts for review). */
   securityDiff(repo: RepoRef, opts: RunOpts & { base: string }): Promise<Loaded<SecurityDiff>>;
+  /** `drift security --top N --json` (0: all): the inventory with `top`, the findings to look at first, ranked by what Drift read. Read-only. */
+  securityTop(repo: RepoRef, n: number, opts?: RunOpts): Promise<Loaded<Inventory>>;
+  /** `drift security --write-baseline`: an explicit write (`.drift/security.lock`); returns the audit entry with Drift's output. */
+  securityBaseline(repo: RepoRef): Promise<AuditEntry>;
   /** `drift practices --json`: for each cross-cutting concern, its variants by share, where each lives and an example (facts, not rules). */
   practices(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PracticesReport>>;
   /** `drift map --json`: packages with production and test dependencies apart (the Map view draws its graph from `drift scan`). */
   map(repo: RepoRef, opts?: RunOpts): Promise<Loaded<{ schema: number; packages: MapPackage[] }>>;
+  /** `drift census --why --json`: what mining dropped, gate by gate. Observation only; read-only. */
+  funnel(repo: RepoRef, opts?: RunOpts): Promise<Loaded<CensusWhy>>;
+  /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
+  promoteList(repo: RepoRef, opts?: RunOpts): Promise<Loaded<PromoteList>>;
+  /** `drift census --from-map --json`: census with `from_map`, the proposals from Drift's map and what is not proposed, with why. Read-only. */
+  fromMap(repo: RepoRef, opts?: RunOpts): Promise<Loaded<Census>>;
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote (or why it refused). Changes nothing. */
+  upgrade(repo: RepoRef, opts?: RunOpts): Promise<Loaded<UpgradeOutcome>>;
+  /** `drift upgrade --apply [--security-baseline] --json`: an explicit write of only what changes no decision a person made; Drift's report. */
+  upgradeApply(repo: RepoRef, opts: { securityBaseline: boolean }): Promise<UpgradeOutcome>;
+  /** `drift feedback mark`: a person's verdict on one violation, kept on this machine (nothing is sent). Drift's output. */
+  feedbackMark(repo: RepoRef, id: string, member: string, verdict: Verdict, why: string | null): Promise<string>;
+  /** `.drift/feedback/marks.json` as Drift wrote it; null when nothing was marked. */
+  feedbackMarks(repo: RepoRef): Promise<FeedbackMarks | null>;
   policy(repo: RepoRef): Promise<PolicyFiles>;
   /** `drift review --accept|--reject|--block <ids>`: an explicit write; returns the audit entry. */
   review(repo: RepoRef, decision: Decision, ids: string[]): Promise<AuditEntry>;

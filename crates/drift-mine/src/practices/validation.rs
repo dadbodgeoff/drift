@@ -39,6 +39,12 @@ impl Concern for Validation {
         "entry_point"
     }
 
+    /// Input parsed with the accepted schema and checked by hand as well is still
+    /// parsed with that schema: the checks add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
             .into_iter()
@@ -81,6 +87,30 @@ impl Concern for Validation {
                 Err((reason, instrument)) => return unknown(reason, &instrument),
             }
         }
+        // What the listed reading adds (TypeScript): calls handed what the request
+        // sent beside a schema, and the pipes a parameter decorator is handed. A
+        // function of the repository handed both may check the input or not: its
+        // body is not followed here, so it is found, not proven [STRICT].
+        let mut unproven: Option<String> = None;
+        for c in bodies.iter().flat_map(|b| &b.controls) {
+            let read = if let Some(rest) = c.strip_prefix(controls::PARSES_INPUT) {
+                parsed_input(cx, rest, &bodies)
+            } else if let Some(pipe) = c.strip_prefix(controls::PIPES_INPUT) {
+                piped_input(cx, pipe)
+            } else {
+                continue;
+            };
+            match read {
+                Some(Ok((mechanism, lib, source))) => {
+                    uses.push(use_of(mechanism, &lib));
+                    sources.push(source);
+                }
+                Some(Err(instrument)) if unproven.as_ref().is_none_or(|u| instrument < *u) => {
+                    unproven = Some(instrument);
+                }
+                Some(Err(_)) | None => {}
+            }
+        }
         if inputs.is_empty() {
             if common::any_control(&bodies, "validates") {
                 let lib = bodies
@@ -92,6 +122,8 @@ impl Concern for Validation {
                         uses.push(use_of("schema", &l));
                         sources.push(VariantSource::Usage);
                     }
+                    // A schema handed to a call beside the input was read above.
+                    None if !uses.is_empty() => {}
                     // A schema is applied, but which library cannot be told. The
                     // validating call is not named, so no instrument.
                     None => return unknown(UnknownReason::Unclassified, ""),
@@ -118,14 +150,41 @@ impl Concern for Validation {
             uses.push(use_of("manual", "body_check"));
             sources.push(VariantSource::Usage);
         }
+        // Python: every input the handler takes is a parameter the framework parses
+        // by its declared type before the body runs (`id: uuid.UUID` in FastAPI, a
+        // `<uuid:pk>` converter in a Django route), and the body reads no other
+        // ([`controls::INPUT_TYPED`]): a value of another shape is answered with an
+        // error. Only where nothing else was found, so a unit that also binds a
+        // model keeps its way. [STRICT] Shown, as a check found and not proven, and
+        // never a use: the audits measured Drift's reading of typed parameters wrong
+        // (3 of 3), and this reading of them is not yet measured, so it is no way a
+        // candidate rule may rest on (review R5, row 7). A person may declare it.
+        if uses.is_empty()
+            && sfile.lang == "py"
+            && s.controls.iter().any(|c| c == controls::INPUT_TYPED)
+        {
+            return unknown(
+                UnknownReason::CheckNotProven,
+                &format!("typed_param:{}", entry.adapter),
+            );
+        }
         if !uses.is_empty() {
             return common::known(uses, common::source_of(&sources));
+        }
+        if let Some(instrument) = unproven {
+            return unknown(UnknownReason::Unclassified, &instrument);
         }
         if SCHEMA_IN_OPTIONS.contains(&entry.adapter.as_str()) {
             // The route's options may carry its schema (`schema: { body }`), which the
             // facts do not hold: nothing found is not none [STRICT].
             unknown(UnknownReason::Unresolved, "")
         } else if common::any_control(&bodies, controls::READS_INPUT) {
+            // The input is handed to a call of a package (or one not resolved)
+            // that is no validation library Drift knows: what it does with the
+            // input is not read, so whether it validates is unknown, never none.
+            if let Some(callee) = handed_unread(&bodies) {
+                return unknown(UnknownReason::Unclassified, &callee);
+            }
             Assignment::None {
                 label: "reads input, nothing validates it".into(),
             }
@@ -140,12 +199,34 @@ impl Concern for Validation {
 /// provably takes no input. [`Validation::assign`] is not to be asked about any other
 /// unit: of one that reads nothing it can only say it does not know whether input is
 /// read.
+///
+/// A body whose parameter names the input only to leave it unread
+/// ([`controls::INPUT_UNREAD`], `async ({ ctx, input }) => handler({ ctx })`)
+/// takes none either: naming a key is not reading it.
 pub fn may_read_input<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> bool {
     unit_symbol(cx, unit).is_none_or(|(_, s)| {
-        !common::bodies(cx, s)
-            .iter()
-            .all(|b| b.controls.iter().any(|c| c == controls::NO_INPUT))
+        !common::bodies(cx, s).iter().all(|b| {
+            b.controls
+                .iter()
+                .any(|c| c == controls::NO_INPUT || c == controls::INPUT_UNREAD)
+        })
     })
+}
+
+/// The first (by name) call of a package, or one that did not resolve, a body
+/// hands the request's input to ([`controls::INPUT_HANDED`]) and that is no
+/// validation library Drift knows ([`validation_library`]). A function of the
+/// repository is not counted: its body is code Drift reads where it is defined.
+fn handed_unread(bodies: &[&drift_core::Symbol]) -> Option<String> {
+    bodies
+        .iter()
+        .flat_map(|b| &b.controls)
+        .filter_map(|c| c.strip_prefix(controls::INPUT_HANDED))
+        .flat_map(|rest| rest.split('\t'))
+        .filter(|callee| callee.starts_with("pkg:") || callee.starts_with("unresolved:"))
+        .filter(|callee| validation_library(callee).is_none())
+        .min()
+        .map(str::to_string)
 }
 
 type Classified = (&'static str, String, VariantSource);
@@ -233,6 +314,84 @@ fn input(cx: &Cx<'_>, adapter: &str, i: &str) -> Result<Classified, (UnknownReas
         Some(lib) => Ok(typed(lib, VariantSource::Usage)),
         None => Err((UnknownReason::Unclassified, i.to_string())),
     }
+}
+
+/// What a call handed what the request sent beside a binding does with it
+/// ([`controls::PARSES_INPUT`], `<callee>\t<binding>`): `None` where the binding is
+/// no schema (a client, a setting, a function), so the call says nothing of
+/// validation. Where it is one, the call checks the request against it only where
+/// the callee is a validation library's own ([`validation_library`]) and the
+/// handler is refused on its failure: a check of one of `bodies` on what the call
+/// handed back answers 400 or 422 (`const r = v.safeParse(Schema, body); if
+/// (!r.success) return 400`). Then `schema:<library>`, the library the schema is
+/// built with. A library's call whose answer nothing refuses on may check nothing
+/// (`yup.reach(Schema, path)`, valibot's `getDefault(Schema, body)`, a check whose
+/// boolean is dropped): which of a library's functions validate is not in the
+/// facts, so it is found and not proven (`Err` with the callee), never a name.
+/// Any other callee is found beside a schema and not proven too: a package that
+/// is no validation library (`jwt.sign(body, env.SECRET)` where `env` was parsed
+/// with zod, a model SDK handed a schema for what it answers, `parseWithZod` of a
+/// forms package), as an input handed to one reads ([`handed_unread`]); a function
+/// of the repository, whose body is not followed here; a callee that was not
+/// resolved.
+fn parsed_input(
+    cx: &Cx<'_>,
+    rest: &str,
+    bodies: &[&drift_core::Symbol],
+) -> Option<Result<Classified, String>> {
+    let (callee, given) = rest.split_once('\t')?;
+    let (lib, source) = if let Some(label) = declared(cx, super::VALIDATION, given) {
+        (label.to_string(), VariantSource::Declared)
+    } else if let Some(lib) = validation_library(given) {
+        (lib, VariantSource::Usage)
+    } else if external(given) {
+        return None;
+    } else {
+        let d = cx.context().definition(given)?;
+        if matches!(d.kind, SymbolKind::Function | SymbolKind::Class) {
+            return None;
+        }
+        (schema_library(cx, d, 0)?, VariantSource::Usage)
+    };
+    let call = crate::mine::norm_ref(callee);
+    let refused = bodies
+        .iter()
+        .flat_map(|b| &b.body_checks)
+        .any(|c| common::check_invalid(c) && crate::mine::norm_ref(&c.source) == call);
+    if validation_library(callee).is_some() && refused {
+        Some(Ok(("schema", lib, source)))
+    } else {
+        Some(Err(call.into_owned()))
+    }
+}
+
+/// What a pipe a parameter decorator is handed does to the request's value
+/// ([`controls::PIPES_INPUT`]): the framework runs it on the value before the
+/// handler and answers for what it refuses. A package's pipe is found and not
+/// proven (`Err`): what it does is not read, and a pipe may only transform or
+/// default the value (`new DefaultValuePipe(10)`); one that makes a declared
+/// class's decorators run is read with that class ([`input`]). A class of the
+/// repository is a schema where its own calls are a validation library's, and
+/// found, not proven, otherwise (`Err`). A reference to anything but a class (a
+/// constant naming the parameter) is no pipe.
+fn piped_input(cx: &Cx<'_>, pipe: &str) -> Option<Result<Classified, String>> {
+    if let Some(label) = declared(cx, super::VALIDATION, pipe) {
+        return Some(Ok(("schema", label.to_string(), VariantSource::Declared)));
+    }
+    if external(pipe) {
+        return Some(Err(crate::mine::norm_ref(pipe).into_owned()));
+    }
+    let d = cx.context().definition(pipe)?;
+    if d.kind != SymbolKind::Class {
+        return None;
+    }
+    Some(
+        d.calls
+            .iter()
+            .find_map(|c| validation_library(c))
+            .map(|lib| ("schema", lib, VariantSource::Usage))
+            .ok_or_else(|| crate::mine::norm_ref(pipe).into_owned()),
+    )
 }
 
 /// Bindings followed at most from a schema value to the library it is built with.
@@ -376,5 +535,95 @@ mod tests {
             key(&of(&all, "apps/open/app/api/thing/route.ts", "POST")),
             "manual:body_check"
         );
+    }
+
+    /// The listed reading's parses and pipes: a validation library's own call handed
+    /// a schema beside what the request sent validates with the schema's library;
+    /// any other package's call, and one of the repository, is found, not proven
+    /// (it fails before the fix: `jwt.sign(body, env.SECRET)` with a zod-parsed
+    /// `env` was `schema:zod`); a binding that is no schema says nothing; a
+    /// package's pipe on a parameter is found, not proven (it was a typed model,
+    /// `new DefaultValuePipe(10)` included).
+    #[test]
+    fn calls_handed_a_schema_and_parameter_pipes() {
+        let d = empty();
+        let route = "app/api/projects/[projectId]/route.ts";
+        let with = |control: &str| {
+            let mut facts = fixtures::next_clerk();
+            for f in facts.files.iter_mut().filter(|f| f.path == route) {
+                for s in f.symbols.iter_mut().filter(|s| s.name == "GET") {
+                    s.controls.push(control.to_string());
+                }
+            }
+            facts
+        };
+        let at = |facts: &drift_core::RepoFacts| {
+            let cx = Cx::new(facts, &d);
+            of(&assign_all(&Validation, &cx), route, "GET")
+        };
+        let parses = controls::PARSES_INPUT;
+        // A library's call handed a schema and the request's data, whose failure
+        // the handler refuses with a 400, checks the request against the schema.
+        let call = "pkg:zod#z.object.parse";
+        let mut facts = with(&format!("{parses}{call}\tlib/schemas.ts#CreateProject"));
+        for f in facts.files.iter_mut().filter(|f| f.path == route) {
+            for s in f.symbols.iter_mut().filter(|s| s.name == "GET") {
+                s.body_checks.push(drift_core::BodyCheck {
+                    source: call.into(),
+                    reads: ".success".into(),
+                    outcome: drift_core::CheckOutcome::Invalid,
+                    ..drift_core::BodyCheck::default()
+                });
+            }
+        }
+        assert!(key(&at(&facts)).contains("schema:zod"), "{:?}", at(&facts));
+        // Review area 6, item 3: the same call whose answer nothing refuses on
+        // (`yup.reach(Schema, req.body.path)`, valibot's `getDefault(Schema, body)`)
+        // may check nothing: found, not proven. It was `schema:<library>`.
+        let facts = with(&format!("{parses}{call}\tlib/schemas.ts#CreateProject"));
+        assert!(
+            matches!(at(&facts), Assignment::Unknown { .. }),
+            "{:?}",
+            at(&facts)
+        );
+        // A package that is no validation library, handed the request's data and a
+        // binding built with zod: found beside a schema, not proven.
+        for callee in [
+            "pkg:@conform-to/zod#parseWithZod",
+            "pkg:jsonwebtoken#sign",
+            "pkg:ai#generateObject",
+        ] {
+            let facts = with(&format!("{parses}{callee}\tlib/schemas.ts#CreateProject"));
+            assert!(
+                matches!(at(&facts), Assignment::Unknown { .. }),
+                "{callee}: {:?}",
+                at(&facts)
+            );
+        }
+        let facts = with(&format!(
+            "{parses}lib/forms.ts#parseForm\tlib/schemas.ts#CreateProject"
+        ));
+        assert!(
+            matches!(at(&facts), Assignment::Unknown { .. }),
+            "{:?}",
+            at(&facts)
+        );
+        // `db` is a client, not a schema: the call says nothing of validation.
+        let facts = with(&format!("{parses}pkg:acme#send\tlib/db.ts#db"));
+        assert!(matches!(at(&facts), Assignment::None { .. }), "{:?}", at(&facts));
+        for pipe in [
+            "pkg:@nestjs/common#ParseIntPipe",
+            "pkg:@nestjs/common#DefaultValuePipe(new)",
+        ] {
+            let facts = with(&format!("{}{pipe}", controls::PIPES_INPUT));
+            assert!(
+                matches!(at(&facts), Assignment::Unknown { .. }),
+                "{pipe}: {:?}",
+                at(&facts)
+            );
+        }
+        // Without them the handler reads input and nothing validates it.
+        let facts = fixtures::next_clerk();
+        assert!(matches!(at(&facts), Assignment::None { .. }));
     }
 }

@@ -64,7 +64,8 @@ const checkout = (sha) => git("-c", "advice.detachedHead=false", "checkout", "-q
 checkout(rec.S);
 rmSync(join(repo, ".drift"), { recursive: true, force: true });
 rmSync(join(repo, "drift.lock"), { force: true });
-drift(a.study, ["init", "--max", "1000", "--all"], { DRIFT_STUDY_UNSHOWN: "1" });
+// DRIFT_NO_FROM_MAP: mined proposals only, as the walk recorded (an older binary ignores it).
+drift(a.study, ["init", "--max", "1000", "--all"], { DRIFT_STUDY_UNSHOWN: "1", DRIFT_NO_FROM_MAP: "1" });
 const yaml = readFileSync(join(repo, ".drift", "conventions.yaml"), "utf8");
 const ids = [...new Set([...yaml.matchAll(/^\s*-?\s*id:\s*([A-Z]-[0-9a-f]+)\s*$/gm)].map((m) => m[1]))];
 const want = rec.census.study.cards.map((c) => c.id).sort();

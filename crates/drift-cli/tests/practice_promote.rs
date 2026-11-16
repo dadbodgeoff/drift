@@ -128,7 +128,9 @@ fn repo(routes: usize, guarded: impl Fn(usize) -> bool) -> tempfile::TempDir {
 /// The sample: 40 routes, 38 wrapped in `withAuth` (r38 and r39 are not), after `drift init`.
 fn sample() -> tempfile::TempDir {
     let dir = repo(40, |i| i < 38);
-    drift(dir.path(), &["init"]);
+    // Without the proposals from the map: this file is about promoting by hand
+    // (`s10_from_map.rs` covers what `init` proposes).
+    drift(dir.path(), &["init", "--no-from-map"]);
     dir
 }
 
@@ -156,7 +158,8 @@ fn history(guarded: impl Fn(usize) -> bool, later: impl Fn(usize) -> bool) -> te
     }
     git(r, &["add", "-A"], None);
     git(r, &["commit", "-qm", "later"], Some("2024-02-01T00:00:00Z"));
-    drift(r, &["init"]);
+    // Without the proposals from the map, as in `sample`.
+    drift(r, &["init", "--no-from-map"]);
     dir
 }
 
@@ -430,7 +433,10 @@ fn a_place_with_seven_routes_is_too_small() {
 fn below_the_share_only_force_promotes_and_never_to_block() {
     let dir = repo(40, |i| i < 24);
     let r = dir.path();
-    drift(r, &["init"]);
+    // Without the proposals from the map, as `sample()`: since S10 a plain `init` also
+    // writes the map's own proposal for this practice, which `practices(r)` would count
+    // beside the promoted one.
+    drift(r, &["init", "--no-from-map"]);
     let id = with_auth(r);
     let before = snapshot(r);
     let (code, v) = json(

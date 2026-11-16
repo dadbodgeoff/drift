@@ -12,13 +12,14 @@ pub use drift_ts::{ScanOptions, ScanStats};
 /// side on one pool of workers (the same workers, and the same stacks, each had to
 /// itself in turn before): the scan takes as long as the longer of the two.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
-    let canonical = root.canonicalize()?;
+    drift_core::work::note(drift_core::work::Work::FullScan);
+    let canonical = drift_core::fsutil::canonical(root)?;
     // Before the walk: a file changed this close to it is read again next time.
     let started_ns = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_nanos() as u64);
-    let mut walked =
-        drift_core::ingest::walk(&canonical, opts.threads, &drift_ts::repo::is_config_path)?;
+    let mut walked = drift_core::ingest::walk(&canonical, opts.threads, &walked_config)?;
+    let deployments = drift_mine::serverless::read_configs(&walked.config);
     let py_walked = std::mem::take(&mut walked.python);
     let py_opts = drift_py::ScanOptions {
         cache_dir: opts.cache_dir.clone(),
@@ -35,6 +36,7 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
     let (py, py_stats) = py?;
     merge(&mut repo, py);
     apply_packages(root, &mut repo);
+    drift_mine::serverless::list(&mut repo, &deployments);
     stats.files += py_stats.files;
     stats.cache_hits += py_stats.cache_hits;
     stats.parse_errors += py_stats.parse_errors;
@@ -61,10 +63,11 @@ fn listed_where_asked(root: &Path, facts: RepoFacts) -> RepoFacts {
 /// needed (no index yet, a package manifest or schema file, or a file that cannot
 /// be done exactly).
 pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<Option<RepoFacts>> {
+    drift_core::work::note(drift_core::work::Work::FileScan);
     if drift_py::packages::is_manifest(rel) || opts.cache_dir.is_none() {
         return Ok(None);
     }
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     // A file neither parser reads and no repo-level pass reads (`.md`, `.css`, ...): no
     // facts, as the TypeScript single-file scan would say after the walk.
     if !analysed(rel) && !drift_ts::repo::is_config_path(rel) {
@@ -79,8 +82,8 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     // Whether an `integration/` directory is a test suite only decides anything about
     // a file below one: only then are the other language's files there looked up.
     let suite_matters = drift_core::in_integration_dir(rel);
-    let mut walked =
-        drift_core::ingest::walk(&root, opts.threads, &drift_ts::repo::is_config_path)?;
+    let mut walked = drift_core::ingest::walk(&root, opts.threads, &walked_config)?;
+    let deployments = drift_mine::serverless::read_configs(&walked.config);
     let py = std::mem::take(&mut walked.python);
     let python = std::path::Path::new(rel)
         .extension()
@@ -100,7 +103,8 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
                 return Ok(None);
             };
             facts.packages.extend(packages);
-            facts.lint = lint;
+            // The Python scan's own linter configurations stay beside them.
+            facts.lint.extend(lint);
         }
         if !facts.files.is_empty() && suite_matters {
             facts.integration_files.extend(drift_ts::integration_files(
@@ -112,11 +116,13 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
         facts
     } else {
         let packages = drift_py::packages_of(&root, &py);
+        let py_lint = drift_py::lint::lint_of(&root, &py);
         let Some(mut facts) = drift_ts::scan_file_walked(&root, opts, rel, walked)? else {
             return Ok(None);
         };
         if !facts.files.is_empty() {
             facts.packages.extend(packages);
+            facts.lint.extend(py_lint);
         }
         if !facts.files.is_empty() && suite_matters {
             facts.integration_files.extend(drift_py::integration_files(
@@ -129,7 +135,18 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     };
     apply_packages(&root, &mut facts);
     facts.normalize();
+    // The entry points a deployment file names, decided as a full scan decides them;
+    // where that needs files this scan did not read, a full scan is needed.
+    if drift_mine::serverless::list(&mut facts, &deployments).needs_repo(&root, rel) {
+        return Ok(None);
+    }
     Ok(Some(listed_where_asked(&root, facts)))
+}
+
+/// The files the walk collects for repo-level passes: those the TypeScript scan
+/// reads, and the deployment files ([`drift_mine::serverless`]).
+fn walked_config(rel: &str) -> bool {
+    drift_ts::repo::is_config_path(rel) || drift_mine::serverless::is_config_path(rel)
 }
 
 /// A file Drift reads at all: a source, a file repo-level passes read (`package.json`,
@@ -162,11 +179,14 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
     into.skipped.extend(other.skipped);
     into.models.extend(other.models);
     into.packages.extend(other.packages);
+    into.lint.extend(other.lint);
     into.context_files.extend(other.context_files);
     into.integration_files.extend(other.integration_files);
     into.generated_clients.extend(other.generated_clients);
     into.generated_clients.sort();
     into.generated_clients.dedup();
+    into.listed_files.extend(other.listed_files);
+    into.listed_skipped.extend(other.listed_skipped);
     into.normalize();
 }
 
@@ -191,7 +211,7 @@ mod tests {
             threads: 1,
         };
         scan(r, &opts).unwrap();
-        let canon = r.canonicalize().unwrap();
+        let canon = drift_core::fsutil::canonical(r).unwrap();
         for rel in ["README.md", "web/site.css", "notes/new.txt"] {
             // What it was: the walk, then the TypeScript single-file scan.
             let walked =

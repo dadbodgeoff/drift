@@ -377,6 +377,26 @@ fn single_file_scan_matches_full_scan() {
         "from fastapi import APIRouter\nfrom app.api.deps import CurrentUser\n\nrouter = APIRouter()\n\n@router.get(\"/{id}\")\ndef get_order(id: int, user: CurrentUser):\n    pass\n",
     );
     assert_matches_full(r, cache.path(), "new mounted file");
+    // A typed parameter (`id: int`) is read in the listed reading only: the route
+    // file has two readings, mining's without it and the listed one held beside, and
+    // the single-file scan gives both as the full scan does. Before, it gave up on
+    // any file with two readings (a full scan, silently).
+    let whole = full(r);
+    let orders = whole
+        .files
+        .iter()
+        .find(|f| f.path == "app/api/routes/orders.py")
+        .unwrap();
+    let typed = |s: &drift_core::Symbol| {
+        s.name == "get_order"
+            && s.controls
+                .iter()
+                .any(|c| c == drift_core::controls::INPUT_TYPED)
+    };
+    let listed = orders.listed.as_deref().expect("a listed reading");
+    assert!(listed.symbols.iter().any(typed), "{listed:?}");
+    assert!(!orders.symbols.iter().any(typed), "{:?}", orders.symbols);
+    assert_eq!(&f("app/api/routes/orders.py"), orders);
     assert_eq!(
         f("app/api/routes/orders.py").entry_points[0]
             .route

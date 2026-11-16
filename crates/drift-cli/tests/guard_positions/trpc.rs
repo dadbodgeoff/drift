@@ -141,7 +141,11 @@ const POSITIONS: &[Position] = &[
     Position {
         name: "router-in-a-router",
         code: "const proc@N@ = publicProcedure.use(@G@);\nconst inner@N@ = router({ c@N@in: proc@N@.mutation(() => []) });\nexport const r@N@ = router({ inner@N@, c@N@out: publicProcedure.mutation(() => []) });\n",
-        covered: "MUTATION c@N@in",
+        // Both surfaces list a procedure at its dotted path: the inner router is
+        // mounted under its key (`inner@N@`), so the covered route is
+        // `inner@N@.c@N@in`; the sibling is a key of the root router itself. The
+        // verdicts are the same cell for cell.
+        covered: "MUTATION inner@N@.c@N@in",
         sibling: "MUTATION c@N@out",
         reads: itself,
     },

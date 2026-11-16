@@ -16,6 +16,11 @@ use crate::roles::{NonProduction, is_test_path};
 use crate::vocab::grant;
 use crate::vocab::refuse::names_access_control;
 
+/// The Kubernetes manifests, read as a deployment of the repository's code.
+mod cluster;
+pub mod platforms;
+pub use cluster::{PATH_ANNOTATIONS, Workload};
+
 /// Suffix of a guard that is a hook the whole app runs.
 pub const APP_HOOK: &str = " (app hook)";
 
@@ -119,6 +124,104 @@ pub struct Unlisted {
     /// found where it is written. Not serialised when empty.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub symbol: String,
+    /// Why it is not listed ([`drift_core::UnlistedReason`]): what serves the
+    /// registration was not read (TypeScript), its handler, path or mount target is
+    /// one Drift does not follow (Python), or, with a symbol, no listed entry
+    /// point reaches the function.
+    pub reason: drift_core::UnlistedReason,
+}
+
+/// A production file that nothing Drift read reaches ([`Inventory::unreached`],
+/// [`unreached_files`]): listed under its own heading, with what it holds, instead
+/// of as production code or not at all.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct UnreachedFile {
+    pub path: String,
+    /// False where the parser reported errors in it: its facts are best-effort.
+    pub parsed: bool,
+    /// The kinds of risky operation its code holds, sorted. Not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sinks: Vec<String>,
+    /// Lines of registrations written as a route ([`drift_core::FileFacts::unlisted_routes`]).
+    /// Not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted: Vec<u32>,
+}
+
+/// Production files (tests and non-production directories apart) that nothing Drift
+/// read reaches, by what the facts say and never by a name: no file of the repository
+/// imports the file or registers what it defines, no manifest names it as an entry
+/// ([`drift_core::PackageFacts::entries`]), no glob a file loads at run time
+/// ([`drift_core::FileFacts::discovers`]) covers it, it lists no entry point and no
+/// mount, and it either did not parse or imports nothing itself. Code that names
+/// nothing and that nothing names cannot run unless something Drift did not read
+/// names it (snippets kept as text and shown to users, a script started by a path).
+///
+/// A file stays reached where its directory holds, at any depth below, a file that is
+/// imported, an entry or lists an entry point (a package's initialiser, a barrel), or
+/// sits at any depth below a directory, other than its package's own, that holds a
+/// file with listed entry points (a file router's page that lists none of its own).
+///
+/// A single-file component ([`drift_core::ingest::is_component_path`]) is never
+/// unreached: its markup is not read, and a component is used from markup, by a
+/// file router, or registered by name, none of which the facts show.
+pub fn unreached_files(repo: &RepoFacts, non_production: &NonProduction) -> BTreeSet<String> {
+    fn dir(p: &str) -> &str {
+        p.rsplit_once('/').map_or("", |(d, _)| d)
+    }
+    fn under(d: &str, top: &str) -> bool {
+        top.is_empty() || d == top || d.strip_prefix(top).is_some_and(|r| r.starts_with('/'))
+    }
+    let mut named: BTreeSet<&str> = BTreeSet::new();
+    for f in &repo.files {
+        named.extend(f.imports.iter().map(|i| i.module.as_str()));
+        for r in &f.registries {
+            named.extend(r.items.iter().map(|i| {
+                i.target
+                    .split_once('#')
+                    .map_or(i.target.as_str(), |(m, _)| m)
+            }));
+        }
+    }
+    for p in &repo.packages {
+        named.extend(p.entries.iter().map(String::as_str));
+    }
+    let discovered: Vec<&str> = repo
+        .files
+        .iter()
+        .flat_map(|f| &f.discovers)
+        .filter(|g| g.contains('/') || g.contains('*'))
+        .map(|g| g.split('*').next().unwrap_or_default())
+        .collect();
+    let serves = |f: &FileFacts| !f.listed_entry_points().is_empty() || !f.mounts.is_empty();
+    let reached: BTreeSet<&str> = repo
+        .files
+        .iter()
+        .filter(|f| serves(f) || named.contains(f.path.as_str()))
+        .map(|f| dir(&f.path))
+        .collect();
+    let routers: BTreeSet<&str> = repo
+        .files
+        .iter()
+        .filter(|f| serves(f) && dir(&f.path) != f.package)
+        .map(|f| dir(&f.path))
+        .collect();
+    repo.files
+        .iter()
+        .filter(|f| {
+            let d = dir(&f.path);
+            !is_test_path(&f.path)
+                && !drift_core::ingest::is_component_path(&f.path)
+                && non_production.dir_of(&f.path, &f.package).is_none()
+                && (!f.parse_ok || f.imports.is_empty())
+                && !serves(f)
+                && !named.contains(f.path.as_str())
+                && !discovered.iter().any(|g| f.path.starts_with(g))
+                && !reached.iter().any(|r| under(r, d))
+                && !routers.iter().any(|r| under(d, r))
+        })
+        .map(|f| f.path.clone())
+        .collect()
 }
 
 /// The share of the entry points that query one thing and filter it by a value of
@@ -154,13 +257,52 @@ pub struct ScopeGap {
     pub resource: String,
     pub key: String,
     /// The entry points that query the resource: those that filter it by the key,
-    /// and the exceptions.
+    /// the exceptions, and those whose filter was not read.
     pub members: usize,
     pub scoped: usize,
     /// The entry points that query it and filter it by no value of the caller.
     pub exceptions: Vec<ScopeRef>,
+    /// The entry points that query it with a filter whose value Drift could not read
+    /// (`unread`): whether it is the caller's is unknown, so they are no exception,
+    /// listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<ScopeRef>,
     /// The first entry point (by path) that filters it by the key: one to copy from.
     pub example: ScopeRef,
+}
+
+/// A side of [`drift_core::controls::FILTER_VALUE`] that says nothing of where the
+/// value comes from: what the lowering could not read, a call it could not
+/// resolve, what a call handed back that no reader proved (`call <callee>`; `call
+/// via` is read by [`crate::practices::side_is_callers`]), or an attribute of
+/// `self`, which whatever built the object set. A filter by it may be the
+/// caller's. (A `param` side is the request's only in the handler itself:
+/// [`scope_gaps`] holds one read in a body the handler reaches as unread too.)
+fn side_unread(side: &str) -> bool {
+    side.is_empty()
+        || side == "unread"
+        || side.contains("unresolved:")
+        || side.starts_with("call ")
+        || side.starts_with("self.")
+}
+
+#[cfg(test)]
+mod side_unread_tests {
+    /// Pins what a scope gap holds apart: a filter by a side that says nothing of
+    /// where the value comes from may be the caller's, so it is no exception.
+    #[test]
+    fn a_side_that_says_nothing_of_its_source_is_unread() {
+        assert!(super::side_unread(""));
+        assert!(super::side_unread("unread"));
+        assert!(super::side_unread("call unresolved:getOrg"));
+        // F3: a result no reader proved, an attribute of `self`.
+        assert!(super::side_unread("call src/org.ts#loadOrg"));
+        assert!(super::side_unread("self.org_id"));
+        assert!(!super::side_unread("param"));
+        assert!(!super::side_unread("caller"));
+        assert!(!super::side_unread("request"));
+        assert!(!super::side_unread("literal"));
+    }
 }
 
 /// What a query is called on: the callee without its last member
@@ -185,6 +327,8 @@ fn scope_gaps<'a>(
         at: ScopeRef,
         queried: BTreeSet<String>,
         scoped: BTreeSet<(String, String)>,
+        /// What it queries with a filter whose value was not read ([`side_unread`]).
+        unread: BTreeSet<String>,
     }
     let mut entries: Vec<Seen> = Vec::new();
     for f in &repo.files {
@@ -209,8 +353,11 @@ fn scope_gaps<'a>(
                 },
                 queried: BTreeSet::new(),
                 scoped: BTreeSet::new(),
+                unread: BTreeSet::new(),
             };
-            for node in index.reach_nodes((origin, s)) {
+            // The first node is the entry point's own handler: a parameter read
+            // anywhere else holds whatever its caller passed.
+            for (hop, node) in index.reach_nodes((origin, s)).into_iter().enumerate() {
                 let args = node.member.map_or(&node.symbol.args, |m| &m.args);
                 for a in args {
                     // `<callee>@<index>:<key path>`: a call given an object.
@@ -232,6 +379,8 @@ fn scope_gaps<'a>(
                     seen.queried.insert(r.to_string());
                     if crate::practices::side_is_callers(cx, side) {
                         seen.scoped.insert((r.to_string(), key.to_string()));
+                    } else if side_unread(side) || (hop > 0 && side.starts_with("param ")) {
+                        seen.unread.insert(r.to_string());
                     }
                 }
             }
@@ -257,14 +406,25 @@ fn scope_gaps<'a>(
             .iter()
             .filter(|e| e.scoped.iter().any(|(r, k)| r == resource && k == key))
             .collect();
+        let unscoped = |e: &&Seen| {
+            e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
+        };
+        // Unknown is never an exception: a filter whose value was not read may be
+        // the caller's.
         let mut exceptions: Vec<ScopeRef> = entries
             .iter()
-            .filter(|e| {
-                e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
-            })
+            .filter(unscoped)
+            .filter(|e| !e.unread.contains(resource))
             .map(|e| e.at.clone())
             .collect();
-        let members = with.len() + exceptions.len();
+        let mut unknown: Vec<ScopeRef> = entries
+            .iter()
+            .filter(unscoped)
+            .filter(|e| e.unread.contains(resource))
+            .map(|e| e.at.clone())
+            .collect();
+        // Counted as before: what was not read neither makes a gap nor hides one.
+        let members = with.len() + exceptions.len() + unknown.len();
         if exceptions.is_empty()
             || members < SCOPE_GAP_MIN
             || (with.len() as f64) < SCOPE_GAP_SHARE * members as f64
@@ -272,6 +432,7 @@ fn scope_gaps<'a>(
             continue;
         }
         exceptions.sort();
+        unknown.sort();
         let Some(example) = with.iter().map(|e| &e.at).min().cloned() else {
             continue;
         };
@@ -281,6 +442,7 @@ fn scope_gaps<'a>(
             members,
             scoped: with.len(),
             exceptions,
+            unknown,
             example,
         });
     }
@@ -302,6 +464,7 @@ fn unreached_handlers(
     repo: &RepoFacts,
     index: &Index<'_>,
     non_production: &NonProduction,
+    unreached: &BTreeSet<String>,
 ) -> Vec<Unlisted> {
     use drift_core::controls::READS_INPUT;
     let shaped = |s: &Symbol| {
@@ -310,7 +473,9 @@ fn unreached_handlers(
             && s.controls.iter().any(|c| c == READS_INPUT)
     };
     let production = |f: &FileFacts| {
-        !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+        !is_test_path(&f.path)
+            && non_production.dir_of(&f.path, &f.package).is_none()
+            && !unreached.contains(&f.path)
     };
     if !repo
         .files
@@ -390,6 +555,7 @@ fn unreached_handlers(
                     path: f.path.clone(),
                     line: s.line,
                     symbol: s.name.clone(),
+                    reason: drift_core::UnlistedReason::HandlerNotReached,
                 });
             }
         }
@@ -498,6 +664,9 @@ pub struct Boundaries {
     /// of an inventory changes with it; [`inventory_with`] takes it out.
     #[serde(skip_serializing_if = "Option::is_none")]
     cautious: Option<(Vec<String>, Box<Boundaries>)>,
+    /// What the platforms' own files deploy and how it is reached ([`platforms`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub platforms: Vec<platforms::Unit>,
     /// The symbols a person declared in `.drift/config.yaml` `practices:`, which the
     /// inventory reads as the practice map does ([`crate::policy::DriftConfig::practices`]).
     #[serde(skip)]
@@ -505,6 +674,14 @@ pub struct Boundaries {
     /// Whose word each of them rests on ([`crate::policy::DriftConfig::declared_by`]).
     #[serde(skip)]
     declared_by: BTreeMap<String, String>,
+    /// The images the compose files build, by the name they give them: what a
+    /// Kubernetes workload that runs one runs ([`cluster`]).
+    #[serde(skip)]
+    built: Vec<cluster::Built>,
+    /// The Kubernetes manifests, read for the code each workload runs and what
+    /// reaches it from outside ([`cluster`]).
+    #[serde(skip)]
+    cluster: Option<cluster::Cluster>,
 }
 
 /// An application built from the repository (`client`, its code in `from`) that can
@@ -1042,6 +1219,14 @@ impl Boundaries {
             .as_ref()
             .map(|cfg| cfg.security.terraform.clone())
             .unwrap_or_default();
+        let platform_ties = config
+            .as_ref()
+            .map(|cfg| cfg.security.platforms.clone())
+            .unwrap_or_default();
+        let workloads = config
+            .as_ref()
+            .map(|cfg| cfg.security.kubernetes.clone())
+            .unwrap_or_default();
         match config {
             Ok(cfg) => {
                 for (list, exposure, source) in [
@@ -1079,8 +1264,8 @@ impl Boundaries {
                 .iter()
                 .any(|p| p.is_empty() || path == p || path.starts_with(&format!("{p}/")))
         };
-        let found = deployments(root);
-        let files = found.compose;
+        let mut found = deployments(root);
+        let files = std::mem::take(&mut found.compose);
         let dir_of = |rel: &str| rel.rsplit_once('/').map_or("", |(d, _)| d).to_string();
         let file_of = |rel: &str| rel.rsplit('/').next().unwrap_or(rel).to_string();
         let services_of = |text: &str| -> BTreeSet<String> {
@@ -1127,13 +1312,13 @@ impl Boundaries {
                 Some(base) if base == rel => stacks.push((rel.clone(), text, overrides(&dir))),
                 // Another compose file beside the base that names a service of it
                 // (`docker-compose.prod.yml`) is laid over it, as `-f base -f this`
-                // does: a stack of its own, named by this file.
+                // does: a stack of its own, named by this file. Files named with
+                // `-f` are all compose reads: the override files are not merged in.
                 Some(base)
                     if read(base)
                         .is_ok_and(|b| !services_of(&b).is_disjoint(&services_of(&text))) =>
                 {
-                    let mut over = overrides(&dir);
-                    over.push((rel.clone(), text));
+                    let over = vec![(rel.clone(), text)];
                     stacks.push((rel.clone(), read(base).unwrap_or_default(), over));
                 }
                 _ => stacks.push((rel.clone(), text, Vec::new())),
@@ -1147,6 +1332,8 @@ impl Boundaries {
                 // Read apart: what it would have said is kept, to say so.
                 let mut apart = Self::default();
                 apart.read_compose_with(Some(root), &name, &text, &overrides);
+                // Which image it builds from which code is so whether it deploys or not.
+                b.built.append(&mut apart.built);
                 apart.rules.sort();
                 apart.warnings.clear();
                 b.warnings.push(format!(
@@ -1158,6 +1345,7 @@ impl Boundaries {
                 b.read_compose_with(Some(root), &name, &text, &overrides);
             }
         }
+        b.read_platforms(root, &mut found.unread, &not_deployed, &platform_ties);
         // The Terraform a person tied code to: its listener rules are read for the
         // routes of that code.
         if !ties.is_empty() {
@@ -1175,6 +1363,8 @@ impl Boundaries {
                 }
             }
         }
+        // The Kubernetes manifests: what is read whole is a description read.
+        cluster::load(&mut b, root, &mut found.unread, &left, &workloads);
         // What Drift recognises as a deployment description and does not read.
         let mut kinds: BTreeMap<String, Vec<String>> = BTreeMap::new();
         let mut left_kinds: BTreeMap<String, usize> = BTreeMap::new();
@@ -1611,6 +1801,9 @@ impl Boundaries {
                 .collect();
             let fronts = !mounts.is_empty()
                 || built.as_ref().is_some_and(|b| !b.copies.is_empty())
+                // Another gateway's configuration copied in ([`config_gateway`]).
+                || (proxy.is_some_and(|p| p != "nginx")
+                    && built.as_ref().is_some_and(|b| !b.files.is_empty()))
                 || !strings(def.get("depends_on")).is_empty()
                 || !strings(def.get("links")).is_empty();
             // Every name another container reaches it by.
@@ -1621,6 +1814,7 @@ impl Boundaries {
                 names.extend(nets.values().flat_map(|n| strings(n.get("aliases"))));
             }
             let said: String = def.iter().map(|(k, v)| format!("{k} {v}\n")).collect();
+            let (command, env) = command_and_env(def);
             let volumes: Vec<(Option<String>, String)> = volumes
                 .into_iter()
                 .map(|(h, t)| {
@@ -1674,6 +1868,15 @@ impl Boundaries {
                         "{who} is on the external network `{n}`, which containers outside {name} join"
                     ))
                 });
+            if let (Some(d), Some(image)) = (&dir, str_of(def.get("image"))) {
+                self.built.push(cluster::Built {
+                    image,
+                    dir: normal_dir(d),
+                    context: context.clone(),
+                    dockerfile: dockerfile.clone(),
+                    by: who.clone(),
+                });
+            }
             let start = match root {
                 Some(root) => started(
                     root,
@@ -1703,6 +1906,8 @@ impl Boundaries {
                 unread_start,
                 absent_env,
                 said: said.to_lowercase(),
+                command,
+                env,
                 built: built.zip(context),
                 names: names.iter().map(|n| n.to_lowercase()).collect(),
                 links: strings(def.get("links"))
@@ -1830,11 +2035,13 @@ impl Boundaries {
             read = gateways
                 .iter()
                 .map(|g| {
+                    let one = |got: Result<Option<Gateway>, String>| got.map(|g| g.map(|g| vec![g]));
                     let (kind, got) = match g.proxy {
-                        Some("nginx") => ("nginx configuration", nginx_gateway(root, g, &svcs)),
-                        Some("traefik") => ("Traefik labels", Ok(Some(traefik_gateway(name, g, &svcs)))),
-                        Some("caddy") => ("a Caddyfile", caddy_gateway(root, g, &svcs)),
-                        _ => ("", Ok(None)),
+                        Some("nginx") => ("nginx configuration", one(nginx_gateway(root, g, &svcs))),
+                        Some("traefik") => ("Traefik labels", Ok(Some(vec![traefik_gateway(root, name, g, &svcs)]))),
+                        Some("caddy") => ("a Caddyfile", one(caddy_gateway(root, g, &svcs))),
+                        Some(p) => (config_kind(p), config_gateway(root, g, &svcs)),
+                        None => ("", Ok(None)),
                     };
                     got.unwrap_or_else(|e| {
                         self.warnings.push(format!(
@@ -1844,7 +2051,8 @@ impl Boundaries {
                         None
                     })
                 })
-                .collect();
+                .collect::<Option<Vec<Vec<Gateway>>>>()
+                .map(|all| all.into_iter().flatten().collect());
         }
         if let (Some(read), Some(root)) = (read, root) {
             for g in read.iter().filter(|g| !g.unread.is_empty()) {
@@ -2011,6 +2219,7 @@ impl Boundaries {
         // One run's worth of comparing routes with locations, and no more.
         gateway::refill();
         self.expose_routes(entries, adapters);
+        self.expose_cluster(entries, adapters);
         // What a compose file that is left out would have said, where that is more.
         for (file, apart) in &self.left_out {
             let mut rows: Vec<EntryRow> = entries.to_vec();
@@ -2279,16 +2488,40 @@ impl Boundaries {
     /// middleware file is there, since Drift reads none ([`NEXT_UNREAD`]).
     fn served(&self, b: &Behind, root: &Path, adapter: &str) -> Option<String> {
         let who = format!("compose service {} in {}", b.service, b.compose);
+        self.served_by(
+            &who,
+            &b.service,
+            &b.dir,
+            b.target.as_ref(),
+            b.next,
+            root,
+            adapter,
+        )
+    }
+
+    /// [`Boundaries::served`] of what `who` (`service`, whose code is in `dir`)
+    /// starts: the application object (`target`), or a Next.js application (`next`).
+    #[allow(clippy::too_many_arguments)]
+    fn served_by(
+        &self,
+        who: &str,
+        service: &str,
+        dir: &str,
+        target: Option<&(String, String)>,
+        next: bool,
+        root: &Path,
+        adapter: &str,
+    ) -> Option<String> {
         if adapter == "nextjs" {
-            if !b.next {
+            if !next {
                 return Some(format!(
                     "{who} does not start with `next start`: where its pages are served is not known"
                 ));
             }
             return NEXT_UNREAD.iter().find_map(|file| {
-                let rel = join_dir(&b.dir, file)?;
+                let rel = join_dir(dir, file)?;
                 root.join(&rel).is_file().then(|| {
-                    format!("{rel} is not read: it may set a base path, rewrites or a middleware that moves the routes of {}", b.service)
+                    format!("{rel} is not read: it may set a base path, rewrites or a middleware that moves the routes of {service}")
                 })
             });
         }
@@ -2296,7 +2529,7 @@ impl Boundaries {
             return None;
         }
         let apps = self.apps.as_ref()?;
-        let Some((file, attr)) = &b.target else {
+        let Some((file, attr)) = target else {
             return Some(format!(
                 "{who} does not start a Python application: where its routes are served is not known"
             ));
@@ -2306,7 +2539,7 @@ impl Boundaries {
                 "{who} starts on `{attr}` of {file}, which is not an application object Drift reads: where its routes are served is not known"
             ));
         };
-        let within = |path: &str| b.dir.is_empty() || path.starts_with(&format!("{}/", b.dir));
+        let within = |path: &str| dir.is_empty() || path.starts_with(&format!("{dir}/"));
         unknown
             .first()
             .map(|u| (u, unknown.len()))
@@ -2317,8 +2550,7 @@ impl Boundaries {
             })
             .map(|(first, n)| {
                 format!(
-                    "Drift does not know what {first} does to the paths of {}{}",
-                    b.service,
+                    "Drift does not know what {first} does to the paths of {service}{}",
                     match n {
                         1 => String::new(),
                         n => format!(" (and {} more it does not know)", n - 1),
@@ -2353,6 +2585,7 @@ impl Boundaries {
         for (_, apart) in &mut self.left_out {
             apart.set_relays(repo);
         }
+        self.cluster_relays(repo);
         let callers = std::mem::take(&mut self.callers);
         for c in &callers {
             let under = |path: &str| {
@@ -2431,14 +2664,32 @@ impl Boundaries {
 
 /// Reverse-proxy images ([`Boundaries::read_compose_at`]): a service running one that
 /// publishes ports fronts the services it routes to.
-pub const GATEWAY_IMAGES: &[&str] = &["nginx", "traefik", "caddy", "haproxy", "envoy"];
+pub const GATEWAY_IMAGES: &[&str] = &[
+    "nginx",
+    "traefik",
+    "caddy",
+    "haproxy",
+    "envoy",
+    "httpd",
+    "kong",
+    "kong-gateway",
+];
 
 /// What stands for the adapter of an entry point whose handler may also be served at
 /// paths that are not read ([`drift_core::MountFacts::elsewhere`]).
 const SERVED_ELSEWHERE: &str = "?";
 
 /// The adapters of a Python application object ([`Boundaries::served`]).
-const PYTHON_ADAPTERS: &[&str] = &["fastapi", "flask", "flask_restx", "django", "drf"];
+const PYTHON_ADAPTERS: &[&str] = &[
+    "fastapi",
+    "flask",
+    "flask_restx",
+    "django",
+    "drf",
+    "sanic",
+    "litestar",
+    "ninja",
+];
 
 /// Files of a Next.js application that can move its routes and that Drift does not
 /// read, relative to the application's directory.
@@ -2466,8 +2717,17 @@ const NEXT_UNREAD: &[&str] = &[
 /// variable) keeps its own path, and a NestJS controller's module and global
 /// prefixes are not read: a route of those, in a service a gateway routes to, is
 /// never said to be internal ([`Boundaries::expose`]).
-pub const EVERY_MOUNT_LISTED: &[&str] =
-    &["fastapi", "flask", "flask_restx", "django", "drf", "nextjs"];
+pub const EVERY_MOUNT_LISTED: &[&str] = &[
+    "fastapi",
+    "flask",
+    "flask_restx",
+    "django",
+    "drf",
+    "sanic",
+    "litestar",
+    "ninja",
+    "nextjs",
+];
 
 /// One service of a compose file ([`Boundaries::read_compose_at`]).
 struct Svc {
@@ -2511,6 +2771,10 @@ struct Svc {
     absent_env: Vec<String>,
     /// Its definition as text, lower case: what its command and environment say.
     said: String,
+    /// Its `command`, word by word, as written; none when it has none.
+    command: Option<Vec<String>>,
+    /// Its `environment`, as written.
+    env: BTreeMap<String, String>,
 }
 
 /// Images that serve data, not other services' HTTP: one that publishes ports is no
@@ -3046,7 +3310,7 @@ const STOCK_CADDY: &[&str] = &[
 /// file's services ([`crate::proxies::traefik`]). What may add routers that are not
 /// on the labels is recorded as unread: a configuration file it mounts, another
 /// provider, an image that is not the stock one.
-fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
+fn traefik_gateway(root: &Path, file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
     let services: Vec<crate::proxies::Labelled> = svcs
         .iter()
         .map(|s| crate::proxies::Labelled {
@@ -3054,8 +3318,15 @@ fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
             labels: &s.labels,
         })
         .collect();
+    // The file provider: the file or the directory its command or environment names.
+    let provider = traefik_provider(g);
+    let of_provider = |t: &str| {
+        provider.as_ref().is_some_and(|(path, _)| {
+            t == path || t.starts_with(&format!("{}/", path.trim_end_matches('/')))
+        })
+    };
     // Anything mounted that may be configuration: not the docker socket, not
-    // certificates or logs.
+    // certificates or logs, not what the file provider reads.
     let config: Vec<String> = g
         .volumes
         .iter()
@@ -3067,15 +3338,216 @@ fn traefik_gateway(file: &str, g: &Svc, svcs: &[Svc]) -> Gateway {
                 || t.ends_with(".toml")
                 || t.starts_with("/etc/traefik")
         })
+        .filter(|t| !of_provider(t))
         .collect();
-    crate::proxies::traefik(
+    let (mut rules, mut unread) = crate::proxies::traefik_rules(
         &g.name,
-        file,
         &g.said,
         &config,
         STOCK_TRAEFIK.contains(&image_repository(&g.image)),
         &services,
-    )
+    );
+    let mut files = vec![file.to_string()];
+    if let Some((path, directory)) = &provider {
+        let fs = crate::gateway_configs::Fs::read(root, &g.volumes, &[]);
+        let resolve = |host: &str| resolve_host(g, svcs, host);
+        match crate::gateway_configs::traefik_file_at(&fs, path, *directory, &resolve) {
+            Some(Ok((more, why, read))) => {
+                let not_read = format!("gateway {}: its `file` provider is not read", g.name);
+                unread.retain(|u| *u != not_read);
+                rules.extend(more);
+                unread.extend(
+                    why.into_iter()
+                        .map(|w| format!("gateway {}: {w} is not read", g.name)),
+                );
+                files.extend(read);
+            }
+            Some(Err(e)) => unread.push(format!(
+                "gateway {}: its file provider ({e}) is not read",
+                g.name
+            )),
+            None => {}
+        }
+    }
+    Gateway::of_rules(&g.name, files, "router", rules, unread)
+}
+
+/// Where the Traefik gateway `g` reads its file provider: the file
+/// (`--providers.file.filename`, `TRAEFIK_PROVIDERS_FILE_FILENAME`), or the
+/// directory (`directory`, true) its command or its environment names. None when it
+/// names neither, or names it with a variable.
+fn traefik_provider(g: &Svc) -> Option<(String, bool)> {
+    let words = g.command.clone().unwrap_or_default();
+    for (key, directory) in [("filename", false), ("directory", true)] {
+        let flag = format!("--providers.file.{key}");
+        for (i, w) in words.iter().enumerate() {
+            let lower = w.to_lowercase();
+            let value = if lower.starts_with(&format!("{flag}=")) {
+                Some(w[flag.len() + 1..].to_string())
+            } else if lower == flag {
+                words.get(i + 1).cloned()
+            } else {
+                None
+            };
+            if let Some(v) = value.filter(|v| !v.contains('$')) {
+                return Some((v, directory));
+            }
+        }
+        let var = format!("TRAEFIK_PROVIDERS_FILE_{}", key.to_uppercase());
+        if let Some(v) = g.env.get(&var).filter(|v| !v.contains('$')) {
+            return Some((v.clone(), directory));
+        }
+    }
+    None
+}
+
+/// What the configuration of the gateway image `proxy` is called, for a warning.
+fn config_kind(proxy: &str) -> &'static str {
+    match proxy {
+        "haproxy" => "HAProxy configuration",
+        "envoy" => "Envoy configuration",
+        "httpd" => "httpd configuration",
+        "kong" | "kong-gateway" => "a Kong declarative configuration",
+        _ => "gateway configuration",
+    }
+}
+
+/// The stock HAProxy, Envoy, httpd and Kong images: what they hold routes nothing
+/// by itself.
+const STOCK_HAPROXY: &[&str] = &[
+    "haproxy",
+    "library/haproxy",
+    "docker.io/haproxy",
+    "docker.io/library/haproxy",
+];
+const STOCK_ENVOY: &[&str] = &["envoyproxy/envoy", "docker.io/envoyproxy/envoy"];
+const STOCK_HTTPD: &[&str] = &[
+    "httpd",
+    "library/httpd",
+    "docker.io/httpd",
+    "docker.io/library/httpd",
+];
+const STOCK_KONG: &[&str] = &[
+    "kong",
+    "library/kong",
+    "docker.io/kong",
+    "docker.io/library/kong",
+    "kong/kong-gateway",
+    "docker.io/kong/kong-gateway",
+];
+
+/// The gateway `g` that runs HAProxy, Envoy, httpd or Kong, read from the
+/// configuration its container has from the repository ([`crate::gateway_configs`]):
+/// what it mounts and what its Dockerfile copies, at the path the gateway reads.
+/// None when the repository puts none there; an error when a file is not
+/// configuration Drift reads. What may configure it otherwise is recorded as unread:
+/// an image that is not the stock one, a Dockerfile step other than a copy, an
+/// `entrypoint`, a `command` Drift does not read.
+fn config_gateway(root: &Path, g: &Svc, svcs: &[Svc]) -> Result<Option<Vec<Gateway>>, String> {
+    use crate::gateway_configs as configs;
+    let copies: Vec<(Option<String>, String)> = g
+        .built
+        .iter()
+        .flat_map(|(built, context)| {
+            built
+                .files
+                .iter()
+                .map(|(source, target)| (join_dir(context, source), target.clone()))
+        })
+        .collect();
+    let fs = configs::Fs::read(root, &g.volumes, &copies);
+    let resolve = |host: &str| resolve_host(g, svcs, host);
+    let words = g.command.as_deref();
+    let (stock, got, reads_command) = match g.proxy {
+        Some("haproxy") => (
+            STOCK_HAPROXY,
+            configs::haproxy_at(&g.name, &fs, words, &resolve)?,
+            true,
+        ),
+        Some("envoy") => (
+            STOCK_ENVOY,
+            configs::envoy_at(&g.name, &fs, words, &resolve)?,
+            true,
+        ),
+        Some("httpd") => (
+            STOCK_HTTPD,
+            configs::httpd(
+                &g.name,
+                &fs,
+                "/usr/local/apache2/conf/httpd.conf",
+                "/usr/local/apache2",
+                &resolve,
+            )?
+            .map(|g| vec![g]),
+            false,
+        ),
+        Some("kong" | "kong-gateway") => (
+            STOCK_KONG,
+            configs::kong_at(&g.name, &fs, &g.env, words, &resolve)?,
+            true,
+        ),
+        _ => return Ok(None),
+    };
+    let Some(mut got) = got.filter(|g| !g.is_empty()) else {
+        return Ok(None);
+    };
+    let mut unread: Vec<String> = Vec::new();
+    if !stock.contains(&image_repository(&g.image)) {
+        unread.push(format!("what the image {} holds", g.image));
+    }
+    if let Some((built, _)) = &g.built {
+        unread.extend(
+            built
+                .unread
+                .as_ref()
+                .map(|step| format!("a step of its Dockerfile (`{step}`)")),
+        );
+    }
+    unread.extend(
+        g.rewired
+            .iter()
+            .filter(|k| !(reads_command && **k == "command"))
+            .map(|k| format!("what its `{k}` does")),
+    );
+    got[0].unread.splice(
+        0..0,
+        unread
+            .into_iter()
+            .map(|what| format!("gateway {}: {what} is not read", g.name)),
+    );
+    Ok(Some(got))
+}
+
+/// A compose service's `command`, word by word (a string is split at spaces; one
+/// with quotes is one word, which no reader takes), and its `environment` (a mapping
+/// or a list of `NAME=value`).
+fn command_and_env(
+    def: &serde_json::Map<String, serde_json::Value>,
+) -> (Option<Vec<String>>, BTreeMap<String, String>) {
+    use serde_json::Value;
+    let text = |v: &Value| v.as_str().map_or_else(|| v.to_string(), str::to_string);
+    let command = match def.get("command") {
+        Some(Value::String(s)) if s.contains(['"', '\'', '\\']) => Some(vec![s.clone()]),
+        Some(Value::String(s)) => Some(s.split_whitespace().map(str::to_string).collect()),
+        Some(Value::Array(a)) => Some(a.iter().map(text).collect()),
+        Some(other) => Some(vec![other.to_string()]),
+        None => None,
+    };
+    let env = match def.get("environment") {
+        Some(Value::Object(m)) => m
+            .iter()
+            .filter(|(_, v)| !v.is_null())
+            .map(|(k, v)| (k.clone(), text(v)))
+            .collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .filter_map(|e| e.split_once('='))
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+        _ => BTreeMap::new(),
+    };
+    (command, env)
 }
 
 /// The Caddy gateway `g` read from the Caddyfile it mounts from the repository
@@ -3769,8 +4241,14 @@ pub struct GuardGap {
     pub guard: String,
     pub members: usize,
     pub with_guard: usize,
-    /// Members without the guard, sorted by path.
+    /// Members without the guard, sorted by path: neither it nor a guard built on it
+    /// ([`guard_gaps_with`]), and nothing whose guard cannot be read.
     pub exceptions: Vec<EntryRef>,
+    /// Members without the guard that have something whose guard cannot be read
+    /// ([`EntryRow::opaque`]): it may be the guard, so they are no exception (guard
+    /// unknown), listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<EntryRef>,
     /// The first member (by path) with the guard: one to copy from.
     pub example: EntryRef,
     /// The convention that says the same (a `wrapped_by` rule on this guard covering
@@ -3806,8 +4284,9 @@ impl GapConvention {
                 }
             ),
             _ => format!(
-                "proposed as [{id}]: `drift review --accept {id}` makes it a rule",
-                id = sanitize(&self.id, 16)
+                "proposed as [{}]: `drift review --accept {}` makes it a rule",
+                sanitize(&self.id, 16),
+                crate::report::shell_word(&sanitize(&self.id, 16))
             ),
         }
     }
@@ -3867,6 +4346,11 @@ pub struct Inventory {
     pub env: BTreeMap<String, Vec<String>>,
     /// Non-production files left out of the inventory (tests are not counted).
     pub left_out: LeftOut,
+    /// Production files nothing Drift read reaches ([`unreached_files`]): their risky
+    /// operations and route-like registrations are listed here, under their own
+    /// heading, not as production code. Sorted; not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unreached: Vec<UnreachedFile>,
     /// Files not parsed for lack of stack ([`crate::unchecked`]), sorted: their entry
     /// points, risky operations and env reads are unknown, and so are client leaks
     /// reached through them. Not serialised when empty.
@@ -3901,6 +4385,26 @@ pub struct Inventory {
     /// when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub workflows: Vec<crate::workflows::WorkflowFinding>,
+    /// What the CI workflows an outsider can start leave unstated: the token's
+    /// permissions, a self-hosted runner ([`crate::hardening`]). Filled by the
+    /// caller. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub workflow_hardening: Vec<crate::hardening::WorkflowHardening>,
+    /// What the images the repository builds to deploy hold: a final stage that
+    /// runs as root, a secret written into a layer ([`crate::hardening`]). Filled by
+    /// the caller. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub image_hardening: Vec<crate::hardening::ImageHardening>,
+    /// What those two readings could not tell: unknown, never a finding. Not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub hardening_not_checked: Vec<crate::hardening::NotChecked>,
+    /// CI files that were not read, or were read only in part, with why
+    /// ([`crate::ci::NotRead`]): what their jobs run is not in `workflows`, and is
+    /// unknown, not nothing. Filled with `workflows` ([`crate::ci::fill`]). Sorted;
+    /// not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub ci_not_read: Vec<crate::ci::NotRead>,
     /// What the repository's manifests install that nothing fixes
     /// ([`crate::dependencies`]): a repository named by a branch, an archive at a
     /// URL with no digest, a source over plain HTTP, a second package index, a
@@ -4669,9 +5173,13 @@ pub(crate) fn after_work(ctx: &crate::context::RepoContext, body: &Symbol, calle
         return false;
     }
     let at = body.order.iter().position(|c| c == callee);
-    // Past the cap on the order kept ([`drift_core::AFTER_MORE`]): as many calls
-    // came before it as the list holds.
-    if at.is_none() && body.order.iter().any(|c| c == drift_core::AFTER_MORE) {
+    // Past the cap on the order kept ([`drift_core::AFTER_MORE`], or `order` in
+    // the listed reading's `truncated`): as many calls came before it as the list
+    // holds.
+    if at.is_none()
+        && (body.order.iter().any(|c| c == drift_core::AFTER_MORE)
+            || body.truncated.iter().any(|t| t == "order"))
+    {
         return true;
     }
     work_among(body, &body.order[..at.unwrap_or(body.order.len())])
@@ -6088,12 +6596,17 @@ pub fn hook_for_some_requests(ctx: &crate::context::RepoContext, hook: &str) -> 
     signs_in.peek().is_some() && signs_in.all(|c| c.conditional)
 }
 
-/// The body has a check that answers "not signed in" (a 401, a sign-in redirect).
+/// The body has a check that answers "not signed in" (a 401, a sign-in redirect),
+/// or may have one: its checks were cut short (`body_checks` in
+/// [`Symbol::truncated`]), so such a check may be among those not kept. Every caller
+/// reads true as "may turn callers away" (not readable, opaque), never as a proof, so
+/// a list cut short is unknown here, never "no check".
 pub(crate) fn answers_not_signed_in(d: &Symbol) -> bool {
     use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
     d.body_checks
         .iter()
         .any(|c| matches!(c.outcome, Unauthenticated | SignInRedirect))
+        || d.truncated.iter().any(|t| t == "body_checks")
 }
 
 /// What a hook the whole application runs before its requests (Flask
@@ -6756,6 +7269,11 @@ fn body_guards(
             }
             out.push(format!("{what}{BODY_CHECK}"));
         }
+        // Its checks were cut short (`truncated`): the one that turns a caller away
+        // may be among those not kept. Found, not proven; never "no check".
+        if b.truncated.iter().any(|t| t == "body_checks") {
+            unproven.push(format!("checks cut short{BODY_CHECK}"));
+        }
         // TypeScript: the body throws where what gives the caller gave nothing.
         if !python
             && ctx.since_measured()
@@ -6834,11 +7352,22 @@ fn body_guards(
 /// ([`drift_core::Symbol::body_checks`]): `if session.get("user_id"): return ...`
 /// and then `abort(401)`. A refusal was found and what it is for was not read: the
 /// body is never one that turns no one away.
+///
+/// A list cut short (`responses` or `body_checks` in [`Symbol::truncated`]) proves
+/// neither that no 401 is answered nor that a check records it: read as found.
 pub(crate) fn answers_401_unrecorded(body: &Symbol) -> bool {
-    body.responses
+    use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
+    let cut = |field: &str| body.truncated.iter().any(|t| t == field);
+    (body
+        .responses
         .iter()
         .any(|r| r.status == 401 && !r.in_catch)
-        && !answers_not_signed_in(body)
+        || cut("responses"))
+        && (cut("body_checks")
+            || !body
+                .body_checks
+                .iter()
+                .any(|c| matches!(c.outcome, Unauthenticated | SignInRedirect)))
 }
 
 /// A call of `body` that [`body_guards`] does not read as a body call: one made only
@@ -6893,6 +7422,155 @@ fn internal_target(r: &str) -> Option<(&str, &str)> {
     let (module, rest) = r.split_once('#')?;
     let name = rest.split(['.', '(']).next()?;
     Some((module, name))
+}
+
+/// Which parameters of a body hold what an entry point was sent, as the reach
+/// follows it ([`Index::reaches`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Carry {
+    /// None of them: nothing on the way handed it on.
+    None,
+    /// Any of them: the entry point's own handler, or a call whose facts say
+    /// only that some value read off a parameter was handed on.
+    All,
+    /// These positions (`#0`, `#2`), as the calls on the way handed it on.
+    At(BTreeSet<String>),
+}
+
+impl Carry {
+    /// Whether the parameter at `at` (`#1`, or `*` for one whose position is
+    /// not read) holds it.
+    fn holds(&self, at: &str) -> bool {
+        match self {
+            Carry::None => false,
+            Carry::All => true,
+            Carry::At(set) => at == "*" || set.contains(at),
+        }
+    }
+
+    /// Adds what `other` holds; whether that added anything.
+    fn join(&mut self, other: &Carry) -> bool {
+        match other {
+            Carry::None => false,
+            Carry::All => {
+                let changed = *self != Carry::All;
+                *self = Carry::All;
+                changed
+            }
+            Carry::At(b) => match self {
+                Carry::All => false,
+                Carry::None => {
+                    *self = Carry::At(b.clone());
+                    true
+                }
+                Carry::At(a) => {
+                    let before = a.len();
+                    a.extend(b.iter().cloned());
+                    a.len() > before
+                }
+            },
+        }
+    }
+
+    /// Holds the argument at `arg` of a call (`#1`; `*` at or after a spread).
+    fn add_arg(&mut self, arg: &str) {
+        if arg == "*" {
+            *self = Carry::All;
+            return;
+        }
+        match self {
+            Carry::All => {}
+            Carry::None => *self = Carry::At(BTreeSet::from([arg.to_string()])),
+            Carry::At(set) => {
+                set.insert(arg.to_string());
+            }
+        }
+    }
+}
+
+/// Whether the body's operation of kind `kind` is given what `carried` holds: its
+/// operand read off a parameter that holds it
+/// ([`drift_core::controls::SINK_FED_AT`]). Where the facts say no position for
+/// the kind (Python, a body read before positions were), any parameter does
+/// ([`drift_core::controls::SINK_FED`]).
+fn fed_through(facts: &[String], kind: &str, carried: &Carry) -> bool {
+    use drift_core::controls::{SINK_FED, SINK_FED_AT};
+    if *carried == Carry::None {
+        return false;
+    }
+    let at: Vec<&str> = facts
+        .iter()
+        .filter_map(|c| c.strip_prefix(SINK_FED_AT))
+        .filter_map(|c| c.split_once('\t'))
+        .filter(|(k, _)| *k == kind)
+        .map(|(_, at)| at)
+        .collect();
+    if at.is_empty() {
+        return facts
+            .iter()
+            .any(|c| c.strip_prefix(SINK_FED).is_some_and(|k| k == kind));
+    }
+    at.iter().any(|p| *p != "-" && carried.holds(p))
+}
+
+/// Which parameters of what the call `call` runs hold what `carried` holds of the
+/// calling body: the callee's parameter at each argument read off a parameter
+/// that holds it ([`drift_core::controls::PASSES_AT`]), any of them where the facts
+/// say no position ([`drift_core::controls::PASSES_PARAM`]). With `made` (the
+/// body is the entry point's handler or what names it), the arguments read off a
+/// parameter of the function the body hands back too
+/// ([`drift_core::controls::PASSES_MADE_AT`], [`drift_core::controls::PASSES_MADE`]).
+fn carried_into(facts: &[String], call: &str, carried: &Carry, made: bool) -> Carry {
+    use drift_core::controls::{PASSES_AT, PASSES_MADE, PASSES_MADE_AT, PASSES_PARAM};
+    let says = |start: &str| {
+        facts
+            .iter()
+            .any(|c| c.strip_prefix(start).is_some_and(|x| x == call))
+    };
+    let mut out = Carry::None;
+    if *carried != Carry::None {
+        let at: Vec<(&str, &str)> = facts
+            .iter()
+            .filter_map(|c| c.strip_prefix(PASSES_AT))
+            .filter_map(|c| {
+                let mut parts = c.rsplitn(3, '\t');
+                let at = parts.next()?;
+                let arg = parts.next()?;
+                let callee = parts.next()?;
+                (callee == call).then_some((arg, at))
+            })
+            .collect();
+        if at.is_empty() {
+            if says(PASSES_PARAM) {
+                out = Carry::All;
+            }
+        } else {
+            for (arg, from) in at {
+                if carried.holds(from) {
+                    out.add_arg(arg);
+                }
+            }
+        }
+    }
+    if made {
+        let at: Vec<&str> = facts
+            .iter()
+            .filter_map(|c| c.strip_prefix(PASSES_MADE_AT))
+            .filter_map(|c| c.rsplit_once('\t'))
+            .filter(|(callee, _)| *callee == call)
+            .map(|(_, arg)| arg)
+            .collect();
+        if at.is_empty() {
+            if says(PASSES_MADE) {
+                out = Carry::All;
+            }
+        } else {
+            for arg in at {
+                out.add_arg(arg);
+            }
+        }
+    }
+    out
 }
 
 struct Index<'a> {
@@ -7023,6 +7701,24 @@ impl<'a> Index<'a> {
         if s.kind == drift_core::SymbolKind::Class && !s.members.is_empty() {
             return class(f, s);
         }
+        // A function written in a value and listed under the value's name (`Dao.find`
+        // of a constructor function that assigns it on `this`, a function of an
+        // object): the call of it runs that function alone, not the value's other
+        // functions. Where none is listed by that name, the value is read as a whole.
+        if let Some(m) = member
+            && let Some(own) = f.symbols.iter().find(|x| {
+                x.name
+                    .strip_prefix(s.name.as_str())
+                    .and_then(|k| k.strip_prefix('.'))
+                    == Some(m)
+            })
+        {
+            return Some(Node {
+                file: f,
+                symbol: own,
+                member: None,
+            });
+        }
         // A binding to an instance: `export const storage = new StorageClient()`.
         if member.is_some()
             && matches!(
@@ -7042,6 +7738,24 @@ impl<'a> Index<'a> {
             }
         }
         Some(whole)
+    }
+
+    /// What the reach follows from `node`: its calls, and, of a function listed under
+    /// a value's name ([`Index::target`]), its calls through the instances the value
+    /// builds (`dao.find(id)` of `const dao = new Dao(db)`, recorded as
+    /// [`Symbol::receiver_calls`] `Dao.find`): the method called, where building the
+    /// instance runs none of them.
+    fn followed(&self, node: &Node<'a>) -> impl Iterator<Item = &'a String> {
+        let in_value = node.member.is_none()
+            && node.symbol.name.split_once('.').is_some_and(|(owner, _)| {
+                self.by_name.contains_key(&(node.file.path.as_str(), owner))
+            });
+        let receivers: &'a [String] = if in_value {
+            &node.symbol.receiver_calls
+        } else {
+            &[]
+        };
+        node.calls().iter().chain(receivers)
     }
 
     /// Where reading an entry point starts: a handler method of a class view
@@ -7075,7 +7789,7 @@ impl<'a> Index<'a> {
         let mut queue: VecDeque<(Node, usize)> = VecDeque::from([(first, 0)]);
         while let Some((node, hops)) = queue.pop_front() {
             if hops < MAX_HOPS {
-                for c in node.calls() {
+                for c in self.followed(&node) {
                     if let Some(next) = self.target(c)
                         && seen.insert(next.key())
                     {
@@ -7101,15 +7815,18 @@ impl<'a> Index<'a> {
         // Hops are counted between symbols: a call of a sibling method of the same class
         // (`this.fetchFile()` in `download`) is no hop, as it was none while a class was
         // read as a whole.
-        // `carried`: every call on the way handed on a value read off a parameter
-        // ([`drift_core::controls::PASSES_PARAM`]), so what the entry point was sent
-        // may be what the body here is given. A body is read once carried and once
-        // not, the carried reading first where both are met.
-        let mut queue: VecDeque<(Node, Vec<String>, usize, bool)> = VecDeque::new();
-        let mut seen_carried: BTreeSet<String> = BTreeSet::new();
+        // `carried`: which parameters of the body hold what the entry point was
+        // sent ([`Carry`]): every call on the way handed it on, at the argument
+        // the callee's parameter is ([`drift_core::controls::PASSES_AT`]), or,
+        // where the facts say no position, handed on some value read off a
+        // parameter ([`drift_core::controls::PASSES_PARAM`]). A body is read again
+        // when it is met carrying a parameter it was not read carrying, the
+        // carried reading first where both are met.
+        let mut queue: VecDeque<(Node, Vec<String>, usize, Carry)> = VecDeque::new();
+        let mut seen_carried: BTreeMap<String, Carry> = BTreeMap::new();
         seen.insert(first.key());
-        seen_carried.insert(first.key());
-        queue.push_back((first, vec![entry], 0, true));
+        seen_carried.insert(first.key(), Carry::All);
+        queue.push_back((first, vec![entry], 0, Carry::All));
         while let Some((node, chain, hops, carried)) = queue.pop_front() {
             let facts = flow_facts(&node);
             let says = |start: &str, what: &str| {
@@ -7123,8 +7840,8 @@ impl<'a> Index<'a> {
             let made = chain.len() <= 2;
             for k in node.sinks() {
                 if chain.len() == 1 || INPUT_SINKS.contains(&k.as_str()) {
-                    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
-                    let fed = (carried && says(SINK_FED, k)) || (made && says(SINK_FED_MADE, k));
+                    use drift_core::controls::SINK_FED_MADE;
+                    let fed = fed_through(facts, k, &carried) || (made && says(SINK_FED_MADE, k));
                     match found.get(k) {
                         Some((_, was)) if *was || !fed => {}
                         _ => {
@@ -7136,15 +7853,21 @@ impl<'a> Index<'a> {
             if hops >= MAX_HOPS {
                 continue;
             }
-            for c in node.calls() {
+            for c in self.followed(&node) {
                 let Some(next) = self.target(c) else {
                     continue;
                 };
                 let key = next.key();
-                let passes = (carried && says(drift_core::controls::PASSES_PARAM, c))
-                    || (made && says(drift_core::controls::PASSES_MADE, c));
+                let passes = carried_into(facts, c, &carried, made);
                 let new = seen.insert(key.clone());
-                let newly_carried = passes && seen_carried.insert(key.clone());
+                let newly_carried = if passes == Carry::None {
+                    false
+                } else if let Some(was) = seen_carried.get_mut(&key) {
+                    was.join(&passes)
+                } else {
+                    seen_carried.insert(key.clone(), passes.clone());
+                    true
+                };
                 if new || newly_carried {
                     let same = std::ptr::eq(next.symbol, node.symbol);
                     let mut chain = chain.clone();
@@ -7307,6 +8030,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     let cx = crate::practices::Cx::new(repo, &declared);
     let app_guards = app_guards(repo);
     let non_production = NonProduction::learn(repo);
+    let unreached = unreached_files(repo, &non_production);
     let mut inv = Inventory {
         boundaries,
         unchecked: repo
@@ -7339,13 +8063,16 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             .files
             .iter()
             .filter(|f| {
-                !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+                !is_test_path(&f.path)
+                    && non_production.dir_of(&f.path, &f.package).is_none()
+                    && !unreached.contains(&f.path)
             })
             .flat_map(|f| {
-                f.unlisted_routes.iter().map(|line| Unlisted {
+                f.unlisted().into_iter().map(|u| Unlisted {
                     path: f.path.clone(),
-                    line: *line,
+                    line: u.line,
                     symbol: String::new(),
+                    reason: u.reason,
                 })
             })
             .collect(),
@@ -7353,6 +8080,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
     };
     // Before any entry point is given its service's exposure.
     inv.boundaries.set_relays(repo);
+    inv.boundaries.tie_platforms(repo);
     let mut env: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut leaks: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     let mut left_out: BTreeSet<String> = BTreeSet::new();
@@ -7367,8 +8095,37 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             left_out.insert(dir);
             continue;
         }
+        // A client file's server value and the env reads are listed for every
+        // production file, reached or not, as before files nothing reaches were set
+        // apart: setting a file apart must not drop a leak it holds.
         for l in &f.client_leaks {
             leaks.entry(l).or_default().push(&f.path);
+        }
+        for s in &f.symbols {
+            for r in &s.reads {
+                env.entry(r.clone()).or_default().insert(f.path.clone());
+            }
+        }
+        // Nothing Drift read reaches it: what it holds is listed apart.
+        if unreached.contains(&f.path) {
+            let mut sinks: Vec<String> = f
+                .symbols
+                .iter()
+                .flat_map(|s| s.sinks.iter().cloned())
+                .collect();
+            sinks.sort();
+            sinks.dedup();
+            inv.unreached.push(UnreachedFile {
+                path: f.path.clone(),
+                parsed: f.parse_ok,
+                sinks,
+                unlisted: {
+                    let mut lines: Vec<u32> = f.unlisted().iter().map(|u| u.line).collect();
+                    lines.dedup();
+                    lines
+                },
+            });
+            continue;
         }
         for s in &f.symbols {
             for k in &s.sinks {
@@ -7379,9 +8136,6 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                     line: s.line,
                     fed: sink_fed(s, k),
                 });
-            }
-            for r in &s.reads {
-                env.entry(r.clone()).or_default().insert(f.path.clone());
             }
         }
         for e in &f.entry_points {
@@ -7531,7 +8285,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             }
         }
     }
-    inv.guard_gaps = guard_gaps(&inv.entry_points);
+    inv.guard_gaps = guard_gaps_built_on(repo, &cx, &inv.entry_points);
     inv.scope_gaps = scope_gaps(repo, &index, &cx);
     inv.whole_rows = crate::whole_rows::read(
         repo,
@@ -7540,8 +8294,8 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             .map(|e| (e.path.clone(), e.symbol.clone()))
             .collect(),
     );
-    let unreached = unreached_handlers(repo, &index, &non_production);
-    inv.unlisted.extend(unreached);
+    let handlers = unreached_handlers(repo, &index, &non_production, &unreached);
+    inv.unlisted.extend(handlers);
     inv.unlisted.sort();
     inv.unlisted.dedup();
     // A property written under a key read off a parameter is a risk where a
@@ -7704,11 +8458,14 @@ pub struct GapRegression {
 /// are looked at, except `now_public`, which is about the boundary moving.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Regressions {
-    /// Entry points in changed files lacking a guard most of their siblings have, that
-    /// did not lack it at the merge base.
+    /// Entry points lacking a guard most of their siblings have, that did not lack it
+    /// at the merge base: in changed files, or elsewhere where their guards read
+    /// differently at the merge base (the change took a guard off a mount or a
+    /// router in another file).
     pub guard_gaps: Vec<GapRegression>,
-    /// Entry points in changed files with no guard reaching a risky
-    /// operation, not so at the merge base.
+    /// Entry points with no guard reaching a risky operation, not so at the merge
+    /// base: in changed files, or elsewhere where their guards read differently at
+    /// the merge base.
     pub unguarded_reaching: Vec<EntryRow>,
     /// Risky operations in changed files that were not at the merge base.
     pub sinks: Vec<SinkUse>,
@@ -7718,11 +8475,17 @@ pub struct Regressions {
     pub now_public: Vec<EntryRef>,
     /// Entry points the change adds (in files it added or changed, of a handler the
     /// merge base did not have) that a request reaches ([`ADDED_KINDS`]) where Drift
-    /// found no guard in what it read, or cannot tell its guard ([`EntryRow::opaque`]),
-    /// whatever their siblings do and whatever they reach. One the map knows to be open
-    /// on purpose ([`EntryRow::known_open`]) is not one, and one listed above (under
-    /// `guard_gaps` or `unguarded_reaching`) is not listed again.
+    /// found no guard in what it read, whatever their siblings do and whatever they
+    /// reach. One the map knows to be open on purpose ([`EntryRow::known_open`]) is not
+    /// one, and one listed above (under `guard_gaps` or `unguarded_reaching`) is not
+    /// listed again. One whose guard Drift cannot read is not one either: it is in
+    /// `guard_unknown`.
     pub added_without_guard: Vec<EntryRow>,
+    /// The entry points the change adds, as `added_without_guard` counts them, with
+    /// no guard and something whose guard cannot be read ([`EntryRow::opaque`]): guard
+    /// unknown, never a finding, listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub guard_unknown: Vec<EntryRow>,
 }
 
 /// The kinds of entry point a person's request reaches, whose lack of a sign-in check
@@ -7739,6 +8502,7 @@ impl Regressions {
             && self.sinks.is_empty()
             && self.leaks.is_empty()
             && self.now_public.is_empty()
+            && self.guard_unknown.is_empty()
     }
 }
 
@@ -7764,9 +8528,38 @@ pub fn regressions(
                 .map(move |e| (g.guard.clone(), base_key(&e.path, &e.symbol)))
         })
         .collect();
+    // An entry point's guards come through every file its guard chain passes (a
+    // mount, a router's middleware, an app hook): one in a file the change did not
+    // touch whose guards read differently at the base lost them through the change.
+    type EntryKey = (String, Option<String>, Option<String>);
+    let base_guards: BTreeMap<EntryKey, &Vec<String>> = base
+        .entry_points
+        .iter()
+        .map(|e| {
+            (
+                (
+                    base_key(&e.path, &e.symbol),
+                    e.method.clone(),
+                    e.route.clone(),
+                ),
+                &e.guards,
+            )
+        })
+        .collect();
+    let guards_changed = |path: &str,
+                          symbol: &str,
+                          method: &Option<String>,
+                          route: &Option<String>,
+                          guards: &Vec<String>| {
+        base_guards
+            .get(&(key(path, symbol), method.clone(), route.clone()))
+            .is_some_and(|was| *was != guards)
+    };
     for g in &head.guard_gaps {
         for e in &g.exceptions {
-            if !touched(&e.path) {
+            if !touched(&e.path)
+                && !guards_changed(&e.path, &e.symbol, &e.method, &e.route, &e.guards)
+            {
                 continue;
             }
             if base_exceptions.contains(&(g.guard.clone(), key(&e.path, &e.symbol))) {
@@ -7797,7 +8590,12 @@ pub fn regressions(
     out.unguarded_reaching = head
         .entry_points
         .iter()
-        .filter(|e| e.unguarded() && !e.reaches.is_empty() && touched(&e.path))
+        .filter(|e| {
+            e.unguarded()
+                && !e.reaches.is_empty()
+                && (touched(&e.path)
+                    || guards_changed(&e.path, &e.symbol, &e.method, &e.route, &e.guards))
+        })
         .filter(|e| !base_bare_reaching.contains(&key(&e.path, &e.symbol)))
         .cloned()
         .collect();
@@ -7898,7 +8696,11 @@ pub fn regressions(
         .filter(|e| !listed.contains(&(e.path.as_str(), e.symbol.as_str(), e.line)))
         .cloned()
         .collect();
+    // Unknown is never a finding: what could not be read may be the guard.
+    let (unknown, added): (Vec<EntryRow>, Vec<EntryRow>) =
+        added.into_iter().partition(|e| !e.opaque.is_empty());
     out.added_without_guard = added;
+    out.guard_unknown = unknown;
     out
 }
 
@@ -7935,7 +8737,7 @@ pub fn render_regressions(
     if r.is_empty() {
         let _ = writeln!(
             out,
-            "Security: this change ({files} file(s) added or changed, {against}) introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard or cannot tell, no new risky operation, no new client leak, and makes nothing internet-facing."
+            "Security: this change ({files} file(s) added or changed, {against}) introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard, no new risky operation, no new client leak, and makes nothing internet-facing."
         );
         let _ = writeln!(
             out,
@@ -8028,7 +8830,7 @@ Entry points lacking a guard most of their siblings have"
         let _ = writeln!(
             out,
             "
-New entry points where Drift found no guard, or cannot tell"
+New entry points where Drift found no guard"
         );
         for e in &r.added_without_guard {
             let _ = writeln!(
@@ -8042,6 +8844,23 @@ New entry points where Drift found no guard, or cannot tell"
                     Some(x) => format!("; {x}"),
                     None => String::new(),
                 }
+            );
+        }
+    }
+    if !r.guard_unknown.is_empty() {
+        let _ = writeln!(
+            out,
+            "
+New entry points whose guard is unknown (Drift could not read what may be one; not findings)"
+        );
+        for e in &r.guard_unknown {
+            let _ = writeln!(
+                out,
+                "  {}:{} {}: {}",
+                sanitize(&e.path, 160),
+                e.line,
+                what(&entry_ref(e)),
+                sanitize(&added_has(e), 200)
             );
         }
     }
@@ -8153,7 +8972,9 @@ pub fn github_regression_annotations(r: &Regressions) -> String {
             }
         );
     }
-    for e in &r.added_without_guard {
+    // A new entry point whose guard is unknown is a notice too, said so: never a
+    // finding.
+    for e in r.added_without_guard.iter().chain(&r.guard_unknown) {
         let mut what = String::new();
         if let Some(m) = &e.method {
             what.push_str(m);
@@ -8199,7 +9020,7 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
         sanitize(&merge_base[..merge_base.len().min(12)], 12)
     );
     if r.is_empty() {
-        out.push_str("No entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard or cannot tell, no new risky operation, no new client leak; nothing made internet-facing.\n");
+        out.push_str("No entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard, no new risky operation, no new client leak; nothing made internet-facing.\n");
     }
     if !r.guard_gaps.is_empty() {
         out.push_str("### Entry points lacking a guard most of their siblings have\n\n");
@@ -8249,7 +9070,7 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
         out.push('\n');
     }
     if !r.added_without_guard.is_empty() {
-        out.push_str("### New entry points where Drift found no guard, or cannot tell\n\n");
+        out.push_str("### New entry points where Drift found no guard\n\n");
         for e in &r.added_without_guard {
             let _ = writeln!(
                 out,
@@ -8262,6 +9083,20 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
                     Some(x) => format!(" ({x})"),
                     None => String::new(),
                 }
+            );
+        }
+        out.push('\n');
+    }
+    if !r.guard_unknown.is_empty() {
+        out.push_str("### New entry points whose guard is unknown (not findings)\n\n");
+        for e in &r.guard_unknown {
+            let _ = writeln!(
+                out,
+                "- `{}:{}` {}: {}",
+                sanitize(&e.path, 160),
+                e.line,
+                sanitize(e.route.as_deref().unwrap_or(&e.symbol), 120),
+                sanitize(&added_has(e), 200)
             );
         }
         out.push('\n');
@@ -8352,10 +9187,25 @@ pub(crate) fn role_dirs(package: &str, path: &str) -> Vec<String> {
     dirs
 }
 
+/// [`GuardGap`]s of sorted `entries`, comparing guards by name alone
+/// ([`guard_gaps_with`]).
+pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
+    guard_gaps_with(entries, &|_, _, _| false)
+}
+
 /// [`GuardGap`]s of sorted `entries`. Hooks the whole app runs are not guards here:
 /// every member has them by construction. Deterministic: roles are visited broadest
 /// first and the output is sorted.
-pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
+///
+/// A member lacking the guard by name has it when `built_on(member, guard, with)`
+/// says one of its own guards is built on it (`with`: the members that have it by
+/// name): such a member is no exception. That only removes exceptions; the share is
+/// still counted by name. A member that lacks it and has something whose guard
+/// cannot be read is no exception either ([`GuardGap::unknown`]).
+pub fn guard_gaps_with(
+    entries: &[EntryRow],
+    built_on: &dyn Fn(&EntryRow, &str, &[&EntryRow]) -> bool,
+) -> Vec<GuardGap> {
     use crate::mine::MIN_ROLE_SIZE;
     let mut roles: BTreeMap<(&str, &str, String), Vec<usize>> = BTreeMap::new();
     for (i, e) in entries.iter().enumerate() {
@@ -8396,14 +9246,22 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
             {
                 continue;
             }
+            let with: Vec<&EntryRow> = members
+                .iter()
+                .copied()
+                .filter(|&i| has(i, guard))
+                .map(|i| &entries[i])
+                .collect();
             let lacking: BTreeSet<usize> = members
                 .iter()
                 .copied()
                 .filter(|&i| !has(i, guard))
+                .filter(|&i| !built_on(&entries[i], guard, with.as_slice()))
                 .collect();
-            if reported
-                .get(guard)
-                .is_some_and(|sets| sets.iter().any(|s| lacking.is_subset(s)))
+            if lacking.is_empty()
+                || reported
+                    .get(guard)
+                    .is_some_and(|sets| sets.iter().any(|s| lacking.is_subset(s)))
             {
                 continue;
             }
@@ -8411,6 +9269,14 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
             let Some(&example) = members.iter().find(|&&i| has(i, guard)) else {
                 continue;
             };
+            // Unknown is never an exception: what could not be read may be the guard.
+            let (unknown, exceptions): (Vec<usize>, Vec<usize>) = lacking
+                .iter()
+                .copied()
+                .partition(|&i| !entries[i].opaque.is_empty());
+            if exceptions.is_empty() {
+                continue;
+            }
             out.push(GuardGap {
                 package: key.0.to_string(),
                 kind: key.1.to_string(),
@@ -8418,7 +9284,8 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
                 guard: guard.to_string(),
                 members: members.len(),
                 with_guard,
-                exceptions: lacking.iter().map(|&i| entry_ref(&entries[i])).collect(),
+                exceptions: exceptions.iter().map(|&i| entry_ref(&entries[i])).collect(),
+                unknown: unknown.iter().map(|&i| entry_ref(&entries[i])).collect(),
                 example: entry_ref(&entries[example]),
                 convention: None,
             });
@@ -8426,6 +9293,161 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
     }
     out.sort();
     out
+}
+
+/// A guard's short name without what says how it is applied (` (body call)`, ` (app
+/// hook)`, ...): the name of what it calls.
+fn guard_name(guard: &str) -> &str {
+    let mut g = guard;
+    for suffix in [
+        BODY_CALL,
+        BODY_CHECK,
+        MIDDLEWARE,
+        APP_HOOK,
+        BASE,
+        " (settings)",
+    ] {
+        g = g.strip_suffix(suffix).unwrap_or(g);
+    }
+    g
+}
+
+/// `own` (a reference, normalised) is built on `target`: `target` is `own`, or what
+/// `own` rests on for every request (the binding it derives from, what it is given
+/// by reference, its wrappers and bases, what it calls one call deep, as
+/// [`built_on`] reads them) reaches `target`'s definition; for a package's guard,
+/// what proves `own` a guard ([`authenticating_root`], [`proving_root`]) is
+/// `target`.
+///
+/// A call made for some requests only (`if (x) await requireUserId(req)`:
+/// [`for_some_requests`], in any language), or after the body hands control on, is
+/// not followed: a guard that runs the other guard on one branch does not have it.
+fn rests_on(ctx: &crate::context::RepoContext, own: &str, target: &str) -> bool {
+    if own == target {
+        return true;
+    }
+    if external(target) {
+        return authenticating_root(ctx, own).as_deref() == Some(target)
+            || proving_root(ctx, own).as_deref() == Some(target);
+    }
+    let Some(t) = ctx.definition(target) else {
+        return false;
+    };
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut queue: VecDeque<(String, usize, bool)> =
+        VecDeque::from([(crate::mine::norm_ref(own).into_owned(), 0, false)]);
+    while let Some((r, hops, called)) = queue.pop_front() {
+        if seen.len() >= GUARD_NODES || !seen.insert(r.clone()) || external(&r) {
+            continue;
+        }
+        let Some(s) = ctx.definition(&r) else {
+            continue;
+        };
+        if std::ptr::eq(s, t) {
+            return true;
+        }
+        if hops >= GUARD_HOPS {
+            continue;
+        }
+        let mut next = |x: &str, called: bool| {
+            queue.push_back((crate::mine::norm_ref(x).into_owned(), hops + 1, called));
+        };
+        if !s.derives_from.is_empty() {
+            next(&s.derives_from, called);
+        }
+        for w in &s.wraps {
+            if matches!(
+                w.kind,
+                WrapKind::Call | WrapKind::Decorator | WrapKind::Extends
+            ) {
+                next(&w.wrapper, called);
+            }
+        }
+        for c in &s.calls {
+            if let Some(m) = c.strip_suffix("(ref)") {
+                next(m, called);
+            } else if !called
+                && !c.ends_with("(new)")
+                && !s.after_continuation.iter().any(|a| a == c)
+                && !for_some_requests(ctx, s, c)
+                && matches!(hand_back(ctx, s, c), None | Some(HandBack::Returned))
+            {
+                next(c, true);
+            }
+        }
+    }
+    false
+}
+
+/// [`guard_gaps_with`] for the inventory: a member has a guard when one of its own
+/// guards is built on it ([`rests_on`]), the guards matched by what the members'
+/// handlers reference (their wrappers and calls, and those of the functions they
+/// pass by reference), never by a name alone. The epic case: a route that calls
+/// `requireRecentVerification`, whose first line is `requireUserId(request)`, has
+/// `requireUserId`.
+fn guard_gaps_built_on(
+    repo: &RepoFacts,
+    cx: &crate::practices::Cx<'_>,
+    entries: &[EntryRow],
+) -> Vec<GuardGap> {
+    let ctx = cx.context();
+    // File -> handler -> what it references, normalised.
+    let mut refs: BTreeMap<&str, BTreeMap<&str, BTreeSet<String>>> = BTreeMap::new();
+    for f in &repo.files {
+        for e in &f.entry_points {
+            let Some((_, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let mut bodies: Vec<&Symbol> = vec![s];
+            for c in &s.calls {
+                if let Some(r) = c.strip_suffix("(ref)")
+                    && !external(r)
+                    && let Some(d) = ctx.definition(r)
+                {
+                    bodies.push(d);
+                }
+            }
+            let set = refs
+                .entry(f.path.as_str())
+                .or_default()
+                .entry(e.symbol.as_str())
+                .or_default();
+            for b in bodies {
+                for w in &b.wraps {
+                    set.insert(crate::mine::norm_ref(unwrapped(&w.wrapper)).into_owned());
+                }
+                for c in &b.calls {
+                    let c = c
+                        .strip_suffix("(ref)")
+                        .or_else(|| c.strip_suffix("(new)"))
+                        .unwrap_or(c);
+                    set.insert(crate::mine::norm_ref(c).into_owned());
+                }
+            }
+        }
+    }
+    // The references of a member's handler that a guard of this name names.
+    let named = |e: &EntryRow, name: &str| -> Vec<String> {
+        refs.get(e.path.as_str())
+            .and_then(|m| m.get(e.symbol.as_str()))
+            .into_iter()
+            .flatten()
+            .filter(|r| short(r) == name)
+            .cloned()
+            .collect()
+    };
+    guard_gaps_with(entries, &|e, guard, with| {
+        let targets: BTreeSet<String> = with
+            .iter()
+            .flat_map(|w| named(w, guard_name(guard)))
+            .collect();
+        !targets.is_empty()
+            && e.guards
+                .iter()
+                .filter(|g| !g.ends_with(APP_HOOK))
+                .flat_map(|g| named(e, guard_name(g)))
+                .any(|own| targets.iter().any(|t| rests_on(ctx, &own, t)))
+    })
 }
 
 /// Exceptions listed per guard gap in text output; the rest are counted.
@@ -8547,6 +9569,24 @@ pub fn render_at(
             shown.join(", ")
         );
     }
+    if !inv.unreached.is_empty() {
+        let shown: Vec<String> = inv
+            .unreached
+            .iter()
+            .take(3)
+            .map(|u| sanitize(&u.path, 160))
+            .collect();
+        let unparsed = inv.unreached.iter().filter(|u| !u.parsed).count();
+        let sinks: usize = inv.unreached.iter().map(|u| u.sinks.len()).sum();
+        let unlisted: usize = inv.unreached.iter().map(|u| u.unlisted.len()).sum();
+        let _ = writeln!(
+            out,
+            "{} files not reached by anything Drift read ({}{}): nothing imports or registers them, no manifest names them, they list no entry point, and they import nothing or did not parse ({unparsed} did not); their {sinks} kind(s) of risky operation and {unlisted} route-like registration(s) are not counted as production code",
+            inv.unreached.len(),
+            shown.join(", "),
+            if inv.unreached.len() > 3 { ", ..." } else { "" }
+        );
+    }
     let unchecked: Vec<&String> = inv.unchecked.iter().filter(|p| keep(p)).collect();
     if !unchecked.is_empty() {
         let shown: Vec<String> = unchecked.iter().take(5).map(|p| sanitize(p, 160)).collect();
@@ -8588,7 +9628,12 @@ pub fn render_at(
             .iter()
             .take(5)
             .map(|u| match u.symbol.is_empty() {
-                true => format!("{}:{}", sanitize(&u.path, 160), u.line),
+                true => format!(
+                    "{}:{} ({})",
+                    sanitize(&u.path, 160),
+                    u.line,
+                    u.reason.label()
+                ),
                 false => format!(
                     "{}:{} {}",
                     sanitize(&u.path, 160),
@@ -8635,6 +9680,12 @@ pub fn render_at(
                     (has("config"), ".drift/config.yaml"),
                     (has("compose"), "compose files"),
                     (entries.iter().any(|e| e.tied), "Terraform ties"),
+                    (
+                        entries
+                            .iter()
+                            .any(|e| inv.boundaries.kubernetes_runs(&e.path)),
+                        "Kubernetes manifests",
+                    ),
                 ]
                 .into_iter()
                 .filter(|(present, _)| *present)
@@ -8815,6 +9866,21 @@ pub fn render_at(
                     g.exceptions.len() - GAP_EXCEPTIONS
                 );
             }
+            if !g.unknown.is_empty() {
+                let _ = writeln!(
+                    out,
+                    "      guard unknown, not exceptions ({}): {}",
+                    g.unknown.len(),
+                    sanitize(
+                        &g.unknown
+                            .iter()
+                            .map(|e| format!("{}:{}", e.path, e.line))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        400
+                    )
+                );
+            }
             let _ = writeln!(
                 out,
                 "      to copy: {}:{} {}",
@@ -8843,9 +9909,23 @@ pub fn render_at(
     if !workflows.is_empty() {
         let _ = writeln!(out, "\nCI workflows that run what an outsider wrote");
         for w in workflows.iter().take(max_rows) {
+            // GitHub's wording names GitHub's terms; another system's pipeline is
+            // said in its own ([`crate::ci`]).
+            let github = w.path.starts_with(".github/");
             let what = match w.kind.as_str() {
+                "unpinned_action" if !github => {
+                    "runs another owner's include, orb or pipe by a name its owner can move, where the pipeline's variables are"
+                }
+                "script_injection" if !github => {
+                    "puts text a commit's or a merge request's author writes into a shell step as code"
+                }
                 "untrusted_checkout" => {
                     "checks out the pull request's code where the repository's secrets are"
+                }
+                // The owner is read off this clone's remote: said, never a reason
+                // to leave the finding out ([`crate::workflows::WorkflowFinding::own_owner`]).
+                "unpinned_action" if w.own_owner => {
+                    "runs an action of the repository's own owner (as this clone's origin remote names it) by a name that owner can move, where it holds secrets or may write"
                 }
                 "unpinned_action" => {
                     "runs another owner's action by a name its owner can move, where it holds secrets or may write"
@@ -8865,6 +9945,25 @@ pub fn render_at(
         if workflows.len() > max_rows {
             let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
         }
+    }
+    crate::hardening::render(&mut out, inv, only, max_rows);
+    let ci_not_read: Vec<&crate::ci::NotRead> =
+        inv.ci_not_read.iter().filter(|n| keep(&n.path)).collect();
+    if !ci_not_read.is_empty() {
+        let shown: Vec<String> = ci_not_read
+            .iter()
+            .take(5)
+            // The reason is Drift's own words around repository text it sanitised
+            // ([`crate::ci::NotRead`]).
+            .map(|n| format!("{} ({})", sanitize(&n.path, 160), n.why))
+            .collect();
+        let _ = writeln!(
+            out,
+            "\n{} CI file(s) NOT READ in full, so what their jobs run is unknown: {}{}",
+            ci_not_read.len(),
+            shown.join("; "),
+            if ci_not_read.len() > 5 { "; ..." } else { "" }
+        );
     }
     let dependencies: Vec<&crate::dependencies::DependencyFinding> = inv
         .dependencies
@@ -8995,6 +10094,21 @@ pub fn render_at(
                     out,
                     "      ... {} more",
                     g.exceptions.len() - GAP_EXCEPTIONS
+                );
+            }
+            if !g.unknown.is_empty() {
+                let _ = writeln!(
+                    out,
+                    "      filter not read, not exceptions ({}): {}",
+                    g.unknown.len(),
+                    sanitize(
+                        &g.unknown
+                            .iter()
+                            .map(|e| format!("{}:{}", e.path, e.line))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        400
+                    )
                 );
             }
             let _ = writeln!(
@@ -9858,9 +10972,18 @@ mod tests {
             wrapper: "lib/auth.ts#withAuth".into(),
             kind: WrapKind::Call,
         });
+        // `lib/a.ts` imports what it calls, as real facts say: a file nothing imports,
+        // registers or lists is set apart since S15b (`unreached_files`), and its sink
+        // is then listed under `unreached`, not in `sinks`.
         let a = FileFacts {
             path: "lib/a.ts".into(),
             symbols: vec![sym("load", &["lib/b.ts#db.run"], &[])],
+            imports: vec![drift_core::Import {
+                module: "lib/b.ts".into(),
+                names: vec!["db".into()],
+                type_only: false,
+                load: Default::default(),
+            }],
             ..Default::default()
         };
         let b = FileFacts {
@@ -9894,6 +11017,7 @@ mod tests {
             ["app/api/x/route.ts#GET", "lib/a.ts#load", "lib/b.ts#db"]
         );
         assert_eq!(inv.sinks.len(), 1);
+        assert!(inv.unreached.is_empty(), "{:?}", inv.unreached);
         assert_eq!(inv.unguarded().count(), 0);
     }
 

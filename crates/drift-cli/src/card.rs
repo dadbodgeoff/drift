@@ -27,6 +27,7 @@ use drift_core::RepoFacts;
 use drift_mine::card::{ConventionLine, MinedCard, Regularity};
 use drift_mine::mine::{Candidate, MineOptions, mine_keeping, mine_with_kinds};
 use drift_mine::policy::{ConventionsFile, Lock, Status};
+use drift_mine::report::{MAX_PATH, sanitize, shell_word};
 use drift_mine::roles::FileKinds;
 
 use crate::derived::Derived;
@@ -128,6 +129,7 @@ pub fn regularities(
             policy: ConventionsFile::merge(base, "drift", mined.kinds.clone(), &candidates),
             lock: Lock::default(),
             unverified: Vec::new(),
+            scanned: std::sync::OnceLock::new(),
         };
         let covering = match view.rules_for_new_file(rel, None, false) {
             NewFileRules::Matched(convs) => convs,
@@ -281,20 +283,25 @@ pub fn copy_from(root: &Path, facts: &RepoFacts, rel: &str) -> Option<String> {
             return None;
         }
         let guard = s.guards.first()?;
+        // `drift example` is what agents run: the repository's names made safe to read,
+        // and the path in the command one shell word.
+        fn safe(t: &str) -> String {
+            sanitize(t, MAX_PATH)
+        }
         Some(format!(
             "to copy: {}:{} {} (the file `drift card {}` names: {} of the {} {} entry points in {} carry {}; a fact about the code, not a rule)",
-            e.path,
+            safe(&e.path),
             e.line,
-            e.symbol,
-            rel,
+            safe(&e.symbol),
+            shell_word(&safe(rel)),
             guard.members,
             s.members,
-            s.kind,
+            safe(&s.kind),
             match s.dir.as_deref() {
                 Some("") | None => "the package".to_string(),
-                Some(d) => format!("{d}/"),
+                Some(d) => format!("{}/", safe(d)),
             },
-            guard.guard
+            safe(&guard.guard)
         ))
     })
 }

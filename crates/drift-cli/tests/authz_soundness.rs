@@ -2106,11 +2106,16 @@ app.get("/plaindrizzle", requireUser, async (req, res) => {
         ("unknown", Some("unclassified"), None),
     );
     // (The builder chain is read as the database library's since the bodies a
-    // route runs are read further; what it filters by is still not classified.)
-    assert_eq!(
-        said(&c, "GET /drizzle"),
-        ("unknown", Some("unclassified"), None),
-    );
+    // route runs are read further.) Since TypeScript lowering 87, what Drizzle's
+    // `eq` compares a column named for a tenant to is read as Prisma's `where`
+    // is: the caller's organisation, alone or in an `and`, is the tenancy filter.
+    for route in ["GET /drizzle", "GET /drizzle2"] {
+        assert_eq!(
+            said(&c, route),
+            ("known", Some("tenancy_filter:where.orgId (session)"), None),
+            "{route}"
+        );
+    }
     assert_eq!(said(&c, "GET /plainsql"), ("none", None, None),);
 }
 

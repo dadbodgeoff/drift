@@ -4,157 +4,228 @@ branding:
   icon: check-circle
   color: blue
 
+# The logic is in scripts/action/ (tested by scripts/action/test.sh); these steps
+# pass it the inputs and the `github` context as environment variables, never as
+# text pasted into a shell line.
+
 inputs:
   args:
     description: Extra arguments for `drift check` (for example `--strict`).
     required: false
     default: ""
+  working-directory:
+    description: "The directory to check, relative to the workspace (for a repository checked out with `path:`). The Drift policy (`.drift/`) is read from there."
+    required: false
+    default: "."
   upload-sarif:
-    description: "Upload results to GitHub code scanning (needs `security-events: write`)."
+    description: "Upload results to GitHub code scanning (needs `security-events: write`). \"file\" writes the SARIF file (the `sarif` output) without uploading it; \"false\" does neither."
     required: false
     default: "true"
   drift-ref:
-    description: Git ref of Drift to build. Pin a tag or commit for reproducible CI.
+    description: "Git ref of Drift to run: a release tag, a branch or a full commit SHA. Empty (the default) runs the Drift of the Action's own ref (`uses: dadbodgeoff/drift@<ref>`). A release tag, or a commit a release tag points at, installs the released binary (checksum verified); anything else is built from source with cargo, cached by commit."
     required: false
-    default: "main"
+    default: ""
   pr-mode:
     description: "On pull_request events, report and fail only on what the pull request introduces (`drift check --diff-base origin/<base>`). Works with a shallow checkout (it fetches the base branch and deepens until the merge base is there); `fetch-depth: 0` avoids the extra fetches. Set to \"false\" to check the whole repository."
     required: false
     default: "true"
   security:
-    description: "On pull_request events in PR mode, also run `drift security --diff-base origin/<base> --github`: notice annotations and a job summary of what the pull request introduces (entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, entry points made internet-facing). Facts for review; it never fails the job. Off by default until its precision is measured; set to \"true\" to run it."
+    description: "On pull_request events in PR mode, also run `drift security --diff-base origin/<base> --github`: notice annotations and a job summary of what the pull request introduces (entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, entry points made internet-facing). Facts for review; it never fails the job. Off by default until its precision is measured; set to \"true\" to run it. With `comment`, the comment lists them too."
+    required: false
+    default: "false"
+  comment:
+    description: "On pull_request events, keep one pull request comment up to date: the new violations of accepted conventions and the security findings, each with its file and line (needs `pull-requests: write`; uses `github.token`). Created when there is something to say, edited in place on every push, marked resolved when there is nothing left. Off by default."
     required: false
     default: "false"
   security-comment:
-    description: "With `security`, also post the same findings as one pull request comment when the pull request introduces any (needs `pull-requests: write`; uses `github.token`). Off by default: the job summary and annotations need no extra permission."
+    description: "The earlier name of `comment`, kept so existing workflows keep working: \"true\" turns `comment` on."
     required: false
     default: "false"
+  comment-limit:
+    description: "Rows the comment lists per section; the rest are counted."
+    required: false
+    default: "20"
+  status:
+    description: "Post the result as a commit status (\"commit\", needs `statuses: write`) or a check run (\"check\", needs `checks: write`) named by `status-name`, so branch protection can require it. \"off\" (the default) posts nothing: the job's own result is the check."
+    required: false
+    default: "off"
+  status-name:
+    description: "The name of the commit status or check run."
+    required: false
+    default: "drift"
+  install-only:
+    description: "\"true\" installs Drift (on PATH for later steps, and the `drift-path` output) and checks nothing."
+    required: false
+    default: "false"
+
+outputs:
+  exit-code:
+    description: "The exit code of `drift check`: 0 nothing fails, 1 new violations or security findings that fail, 2 an error. Empty when the check did not run."
+    value: ${{ steps.check.outputs.exit-code }}
+  block:
+    description: New violations of accepted conventions in block mode (in PR mode, those the pull request introduces).
+    value: ${{ steps.check.outputs.block }}
+  advise:
+    description: New violations of accepted conventions in advise mode.
+    value: ${{ steps.check.outputs.advise }}
+  security-findings:
+    description: Security findings not in the committed security baseline (`.drift/security.lock`), of a kind it sets to fail. 0 without a baseline.
+    value: ${{ steps.check.outputs.security-findings }}
+  security-advice:
+    description: "Security findings that advise: not in the baseline but of a kind it does not set to fail, or, with no baseline, what the pull request adds that a baseline would hold."
+    value: ${{ steps.check.outputs.security-advice }}
+  unchecked:
+    description: Files Drift could not read (here or at the merge base), whose violations are unknown.
+    value: ${{ steps.check.outputs.unchecked }}
+  report:
+    description: Path of the `drift check --format json` report the counts come from.
+    value: ${{ steps.check.outputs.report }}
+  sarif:
+    description: Path of the SARIF file, when `upload-sarif` is not "false".
+    value: ${{ steps.sarif.outputs.sarif }}
+  drift-path:
+    description: Path of the Drift binary the Action ran.
+    value: ${{ steps.ref.outputs.bin }}
+  drift-commit:
+    description: The Drift commit the Action ran.
+    value: ${{ steps.ref.outputs.sha }}
+  installed-from:
+    description: "How Drift was installed: release (the released binary), build (from source) or cached."
+    value: ${{ steps.release.outputs.how || steps.build.outputs.how }}
 
 runs:
   using: composite
   steps:
-    # Resolve the ref to one commit, matching full ref names only (`ls-remote`
-    # patterns match suffixes: `v1` would also match `refs/heads/archive/v1`).
-    # The cache key and the build both use that commit, so a branch such as
-    # `main` is rebuilt when it moves and never mixed with another build.
+    # One commit, from `drift-ref` or the Action's own ref (never a floating
+    # branch), and the release tag it is, if any. Also a fresh fact cache outside
+    # the checkout, so pull request code cannot supply cached facts.
     - name: Resolve Drift ref
       id: ref
       shell: bash
       env:
         DRIFT_REF: ${{ inputs.drift-ref }}
-      run: |
-        url=https://github.com/dadbodgeoff/drift
-        if [[ "$DRIFT_REF" =~ ^[0-9a-f]{40}$ ]]; then
-          sha="$DRIFT_REF"
-        else
-          refs=$(git ls-remote --heads --tags "$url")
-          sha=""
-          for want in "refs/tags/$DRIFT_REF^{}" "refs/tags/$DRIFT_REF" "refs/heads/$DRIFT_REF"; do
-            sha=$(awk -v w="$want" '$2 == w { print $1; exit }' <<<"$refs")
-            [ -n "$sha" ] && break
-          done
-        fi
-        if [ -z "$sha" ]; then
-          echo "::error::drift-ref '$DRIFT_REF' is not a tag, a branch or a full 40-character commit SHA of $url"
-          exit 1
-        fi
-        echo "sha=$sha" >> "$GITHUB_OUTPUT"
-        # A fresh fact cache outside the checkout: pull request code must not be
-        # able to supply cached facts (Drift also ignores a git-tracked .drift/cache).
-        echo "DRIFT_CACHE_DIR=$(mktemp -d "$RUNNER_TEMP/drift-cache.XXXXXX")" >> "$GITHUB_ENV"
+        DRIFT_ACTION_REF: ${{ github.action_ref }}
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/install.sh resolve
+    - name: Install released Drift
+      id: release
+      shell: bash
+      env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_SHA: ${{ steps.ref.outputs.sha }}
+        DRIFT_TAG: ${{ steps.ref.outputs.tag }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/install.sh release
+    # No release for this ref and platform: build from source, with the cargo
+    # registry and the build output cached by the resolved commit (and restored
+    # from an earlier commit's, so only what changed is rebuilt).
     - name: Cache Drift build
+      if: ${{ steps.release.outputs.installed != 'true' }}
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
-        path: ~/.cargo/bin/drift
-        key: drift-${{ runner.os }}-${{ steps.ref.outputs.sha }}
-    - name: Install Drift
+        path: |
+          ~/.cache/drift-action
+          ~/.cargo/registry/index
+          ~/.cargo/registry/cache
+          ~/.cargo/git/db
+        key: drift-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.ref.outputs.sha }}
+        restore-keys: drift-build-${{ runner.os }}-${{ runner.arch }}-
+    - name: Build Drift
+      id: build
+      if: ${{ steps.release.outputs.installed != 'true' }}
       shell: bash
       env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
         DRIFT_SHA: ${{ steps.ref.outputs.sha }}
-      run: |
-        if ! command -v drift >/dev/null; then
-          cargo install --locked --git https://github.com/dadbodgeoff/drift --rev "$DRIFT_SHA" drift-cli
-        fi
+        DRIFT_SOURCE: ${{ steps.ref.outputs.source }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/install.sh build
     # Code scanning gets the whole repository's new violations: it tracks alerts
     # across branches itself and shows a pull request only the alerts it adds.
-    # Exit 1 (violations found) is expected here; any other failure stops the job.
     - name: Drift check (SARIF)
-      if: ${{ inputs.upload-sarif == 'true' }}
+      id: sarif
+      if: ${{ inputs.install-only != 'true' && inputs.upload-sarif != 'false' }}
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_BIN: ${{ steps.ref.outputs.bin }}
         DRIFT_ARGS: ${{ inputs.args }}
-      # Written outside the checkout, so it is never part of a diff.
-      run: |
-        status=0
-        drift check --format sarif $DRIFT_ARGS > "$RUNNER_TEMP/drift.sarif" || status=$?
-        if [ "$status" -gt 1 ]; then exit "$status"; fi
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/check.sh sarif
     - name: Upload SARIF
-      if: ${{ inputs.upload-sarif == 'true' }}
+      if: ${{ inputs.install-only != 'true' && inputs.upload-sarif == 'true' }}
       uses: github/codeql-action/upload-sarif@f3bbb05694c2f74569081c28664c0866d64dec21 # v4.39.3
       with:
-        sarif_file: ${{ runner.temp }}/drift.sarif
+        sarif_file: ${{ steps.sarif.outputs.sarif }}
         category: drift
-    # Annotations on the changed lines and a job summary. On pull_request events
-    # (unless pr-mode is "false") only what the pull request introduces is reported,
-    # and only its violations of block-mode conventions fail the check. Every other
-    # event (push, pull_request_target, merge_group, ...) checks the whole repository.
-    # A shallow checkout is deepened until the merge base with the base branch is
-    # there; `fetch-depth: 0` avoids the extra fetches.
+    # Annotations on the changed lines and a job summary, then the same check as
+    # JSON for the outputs. On pull_request events (unless pr-mode is "false")
+    # only what the pull request introduces is reported, and only its violations
+    # of block-mode conventions fail. Every other event (push, pull_request_target,
+    # merge_group, ...) checks the whole repository. This step records the exit
+    # code; the last step fails the job with it, after the comment and status.
     - name: Drift check
+      id: check
+      if: ${{ inputs.install-only != 'true' }}
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_BIN: ${{ steps.ref.outputs.bin }}
         DRIFT_ARGS: ${{ inputs.args }}
         DRIFT_PR_MODE: ${{ inputs.pr-mode }}
         DRIFT_EVENT: ${{ github.event_name }}
         DRIFT_BASE_REF: ${{ github.base_ref }}
-      run: |
-        diff_args=()
-        if [ "$DRIFT_EVENT" = "pull_request" ] && [ "$DRIFT_PR_MODE" != "false" ] && [ -n "$DRIFT_BASE_REF" ]; then
-          base="origin/$DRIFT_BASE_REF"
-          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
-            refspec="+refs/heads/$DRIFT_BASE_REF:refs/remotes/origin/$DRIFT_BASE_REF"
-            git fetch --no-tags --quiet --depth=100 origin "$refspec" || true
-            tries=1
-            until git merge-base "$base" HEAD >/dev/null 2>&1 || [ "$tries" -ge 10 ]; do
-              git fetch --no-tags --quiet --deepen=100 origin "$refspec" || break
-              tries=$((tries + 1))
-            done
-            if ! git merge-base "$base" HEAD >/dev/null 2>&1; then
-              echo "drift: no merge base with $base within $((tries * 100)) commits; fetching the full history (git fetch --unshallow)"
-              git fetch --no-tags --quiet --unshallow origin "$refspec" || true
-            fi
-          fi
-          diff_args=(--diff-base "$base")
-        fi
-        drift check --format github "${diff_args[@]}" $DRIFT_ARGS
-    # What the pull request introduces, security-wise, as notices and a job summary.
-    # Facts for a reviewer: this step never fails the job. The base branch was fetched
-    # by the step above.
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/check.sh gate
+    # What the pull request introduces, security-wise, as notices and a job
+    # summary. Facts for a reviewer: this step never fails the job.
     - name: Drift security
-      if: ${{ always() && inputs.security == 'true' && inputs.pr-mode != 'false' && github.event_name == 'pull_request' && github.base_ref != '' }}
+      id: security
+      if: ${{ !cancelled() && steps.check.outcome == 'success' && inputs.security == 'true' && inputs.pr-mode != 'false' && github.event_name == 'pull_request' && github.base_ref != '' }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_BIN: ${{ steps.ref.outputs.bin }}
+        DRIFT_PR_MODE: ${{ inputs.pr-mode }}
+        DRIFT_EVENT: ${{ github.event_name }}
+        DRIFT_BASE_REF: ${{ github.base_ref }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/check.sh security
+    - name: Drift comment
+      if: ${{ !cancelled() && steps.check.outputs.report != '' && (inputs.comment == 'true' || inputs.security-comment == 'true') && github.event_name == 'pull_request' }}
       shell: bash
       env:
-        DRIFT_BASE_REF: ${{ github.base_ref }}
-      run: |
-        if git merge-base "origin/$DRIFT_BASE_REF" HEAD >/dev/null 2>&1; then
-          drift security --diff-base "origin/$DRIFT_BASE_REF" --github
-        else
-          echo "drift security: no merge base with origin/$DRIFT_BASE_REF; skipped"
-        fi
-    # One comment with the same findings, only when there are any, so a clean pull
-    # request gets no comment. Opt-in: it needs `pull-requests: write`.
-    - name: Drift security comment
-      if: ${{ always() && inputs.security-comment == 'true' && inputs.security == 'true' && inputs.pr-mode != 'false' && github.event_name == 'pull_request' && github.base_ref != '' }}
-      shell: bash
-      env:
-        DRIFT_BASE_REF: ${{ github.base_ref }}
-        GH_TOKEN: ${{ github.token }}
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_REPORT: ${{ steps.check.outputs.report }}
+        DRIFT_SECURITY_REPORT: ${{ steps.security.outputs.security-report }}
+        DRIFT_BASE: ${{ steps.check.outputs.base }}
+        DRIFT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        DRIFT_COMMENT_LIMIT: ${{ inputs.comment-limit }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: |
-        base="origin/$DRIFT_BASE_REF"
-        git merge-base "$base" HEAD >/dev/null 2>&1 || exit 0
-        drift security --diff-base "$base" --json > "$RUNNER_TEMP/drift-security.json"
-        if jq -e '(.guard_gaps + .unguarded_reaching + .sinks + .leaks + .now_public) | length > 0' "$RUNNER_TEMP/drift-security.json" >/dev/null; then
-          { echo '<!-- drift-security -->'; echo '```'; drift security --diff-base "$base"; echo '```'; } > "$RUNNER_TEMP/drift-security.md"
-          gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/drift-security.md"
-        fi
+        GH_TOKEN: ${{ github.token }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/comment.sh
+    # Posted even when the check could not run to the end (as an error), so a
+    # branch protection rule that requires it never sees a stale success.
+    - name: Drift status
+      if: ${{ !cancelled() && inputs.install-only != 'true' && inputs.status != 'off' && steps.ref.outputs.sha != '' }}
+      shell: bash
+      env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_STATUS: ${{ inputs.status }}
+        DRIFT_STATUS_NAME: ${{ inputs.status-name }}
+        DRIFT_EXIT_CODE: ${{ steps.check.outputs.exit-code }}
+        DRIFT_BLOCK: ${{ steps.check.outputs.block }}
+        DRIFT_ADVISE: ${{ steps.check.outputs.advise }}
+        DRIFT_SECURITY: ${{ steps.check.outputs.security-findings }}
+        DRIFT_UNCHECKED: ${{ steps.check.outputs.unchecked }}
+        DRIFT_REPORT: ${{ steps.check.outputs.report }}
+        DRIFT_SECURITY_REPORT: ${{ steps.security.outputs.security-report }}
+        DRIFT_BASE: ${{ steps.check.outputs.base }}
+        DRIFT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        GH_TOKEN: ${{ github.token }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/status.sh
+    - name: Drift result
+      if: ${{ !cancelled() && inputs.install-only != 'true' }}
+      shell: bash
+      env:
+        DRIFT_ACTION_PATH: ${{ github.action_path }}
+        DRIFT_EXIT_CODE: ${{ steps.check.outputs.exit-code }}
+      run: bash "$DRIFT_ACTION_PATH"/scripts/action/check.sh finish

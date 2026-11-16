@@ -99,6 +99,35 @@ jobs:
         env:
           INSTA_UPDATE: "no"
 
+  test-windows:
+    # Native Windows (MSVC): the release build and the whole suite, gated as test-macos
+    # is (main, nightly, on demand, and pull requests that change the Rust build). Not
+    # yet green anywhere, so it never fails the run: its result shows, nothing waits on
+    # it. `--no-fail-fast` runs every test binary, so one run lists every Windows
+    # failure, not only the first. python3 is not on PATH on windows-latest, so the
+    # importlib oracle is skipped (it runs on Linux).
+    needs: rust-changed
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.rust-changed.outputs.rust == 'true') }}
+    continue-on-error: true
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      DRIFT_SKIP_ORACLE: "1"
+    steps:
+      - run: git config --global core.longpaths true
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+      - run: cargo build --release --locked -p drift-cli
+      - run: target/release/drift --version
+      - run: cargo test --all --locked --no-fail-fast
+        env:
+          INSTA_UPDATE: "no"
+
   deny:
     runs-on: ubuntu-latest
     steps:
@@ -129,11 +158,14 @@ jobs:
     # Parameter-type facts (`Symbol.arg_types`) against the TypeScript compiler on the
     # synthetic fixtures of crates/drift-ts/tests/fixtures/param-types*: every key the
     # compiler answers must match, and Drift may answer no key the compiler cannot.
+    # Then, with the same build, `drift check` on this repository (the last step).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+          # Full history, so the pull request's base commit is there for --diff-base.
+          fetch-depth: 0
       - run: rustup show
       - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
       - run: cargo build --locked -p drift-cli
@@ -144,6 +176,43 @@ jobs:
       - run: node eval/oracle/fixtures.mjs --drift target/debug/drift
         env:
           TS_PATH: ${{ runner.temp }}/ts/node_modules/typescript
+      # Drift on its own repository, against the policy committed in .drift/ and
+      # drift.lock. On a pull request only what it introduces is reported (--diff-base
+      # its base commit); on every other event the whole repository is checked. Exit 1
+      # means an accepted block-mode convention is newly broken (none is accepted yet,
+      # so today this proves the command on a real repository); exit 2 is an error. A
+      # fresh cache outside the checkout, as the Drift Action uses, so the change
+      # cannot supply cached facts.
+      - name: Drift check on this repository
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          DRIFT_CACHE_DIR=$(mktemp -d "$RUNNER_TEMP/drift-cache.XXXXXX")
+          export DRIFT_CACHE_DIR
+          if [ -n "$BASE" ]; then
+            target/debug/drift check --diff-base "$BASE" --format github
+          else
+            target/debug/drift check --format github
+          fi
+
+  harness:
+    # The Python harness unit tests (eval/scoreboard, eval/benchmark; eval/replay has
+    # none) on the runner's python3, with nothing installed: they use the standard
+    # library, git and bash only. Then the tests of scripts/snapshot.sh, which run it
+    # on throwaway repositories. snapshot.sh itself is not run here: it needs the
+    # private deny and fake-secret lists, which are not in the repository, and without
+    # the second it fails on the known fake secrets of the redaction test data.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: python3 --version
+      - run: python3 -I -m unittest discover -s tests
+        working-directory: eval/scoreboard
+      - run: python3 -I -m unittest discover -s tests
+        working-directory: eval/benchmark
+      - run: sh scripts/snapshot-test.sh
 
   packaging:
     # The release path without building Drift (no musl build here): YAML and shape
@@ -159,6 +228,67 @@ jobs:
           node-version: 22
       - run: npm install --prefix "$RUNNER_TEMP/yaml" --no-save --no-audit --no-fund --ignore-scripts yaml@2.9.1
       - run: node npm/ci-check.mjs "$RUNNER_TEMP/yaml"
+      - run: node --test npm/set-version.test.mjs
+
+  release-changed:
+    # Whether a pull request touches the release path (the release workflow, the npm
+    # packaging, or a file that states the version), so the Linux rehearsal below
+    # runs only when it can find something.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.diff.outputs.release }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE" HEAD -- .github/workflows/release.yml npm Cargo.toml Cargo.lock integrations/claude-code/.claude-plugin .claude-plugin; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release-rehearsal:
+    # The Linux part of release.yml's rehearsal, with a real binary: the
+    # x86_64-unknown-linux-musl release build, archive and SHA256SUMS (a tampered
+    # copy must fail), the npm tarballs packed and installed offline, `drift
+    # --version` through the launcher, then census, init, review, check and every
+    # plugin hook through that install (npm/dry-run.sh, the same script a person runs
+    # locally). One target, not five: the whole matrix is `gh workflow run
+    # release.yml`. Pull requests that touch the release path, nightly, on demand.
+    needs: release-changed
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || needs.release-changed.outputs.release == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: rustup show && rustup target add x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          key: release-musl
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: bash npm/dry-run.sh
+        env:
+          WORK: ${{ runner.temp }}/dry-run
+          DRIFT_BUILD_COMMIT: ${{ github.sha }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: release-rehearsal-linux-x64
+          path: |
+            ${{ runner.temp }}/dry-run/out/
+            ${{ runner.temp }}/dry-run/npm-tarballs/
+          if-no-files-found: ignore
+          retention-days: 7
 
   studio:
     # Drift Studio (apps/studio) and its design system (packages/ui).
@@ -183,3 +313,110 @@ jobs:
       # The browser for end-to-end tests matches the pinned playwright version.
       - run: npx playwright install --with-deps chromium
       - run: node apps/studio/tests/e2e/run.mjs
+
+  action:
+    # The GitHub Action itself (`uses: ./`) on a fixture repository made here: a base
+    # commit where `drift init` mined the `withAuth()` wrapper of 38 of 40 routes and a
+    # person set it to block, then a change that adds a route without it. The outputs
+    # are asserted; the comment and the status go to a fake `gh` (this job must not
+    # comment on Drift's own pull requests). The first `uses: ./` installs Drift as
+    # every run does (no release for this commit, so a cached build from the Action's
+    # own files); the second finds that binary by its commit. The scripts' logic is
+    # also tested in the `test` job (crates/drift-cli/tests/gap_action_scripts.rs).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Install Drift with the Action
+        id: install
+        uses: ./
+        with:
+          install-only: "true"
+      - name: Fixture repository
+        env:
+          DRIFT_PATH: ${{ steps.install.outputs.drift-path }}
+        run: |
+          set -euo pipefail
+          test "$(command -v drift)" = "$DRIFT_PATH"
+          fx="$RUNNER_TEMP/fixture"
+          mkdir -p "$fx/lib" && cd "$fx"
+          echo '{ "name": "fx" }' > package.json
+          echo '{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./*"] } } }' > tsconfig.json
+          printf 'export function withAuth<T>(h: T): T {\n  return h;\n}\n' > lib/auth.ts
+          for i in $(seq -w 0 39); do
+            mkdir -p "app/api/r$i"
+            if [ "$i" -lt 38 ]; then
+              printf 'import { withAuth } from "@/lib/auth";\n\nexport const GET = withAuth(async (req: Request) => {\n  return Response.json({ ok: true });\n});\n'
+            else
+              printf 'export async function GET(req: Request) {\n  return Response.json({ ok: true });\n}\n'
+            fi > "app/api/r$i/route.ts"
+          done
+          mkdir -p src/ui src/other
+          for i in $(seq 10 29); do
+            printf 'export function Card%s() {\n  return <div>c</div>;\n}\n' "$i" > "src/ui/c$i.tsx"
+            printf 'export function other%s() {\n  return %s;\n}\n' "$i" "$i" > "src/other/o$i.ts"
+          done
+          echo '.drift/cache/' > .gitignore
+          drift init
+          id=$(drift census --json | jq -r '.proposals[] | select(.rule_kind == "wrapped_by:call") | .id')
+          test -n "$id"
+          drift review --block "$id"
+          g() { git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false "$@"; }
+          g init -q -b base && g add -A && g commit -qm base
+          # What a pull request checkout has: its base branch as origin/<base>.
+          g update-ref "refs/remotes/origin/${GITHUB_BASE_REF:-main}" HEAD
+          g checkout -qb change
+          mkdir -p app/api/new
+          printf 'export async function POST(req: Request) {\n  return Response.json({ ok: true });\n}\n' > app/api/new/route.ts
+          g add -A && g commit -qm change
+      - name: Fake gh
+        run: |
+          mkdir -p "$RUNNER_TEMP/fake"
+          cat > "$RUNNER_TEMP/fake/gh" <<'SH'
+          #!/usr/bin/env bash
+          echo "gh $*" >> "$RUNNER_TEMP/gh.log"
+          exit 0
+          SH
+          chmod +x "$RUNNER_TEMP/fake/gh"
+          echo "$RUNNER_TEMP/fake" >> "$GITHUB_PATH"
+      - name: Run the Action on the fixture
+        id: drift
+        uses: ./
+        # A block violation fails the step; the next step asserts that it did.
+        continue-on-error: true
+        with:
+          working-directory: ${{ runner.temp }}/fixture
+          upload-sarif: file
+          comment: "true"
+          status: commit
+      - name: The Action's outputs
+        env:
+          OUTCOME: ${{ steps.drift.outcome }}
+          EXIT_CODE: ${{ steps.drift.outputs.exit-code }}
+          BLOCK: ${{ steps.drift.outputs.block }}
+          ADVISE: ${{ steps.drift.outputs.advise }}
+          SECURITY: ${{ steps.drift.outputs.security-findings }}
+          SECURITY_ADVICE: ${{ steps.drift.outputs.security-advice }}
+          UNCHECKED: ${{ steps.drift.outputs.unchecked }}
+          SARIF: ${{ steps.drift.outputs.sarif }}
+          REPORT: ${{ steps.drift.outputs.report }}
+          HOW: ${{ steps.drift.outputs.installed-from }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euxo pipefail
+          test "$OUTCOME" = failure
+          test "$EXIT_CODE" = 1
+          test "$BLOCK" = 1
+          test "$ADVISE" = 0
+          test "$SECURITY" = 0
+          test "$UNCHECKED" = 0
+          test "$HOW" = cached
+          jq -e '.runs[0].results | length == 1' "$SARIF"
+          jq -e '[.violations[] | select(.baselined | not)] | map(.path) == ["app/api/new/route.ts"]' "$REPORT"
+          grep -q "gh api --method POST repos/$GITHUB_REPOSITORY/statuses/" "$RUNNER_TEMP/gh.log"
+          if [ "$EVENT" = pull_request ]; then
+            jq -e '.diff.base' "$REPORT"
+            test "$SECURITY_ADVICE" = 1
+            grep -q "gh api --method POST repos/$GITHUB_REPOSITORY/issues/.*/comments" "$RUNNER_TEMP/gh.log"
+          fi

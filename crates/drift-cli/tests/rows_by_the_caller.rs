@@ -350,8 +350,13 @@ fn rows_filtered_by_the_caller_itself_scope_the_route_however_the_query_is_writt
 #[test]
 fn a_dependency_that_refuses_unless_the_caller_is_found_in_what_the_request_names() {
     let got = repo();
+    // Gap promote-membership: the lookup is of the caller and of a value the
+    // request sent, but the facts do not record which value (`rows:` names no
+    // parameter), and a FastAPI dependency is handed a query value under any name
+    // the path does not declare. Whether it is the space the URL names cannot be
+    // told: found, not proven. Before, "known membership_guard".
     assert_eq!(
-        got["/spaces/{space}/notes"], "known membership_guard",
+        got["/spaces/{space}/notes"], "unknown check_not_proven sides_not_caller_and_resource",
         "{got:?}"
     );
     // The lookup is made and nothing is refused on it.

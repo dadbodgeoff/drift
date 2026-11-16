@@ -133,8 +133,18 @@ impl Reading {
         {
             self.partly = Some(c);
         }
-        self.role_guards.extend(own.role_guards);
-        self.role_only.extend(own.role_only);
+        // A base read through a derived builder may be one already read on the way
+        // here (`auditedAdmin = admin.use(isAuthed)`): one guard is named once.
+        for g in own.role_guards {
+            if !self.role_guards.contains(&g) {
+                self.role_guards.push(g);
+            }
+        }
+        for o in own.role_only {
+            if !self.role_only.iter().any(|x| x.0 == o.0 && x.1 == o.1) {
+                self.role_only.push(o);
+            }
+        }
         self.found_guard |= own.found_guard;
     }
 
@@ -299,6 +309,23 @@ impl Concern for Authn {
         "entry_point"
     }
 
+    /// A route that signs the caller in the accepted way and checks more besides (a
+    /// body check, a second guard) still signs them in: the uses add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
+    /// A use that turns away a caller who is not signed in ([`enforces`]); one that only
+    /// identifies the caller, opens the route or checks a sending service does not.
+    fn enforces(&self, uses: &[Use]) -> Option<bool> {
+        Some(uses.iter().any(|u| super::authn::enforces(&u.mechanism)))
+    }
+
+    /// Sign-in is of the caller of a request: a background job has none.
+    fn needs_a_caller(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
     }
@@ -345,8 +372,9 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
         .collect();
     let py = sfile.lang == "py";
     // FastAPI runs every dependency of a route before its handler, and one that
-    // answers refuses: none can serve the request before another has run.
-    let dependencies = py && entry.adapter == "fastapi";
+    // answers refuses: none can serve the request before another has run. So does
+    // Litestar, with its guards.
+    let dependencies = py && matches!(entry.adapter.as_str(), "fastapi" | "litestar");
     // What the unit's own mount adds could not be read [STRICT]: never another
     // mount's guards, never none. What a FastAPI mount adds are dependencies: beside
     // a proven guard they change nothing.
@@ -484,7 +512,21 @@ pub fn read<'a>(cx: &Cx<'a>, unit: &UnitRef<'a>) -> Reading {
         {
             let mut own = Reading::default();
             wrap(cx, sfile, &w.wrapper, w.kind, &guards, None, &mut own);
-            r.position(crate::guard_position::read(cx, sfile, s, &w.wrapper), own, &w.wrapper);
+            let verdict = crate::guard_position::read(cx, sfile, s, &w.wrapper);
+            let unknown_here = matches!(verdict, crate::guard_position::Verdict::Unknown(_));
+            let nothing_here = matches!(verdict, crate::guard_position::Verdict::Nothing);
+            // A base a guarded builder is made from by adding the guard: the
+            // route that stands on the base itself is the one left open. Only
+            // where the position could not tell: what it proved stands.
+            if unknown_here && !own.signs_in() && unguarded_base(cx, &w.wrapper) {
+                let base = crate::mine::norm_ref(&w.wrapper).into_owned();
+                r.add(OPENS, &base, source(&base));
+                continue;
+            }
+            r.position(verdict, own, &w.wrapper);
+            if !nothing_here {
+                derived_bases(cx, sfile, s, &w.wrapper, &guards, &mut r);
+            }
             continue;
         }
         // Python: what stands at the position is read in one place
@@ -888,6 +930,160 @@ fn source(r: &str) -> VariantSource {
     }
 }
 
+/// The value a builder chain was made from: what stands before its first call's
+/// member (`a.ts#authedProcedure.input().use()` -> `a.ts#authedProcedure`). The
+/// same cut [`crate::guard_position`] makes of a bound builder.
+fn builder_base(derives_from: &str) -> &str {
+    // The cut is made in the value's name, after the module's path: a route
+    // group (`app/(auth)/trpc.ts`) or a dotted directory is no step.
+    let from = derives_from.find('#').map_or(0, |i| i + 1);
+    let Some(open) = derives_from[from..].find('(').map(|i| i + from) else {
+        return derives_from;
+    };
+    match derives_from[from..open].rfind('.') {
+        Some(dot) => &derives_from[..from + dot],
+        None => derives_from,
+    }
+}
+
+/// How many bases a derived builder is followed through.
+const MAX_BASES: usize = 4;
+
+/// A wrapper made from another builder of the repository by adding steps
+/// (`authedProcedure.input(..).use(..)`, or a function returning such a chain)
+/// runs its base's steps before its own: a guard the base is proven to be, at
+/// the route's guard position ([`crate::guard_position::read`]), guards the
+/// route too, whatever the added steps do. Each base is followed while it is
+/// itself derived, to [`MAX_BASES`]. A base that is a package's, or one whose
+/// position is not proven a guard, adds nothing: the wrapper's own reading
+/// stands.
+fn derived_bases(
+    cx: &Cx<'_>,
+    sfile: &FileFacts,
+    route: &Symbol,
+    w: &str,
+    guards: &[&str],
+    r: &mut Reading,
+) {
+    let mut cur = crate::mine::norm_ref(w).into_owned();
+    // The builders on the way from the wrapper to the base: each runs the base's
+    // steps, so a role guard one of them is already named as is the base's guard.
+    let mut chain: Vec<String> = Vec::new();
+    for _ in 0..MAX_BASES {
+        chain.push(cur.clone());
+        let Some(d) = cx.context().definition(&cur) else {
+            return;
+        };
+        if d.derives_from.is_empty() {
+            return;
+        }
+        let base = crate::mine::norm_ref(builder_base(&d.derives_from)).into_owned();
+        if base == cur || external(&base) || !base.contains('#') {
+            return;
+        }
+        if let crate::guard_position::Verdict::Guard(instrument) =
+            crate::guard_position::read(cx, sfile, route, &base)
+        {
+            // The base read as a route standing on it reads it ([`Reading::position`]):
+            // by its own reading where that signs in (`wrap isAuthed` of
+            // `authedProcedure = t.procedure.use(isAuthed)`), so a route on the
+            // derived builder follows the same practice as one on the base.
+            let mut own = Reading::default();
+            wrap(cx, sfile, &base, WrapKind::Call, guards, None, &mut own);
+            if own.signs_in() || !own.role_only.is_empty() {
+                // The same role guard reached through the base and through the
+                // builder standing on it (`auditedAdminProcedure =
+                // adminProcedure.use(isAuthed)`, already read as the role guard it
+                // is) is one guard, named once: by the builder the route stands on.
+                if r.role_guards.iter().any(|g| chain.contains(g)) {
+                    own.role_guards.clear();
+                }
+                r.absorb(own);
+                return;
+            }
+            let u = use_of("wrap", &instrument);
+            if !r.uses.contains(&u) {
+                r.add("wrap", &instrument, source(&instrument));
+            }
+            // The nearest proven base answers for the chain below it.
+            return;
+        }
+        cur = base;
+    }
+}
+
+/// The wrapper is the base another builder of the repository is made from, and
+/// that builder is proven a guard at a guard position while the wrapper is not
+/// ([`crate::guard_position::read`]): what the derived builder adds is the
+/// sign-in, so a route standing on the base is the one the repository leaves
+/// open (`publicProcedure`, of which `authedAdminProcedure =
+/// publicProcedure.use(isAdmin)` is made). Read from the derivation and the
+/// proof, never from the wrapper's name. Only where the wrapper adds no step of
+/// its own to what it is made from (`publicProcedure = t.procedure`): a wrapper
+/// whose steps were not read (`authed = t.procedure.use(sessionOf)`, with
+/// `admin = authed.use(isAdmin)` proven) may sign in by them, and is unknown,
+/// never open.
+fn unguarded_base(cx: &Cx<'_>, w: &str) -> bool {
+    let w = crate::mine::norm_ref(w).into_owned();
+    if external(&w) || !w.contains('#') {
+        return false;
+    }
+    if !adds_no_step(cx, &w) {
+        return false;
+    }
+    for f in &cx.facts.files {
+        for g in &f.symbols {
+            if g.derives_from.is_empty()
+                || crate::mine::norm_ref(builder_base(&g.derives_from)) != w.as_str()
+            {
+                continue;
+            }
+            let value = format!("{}#{}", f.path, g.name);
+            if matches!(
+                crate::guard_position::read(cx, f, g, &value),
+                crate::guard_position::Verdict::Guard(_)
+            ) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// The binding `w` is another bound as it is (`publicProcedure = t.procedure`,
+/// `p = base`), followed to [`MAX_BASES`] bindings, with no builder step anywhere
+/// on the way: the value that built the first of them (`initTRPC.create()`) is all
+/// it runs ([`unguarded_base`]). A step added on the way (`.use(..)`), a binding of
+/// the repository that does not resolve, or a chain followed past the bound is not
+/// that.
+fn adds_no_step(cx: &Cx<'_>, w: &str) -> bool {
+    let mut cur = w.to_string();
+    for at in 0..MAX_BASES {
+        let Some(d) = cx.context().definition(&cur) else {
+            // A package's value is where the chain starts; anything else of the
+            // repository was not read.
+            return at > 0 && external(&cur);
+        };
+        if d.derives_from.is_empty() {
+            // `w` itself built by a call: what that call builds is not read. A
+            // binding on the way built only by a package's calls
+            // (`initTRPC.create()`) is where the chain starts; one built by the
+            // repository's own function (`makeProcedure()`, which may add the
+            // guard) or by no call the facts record was not read.
+            return at > 0 && !d.calls.is_empty() && d.calls.iter().all(|c| external(c));
+        }
+        if d.derives_from.contains('(') {
+            return false;
+        }
+        let next = crate::mine::norm_ref(&d.derives_from).into_owned();
+        if next == cur {
+            return false;
+        }
+        cur = next;
+    }
+    false
+}
+
 /// Reads one wrapper; true when it declares the route public (`@Public()`).
 fn wrap(
     cx: &Cx<'_>,
@@ -1260,6 +1456,17 @@ fn role_only_guard(cx: &Cx<'_>, g: &str) -> bool {
     })
 }
 
+/// The one switch for reading a shared-secret refusal
+/// ([`drift_core::controls::REFUSES_SECRET`]) as `service_auth`: a header
+/// compared whole with a value of the environment, the body left where they
+/// differ. Off: the facts do not show that the value is a secret (an `Origin` or
+/// `Host` compared with the app's public URL reads the same), so such a refusal is
+/// a check found and not proven, unknown ([`UnknownReason::CheckNotProven`]),
+/// never `service_auth`.
+fn shared_secret_refusal_is_service_auth() -> bool {
+    false
+}
+
 /// Reads one body the entry point runs (`py`: a Python one; `request`: of an entry
 /// point a remote caller reaches, [`REQUEST_KINDS`]). `wraps` are the handler's
 /// own wrappers (normalised), which a body call is not ([`security::not_a_body_call`]).
@@ -1281,6 +1488,24 @@ fn body(
     }
     for instrument in &signature.unproven {
         r.call_unknown(UnknownReason::SignatureNotProven, instrument);
+    }
+    // TypeScript: the body leaves wherever a request header differs from a secret
+    // the environment holds, outside every branch
+    // ([`drift_core::controls::REFUSES_SECRET`]): a sending service is checked.
+    if !py {
+        for c in &s.controls {
+            if let Some(header) = c.strip_prefix(drift_core::controls::REFUSES_SECRET) {
+                let instrument = format!("header:{header}");
+                if !shared_secret_refusal_is_service_auth() {
+                    r.call_unknown(UnknownReason::CheckNotProven, &instrument);
+                    continue;
+                }
+                let u = use_of(SERVICE_AUTH, &instrument);
+                if !r.uses.contains(&u) {
+                    r.add(SERVICE_AUTH, &instrument, VariantSource::Usage);
+                }
+            }
+        }
     }
     // [STRICT] TypeScript: a branch on the caller's value hands back what the facts
     // do not read (a refusal builder's response through a local, a status written as
@@ -1367,6 +1592,27 @@ fn body(
         } else {
             format!("{}{}", c.source, c.reads)
         };
+        // TypeScript: a 401 is no sign-in check by its status. One on what the
+        // request sent (a CAPTCHA answer, a new password) is input validation and
+        // says nothing of who calls, and so is the stored value such input must
+        // match (the CAPTCHA's answer); a header of no credential's name is found,
+        // not proven ([`super::signin_test::tested`]). Each is unknown, never known
+        // and never none. A declared or a library's check, and one whose value the
+        // facts say nothing of, are read as before.
+        if !py
+            && declared(cx, super::AUTHN, &c.source).is_none()
+            && !authn_callee(&c.source)
+        {
+            match super::signin_test::tested(cx, c, &s.body_checks) {
+                super::signin_test::Tested::Caller | super::signin_test::Tested::Unsaid => {}
+                // No sign-in check, and the body refuses some callers by what it
+                // tests: what else it tests is not all read, so never none.
+                super::signin_test::Tested::Input | super::signin_test::Tested::CannotTell => {
+                    r.call_unknown(UnknownReason::CheckNotProven, &what);
+                    continue;
+                }
+            }
+        }
         // [STRICT] TypeScript: a `try` whose handler answers 401 for some of what it
         // catches, or after which the request is handed on all the same: found, and
         // not proven to turn anyone away.
@@ -1385,6 +1631,20 @@ fn body(
             r.call_unknown(UnknownReason::Unresolved, &what);
             continue;
         }
+        // Python: a 401 on a value of the module rather than of this request (a flag,
+        // a name bound to an environment read, a field of an object the module made:
+        // `if not LOCKED: raise HTTPException(401)`) tests no caller: every request
+        // gets the same answer, so it signs no one in. Found, not proven: unknown,
+        // never known and never none ([`module_value`]). A declared check or a
+        // library's is read as before.
+        if py
+            && declared(cx, super::AUTHN, &c.source).is_none()
+            && !authn_callee(&c.source)
+            && module_value(cx, c)
+        {
+            r.call_unknown(UnknownReason::CheckNotProven, &what);
+            continue;
+        }
         let src = if declared(cx, super::AUTHN, &c.source).is_some() {
             VariantSource::Declared
         } else if authn_callee(&c.source) {
@@ -1393,6 +1653,18 @@ fn body(
             VariantSource::Usage
         };
         r.add("body_check", &what, src);
+    }
+    // TypeScript: the body leaves by a refusal (a `throw`, or an error handed to the
+    // framework's continuation, the handler's own parameter by its position) for
+    // every request for which what gives the caller gave nothing
+    // ([`security::refuses_without_identity`]): a check of the body, the one
+    // `drift security` lists it by. Only what a giver proven to hand back who calls,
+    // or nothing, gave counts; any other test is not read here.
+    if !py
+        && ctx.since_measured()
+        && let Some(giver) = security::refuses_without_identity(ctx, s)
+    {
+        r.add("body_check", &crate::mine::norm_ref(giver), source(giver));
     }
     // [STRICT] Python: the body answers 401 where no check records why (after a
     // branch that returns for a signed-in caller): found, never none.
@@ -1916,6 +2188,28 @@ fn names_service_check(c: &str) -> bool {
 fn names_guard(c: &str) -> bool {
     let last = common::short(c).rsplit('.').next().unwrap_or_default();
     crate::vocab::refuse::names_access_control(&format!("x#{last}"))
+}
+
+/// Whether the value a Python check tests is the module's, the same for every request
+/// ([`body`]): the check reads a module-level name of the repository (or a member of
+/// one) that the module binds once, as a constant (a literal, an environment read,
+/// whatever it computes at import), or as a variable whose value only the
+/// repository's own code makes (`box = Box()`). A variable a package's call makes
+/// (`current_user = LocalProxy(...)`, a `ContextVar`) may hold each request's own
+/// value, and a function's or a class's name is read as before.
+fn module_value(cx: &Cx<'_>, c: &drift_core::BodyCheck) -> bool {
+    let source = c.source.as_str();
+    if source.is_empty() || external(source) || source.contains(':') || !source.contains('#') {
+        return false;
+    }
+    let Some(d) = cx.context().definition(&crate::mine::norm_ref(source)) else {
+        return false;
+    };
+    match d.kind {
+        drift_core::SymbolKind::Const => true,
+        drift_core::SymbolKind::Variable => d.calls.iter().all(|call| !external(call)),
+        _ => false,
+    }
 }
 
 // ---------- the Next.js middleware ----------
@@ -3663,5 +3957,40 @@ mod tests {
                 "{path}"
             );
         }
+    }
+
+    /// A body that refuses (throws, or hands an error to its continuation) for every
+    /// request for which a giver of who calls gave nothing has a body check by that
+    /// giver; a giver not proven to hand back who calls gives none.
+    #[test]
+    fn a_refusal_without_the_caller_is_a_body_check() {
+        let route = "app/api/projects/[projectId]/route.ts";
+        let with = |gives: bool| {
+            let mut facts = fixtures::next_clerk();
+            for f in facts.files.iter_mut() {
+                for s in f.symbols.iter_mut() {
+                    if f.path == route && s.name == "GET" {
+                        s.controls.push(format!(
+                            "{}lib/db.ts#db",
+                            drift_core::controls::REFUSES_WITHOUT
+                        ));
+                    }
+                    if gives && f.path == "lib/db.ts" && s.name == "db" {
+                        s.controls
+                            .push(drift_core::controls::RETURNS_CALLER.to_string());
+                    }
+                }
+            }
+            facts
+        };
+        let d = empty();
+        let facts = with(true);
+        let cx = Cx::new(&facts, &d);
+        let k = key(&of(&assign_all(&Authn, &cx), route, "GET"));
+        assert!(k.contains("body_check:lib/db.ts#db"), "{k}");
+        let facts = with(false);
+        let cx = Cx::new(&facts, &d);
+        let k = key(&of(&assign_all(&Authn, &cx), route, "GET"));
+        assert!(!k.contains("lib/db.ts#db"), "{k}");
     }
 }

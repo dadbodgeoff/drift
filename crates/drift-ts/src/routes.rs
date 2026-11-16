@@ -10,6 +10,9 @@
 
 use super::*;
 
+#[path = "servers.rs"]
+mod servers;
+
 const NEST_HTTP: &[(&str, &str)] = &[
     ("Get", "GET"),
     ("Post", "POST"),
@@ -73,6 +76,49 @@ pub(super) fn object_prop<'b, 'a>(
         }
         _ => None,
     })
+}
+
+/// What a registration on a Koa application or `@koa/router` router is given, as
+/// the Express reading takes it: `child.routes()` and `child.middleware()` mount
+/// the router `child`; `child.allowedMethods()` answers only what no route matched
+/// (an `OPTIONS`, a method a path does not serve) and stands before no route; a
+/// named route (`router.get("user", "/users/:id", ...)`) is at its second
+/// argument. Gives the routers a `use` mounts.
+fn koa_arguments<'b, 'a>(method: &str, exprs: &mut Vec<&'b Expression<'a>>) -> Vec<oxc_span::Span> {
+    // `<router>.<name>()`: the router and the name.
+    fn called<'b, 'a>(e: &'b Expression<'a>) -> Option<(&'b Expression<'a>, &'b str)> {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return None;
+        };
+        let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee) else {
+            return None;
+        };
+        let object = unwrap_expr(&m.object);
+        (c.arguments.is_empty()
+            && matches!(
+                object,
+                Expression::Identifier(_) | Expression::StaticMemberExpression(_)
+            ))
+        .then_some((object, m.property.name.as_str()))
+    }
+    let mut mounted = Vec::new();
+    if method == "use" {
+        exprs.retain(|e| called(e).is_none_or(|(_, name)| name != "allowedMethods"));
+        for e in exprs.iter_mut() {
+            let cur: &'b Expression<'a> = e;
+            if let Some((router, "routes" | "middleware")) = called(cur) {
+                *e = router;
+                mounted.push(router.span());
+            }
+        }
+    } else if exprs.len() >= 3
+        && exprs[..2]
+            .iter()
+            .all(|e| matches!(unwrap_expr(e), Expression::StringLiteral(_)))
+    {
+        exprs.remove(0);
+    }
+    mounted
 }
 
 /// Call arguments as expressions, with spreads (`...protectedMiddleware`) unwrapped.
@@ -211,9 +257,11 @@ impl Lowerer<'_> {
             ("hono", "Hono", "", true) | ("@hono/zod-openapi", "OpenAPIHono", "", true) => {
                 Some("hono")
             }
-            // `new Router()` of `@koa/router`: its routes are listed since the
-            // measured build, and what a Koa middleware does is not read.
-            ("@koa/router" | "koa-router", "default", "", true) if !unmeasured_listing() => {
+            // `new Router()` of `@koa/router` and `new Koa()`: their routes and
+            // what runs before them are listed since the measured build.
+            ("@koa/router" | "koa-router" | "koa", "default", "", true)
+                if !unmeasured_listing() =>
+            {
                 Some("koa")
             }
             _ => None,
@@ -1875,6 +1923,41 @@ impl Lowerer<'_> {
         }
     }
 
+    /// The calls a handler value is handed that build what it wraps: `searchProducts()`
+    /// in `asyncHandler(searchProducts())`, through nested wrappers
+    /// (`a(b(makeHandler()))`), each as the call is named (`routes/search.ts#
+    /// searchProducts()`). A bound method (`ctrl.list.bind(ctrl)`) is a reference
+    /// ([`Lowerer::inner_handler_refs`]), and globals are left out: neither is a
+    /// function the repository makes.
+    fn handler_factories(&self, e: &Expression, out: &mut Vec<RawRef>, depth: usize) {
+        if depth > 3 {
+            return;
+        }
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return;
+        };
+        for a in &c.arguments {
+            let Some(x) = a.as_expression() else {
+                continue;
+            };
+            let Expression::CallExpression(inner) = unwrap_expr(x) else {
+                continue;
+            };
+            let binds = matches!(
+                unwrap_expr(&inner.callee),
+                Expression::StaticMemberExpression(m) if m.property.name == "bind"
+            );
+            if !binds
+                && let Some(r) = self.canon(x)
+                && !matches!(r.base, RawBase::Global(_))
+                && !out.contains(&r)
+            {
+                out.push(r);
+            }
+            self.handler_factories(x, out, depth + 1);
+        }
+    }
+
     // ------------------------------------------------------------------ Express / Hono / Fastify (top level)
 
     /// The adapter of the router a registration chain starts from, when the chain
@@ -1932,7 +2015,13 @@ impl Lowerer<'_> {
             .unwrap_or("express");
         let line = self.line_of(e.span().start);
         for (method, args) in regs {
-            let exprs: Vec<&Expression> = arg_exprs(args);
+            let mut exprs: Vec<&Expression> = arg_exprs(args);
+            // The routers a Koa `use` mounts (`router.routes()`): mounted, never a
+            // middleware of what is registered after them.
+            let mounted = match adapter {
+                "koa" => koa_arguments(&method, &mut exprs),
+                _ => Vec::new(),
+            };
             // Under a condition, only the routes are read: what is registered beside
             // them there runs for no route that is proven.
             if self.scope_conditional
@@ -2144,6 +2233,13 @@ impl Lowerer<'_> {
                         for x in &exprs[1..] {
                             self.note_hook(&receiver, &prefix, "use", x);
                         }
+                        // `app.use("/ftp/:file", servePublicFiles())` is a mount like
+                        // any other: what the call makes may be a router, a middleware
+                        // that hands on, or a handler, and no fact of this file says
+                        // which. It is listed as no route; a function it makes that
+                        // reads a request and answers, and that nothing listed reaches,
+                        // is in the inventory's "not listed" (`unreached_handlers`),
+                        // never an unguarded entry point.
                         if let Some(target) = exprs.last().and_then(|t| self.canon(t)) {
                             let mut middleware =
                                 self.express.get(&receiver).cloned().unwrap_or_default();
@@ -2218,9 +2314,15 @@ impl Lowerer<'_> {
                             calls.extend(before.calls);
                             hooks.extend(before.unread.iter().map(|how| Self::unread_hook(how)));
                             hooks.extend(before.members.into_iter().map(|(_, member)| member));
+                            // A Koa router mounts what it is given under its own
+                            // prefix.
+                            let prefix = match adapter {
+                                "koa" => base_of.clone().unwrap_or_default(),
+                                _ => String::new(),
+                            };
                             if self.scope == 0 || self.closure_routers.contains(&receiver) {
                                 self.out.mounts.push(RawMount {
-                                    prefix: String::new(),
+                                    prefix,
                                     target,
                                     middleware,
                                     parent: receiver.clone(),
@@ -2233,7 +2335,7 @@ impl Lowerer<'_> {
                         }
                         // Router-level middleware guards every route registered after it.
                         let mut mws = Vec::new();
-                        for x in &exprs {
+                        for x in exprs.iter().filter(|x| !mounted.contains(&x.span())) {
                             self.collect_middleware(x, &mut mws);
                             // What has no name where it is given may be the guard of
                             // the routes that follow, whatever it is.
@@ -2467,6 +2569,18 @@ impl Lowerer<'_> {
                             );
                             let mut named = Vec::new();
                             self.inner_handler_refs(handler, &mut named, 0);
+                            // What a wrapper is handed that a call builds
+                            // (`asyncHandler(searchProducts())`): the function that
+                            // call makes is what answers, a call of the route for the
+                            // readings that list, as `app.get("/p", login())` is.
+                            let mut made = Vec::new();
+                            self.handler_factories(handler, &mut made, 0);
+                            for mut r in made {
+                                r.member.push_str("(ref)");
+                                if !sym.listed_calls.contains(&r) {
+                                    sym.listed_calls.push(r);
+                                }
+                            }
                             if wrapped.is_empty()
                                 && named.is_empty()
                                 && let Some(r) = self.middleware_ref(handler)
@@ -2484,12 +2598,6 @@ impl Lowerer<'_> {
                                 .flatten()
                                 .cloned(),
                         );
-                        // Koa: a middleware answers by setting `ctx.status` or by
-                        // `ctx.throw`, which the reading of a guard does not follow.
-                        if adapter == "koa" {
-                            unread
-                                .push("what a Koa middleware does, which is not read".to_string());
-                        }
                         // A route the module registers itself, on a router a
                         // function or a condition registers a middleware on: whether
                         // that runs before the route is not read. The measured build
@@ -3593,6 +3701,56 @@ pub(super) fn base_path(init: &Expression) -> Option<String> {
     })
 }
 
+/// The prefix a `@koa/router` router is made with (`new Router({ prefix: "/api"
+/// })`): `?` where it is given no literal.
+pub(super) fn koa_prefix(init: &Expression) -> Option<String> {
+    let Expression::NewExpression(n) = unwrap_expr(init) else {
+        return None;
+    };
+    let Expression::ObjectExpression(o) = n.arguments.first()?.as_expression().map(unwrap_expr)?
+    else {
+        return None;
+    };
+    let given = object_prop(o, "prefix")?;
+    Some(route_text(given).unwrap_or_else(|| "?".to_string()))
+}
+
+impl Lowerer<'_> {
+    /// `router.prefix("/api")` at the top level of the module, for a `@koa/router`
+    /// router of it: every route of the router is under it, those registered
+    /// before the call too. `?` where it is given no literal, or given twice.
+    pub(super) fn koa_prefixes(&mut self, program: &Program) {
+        for st in &program.body {
+            let Statement::ExpressionStatement(x) = st else {
+                continue;
+            };
+            let Expression::CallExpression(c) = unwrap_expr(&x.expression) else {
+                continue;
+            };
+            let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee) else {
+                continue;
+            };
+            let Expression::Identifier(id) = unwrap_expr(&m.object) else {
+                continue;
+            };
+            let router = id.name.as_str();
+            if m.property.name != "prefix" || self.router_adapter.get(router) != Some(&"koa") {
+                continue;
+            }
+            let given = c
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .and_then(route_text);
+            let base = match (self.base_paths.contains_key(router), given) {
+                (false, Some(p)) => p,
+                _ => "?".to_string(),
+            };
+            self.base_paths.insert(router.to_string(), base);
+        }
+    }
+}
+
 /// The paths a registration is given: one for a literal, each for an array of
 /// literals (`app.use(["/a", "/b"], router)`, `app.get(["/p", "/q"], handler)`);
 /// none for anything else.
@@ -4295,6 +4453,22 @@ impl<'s> Lowerer<'s> {
             });
         }
         self.handler_facts(p.handler, &mut sym);
+        // A handler that names the input only to leave it unread (`async ({ ctx,
+        // input }) => handler({ ctx })`): `input_unread`, the listed reading only,
+        // as for a function bound to a name ([`record_input_unread`]).
+        match p.handler.map(unwrap_expr) {
+            Some(Expression::ArrowFunctionExpression(a)) => {
+                record_input_unread(&mut sym, self.scoping, &a.params, || {
+                    ReachesArguments::of_arrow(&a.body)
+                });
+            }
+            Some(Expression::FunctionExpression(f)) => {
+                record_input_unread(&mut sym, self.scoping, &f.params, || {
+                    ReachesArguments::of(f.body.as_deref())
+                });
+            }
+            _ => {}
+        }
         sym.app_unread.extend(p.position.unread.iter().cloned());
         for c in &p.position.calls {
             if !sym.guard_calls.contains(c) {
@@ -4534,6 +4708,28 @@ impl<'s> Lowerer<'s> {
                                 base,
                                 member: String::new(),
                             });
+                        }
+                        // Each pipe the decorator is handed (`@Param("id",
+                        // ParseIntPipe)`, `@Body(new ValidationPipe())`): the
+                        // framework runs it on the value before the handler
+                        // ([`drift_core::controls::PIPES_INPUT`], listed reading).
+                        if let Expression::CallExpression(c) = unwrap_expr(&d.expression) {
+                            for a in c.arguments.iter().filter_map(|a| a.as_expression()) {
+                                let pipe = match unwrap_expr(a) {
+                                    Expression::NewExpression(n) => self.canon(&n.callee),
+                                    e @ (Expression::Identifier(_)
+                                    | Expression::StaticMemberExpression(_)) => self.canon(e),
+                                    _ => None,
+                                };
+                                if let Some(p) =
+                                    pipe.filter(|r| !matches!(r.base, RawBase::Global(_)))
+                                {
+                                    sym.listed_refs.push((
+                                        drift_core::controls::PIPES_INPUT.to_string(),
+                                        vec![p],
+                                    ));
+                                }
+                            }
                         }
                     }
                     Some("Headers") => {

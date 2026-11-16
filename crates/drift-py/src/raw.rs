@@ -7,6 +7,10 @@
 use drift_core::{SymbolKind, WrapKind};
 use serde::{Deserialize, Serialize};
 
+#[path = "raw_frameworks.rs"]
+mod frameworks;
+pub use frameworks::*;
+
 /// Where a reference points before module resolution.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum RawBase {
@@ -225,6 +229,12 @@ pub struct RawSymbol {
     pub string_literals: u32,
     pub suppressions: Vec<String>,
     pub reads: Vec<String>,
+    /// Env reads the measured build did not read, beside [`Self::reads`] (Python
+    /// lowering 75): through python-decouple, environs, django-environ or a
+    /// pydantic settings class (`decouple.SECRET_KEY`). Linked into the listed
+    /// reading only ([`drift_core::Listed`]), after the build `a0779066`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_reads: Vec<String>,
     pub throws: Vec<RawRef>,
     pub sinks: Vec<String>,
     /// Sinks the measured build did not read, beside [`Self::sinks`] (Python
@@ -536,6 +546,13 @@ pub struct RawInputUse {
     /// `*args` / `**kwargs`: route kwargs may arrive there.
     pub variadic: bool,
     pub params: Vec<RawParamKind>,
+    /// Each of [`RawInputUse::params`], in its order: the parameter's name, and
+    /// whether it is declared with a type its value is parsed into, one a request
+    /// value can fail to be (`uuid.UUID`, `int`, `EmailStr`, a model), rather than
+    /// one every value already is (`str`, `Any`) or none. What the framework does
+    /// with the declaration is the linker's to say, by the entry's adapter.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed: Vec<(String, bool)>,
 }
 
 /// A callable a function returns ([`RawSymbol::returns`]).
@@ -679,6 +696,17 @@ pub struct RawBodyCheck {
 /// ([`RawBodyCheck::since`]). Linked as that control for what mining reads, and
 /// dropped otherwise.
 pub(crate) const UNREAD_EXIT_MEASURED: &str = "unread_exit:measured";
+
+/// In front of a fact the lowering writes in a function's controls, a method's
+/// [`RawMember::unread`] or a body's [`RawSymbol::fed_sinks`]: a reading made since
+/// the measured build. The linker keeps what follows for the listed reading and
+/// drops it from what mining reads (`Linker::since_marked`), so the measured copy
+/// stays as the measured build wrote it (stream S15c).
+pub(crate) const SINCE: &str = "since:";
+
+/// In front of a fact the measured build wrote and the reading made since does
+/// not: kept, without it, for what mining reads only ([`SINCE`]'s other half).
+pub(crate) const MEASURED: &str = "measured:";
 
 /// A condition whose first exit raises an error class ([`drift_core::RaiseCheck`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -1033,6 +1061,35 @@ pub enum MountTarget {
 /// How many [`RawFile::router_uses`] one file keeps.
 pub const MAX_ROUTER_USES: usize = 2048;
 
+/// The 1-based line a mount or a registration is written on, for what Drift did
+/// not list of it ([`crate::link::unlisted`]); 0 where none was kept. Every two
+/// compare equal, so that the line never changes which mounts or registrations
+/// are the same one ([`RawFile::mounts`] and [`RawFile::registrations`] are
+/// deduplicated, keeping the first written).
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct Site(pub u32);
+
+impl PartialEq for Site {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for Site {}
+
+impl PartialOrd for Site {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Site {
+    fn cmp(&self, _: &Self) -> std::cmp::Ordering {
+        std::cmp::Ordering::Equal
+    }
+}
+
 /// One router mounted under another: `app.include_router(r, prefix="/v1")`,
 /// `app.register_blueprint(bp)`, Django `path("api/", include("api.urls"))`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -1065,6 +1122,9 @@ pub struct RawMount {
     /// mount as the other fields say (no parent, under a prefix that is not known).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<Box<RawTableMount>>,
+    /// Where the mount is written ([`Site`]).
+    #[serde(default)]
+    pub line: Site,
 }
 
 /// A view registered by reference from another place: Django `path("x/", views.f)`,
@@ -1105,6 +1165,9 @@ pub struct RawRegistration {
     /// view_func=login_required(view))`, by their reference.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub since_guards: Vec<(Option<RawRef>, String)>,
+    /// Where the registration is written ([`Site`]).
+    #[serde(default)]
+    pub line: Site,
 }
 
 /// `@bp.before_request` and similar hooks that guard every route of a router.
@@ -1359,6 +1422,170 @@ pub struct RawFile {
     /// `app.add_exception_handler(X, handler)`: what the handler handles, and the handler.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub error_handlers: Vec<(RawHandles, RawRef)>,
+    /// Registrations written as a route is that lowering could not make into one
+    /// ([`crate::link::unlisted::RawUnlisted`]): a path or a handler that is computed,
+    /// a route table that is not read. Reporting only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted: Vec<crate::link::unlisted::RawUnlisted>,
+    /// What the django-ninja, Litestar and Sanic readings know of the file, for the
+    /// listed link only. Lowering 75.
+    #[serde(default, skip_serializing_if = "RawFrameworks::is_empty")]
+    pub frameworks: RawFrameworks,
+    /// aiohttp, Tornado, Falcon, Channels, management commands, Huey and arq
+    /// ([`crate::lower::servers`]): listed since the measured build (lowering 75).
+    #[serde(
+        default,
+        skip_serializing_if = "crate::lower::servers::RawServers::is_empty"
+    )]
+    pub servers: crate::lower::servers::RawServers,
+    /// What the file says of GraphQL schemas and their resolvers ([`RawGraphql`]):
+    /// read by the listed reading only. Python lowering 75; omitted when empty.
+    #[serde(default, skip_serializing_if = "RawGraphql::is_empty")]
+    pub graphql: RawGraphql,
+}
+
+/// What a file says of GraphQL (strawberry, graphene and graphene-django, ariadne),
+/// before resolution: the schemas it builds, the object types it defines, the
+/// ariadne objects it binds resolvers to, and the views it hands a schema to. Every
+/// resolver of a root field (Query, Mutation, Subscription) of a schema Drift ties
+/// to its root types is an entry point of kind `graphql`; the linker decides which
+/// those are. Recorded only in a file that imports one of the libraries.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawGraphql {
+    pub schemas: Vec<RawGqlSchema>,
+    pub types: Vec<RawGqlType>,
+    /// ariadne: `query = QueryType()`, `ObjectType("Mutation")`.
+    pub bindables: Vec<RawGqlBindable>,
+    /// ariadne: `@query.field("name")`, `query.set_field("name", resolver)`.
+    pub binds: Vec<RawGqlBind>,
+    /// `View.as_view(schema=schema)`: the view a schema is served by.
+    pub served: Vec<RawGqlServed>,
+    /// The methods of the file's classes that may resolve a field (decorated with
+    /// one of strawberry's field decorators; graphene's `resolve_<field>`, `mutate`,
+    /// `mutate_and_get_payload`, `get_queryset`), as symbols named `Class.method`:
+    /// a symbol of the listed reading where an entry point names it, of no other.
+    pub methods: Vec<RawSymbol>,
+}
+
+impl RawGraphql {
+    pub fn is_empty(&self) -> bool {
+        self.schemas.is_empty()
+            && self.types.is_empty()
+            && self.bindables.is_empty()
+            && self.binds.is_empty()
+            && self.served.is_empty()
+            && self.methods.is_empty()
+    }
+}
+
+/// A schema built in the file: `strawberry.Schema(query=Query, mutation=Mutation)`,
+/// `graphene.Schema(...)`, ariadne's `make_executable_schema(type_defs, query, ...)`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlSchema {
+    /// `strawberry`, `graphene` or `ariadne`.
+    pub library: String,
+    pub line: u32,
+    /// The module-level name it is bound to (`schema = strawberry.Schema(...)`).
+    pub name: Option<String>,
+    /// Each root given: the operation (`QUERY`, `MUTATION`, `SUBSCRIPTION`) and the
+    /// root type.
+    pub roots: Vec<(String, RawGqlRoot)>,
+    /// ariadne: the bindables given, by reference.
+    pub bindables: Vec<RawRef>,
+    /// What was given that is not read (`query=make_query()`, `*bindables`), in
+    /// the code's words: what it holds is not listed.
+    pub unread: Vec<String>,
+}
+
+/// A root type as a schema is given it.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawGqlRoot {
+    /// A class by name.
+    Ref(RawRef),
+    /// strawberry's `merge_types("Query", (A, B))` written in place: the type's
+    /// name and the classes merged.
+    Merged(String, Vec<RawRef>),
+}
+
+/// A module-level class of a file that imports a GraphQL library, with what makes
+/// a field of it.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlType {
+    pub name: String,
+    pub line: u32,
+    /// The bases as written (a strawberry type's fields include those of the types
+    /// it is built on, a graphene one's those of its mixins); for
+    /// `Query = merge_types("Query", (A, B))`, the classes merged.
+    pub bases: Vec<RawRef>,
+    pub fields: Vec<RawGqlField>,
+    /// The methods of [`RawGraphql::methods`] that are this class's, by name.
+    pub methods: Vec<String>,
+    /// graphene: the types of the class's `Arguments` (or `Input`) attributes, the
+    /// input of the mutation it is.
+    pub args: Vec<RawRef>,
+}
+
+/// A field of an object type.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlField {
+    /// The Python name (strawberry and graphene name the GraphQL field after it).
+    pub name: String,
+    pub line: u32,
+    pub resolver: RawGqlResolver,
+    /// strawberry's `permission_classes=[...]`, and the permissions of a
+    /// `PermissionExtension` (or any other extension) given in `extensions=[...]`.
+    pub permissions: Vec<RawRef>,
+    /// A permission list or an extension that is not read, by its words.
+    pub unread: Vec<String>,
+    /// graphene: the types of the field's arguments (`graphene.Field(User,
+    /// data=UserInput())`).
+    pub args: Vec<RawRef>,
+}
+
+/// What resolves a field.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawGqlResolver {
+    /// A method of the class (`@strawberry.field def user(self, ...)`).
+    Method(String),
+    /// A function given (`strawberry.field(resolver=get_user)`).
+    Function(RawRef),
+    /// graphene: a mutation class mounted (`create_user = CreateUser.Field()`).
+    Mounted(RawRef),
+    /// graphene-django: a connection field of a node type
+    /// (`DjangoFilterConnectionField(UserNode)`).
+    Connection(RawRef),
+    /// Declared only (`user = graphene.Field(User)`): graphene resolves it with the
+    /// type's `resolve_<name>`, where there is one.
+    Declared,
+}
+
+/// ariadne: a module-level object resolvers are bound to (`query = QueryType()`).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlBindable {
+    pub name: String,
+    /// The GraphQL type it binds (`Query`).
+    pub type_name: String,
+    pub line: u32,
+}
+
+/// ariadne: a resolver bound to a field of a bindable.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlBind {
+    pub bindable: RawRef,
+    pub field: String,
+    pub resolver: RawRef,
+    pub line: u32,
+    /// The decorators that are no wrap of the resolver where a decorator binds it:
+    /// the binding decorator itself and those above it, which wrap what it hands
+    /// back, not what it registered.
+    pub unwraps: Vec<RawRef>,
+}
+
+/// A schema handed to a view: `GraphQLView.as_view(schema=schema)`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawGqlServed {
+    pub view: RawRef,
+    pub schema: RawRef,
 }
 
 /// One entry of a [`RawRefList`].
@@ -1416,6 +1643,7 @@ impl RawSymbol {
             string_literals: 0,
             suppressions: vec![],
             reads: vec![],
+            since_reads: vec![],
             throws: vec![],
             sinks: vec![],
             since_sinks: vec![],

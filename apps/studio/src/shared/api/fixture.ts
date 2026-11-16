@@ -4,22 +4,33 @@
 // on large public repos for performance work). Writes (review, init, a practice
 // made a convention) change only this tab's memory; history lives in localStorage.
 import { parseDocument } from "yaml";
-import type { AbRow, Census, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { AbRow, Census, CensusWhy, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
-import { fixtureConvention, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
+import { type RecordedRun, fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand, promoteFlags, recordedRun } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
+import { baselineCommand } from "@/shared/lib/baseline";
 import { answerPlan } from "@/shared/lib/questions";
-import type { Answer } from "@/shared/ipc/contract";
+import type { Answer, Verdict } from "@/shared/ipc/contract";
+import type { FeedbackMark, FeedbackMarks, UpgradeOutcome } from "@/shared/contract/screens";
 import { type Decision, type Loaded, type StudiesData, type StudioApi, retain } from "./types";
 
 interface Index {
   /**
    * `errors`: the repository has errors.json, what drift printed when it refused to run there (make-round11-fixtures.mjs).
    * `practices`: the repository has practices.json (`drift practices --json`); `map`: map.json (`drift map --json`).
+   * `funnel`: funnel.json (`drift census --why --json`); `promoteList`: promote-list.json (`drift practices promote --list --json`).
+   * `securityTop`: security-top.json (`drift security --top 0 --json`); `baseline`: security-baseline.json (what
+   * `drift security --write-baseline` printed and wrote on a copy of the repository, make-harbor-fixtures.mjs).
+   * `promoteRuns`: promote-runs.json, what `drift practices promote ... --json` answered run after run (make-promote-fixtures.mjs).
    */
-  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean }[];
+  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean; securityTop?: boolean; baseline?: boolean; promoteRuns?: boolean }[];
   sessions: { id: string; project: string; title: string; bytes: number; modified: number; hasState: boolean }[];
   studies: { census: string[]; ab: string[]; runs?: string[]; variants?: { path: string; variant: string }[] };
+}
+
+/** fixtures/screens/index.json (scripts/make-screens-fixtures.mjs): which repository has which of its files. */
+interface ScreensIndex {
+  repos: Record<string, { fromMap?: boolean; upgrade?: boolean; upgradeApply?: boolean; marks?: boolean }>;
 }
 
 const PROVENANCE = { commit: "4f2a91c", branch: "main", driftVersion: "drift 0.1.0-dev" };
@@ -36,6 +47,10 @@ export class FixtureApi implements StudioApi {
   private setApart = new Map<string, Map<string, Map<string, string[]>>>();
   /** This tab's practices made conventions per repo: convention id -> the convention (`drift practices promote`). */
   private promoted = new Map<string, Map<string, Convention>>();
+  /** This tab's security baseline per repo: the `.drift/security.lock` text `drift security --write-baseline` wrote. */
+  private baselines = new Map<string, string>();
+  /** This tab's promotions per repo that the real binary was recorded making: each one's argv, in order (`promote-runs.json` `after`). */
+  private writes = new Map<string, string[][]>();
   private idx: Promise<Index> | null = null;
   private logBuf: LogEntry[] = [];
 
@@ -169,6 +184,43 @@ export class FixtureApi implements StudioApi {
     return this.wait(this.loaded(await this.json<SecurityDiff>(`${await this.dir(repo)}/security-diff.json`), false), this.delay * 3);
   }
 
+  /**
+   * `drift security --top N --json` for this fixture: security-top.json holds every ranked finding (`--top 0`); the
+   * first `n` are shown and the rest counted under `more`, as `Summary::top` does. A repository without one fails as a
+   * run would.
+   */
+  async securityTop(repo: RepoRef, n: number): Promise<Loaded<Inventory>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.securityTop) throw new Error(`drift security --top failed: fixture mode has no security-top.json for ${repo.name}`);
+    const inv = await this.json<Inventory>(`${await this.dir(repo)}/security-top.json`);
+    if (inv.top) {
+      const all = [...inv.top.shown];
+      const k = n === 0 ? all.length : Math.min(n, all.length);
+      inv.top = { ...inv.top, shown: all.slice(0, k), more: all.length - k + inv.top.more };
+    }
+    return this.wait(this.loaded(inv, false), this.delay * 3);
+  }
+
+  /** `drift security --write-baseline` in this tab only: what Drift printed for this fixture, and the file it wrote, kept in memory. */
+  async securityBaseline(repo: RepoRef) {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.baseline) throw new Error(`drift security --write-baseline failed: fixture mode has no security-baseline.json for ${repo.name}`);
+    const recorded = await this.json<{ stdout: string; lock: string }>(`${await this.dir(repo)}/security-baseline.json`);
+    this.baselines.set(repo.path, recorded.lock);
+    const entry = {
+      at: Date.now(),
+      user: "you (fixture)",
+      decision: "security-baseline" as const,
+      ids: [],
+      command: baselineCommand(repo.path),
+      ok: true,
+      output: `${recorded.stdout.trim()}\nfixture mode: recorded in this tab only; no file was written`,
+    };
+    const h = await this.history(repo);
+    this.saveHistory(repo, retain({ ...h, audit: [...h.audit, entry] }));
+    return this.wait(entry);
+  }
+
   /** `drift practices --json` for this fixture (practices.json); a repository without one fails as a run would. */
   async practices(repo: RepoRef): Promise<Loaded<PracticesReport>> {
     const r = (await this.index()).repos.find((x) => x.path === repo.path);
@@ -183,22 +235,144 @@ export class FixtureApi implements StudioApi {
     return this.wait(this.loaded(await this.json<{ schema: number; packages: MapPackage[] }>(`${await this.dir(repo)}/map.json`), false));
   }
 
+  /** `drift census --why --json` for this fixture (funnel.json); a repository without one fails as a run would. */
+  async funnel(repo: RepoRef): Promise<Loaded<CensusWhy>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.funnel) throw new Error(`drift census --why failed: fixture mode has no funnel.json for ${repo.name}`);
+    return this.wait(this.loaded(await this.json<CensusWhy>(`${await this.dir(repo)}/funnel.json`), false), this.delay * 2);
+  }
+
+  /**
+   * `drift practices promote --list --json` for this fixture (promote-list.json), less what this tab promoted: as Drift
+   * leaves out a candidate a convention already covers, and names that convention under `promoted`.
+   */
+  async promoteList(repo: RepoRef): Promise<Loaded<PromoteList>> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.promoteList) throw new Error(`drift practices promote --list failed: fixture mode has no promote-list.json for ${repo.name}`);
+    // After a promotion the real binary was recorded making, the list it printed then.
+    const after = this.writes.get(repo.path) ?? [];
+    const recorded = after.length ? recordedRun(await this.runs(repo), after, ["--list", "--json"]) : null;
+    if (recorded) return this.wait(this.loaded(recorded as PromoteList, false));
+    const list = await this.json<PromoteList>(`${await this.dir(repo)}/promote-list.json`);
+    return this.wait(this.loaded(fixtureListOpen(list, [...(this.promoted.get(repo.path)?.keys() ?? [])]), false));
+  }
+
+  // ---------- proposals from the map, upgrade and feedback (fixtures/screens, scripts/make-screens-fixtures.mjs) ----------
+
+  private screensIdx: Promise<ScreensIndex> | null = null;
+  /** This tab's `drift upgrade --apply` per repository: the report Drift printed then. */
+  private upgraded = new Map<string, UpgradeOutcome>();
+  /** This tab's marks per repository (`drift feedback mark`), by report key. */
+  private marked = new Map<string, Map<string, FeedbackMark>>();
+
+  /** Which repository has which file under fixtures/screens; a repository without one fails as a run would. */
+  private async screen(repo: RepoRef, what: keyof ScreensIndex["repos"][string], file: string, command: string): Promise<string> {
+    this.screensIdx ??= this.json<ScreensIndex>("screens/index.json").catch(() => ({ repos: {} }));
+    const id = await this.dir(repo);
+    if (!(await this.screensIdx).repos[id]?.[what]) throw new Error(`${command} failed: fixture mode has no ${file} for ${repo.name}`);
+    return `screens/${id}/${file}`;
+  }
+
+  async fromMap(repo: RepoRef): Promise<Loaded<Census>> {
+    const path = await this.screen(repo, "fromMap", "from-map.json", "drift census --from-map");
+    return this.wait(this.loaded(await this.json<Census>(path), false), this.delay * 2);
+  }
+
+  async upgrade(repo: RepoRef): Promise<Loaded<UpgradeOutcome>> {
+    const path = await this.screen(repo, "upgrade", "upgrade.json", "drift upgrade");
+    return this.wait(this.loaded(this.upgraded.get(repo.path) ?? (await this.json<UpgradeOutcome>(path)), false), this.delay * 2);
+  }
+
+  /** What `drift upgrade --apply` printed for this fixture (with `--security-baseline` when asked); kept for this tab, no file is written. */
+  async upgradeApply(repo: RepoRef, opts: { securityBaseline: boolean }): Promise<UpgradeOutcome> {
+    const file = opts.securityBaseline ? "upgrade-apply-security.json" : "upgrade-apply.json";
+    const out = await this.json<UpgradeOutcome>(await this.screen(repo, "upgradeApply", file, "drift upgrade --apply"));
+    this.upgraded.set(repo.path, out);
+    return this.wait(out);
+  }
+
+  /** A mark as `drift feedback mark` records it (feedback.rs `mark`: the rule kind, tier and baselined of the violation as check reports it), in this tab only. */
+  async feedbackMark(repo: RepoRef, id: string, member: string, verdict: Verdict, why: string | null): Promise<string> {
+    const check = (await this.check(repo)).data;
+    const at = member.lastIndexOf("#");
+    const v = check.violations.find((x) => x.id === id && x.path === member.slice(0, at) && x.symbol === member.slice(at + 1));
+    const conv = check.conventions?.find((c) => c.id === id);
+    if (!conv) throw new Error(`drift feedback mark failed: no convention ${id} in .drift/conventions.yaml`);
+    const byKey = this.marked.get(repo.path) ?? new Map<string, FeedbackMark>();
+    const key = `violation ${id} ${member}`;
+    const replaced = byKey.has(key) || ((await this.fixtureMarks(repo))?.marks.some((m) => m.id === id && m.member === member) ?? false);
+    const clean = why === null ? undefined : why.trim().split(/\s+/).join(" ");
+    byKey.set(key, { report: "violation", id, member, verdict, ...(clean ? { why: clean } : {}), kind: conv.rule_kind ?? "", tier: v?.tier ?? conv.tier ?? "", baselined: v?.baselined ?? false, day: new Date().toISOString().slice(0, 10) });
+    this.marked.set(repo.path, byKey);
+    return this.wait(`${replaced ? "Replaced the mark" : "Marked"}: ${id} ${member} is ${verdict}. Kept in .drift/feedback/marks.json, on this machine only.\nThis changes no verdict: Drift reports it as before. \`drift feedback export\` counts it.\nfixture mode: recorded in this tab only; no file was written`);
+  }
+
+  private async fixtureMarks(repo: RepoRef): Promise<FeedbackMarks | null> {
+    try {
+      return await this.json<FeedbackMarks>(await this.screen(repo, "marks", "feedback-marks.json", "read marks"));
+    } catch {
+      return null;
+    }
+  }
+
+  /** The fixture's marks file, with this tab's marks in it as Drift records them: one per report, sorted by report, id and member. */
+  async feedbackMarks(repo: RepoRef): Promise<FeedbackMarks | null> {
+    const file = await this.fixtureMarks(repo);
+    const mine = this.marked.get(repo.path);
+    if (!file && !mine?.size) return this.wait(null);
+    const all = new Map<string, FeedbackMark>((file?.marks ?? []).map((m) => [`${m.report} ${m.id} ${m.member ?? ""}`, m]));
+    for (const [k, m] of mine ?? []) all.set(k, m);
+    const key = (m: FeedbackMark) => [m.report, m.id, m.member ?? ""];
+    const marks = [...all.values()].sort((a, b) => {
+      const [x, y] = [key(a), key(b)];
+      for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1;
+      return 0;
+    });
+    return this.wait({ schema: file?.schema ?? "drift-feedback-marks", version: file?.version ?? 1, marks });
+  }
+
+  /** The promotion runs recorded for this fixture (promote-runs.json); none when it has no such file. */
+  private async runs(repo: RepoRef): Promise<RecordedRun[]> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.promoteRuns) return [];
+    return (await this.json<{ runs: RecordedRun[] }>(`${await this.dir(repo)}/promote-runs.json`)).runs;
+  }
+
+  /**
+   * What `drift practices promote` answers for `req`: the real binary's recorded answer for this run after this tab's
+   * recorded writes, else the stand-in from the fixture's practice map (named ways in a directory, with no recorded
+   * write before it), else a refusal that says the run was not recorded.
+   */
+  private async promoteOutcome(repo: RepoRef, req: PromoteRequest, written: boolean): Promise<{ out: PromoteOutcome; recorded: boolean }> {
+    const after = this.writes.get(repo.path) ?? [];
+    const hit = recordedRun(await this.runs(repo), after, promoteFlags(req, !written));
+    if (hit) return { out: hit as PromoteOutcome, recorded: true };
+    if (after.length)
+      return {
+        out: { refused: { code: "not_recorded" }, message: "Fixture mode has no drift binary, and this promotion was not run after the one made in this tab when the fixtures were made (scripts/make-promote-fixtures.mjs); the desktop app runs it." },
+        recorded: false,
+      };
+    return { out: fixturePromote((await this.practices(repo)).data, req, written), recorded: false };
+  }
+
   async policy(repo: RepoRef) {
     const d = await this.dir(repo);
     let yaml: string;
     let lock: string | null;
+    // The security baseline: written in this tab, or none (no fixture repository has one committed).
+    const securityLock = this.baselines.get(repo.path) ?? null;
     try {
       yaml = await this.text(`${d}/conventions.yaml`);
       lock = await this.text(`${d}/drift.lock`);
     } catch {
-      return { conventions: null, lock: null };
+      return { conventions: null, lock: null, securityLock };
     }
     const over = this.overrides.get(repo.path);
     const fine = this.exceptions.get(repo.path);
     const logSetting = this.reviewLog.get(repo.path);
     const apart = this.setApart.get(repo.path);
     const promoted = this.promoted.get(repo.path);
-    if (!over?.size && !fine?.size && !apart?.size && !promoted?.size && logSetting === undefined) return { conventions: yaml, lock };
+    if (!over?.size && !fine?.size && !apart?.size && !promoted?.size && logSetting === undefined) return { conventions: yaml, lock, securityLock };
     // Apply this tab's decisions the way `drift review` records them.
     const doc = parseDocument(yaml);
     // `review_log: on`, absent when off (as Drift writes it).
@@ -236,7 +410,7 @@ export class FixtureApi implements StudioApi {
         item.set("mode", Number(ev.get("total")) >= 15 ? "block" : "advise");
       } else if (dec === "advise") item.set("mode", "advise");
     }
-    return { conventions: doc.toString(), lock };
+    return { conventions: doc.toString(), lock, securityLock };
   }
 
   async review(repo: RepoRef, decision: Decision, ids: string[]) {
@@ -350,18 +524,19 @@ export class FixtureApi implements StudioApi {
     return this.wait("fixture mode: the fixture repository is already initialised");
   }
 
-  /** What promoting would record, worked out from this fixture's practice map (`practices.json`): nothing is written. */
+  /** What promoting would record, as the real binary answered it (or worked out from this fixture's practice map): nothing is written. */
   async promotePreview(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
-    const report = (await this.practices(repo)).data;
-    return this.wait(fixturePromote(report, req, false));
+    return this.wait((await this.promoteOutcome(repo, req, false)).out);
   }
 
   /** The same, recorded in this tab only (the Conventions view shows the convention); no file is written. */
   async promote(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
-    const report = (await this.practices(repo)).data;
-    const out = fixturePromote(report, req, true);
+    const { out, recorded } = await this.promoteOutcome(repo, req, true);
     if (isRefused(out)) return this.wait(out);
+    if (recorded) this.writes.set(repo.path, [...(this.writes.get(repo.path) ?? []), promoteFlags(req, false)]);
     const byId = this.promoted.get(repo.path) ?? new Map<string, Convention>();
+    // A promotion of another form in the same place replaces that practice, as Drift says (`replaces`).
+    for (const old of out.replaces ?? []) byId.delete(old.id);
     byId.set(out.convention.id, fixtureConvention(out));
     this.promoted.set(repo.path, byId);
     this.count(repo, 1);

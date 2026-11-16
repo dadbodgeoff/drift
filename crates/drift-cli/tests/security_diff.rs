@@ -179,7 +179,7 @@ fn only_what_the_change_introduces_is_listed() {
     assert!(out.contains("::notice file=app/api/open/route.ts,line=1,title=drift security::withAuth is on 37 of 41 http entry points here; this one has no guard found in what Drift read. To copy: app/api/r00/route.ts:3."), "{out}");
     assert!(out.contains("::notice file=app/api/run/route.ts,line=1,title=drift security::Entry point where Drift found no guard in what it read, reaching eval; internet-facing (compose service web in compose.yaml publishes ports)."), "{out}");
     assert!(out.contains("::notice file=app/api/run/route.ts,line=1,title=drift security::Risky operation added: eval in POST."), "{out}");
-    assert!(out.contains("drift security: 2 entry point(s) lacking a shared guard, 1 where Drift found no guard in what it read reaching a risky operation, 0 new entry point(s) where Drift found no guard or cannot tell, 1 risky operation(s) added, 0 new client leak(s), 0 now internet-facing; facts for review, nothing fails\n"), "{out}");
+    assert!(out.contains("drift security: 2 entry point(s) lacking a shared guard, 1 where Drift found no guard in what it read reaching a risky operation, 0 new entry point(s) where Drift found no guard (0 more whose guard is unknown), 1 risky operation(s) added, 0 new client leak(s), 0 now internet-facing; facts for review, nothing fails\n"), "{out}");
     assert!(
         !out.contains("::error") && !out.contains("::warning"),
         "{out}"
@@ -213,7 +213,7 @@ fn a_change_that_introduces_nothing_says_so_and_a_moved_exception_is_not_new() {
         ),
         "{text}"
     );
-    assert!(text.contains("introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard or cannot tell, no new risky operation, no new client leak, and makes nothing internet-facing.\n"), "{text}");
+    assert!(text.contains("introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard, no new risky operation, no new client leak, and makes nothing internet-facing.\n"), "{text}");
     assert!(text.contains("\nNot covered:"), "{text}");
     // Not a git ref: an error, not a report.
     let (code, _, err) = drift(r, &["--no-cache", "security", "--diff-base", "nope"], &[]);
@@ -265,7 +265,9 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
     // Added: a route with no sign-in check, one whose check Drift cannot read, and one
     // that checks the sign-in as its siblings do; and a handler with no check added to
     // a file that has one. A handler edited in place is not added: the sign-in check
-    // taken out of `iam/roles` is not said here.
+    // taken out of `iam/roles` is not said among the new entry points, but as the
+    // `no-guard` finding the security baseline would hold, with the one signed-in
+    // route that checks nothing of who calls (`no-authorization`).
     write(r, "app/api/iam/orgs/count/route.ts", UNGUARDED);
     write(r, "app/api/iam/unknown/route.ts", UNREAD_CHECK);
     write(r, "app/api/iam/signed/route.ts", SIGNED_IN);
@@ -293,22 +295,37 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
             "::notice file=app/api/billing/plans/route.ts,line=11,title=drift security::New http entry point POST /api/billing/plans: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
             "::notice file=app/api/iam/orgs/count/route.ts,line=1,title=drift security::New http entry point GET /api/iam/orgs/count: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
             "::notice file=app/api/iam/unknown/route.ts,line=3,title=drift security::New http entry point GET /api/iam/unknown: guard unknown, Drift cannot tell whether it requires sign-in (it could not read: requireMember); internet-facing (compose service web in compose.yaml publishes ports). Facts for review; this fails nothing.",
+            "::notice file=app/api/iam/roles/route.ts,line=1,title=drift security [no-guard]::app/api/iam/roles/route.ts#GET GET /api/iam/roles: added by this change (entry point(s) where Drift found no guard). Facts for review.",
+            "::notice file=app/api/iam/signed/route.ts,line=3,title=drift security [no-authorization]::app/api/iam/signed/route.ts#GET GET /api/iam/signed: added by this change (entry point(s) that sign the caller in and check nothing of who they are (no role, no tenant, no owner)). Facts for review.",
         ],
         "{out}"
     );
     assert!(
-        out.contains(", 3 new entry point(s) where Drift found no guard or cannot tell, "),
+        // The one whose guard Drift cannot read is said apart: unknown is never a
+        // finding.
+        out.contains(
+            ", 2 new entry point(s) where Drift found no guard (1 more whose guard is unknown), "
+        ),
         "{out}"
     );
 
     let (code, text, err) = drift(r, &["--no-cache", "security", "--diff-base", "main"], &[]);
     assert_eq!(code, 0, "{err}");
     assert!(
-        text.contains("\nNew entry points where Drift found no guard, or cannot tell\n  app/api/billing/plans/route.ts:11 POST /api/billing/plans [http]: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports)\n  app/api/iam/orgs/count/route.ts:1 GET /api/iam/orgs/count [http]: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports)\n  app/api/iam/unknown/route.ts:3 GET /api/iam/unknown [http]: guard unknown, "),
+        text.contains("\nNew entry points where Drift found no guard\n  app/api/billing/plans/route.ts:11 POST /api/billing/plans [http]: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports)\n  app/api/iam/orgs/count/route.ts:1 GET /api/iam/orgs/count [http]: no guard found in what Drift read; internet-facing (compose service web in compose.yaml publishes ports)\n\n"),
         "{text}"
     );
-    assert!(!text.contains("iam/signed"), "{text}");
-    assert!(!text.contains("iam/roles"), "{text}");
+    assert!(
+        text.contains("\nNew entry points whose guard is unknown (Drift could not read what may be one; not findings)\n  app/api/iam/unknown/route.ts:3 GET /api/iam/unknown [http]: guard unknown, "),
+        "{text}"
+    );
+    let (listed, other) = text.split_once("\nOther findings").unwrap();
+    assert!(!listed.contains("iam/signed"), "{text}");
+    assert!(!listed.contains("iam/roles"), "{text}");
+    assert!(
+        other.contains("app/api/iam/roles/route.ts#GET GET /api/iam/roles"),
+        "{text}"
+    );
 
     let (code, out, err) = drift(
         r,
@@ -328,8 +345,11 @@ fn a_new_route_with_no_sign_in_check_is_a_notice_whatever_its_siblings_do() {
         [
             "app/api/billing/plans/route.ts",
             "app/api/iam/orgs/count/route.ts",
-            "app/api/iam/unknown/route.ts"
         ]
+    );
+    assert_eq!(
+        v["guard_unknown"][0]["path"], "app/api/iam/unknown/route.ts",
+        "{out}"
     );
 
     // `drift check --diff-base`: the same two as practice notices, never a failure.

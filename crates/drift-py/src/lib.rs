@@ -9,6 +9,7 @@ mod docs;
 mod index;
 pub mod kinds;
 pub mod link;
+pub mod lint;
 pub mod lower;
 pub mod packages;
 pub mod project;
@@ -88,6 +89,8 @@ struct Prepared {
     resolver: Resolver,
     stats: ScanStats,
     packages: Vec<PackageFacts>,
+    /// The Python linter configurations around the walk's files ([`lint::lint_of`]).
+    lint: Vec<drift_core::LintConfig>,
     declared: BTreeMap<String, Vec<drift_core::EntryPoint>>,
 }
 
@@ -178,6 +181,7 @@ fn prepare(
         }
     };
     let packages = packages_of(root, &py);
+    let lint = lint::lint_of(root, &py);
     let paths = walked_paths(root, &py);
     let cache = opts
         .cache_dir
@@ -233,13 +237,14 @@ fn prepare(
         resolver,
         stats,
         packages,
+        lint,
         declared,
     })
 }
 
 /// Scan a repository's Python code and return its facts. Output is deterministic.
 pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanStats)> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     // Every file is parsed, lowered and dropped on these workers' stacks.
     drift_core::stack::pool(opts.threads)?.install(|| scan_inner(&root, opts, None))
 }
@@ -304,8 +309,17 @@ fn scan_inner(
     // Mining's input is held at the listings of the last measured build: where the
     // ones made since change a file, the file is what mining reads, and keeps what
     // `drift security` and the practice map read beside it ([`drift_core::Listed`]).
-    // Only the files the second link can read differently are linked again; kinds
-    // are a matter of the whole repository, and are classified for each reading.
+    // What mining reads is frozen at what the build `a0779066` gave it, which takes
+    // three readings. That build linked again only the files its test picks
+    // (`Linker::links_differently`, kept as it was) and took every other file from
+    // its listed link, with the listed readings it made since the measured build.
+    // So a file the test picks is the second link's (`measured`); any other is
+    // the compat link's (`Linker::compat`): that build's listed link, which makes
+    // each reading it made and none added after it (`Linker::since_frozen`), so
+    // that a reading added since never reaches mining through a file the test
+    // does not pick (review R5, row 1), and none that build gave mining is lost
+    // (review M2). The full listed link is held beside. Kinds are a matter of the
+    // whole repository, and are classified for each reading.
     let facts = match measured {
         None => classified(linked),
         Some(measured) => {
@@ -313,14 +327,17 @@ fn scan_inner(
                 .files
                 .iter()
                 .any(|f| f.raw.symbols.iter().any(|s| s.built_by_new));
+            let picked: Vec<bool> = (0..p.files.len())
+                .into_par_iter()
+                .map(|i| linker.links_differently(&measured, i, by_new))
+                .collect();
+            // Built only where some file is not picked.
+            let compat = picked.iter().any(|picked| !picked).then(|| linker.compat());
             let held: Vec<FileFacts> = (0..p.files.len())
                 .into_par_iter()
-                .map(|i| {
-                    if linker.links_differently(&measured, i, by_new) {
-                        measured.link(i, packages[i].clone())
-                    } else {
-                        linked[i].clone()
-                    }
+                .map(|i| match &compat {
+                    Some(compat) if !picked[i] => compat.link(i, packages[i].clone()),
+                    _ => measured.link(i, packages[i].clone()),
                 })
                 .collect();
             // The two readings are classified side by side.
@@ -338,12 +355,13 @@ fn scan_inner(
         skipped: p.skipped,
         models,
         packages: p.packages,
-        // Python lint configs (ruff, flake8) are not read yet.
-        lint: vec![],
+        lint: p.lint,
         context_files: vec![],
         key_files: vec![],
         integration_files: vec![],
         generated_clients: vec![],
+        listed_files: vec![],
+        listed_skipped: vec![],
     };
     // A test file not parsed for lack of stack still exists: it pairs like the others.
     let parsed = repo.files.len();
@@ -387,6 +405,20 @@ fn empty_facts() -> RepoFacts {
     }
 }
 
+/// `target` with its kinds classified over it and `others` (one reading of each, the
+/// files whose facts its kinds read), normalized as [`scan_inner`] leaves each
+/// reading before the listed one is held beside mining's.
+fn classified_with(target: FileFacts, others: impl Iterator<Item = FileFacts>) -> FileFacts {
+    let mut mini = RepoFacts {
+        files: std::iter::once(target).chain(others).collect(),
+        ..empty_facts()
+    };
+    kinds::classify(&mut mini);
+    let mut facts = mini.files.swap_remove(0);
+    facts.normalize();
+    facts
+}
+
 fn is_python_path(rel: &str) -> bool {
     Path::new(rel)
         .extension()
@@ -394,12 +426,48 @@ fn is_python_path(rel: &str) -> bool {
         .is_some_and(|e| ingest::PYTHON_EXTENSIONS.contains(&e))
 }
 
+/// The two readings of one file, linked as a full scan links them ([`scan_inner`]),
+/// before kinds are classified: `mining` is the copy mining reads, `listed` the
+/// link with every listing ([`drift_core::Listed`]). The same file twice where the
+/// readings agree.
+#[derive(Clone)]
+struct Readings {
+    mining: FileFacts,
+    listed: FileFacts,
+}
+
+/// [`link_readings`], the copy mining reads: what a preview, which is checked
+/// against conventions, gives.
+fn link_target(
+    res: &Resolver,
+    declared: &BTreeMap<String, Vec<drift_core::EntryPoint>>,
+    files: Vec<LoweredFile>,
+    target: &str,
+    package: &str,
+    max_rounds: Option<usize>,
+    load: impl FnMut(&BTreeSet<String>) -> Option<Vec<LoweredFile>>,
+) -> Option<FileFacts> {
+    link_readings(res, declared, files, target, package, max_rounds, load).map(|r| r.mining)
+}
+
 /// Link `target` against the smallest set of files that gives the facts a link over
 /// every file gives: start from `files` (sorted by path), and add the modules the
 /// link looked up and did not have, from `load`, until none is missing. `load`
 /// returns the files among the modules it is given that exist (in any order), or
-/// `None` to give up. With `max_rounds`, stop early (best effort).
-fn link_target(
+/// `None` to give up. With `max_rounds`, stop early (best effort), and the copy
+/// mining reads is the measured link, as it always was for a preview.
+///
+/// Without `max_rounds`, the copy mining reads is chosen as [`scan_inner`] chooses
+/// it: the measured link where [`Linker::links_differently`] picks the file, the
+/// compat link ([`Linker::compat`]) where it does not. Every term of that test but
+/// one is read from what the target's own link looks up, so the set of files that
+/// gives the target's link gives it too. The one that is not is `by_new` (some
+/// class of the repository is built by `__new__`), a fact of every file: a file of
+/// this set that has one says yes for the whole repository, and none says nothing
+/// of the files not read. So where no other term picks the file and the two
+/// candidate copies differ, which is mining's is not known here: `None`, and a full
+/// scan decides.
+fn link_readings(
     res: &Resolver,
     declared: &BTreeMap<String, Vec<drift_core::EntryPoint>>,
     mut files: Vec<LoweredFile>,
@@ -407,12 +475,12 @@ fn link_target(
     package: &str,
     max_rounds: Option<usize>,
     mut load: impl FnMut(&BTreeSet<String>) -> Option<Vec<LoweredFile>>,
-) -> Option<FileFacts> {
+) -> Option<Readings> {
     let mut tried: BTreeSet<String> = files.iter().map(|f| f.rel_path.clone()).collect();
     let mut round = 0;
     loop {
         let ti = files.iter().position(|f| f.rel_path == target)?;
-        let (facts, misses, two_readings) = {
+        let (readings, misses) = {
             let linker = Linker::tracking(res, &files, target).with_declared(declared.clone());
             // A listing mining does not read yet may be in this link: the file is
             // linked as mining reads it too ([`drift_core::Listed`]), its tables
@@ -426,28 +494,54 @@ fn link_target(
             match measured {
                 Some(measured) => {
                     let held = measured.link(ti, package.to_string());
+                    let mut compat_misses = BTreeSet::new();
+                    let mining = if max_rounds.is_some() {
+                        Some(held)
+                    } else {
+                        let by_new = files
+                            .iter()
+                            .any(|f| f.raw.symbols.iter().any(|s| s.built_by_new));
+                        if linker.links_differently(&measured, ti, by_new) {
+                            Some(held)
+                        } else {
+                            let compat = linker.compat();
+                            let linked = compat.link(ti, package.to_string());
+                            compat_misses = compat.misses();
+                            // Not picked here; a class built by `__new__` in a file
+                            // not read would pick it. Only a difference decides.
+                            (linked == held).then_some(linked)
+                        }
+                    };
+                    // After the test, whose lookups are tracked too.
                     let mut misses = linker.misses();
                     misses.extend(measured.misses());
-                    let two = held != facts;
-                    (held, misses, two)
+                    misses.extend(compat_misses);
+                    let readings = mining.map(|mining| Readings {
+                        mining,
+                        listed: facts,
+                    });
+                    (readings, misses)
                 }
-                None => (facts, linker.misses(), false),
+                None => {
+                    let readings = Readings {
+                        mining: facts.clone(),
+                        listed: facts,
+                    };
+                    (Some(readings), linker.misses())
+                }
             }
         };
-        // Two readings of one file are a full scan's to give; a preview, which is
-        // checked against conventions, is what mining reads.
-        let done = |facts: FileFacts| (!two_readings || max_rounds.is_some()).then_some(facts);
         let want: BTreeSet<String> = misses
             .into_iter()
             .filter(|m| tried.insert(m.clone()))
             .collect();
         round += 1;
         if want.is_empty() || max_rounds.is_some_and(|m| round >= m) {
-            return done(facts);
+            return readings;
         }
         let new = load(&want)?;
         if new.is_empty() {
-            return done(facts);
+            return readings;
         }
         files.extend(new);
         files.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
@@ -462,14 +556,18 @@ fn link_target(
 /// index yet (a full scan writes one), `rel` is not a Python file, a file it
 /// depends on can no longer be read, another production file names one of its
 /// classes as a base (whether a class is a `base` counts its subclasses across the
-/// repo), or the chain of its classes' in-repo bases is longer than
-/// [`MAX_BASE_FILES`] files. The base classes' files come back as `context_files`.
+/// repo), the chain of its classes' in-repo bases is longer than
+/// [`MAX_BASE_FILES`] files, or which of two readings of it (or of a file its kinds
+/// read) mining reads turns on a class built by `__new__` in a file not read
+/// (`link_readings`). A file with a listed reading ([`drift_core::Listed`]) has it
+/// held beside mining's, as in a full scan. The base classes' files come back as
+/// `context_files`.
 /// Returns no files when `rel` is not analysed.
 pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<Option<RepoFacts>> {
     if !is_python_path(rel) || opts.cache_dir.is_none() {
         return Ok(None);
     }
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let py = ingest::walk(&root, opts.threads, &|_| false)?.python;
     scan_file_walked(&root, opts, rel, py)
 }
@@ -506,6 +604,7 @@ fn scan_file_inner(
 ) -> anyhow::Result<Option<RepoFacts>> {
     let started = index::now_ns();
     let packages = packages_of(root, &py);
+    let lint = lint::lint_of(root, &py);
     let paths = walked_paths(root, &py);
     let known = index::classify(py.sources, Some(index), Some(cache), started);
     index::update(cache_dir, root, Some(index), &known);
@@ -572,26 +671,33 @@ fn scan_file_inner(
         .flat_map(models_of)
         .collect();
     let package = package_of(root, &target.cand.abs_path, &mut BTreeMap::new());
-    let Some(facts) = link_target(&resolver, &declared, files, rel, &package, None, &load) else {
+    // Both readings of `rel`, as a full scan gives them; each is classified below
+    // with the same reading of the other files kinds read.
+    let Some(readings) = link_readings(&resolver, &declared, files, rel, &package, None, &load)
+    else {
         return Ok(None);
     };
+    // What either reading names counts below.
+    let copies: [&FileFacts; 2] = [&readings.mining, &readings.listed];
     // Another file was not parsed. What `rel` reads directly, its bases, routes and
     // test pairing are decided from these facts and `skipped` (`drift_mine::unchecked`);
     // a name imported from a module that star-imports (`from .core import *`) may stop
     // there when the module behind it was not parsed, which only that module's facts
     // show: a full scan decides then.
     if !no_stack.is_empty() {
-        let modules: BTreeSet<&str> = facts
-            .imports
-            .iter()
-            .map(|i| i.module.as_str())
-            .chain(facts.symbols.iter().flat_map(|s| {
-                s.wraps
-                    .iter()
-                    .map(|w| w.wrapper.as_str())
-                    .chain(s.calls.iter().map(String::as_str))
-                    .chain(s.throws.iter().map(String::as_str))
-            }))
+        let modules: BTreeSet<&str> = copies
+            .into_iter()
+            .flat_map(|facts| {
+                facts.imports.iter().map(|i| i.module.as_str()).chain(
+                    facts.symbols.iter().flat_map(|s| {
+                        s.wraps
+                            .iter()
+                            .map(|w| w.wrapper.as_str())
+                            .chain(s.calls.iter().map(String::as_str))
+                            .chain(s.throws.iter().map(String::as_str))
+                    }),
+                )
+            })
             .map(|r| r.split_once('#').map_or(r, |(m, _)| m))
             .filter(|m| *m != rel)
             .collect();
@@ -605,9 +711,9 @@ fn scan_file_inner(
     // Kind facts ([`kinds::classify`]) read other files. When another production
     // file may extend one of its classes (`base` counts subclasses), a full scan
     // decides.
-    let classes: BTreeSet<&str> = facts
-        .symbols
-        .iter()
+    let classes: BTreeSet<&str> = copies
+        .into_iter()
+        .flat_map(|facts| &facts.symbols)
         .filter(|s| s.kind == drift_core::SymbolKind::Class)
         .map(|s| s.name.as_str())
         .collect();
@@ -627,24 +733,26 @@ fn scan_file_inner(
     // The files of the in-repo bases, at any depth (inherited kinds, and rules that
     // follow base chains read them), and of in-repo decorators (whether one wraps a
     // task-queue decorator: jobs). Linked as a full scan links them.
-    let link_file = |m: &str| -> Option<FileFacts> {
+    let link_file = |m: &str| -> Option<Readings> {
         let files = load(&std::iter::once(m.to_string()).collect())?;
         let k = kept.get(m)?;
         let pkg = package_of(root, &k.cand.abs_path, &mut BTreeMap::new());
-        link_target(&resolver, &declared, files, m, &pkg, None, &load)
+        link_readings(&resolver, &declared, files, m, &pkg, None, &load)
     };
-    let modules_of = |f: &FileFacts, kind: drift_core::SymbolKind, wrap: drift_core::WrapKind| {
-        f.symbols
-            .iter()
+    // The modules either reading of a file names.
+    let modules_of = |r: &Readings, kind: drift_core::SymbolKind, wrap: drift_core::WrapKind| {
+        [&r.mining, &r.listed]
+            .into_iter()
+            .flat_map(|f| &f.symbols)
             .filter(|s| s.kind == kind)
             .flat_map(|s| &s.wraps)
             .filter(|w| w.kind == wrap && in_repo(&w.wrapper))
             .filter_map(|w| w.wrapper.split_once('#').map(|(m, _)| m.to_string()))
             .collect::<BTreeSet<String>>()
     };
-    let mut bases: BTreeMap<String, FileFacts> = BTreeMap::new();
+    let mut bases: BTreeMap<String, Readings> = BTreeMap::new();
     let mut frontier = modules_of(
-        &facts,
+        &readings,
         drift_core::SymbolKind::Class,
         drift_core::WrapKind::Extends,
     );
@@ -672,7 +780,7 @@ fn scan_file_inner(
     }
     let mut others = bases.clone();
     for m in modules_of(
-        &facts,
+        &readings,
         drift_core::SymbolKind::Function,
         drift_core::WrapKind::Decorator,
     ) {
@@ -683,12 +791,12 @@ fn scan_file_inner(
             e.insert(f);
         }
     }
-    let mut mini = RepoFacts {
-        files: std::iter::once(facts).chain(others.into_values()).collect(),
-        ..empty_facts()
-    };
-    kinds::classify(&mut mini);
-    let mut facts = mini.files.swap_remove(0);
+    // Kinds are classified for each reading over that reading of the files, as a
+    // full scan classifies them, and the listed one is held beside mining's.
+    let others: Vec<Readings> = others.into_values().collect();
+    let mut facts = classified_with(readings.mining, others.iter().map(|r| r.mining.clone()));
+    let listed = classified_with(readings.listed, others.into_iter().map(|r| r.listed));
+    facts.hold(listed);
     // Test pairing over the test files of the repo ([`pair_tests`]).
     let mut memo = BTreeMap::new();
     let mut pairing = RepoFacts {
@@ -715,19 +823,25 @@ fn scan_file_inner(
     };
     pair_tests(&mut pairing);
     facts.has_test = pairing.files[0].has_test;
-    // Base files are context for rules about `rel`: their class symbols only.
+    // Base files are context for rules about `rel`: their class symbols only, the
+    // listed reading's held beside mining's where they differ.
+    let context_of = |f: FileFacts| FileFacts {
+        path: f.path,
+        lang: f.lang,
+        package: f.package,
+        symbols: f
+            .symbols
+            .into_iter()
+            .filter(|s| s.kind == drift_core::SymbolKind::Class)
+            .collect(),
+        ..FileFacts::default()
+    };
     let context_files = bases
         .into_values()
-        .map(|f| FileFacts {
-            path: f.path,
-            lang: f.lang,
-            package: f.package,
-            symbols: f
-                .symbols
-                .into_iter()
-                .filter(|s| s.kind == drift_core::SymbolKind::Class)
-                .collect(),
-            ..FileFacts::default()
+        .map(|r| {
+            let mut c = context_of(r.mining);
+            c.hold(context_of(r.listed));
+            c
         })
         .collect();
     // Which `integration/` directories are test suites is learned from all their
@@ -747,6 +861,7 @@ fn scan_file_inner(
         files: vec![facts],
         models,
         packages,
+        lint,
         context_files,
         skipped: no_stack,
         integration_files,
@@ -974,6 +1089,7 @@ fn preview_inner(root: &Path, rel: &str, text: &str) -> Preview {
                 behind: RawBehind::default(),
                 shapes: vec![],
                 since_guards: vec![],
+                line: crate::raw::Site::default(),
             });
         }
         match link(&target) {
@@ -1097,7 +1213,7 @@ pub struct ImportRow {
 
 /// Every import in the repo's Python files with its resolution, uncached.
 pub fn debug_imports(root: &Path) -> anyhow::Result<Vec<ImportRow>> {
-    let root = root.canonicalize()?;
+    let root = drift_core::fsutil::canonical(root)?;
     let p =
         drift_core::stack::pool(0)?.install(|| prepare(&root, &ScanOptions::default(), None))?;
     let linker = Linker::new(&p.resolver, &p.files);

@@ -159,12 +159,16 @@ pub fn without_answered(root: &Path, r: &mut PracticesReport) -> Vec<String> {
             let why = if let Some(id) =
                 crate::setup::investigate::said_not_a(&text, &c.id, &instrument)
             {
-                format!("answered not {what} by {id} (`drift setup --forget {id}` asks again)")
+                format!(
+                    "answered not {what} by {id} (`drift setup --forget {}` asks again)",
+                    crate::promote::shell_word(&id)
+                )
             } else if let Some(id) =
                 crate::setup::investigate::rejected_declaring(&text, &c.id, &instrument)
             {
                 format!(
-                    "rejected by a person in {id}, proposed as {what} (`drift setup --forget {id}` asks again)"
+                    "rejected by a person in {id}, proposed as {what} (`drift setup --forget {}` asks again)",
+                    crate::promote::shell_word(&id)
                 )
             } else {
                 continue;
@@ -281,41 +285,108 @@ pub fn add_practices<'m>(
     only: Option<&BTreeSet<String>>,
     map: impl FnOnce() -> &'m PracticesReport,
 ) {
-    if !promote::any(policy, scope) {
+    // A practice proposed from the map that nobody decided is checked only in a person's
+    // review of proposals (`Scope::All`, its card's outliers): every check, hook and
+    // agent tool reads `Scope::Accepted`, where it is not in scope.
+    let promoted = promote::any(policy, scope);
+    // An accepted mined rule about how an entry point is guarded reports no entry point
+    // the map cannot tell ([`CheckReport::set_aside_untold`]); the map is asked only
+    // when such a rule has a member that breaks it.
+    let mined = scope == dcheck::Scope::Accepted && dcheck::reads_practice_map(report, policy);
+    if !promoted && !mined {
         return;
     }
     // Paths named (a hook's one file): a practice that covers none of them says nothing
     // of them, and the map of facts that may be of one file is not built for it.
-    if let Some(only) = only
-        && !policy.conventions.iter().any(|c| {
-            facts
-                .files
-                .iter()
-                .any(|f| only.contains(&f.path) && promote::covers_file(c, f))
-        })
-    {
+    let promoted = promoted
+        && only.is_none_or(|only| {
+            // Only a practice `scope` checks: one rejected, or (checking what is
+            // accepted) one only proposed, makes no map be built for these files.
+            policy.conventions.iter().any(|c| {
+                c.rule.is_practice()
+                    && match scope {
+                        dcheck::Scope::Accepted => c.status == drift_mine::policy::Status::Accepted,
+                        dcheck::Scope::All => c.status != drift_mine::policy::Status::Rejected,
+                    }
+                    && facts
+                        .files
+                        .iter()
+                        .any(|f| only.contains(&f.path) && promote::covers_file(c, f))
+            })
+        });
+    if !promoted && !mined {
         return;
     }
-    report.add_practices(promote::check(facts, map(), policy, lock, scope, only));
+    let map = map();
+    if promoted {
+        report.add_practices(promote::check(facts, map, policy, lock, scope, only));
+    }
+    if mined {
+        report.set_aside_untold(facts, policy, map);
+    }
 }
 
 /// The lock that baselines every current violation of `policy` (every convention not
 /// rejected, [`drift_mine::check::baseline`]), the units that break a promoted practice
 /// included ([`promote::baseline`]). The map is built only when there is one.
 pub fn baseline_with_practices(root: &Path, facts: &RepoFacts, policy: &ConventionsFile) -> Lock {
+    let map = OnceCell::new();
+    baseline_with_map(facts, policy, || {
+        map.get_or_init(|| report_units_kept(root, facts, None))
+    })
+}
+
+/// [`baseline_with_practices`] for a caller that has the practice map of `facts` (with
+/// units listed): `map` is asked only when the policy has a promoted practice. Accepting
+/// a proposal from the map records its lines through this, so they are the lines `drift
+/// init` writes for any convention new to the policy.
+pub fn baseline_with_map<'m>(
+    facts: &RepoFacts,
+    policy: &ConventionsFile,
+    map: impl FnOnce() -> &'m PracticesReport,
+) -> Lock {
     let mut lock = dcheck::baseline(facts, policy);
-    if promote::any(policy, dcheck::Scope::All) {
-        let map = report_units_kept(root, facts, None);
-        lock.entries.extend(promote::baseline(facts, &map, policy));
+    // A proposal from the map is recorded only once a person accepts it.
+    let promoted = promoted_only(policy);
+    if promote::any(&promoted, dcheck::Scope::All) {
+        lock.entries
+            .extend(promote::baseline(facts, map(), &promoted));
     }
     lock
 }
 
-/// The concern of each promoted practice of `policy`, by convention id.
+/// Whether `c` is a practice a person promoted: a [`drift_mine::mine::Rule::Practice`]
+/// not rejected and not a proposal from the map nobody decided yet
+/// ([`crate::from_map_cli::undecided`]: `status: proposed` with `from_map` set). Such a
+/// proposal did not pass through a person, so it is never listed, counted, checked or
+/// explained as a promoted practice, and never reaches an agent as a rule.
+pub fn is_promoted(c: &drift_mine::policy::Convention) -> bool {
+    c.rule.is_practice()
+        && c.status != drift_mine::policy::Status::Rejected
+        && !crate::from_map_cli::undecided(c)
+}
+
+/// `policy` without the practices proposed from the map nobody decided yet: what every
+/// check of promoted practices reads ([`is_promoted`]). Borrowed when there is none.
+pub fn promoted_only(policy: &ConventionsFile) -> std::borrow::Cow<'_, ConventionsFile> {
+    let proposal = |c: &drift_mine::policy::Convention| {
+        c.rule.is_practice() && crate::from_map_cli::undecided(c)
+    };
+    if !policy.conventions.iter().any(proposal) {
+        return std::borrow::Cow::Borrowed(policy);
+    }
+    let mut p = policy.clone();
+    p.conventions.retain(|c| !proposal(c));
+    std::borrow::Cow::Owned(p)
+}
+
+/// The concern of each promoted practice of `policy` ([`is_promoted`]), by convention
+/// id.
 pub fn practice_concerns(policy: &ConventionsFile) -> BTreeMap<&str, &str> {
     policy
         .conventions
         .iter()
+        .filter(|c| is_promoted(c))
         .filter_map(|c| match &c.rule {
             drift_mine::mine::Rule::Practice { concern, .. } => {
                 Some((c.id.as_str(), concern.as_str()))
@@ -352,6 +423,8 @@ pub fn reported_practice_units(
 /// how many units of each Drift could not read. Neither changes the exit code. Sorted
 /// by convention id.
 pub fn practice_status_lines(report: &CheckReport, policy: &ConventionsFile) -> Vec<String> {
+    use drift_mine::report::sanitize;
+    // Only promoted practices: a proposal from the map is not one ([`is_promoted`]).
     let concerns = practice_concerns(policy);
     let place = |id: &str| {
         policy
@@ -359,27 +432,50 @@ pub fn practice_status_lines(report: &CheckReport, policy: &ConventionsFile) -> 
             .iter()
             .find(|c| c.id == id)
             .and_then(promote::place_of)
-            .map(|p| p.shown())
     };
-    let mut stale: Vec<&promote::Stale> = report.stale_practices.iter().collect();
+    let mut stale: Vec<&promote::Stale> = report
+        .stale_practices
+        .iter()
+        .filter(|s| concerns.contains_key(s.id.as_str()))
+        .collect();
     stale.sort();
-    let mut not_checked: Vec<&promote::NotChecked> = report.practices_not_checked.iter().collect();
+    let mut not_checked: Vec<&promote::NotChecked> = report
+        .practices_not_checked
+        .iter()
+        .filter(|n| concerns.contains_key(n.id.as_str()))
+        .collect();
     not_checked.sort();
     let mut out = Vec::new();
     for s in stale {
-        let at = place(&s.id).unwrap_or_else(|| "<place>".to_string());
+        let p = place(&s.id);
+        let at = p
+            .as_ref()
+            .map_or_else(|| "its place".to_string(), |p| sanitize(&p.shown(), 160));
+        // The place as the promote command takes it: a route place holds `[*]` and `:`,
+        // a directory may hold `(`, so it is one shell word as `drift practices promote
+        // --list` prints it ([`crate::promote::shell_word`]).
+        let arg = p.as_ref().map_or_else(
+            || "<place>".to_string(),
+            |p| crate::promote::shell_word(&sanitize(&p.shown(), 160)),
+        );
         out.push(format!(
-            "drift: [{}] promoted practice is stale: none of the {} Drift read in {at} does it an accepted way any more ({}), so it reports nothing until a person looks. To accept the way the code does it now: `drift practices promote <P-id> --in {at}` again (`drift practices promote --list` shows what may be promoted); to drop it: `drift review --reject {}`",
-            s.id, s.units, s.summary, s.id
+            "drift: [{}] promoted practice is stale: none of the {} Drift read in {at} does it an accepted way any more ({}), so it reports nothing until a person looks. To accept the way the code does it now: `drift practices promote <P-id> --in {arg}` again (`drift practices promote --list` shows what may be promoted); to drop it: `drift review --reject {}`",
+            sanitize(&s.id, 16),
+            s.units,
+            sanitize(&s.summary, 240),
+            crate::promote::shell_word(&sanitize(&s.id, 16))
         ));
     }
     for n in not_checked {
         let concern =
             practices::plain_concern(concerns.get(n.id.as_str()).copied().unwrap_or_default());
-        let at = place(&n.id).map_or_else(String::new, |p| format!(" in {p}"));
+        let at = place(&n.id).map_or_else(String::new, |p| {
+            format!(" in {}", sanitize(&p.shown(), 160))
+        });
         out.push(format!(
             "drift: [{}] promoted practice ({concern}): {}{at} not checked: Drift could not read how it is done there, and never reports what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that settle it",
-            n.id, n.units
+            sanitize(&n.id, 16),
+            n.units
         ));
     }
     out
@@ -399,13 +495,17 @@ pub type Adds<'a> = &'a dyn Fn(&str, u32, &str, Option<&str>, Option<&str>) -> b
 /// points: the caller that checks promoted practices shares the one it built for them.
 /// `reported`: the units the check already lists as breaking a promoted practice
 /// ([`reported_practice_units`]): none is said again as a departure, or a new entry
-/// point, of the same concern.
+/// point, of the same concern. `policy`: a departure whose place a person already
+/// decided on for its concern (promoted there, or declined) carries no promote command
+/// ([`crate::promote::drop_decided_departures`]); a proposal from the map nobody decided
+/// is no decision ([`promoted_only`]).
 pub fn check_departures<'m>(
     facts: &RepoFacts,
     map: impl FnOnce() -> &'m PracticesReport,
     looked_at: impl Fn(&str) -> bool,
     added: Option<Adds<'_>>,
     reported: &BTreeSet<(String, String, String)>,
+    policy: &ConventionsFile,
 ) -> (Vec<practices::Departure>, Vec<practices::AddedEntry>) {
     let any = facts.files.iter().any(|f| {
         !f.listed_entry_points().is_empty()
@@ -458,6 +558,8 @@ pub fn check_departures<'m>(
     }
     out.retain(|d| !d.units.is_empty());
     new.retain(|a| !said(practices::AUTHN, &a.path, &a.symbol));
+    // What a person already decided is not offered to them again.
+    crate::promote::drop_decided_departures(report, &promoted_only(policy), &mut out);
     // In the map's concern order (who may call first), not the alphabet's: the first
     // few are the ones a pull request annotates.
     let rank = |c: &str| {

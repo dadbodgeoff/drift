@@ -44,15 +44,17 @@ import {
   variantLabel,
   variantName,
 } from "./model/practices";
-import { promotablePlace } from "./model/promote";
+import { choiceFromVariant, promotablePlace } from "./model/promote";
 import { PromoteDialog } from "./PromoteDialog";
+import { CandidatesTab } from "./Candidates";
+import { t } from "@/shared/i18n";
 
 const KNOWN = seriesColor("accent");
 const NONE = seriesColor("muted");
 const IDENTIFIED = seriesColor("warning");
 
-type Tab = "recipe" | "findings" | "concerns";
-const TABS: Tab[] = ["recipe", "findings", "concerns"];
+type Tab = "recipe" | "findings" | "concerns" | "candidates";
+const TABS: Tab[] = ["recipe", "findings", "concerns", "candidates"];
 
 export function PracticesView({ tab, concern }: { tab: string | null; concern: string | null }) {
   const { repo } = useRepo();
@@ -96,12 +98,15 @@ function Practices({ report, tab, concernParam, pkg: pkgState, setPkg }: { repor
           { value: "recipe", label: "Recipe", count: recipes.length },
           { value: "findings", label: "Findings", count: findings.length },
           { value: "concerns", label: "All concerns", count: rows.length },
+          // Drift's list of what may be promoted now: run only when this tab is open.
+          { value: "candidates", label: t("practices.candidates.tab") },
         ]}
       />
       <TabPanel idBase="pr" value={tab} className="st-tabfill">
         {tab === "recipe" && <Recipes report={report} recipes={recipes} pkg={pkg} />}
         {tab === "findings" && <Findings report={report} findings={findings} pkg={pkg} />}
         {tab === "concerns" && <Concerns report={report} rows={rows} pkg={pkg} concernParam={concernParam} />}
+        {tab === "candidates" && <CandidatesTab report={report} pkg={pkg} titleOf={(id) => concernTitle(report, id)} />}
       </TabPanel>
     </div>
   );
@@ -300,7 +305,7 @@ function Findings({ report, findings, pkg }: { report: PracticesReport; findings
 }
 
 function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding }) {
-  const t = findingText(report, f);
+  const text = findingText(report, f);
   const k = FINDING_KIND[f.kind];
   return (
     <li className={`pr-finding is-${f.kind}`}>
@@ -316,8 +321,8 @@ function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding })
         {f.concern !== HYGIENE && isPreview(f.concern) && <Tag>preview</Tag>}
         <span className="t-caption t-muted">{f.package === null ? (f.kind === "duplicate_helper" ? "across packages" : "whole repository") : pkgLabel(f.package)}</span>
       </div>
-      <p className="pr-finding__title">{t.title}</p>
-      <p className="t-body-sm t-secondary">{t.detail}</p>
+      <p className="pr-finding__title">{text.title}</p>
+      <p className="t-body-sm t-secondary">{text.detail}</p>
       {f.kind === "unexplained_split" && f.variants.length > 0 && (
         <p className="t-body-sm">
           {f.variants.map((id, i) => (
@@ -330,9 +335,9 @@ function Finding({ report, f }: { report: PracticesReport; f: PracticeFinding })
       )}
       {f.config_hint && <ConfigHint hint={f.config_hint} />}
       {f.kind === "duplicate_helper" ? (
-        (f.copies?.length ?? 0) > 0 && <Examples compact items={f.copies ?? []} context={(e) => ({ title: t.title, detail: `One of ${f.members} copies of ${e.symbol}`, tone: "warning" })} />
+        (f.copies?.length ?? 0) > 0 && <Examples compact items={f.copies ?? []} context={(e) => ({ title: text.title, detail: `One of ${f.members} copies of ${e.symbol}`, tone: "warning" })} />
       ) : (
-        f.examples.length > 0 && <Examples compact items={f.examples} context={(e) => ({ title: t.title, detail: `${concernTitle(report, f.concern)}: ${e.symbol}`, tone: f.kind === "none" || f.kind === "unscoped_key" ? "warning" : "info" })} />
+        f.examples.length > 0 && <Examples compact items={f.examples} context={(e) => ({ title: text.title, detail: `${concernTitle(report, f.concern)}: ${e.symbol}`, tone: f.kind === "none" || f.kind === "unscoped_key" ? "warning" : "info" })} />
       )}
     </li>
   );
@@ -734,6 +739,11 @@ function Unknown({ c, scope }: { c: PracticeConcern; scope: ConcernScope }) {
   );
 }
 
+/** Where a variant has the most units: its first listed directory, else its first package (`.` the root package). */
+function biggestPlace(v: PracticeVariant): string {
+  return v.where.dirs[0]?.dir ?? (v.where.packages[0] ? v.where.packages[0].package || "." : ".");
+}
+
 function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; pkg: string | null }) {
   const d = dominantOf(c);
   const ex = examplesIn(v.examples, pkg);
@@ -774,7 +784,15 @@ function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; 
           </div>
         </Panel>
       )}
-      {place !== null && promoting === v.id && <PromoteDialog c={c} v={v} place={place} onClose={() => setPromoting(null)} />}
+      {v.kind === "known" && place === null && (
+        <div className="st-row st-wrap pr-promote__action">
+          <Button variant="secondary" size="sm" onClick={() => setPromoting(v.id)}>
+            Try it as a convention
+          </Button>
+          <span className="t-caption t-muted">Drift names no place where this way qualifies as the code stands; choose a place, a file or a route prefix and Drift says what it would record, or why not.</span>
+        </div>
+      )}
+      {promoting === v.id && <PromoteDialog concern={c} initial={choiceFromVariant(c, v, place ?? biggestPlace(v))} onClose={() => setPromoting(null)} />}
       {v.alternatives?.length ? (
         <Panel title="A split policy" subtitle="Any of these, counted as one way; each alternative's own share">
           <ul className="st-plainlist t-body-sm">

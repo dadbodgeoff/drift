@@ -17,10 +17,28 @@ use crate::roles::{FileKinds, RoleSelector};
 /// still written as version 1, byte for byte. A version-1 file needs no migration: it
 /// reads as a policy without `packages` (each convention's scope is its role's
 /// `package`, as it always was), and the next `drift init` in a workspace writes
-/// version 2.
-pub const POLICY_VERSION: u32 = 2;
+/// version 2. 3: a convention holds a form a Drift that reads up to 2 would read as a
+/// narrower or wider rule than it is, and check wrongly ([`misread_before_forms`]: a
+/// promoted practice that accepts a mechanism whole or any enforcing way). Written only
+/// when one is there ([`written_version`]), so every other file is written as before,
+/// byte for byte; such a Drift refuses a version-3 file instead of checking it wrong.
+/// 4: a convention holds a rule kind a Drift that reads up to 3 does not know
+/// ([`misread_before_rules`]: [`Rule::ImportsDeclared`], whatever its status). Such a
+/// Drift could not parse the file at all and would show a parse error; at version 4 it
+/// refuses it with "written by a newer Drift: upgrade", as it does format 3. Written only
+/// when one is there, so every other file is written as before, byte for byte.
+pub const POLICY_VERSION: u32 = 4;
 /// The format of a policy without [`ConventionsFile::packages`].
 pub const POLICY_VERSION_SINGLE: u32 = 1;
+/// The format of a policy with [`ConventionsFile::packages`] and no form of
+/// [`POLICY_VERSION_FORMS`].
+pub const POLICY_VERSION_PACKAGES: u32 = 2;
+/// The format of a policy holding a form an older Drift would misread
+/// ([`misread_before_forms`]), with or without packages.
+pub const POLICY_VERSION_FORMS: u32 = 3;
+/// The format of a policy holding a rule kind an older Drift does not know
+/// ([`misread_before_rules`]), with or without the forms of [`POLICY_VERSION_FORMS`].
+pub const POLICY_VERSION_RULES: u32 = 4;
 
 /// How a convention's role selector is read ([`Convention::selector_version`]).
 /// 1: as written before reserved exports had roles of their own: a selector without
@@ -80,7 +98,22 @@ pub const KNOWN_FEATURES: &[&str] = &[
     TEST_ROLES_FEATURE,
     KIND_ROLES_FEATURE,
     LISTED_ENTRY_POINTS_FEATURE,
+    PROBATION_FEATURE,
 ];
+
+/// The experimental feature that lets a promoted practice earn block mode without git
+/// history ([`crate::practices::probation`]): `--block` with no history to replay puts
+/// it on probation in advise mode, and `drift check` counts the units added to its place
+/// since. Off by default: how many units it takes is the owner's decision.
+pub const PROBATION_FEATURE: &str = "probation";
+
+/// Whether probation is on for the repository at `root` ([`PROBATION_FEATURE`]): in the
+/// config's `experimental` list or in [`EXPERIMENTAL_ENV`]. Off by default, and off when
+/// the config cannot be read [STRICT], so a Drift that cannot read the setting does
+/// what it did before.
+pub fn probation(root: &Path) -> bool {
+    DriftConfig::load(root).is_ok_and(|c| c.enabled(PROBATION_FEATURE))
+}
 
 /// Whether every command reads the listed entry points of the repository at `root`
 /// ([`LISTED_ENTRY_POINTS_FEATURE`]): in the config's `experimental` list or in
@@ -110,6 +143,54 @@ pub fn kind_roles(root: &Path, flag: bool) -> bool {
 /// the config cannot be read [STRICT].
 pub fn test_roles(root: &Path, flag: bool) -> bool {
     flag || DriftConfig::load(root).is_ok_and(|c| c.enabled(TEST_ROLES_FEATURE))
+}
+
+/// Files of one kind this process has read, by canonical path, once [`remember_configs`]
+/// turned that on: `None` while off.
+type Remembered<T> = std::sync::Mutex<Option<std::collections::BTreeMap<std::path::PathBuf, T>>>;
+
+static REMEMBERED_CONFIGS: Remembered<DriftConfig> = std::sync::Mutex::new(None);
+static REMEMBERED_POLICIES: Remembered<ConventionsFile> = std::sync::Mutex::new(None);
+
+/// From now on, [`DriftConfig::load`] and [`ConventionsFile::load`] read each
+/// `.drift/config.yaml` and `.drift/conventions.yaml` once in this process and answer
+/// later loads from that reading. For a short process that never writes them and asks
+/// for them from many places (an agent hook: the scan, the workspace, the listed entry
+/// points, the practice map and the brief each load the config, the practice map the
+/// policy again); a long one (the MCP server) or one that writes them must not turn it
+/// on. A file that cannot be read or parsed is not remembered: each load says why, as
+/// before.
+pub fn remember_configs() {
+    if let Ok(mut m) = REMEMBERED_CONFIGS.lock() {
+        m.get_or_insert_with(Default::default);
+    }
+    if let Ok(mut m) = REMEMBERED_POLICIES.lock() {
+        m.get_or_insert_with(Default::default);
+    }
+}
+
+/// The key of a remembered file: its path with the directory canonical, so the
+/// spellings of one root (a symbolic link, the session's `cwd`) share one reading.
+fn remembered_key(path: &Path) -> std::path::PathBuf {
+    match (path.parent(), path.file_name()) {
+        (Some(dir), Some(name)) => drift_core::fsutil::canonical(dir)
+            .map(|d| d.join(name))
+            .unwrap_or_else(|_| path.to_path_buf()),
+        _ => path.to_path_buf(),
+    }
+}
+
+fn remembered<T: Clone>(kept: &Remembered<T>, path: &Path) -> Option<T> {
+    let m = kept.lock().ok()?;
+    m.as_ref()?.get(&remembered_key(path)).cloned()
+}
+
+fn remember<T: Clone>(kept: &Remembered<T>, path: &Path, value: &T) {
+    if let Ok(mut m) = kept.lock()
+        && let Some(m) = m.as_mut()
+    {
+        m.insert(remembered_key(path), value.clone());
+    }
 }
 
 /// `.drift/config.yaml`: settings people choose. Every field is optional.
@@ -156,10 +237,16 @@ impl DriftConfig {
     /// or an `experimental` that is not a list of names, is an error.
     pub fn load(root: &Path) -> anyhow::Result<Self> {
         let p = root.join(CONFIG_FILE);
-        let Some(text) = read_policy_file(&p)? else {
+        if let Some(kept) = remembered(&REMEMBERED_CONFIGS, &p) {
+            return Ok(kept);
+        }
+        let Some(text) = read_policy_file(root, CONFIG_FILE)? else {
             return Ok(Self::default());
         };
-        Self::parse(&text, &p.display().to_string())
+        drift_core::work::note(drift_core::work::Work::ConfigLoad);
+        let cfg = Self::parse(&text, &p.display().to_string())?;
+        remember(&REMEMBERED_CONFIGS, &p, &cfg);
+        Ok(cfg)
     }
 
     /// The config written as `text` ([`Self::load`] reads the file and parses it so);
@@ -327,6 +414,13 @@ pub struct SecuritySettings {
     /// What a person says of the repository's Terraform ([`TerraformTie`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terraform: Vec<TerraformTie>,
+    /// What a person says a platform's file deploys ([`PlatformTie`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub platforms: Vec<PlatformTie>,
+    /// What a person says of the repository's Kubernetes manifests
+    /// ([`KubernetesTie`]): which workload runs which code.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kubernetes: Vec<KubernetesTie>,
     /// The entries of `not_deployed` that rest only on an agent's answer to `drift
     /// setup` that no person confirmed ([`agents_word`]): they count only where they
     /// make Drift more cautious, judged each time the boundary is read
@@ -431,6 +525,38 @@ pub struct TerraformTie {
     pub code: String,
 }
 
+/// One entry of `security.platforms`: `{file: <platform file>[#<service>], code: <dir>}`.
+/// A person's statement that what the platform's file deploys (the service, process
+/// or function it names after `#`, or the one thing the file deploys) runs the code
+/// in `code`: where the file does not say it (a monorepo root with several
+/// applications, a Cloud Run service that names only an image), Drift then reads the
+/// file's own word on how that code is reached ([`crate::security::platforms`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlatformTie {
+    /// The platform's file, repo-relative, with `#<name>` for one unit of it.
+    pub file: String,
+    /// The code directory, repo-relative; "" is the whole repository.
+    pub code: String,
+}
+
+/// One entry of `security.kubernetes`: `{workload: [<namespace>/]<Kind>/<name>, code:
+/// <dir>}`, with `container: <name>` where the pod has more than one. A person's
+/// statement that the workload of the repository's Kubernetes manifests (a
+/// `Deployment`, `StatefulSet`, `DaemonSet`, `Pod`, ...) runs the code in `code`: what
+/// Drift cannot tell itself when the image it runs is not one the repository is
+/// seen to build. The manifests are then read for the routes of `code`
+/// ([`crate::security::Boundaries`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KubernetesTie {
+    /// `Kind/name` or `namespace/Kind/name`, as `drift security` names the object.
+    pub workload: String,
+    /// The container of its pod, when one is named.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container: Option<String>,
+    /// The code directory, repo-relative; "" is the whole repository.
+    pub code: String,
+}
+
 /// A path of the config as Drift compares it: no `./`, no `/` at the end, `.` the root.
 fn config_dir(d: &str) -> Option<String> {
     let d = d.trim().trim_start_matches("./").trim_end_matches('/');
@@ -454,6 +580,14 @@ impl SecuritySettings {
         for (k, v) in map {
             if k == "terraform" {
                 out.terraform = Self::ties(v, warnings);
+                continue;
+            }
+            if k == "platforms" {
+                out.platforms = Self::platform_ties(v, warnings);
+                continue;
+            }
+            if k == "kubernetes" {
+                out.kubernetes = Self::workloads(v, warnings);
                 continue;
             }
             let list = match k.as_str() {
@@ -494,6 +628,44 @@ impl SecuritySettings {
 }
 
 impl SecuritySettings {
+    /// Reads `security.platforms`; an entry that is not `{file, code}` is a warning.
+    fn platform_ties(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<PlatformTie> {
+        let shape = format!(
+            "{CONFIG_FILE}: `security.platforms` must be a list of `{{file: <platform file>[#<service>], code: <dir>}}`"
+        );
+        let Some(items) = v.as_array() else {
+            warnings.push(format!("{shape} (ignored)"));
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for item in items {
+            let text = |key: &str| item.get(key).and_then(|v| v.as_str());
+            let known = item
+                .as_object()
+                .is_some_and(|o| o.keys().all(|k| k == "file" || k == "code"));
+            let (Some(file), Some(code), true) = (text("file"), text("code"), known) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            let (path, unit) = match file.split_once('#') {
+                Some((p, u)) => (p, Some(u.trim())),
+                None => (file, None),
+            };
+            let (Some(path), Some(code)) = (config_dir(path), config_dir(code)) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            out.push(PlatformTie {
+                file: match unit {
+                    Some(u) if !u.is_empty() => format!("{path}#{u}"),
+                    _ => path,
+                },
+                code,
+            });
+        }
+        out
+    }
+
     /// Reads `security.terraform`; an entry that is not `{target, code}` is a warning.
     fn ties(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<TerraformTie> {
         let mut out = Vec::new();
@@ -542,6 +714,55 @@ impl SecuritySettings {
             out.push(TerraformTie {
                 module,
                 group,
+                code,
+            });
+        }
+        out
+    }
+}
+
+impl SecuritySettings {
+    /// Reads `security.kubernetes`; an entry that is not `{workload, code}` (and
+    /// optionally `container`) is a warning.
+    fn workloads(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<KubernetesTie> {
+        let mut out = Vec::new();
+        let shape = format!(
+            "{CONFIG_FILE}: `security.kubernetes` must be a list of `{{workload: [<namespace>/]<Kind>/<name>, code: <dir>}}`, with `container: <name>` where its pod has more than one"
+        );
+        let Some(items) = v.as_array() else {
+            warnings.push(format!("{shape} (ignored)"));
+            return out;
+        };
+        for item in items {
+            let text = |key: &str| item.get(key).and_then(|v| v.as_str());
+            let known = item.as_object().is_some_and(|o| {
+                o.keys()
+                    .all(|k| matches!(k.as_str(), "workload" | "code" | "container"))
+            });
+            let container = match item.get("container") {
+                None => Some(None),
+                Some(c) => c
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|c| !c.is_empty())
+                    .map(|c| Some(c.to_string())),
+            };
+            let workload = text("workload").map(str::trim).filter(|w| {
+                let parts: Vec<&str> = w.split('/').collect();
+                matches!(parts.len(), 2 | 3) && parts.iter().all(|p| !p.is_empty())
+            });
+            let (Some(workload), Some(code), Some(container), true) = (
+                workload,
+                text("code").and_then(config_dir),
+                container,
+                known,
+            ) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            out.push(KubernetesTie {
+                workload: workload.to_string(),
+                container,
                 code,
             });
         }
@@ -647,41 +868,13 @@ fn python_kept(c: &Convention) -> bool {
 /// through a symbolic link that leaves the repository: a repository can commit
 /// `.drift/conventions.yaml -> ~/.bashrc`, and a plain write would overwrite the
 /// target. A link that stays inside (`CLAUDE.md -> AGENTS.md`) is written at its
-/// destination; any other link on the way is refused (an error). The file is
-/// written with `drift_core::fsutil::write_atomic`, which never follows a link.
+/// destination; a link on the way that leads outside, and a final link to a file that
+/// does not exist, are refused (an error naming the link; nothing is written, and the
+/// link is left as it is). The rule is [`crate::owned_file::resolve`], the same one
+/// Drift reads its files by. The file is written with
+/// `drift_core::fsutil::write_atomic`, which never follows a link.
 pub fn write_no_follow(base: &Path, rel: &Path, contents: &[u8]) -> anyhow::Result<()> {
-    let target = base.join(rel);
-    let link = rel
-        .ancestors()
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(|p| base.join(p))
-        .find(|p| std::fs::symlink_metadata(p).is_ok_and(|m| m.file_type().is_symlink()));
-    let target = match link {
-        None => target,
-        Some(link) => {
-            let refuse = || {
-                anyhow::anyhow!(
-                    "refusing to write {}: {} is a symbolic link that leads outside the \
-                     repository. Replace it with a regular file or directory.",
-                    target.display(),
-                    link.display()
-                )
-            };
-            let root = base.canonicalize().map_err(|_| refuse())?;
-            let resolved = match target.canonicalize() {
-                Ok(p) => p,
-                // A dangling final link: resolve its directory; the link is replaced.
-                Err(_) => match (target.parent(), target.file_name()) {
-                    (Some(dir), Some(name)) => dir.canonicalize().map_err(|_| refuse())?.join(name),
-                    _ => return Err(refuse()),
-                },
-            };
-            if !resolved.starts_with(&root) {
-                return Err(refuse());
-            }
-            resolved
-        }
-    };
+    let target = crate::owned_file::resolve(base, rel, "write")?;
     let dir = target.parent().unwrap_or(base);
     std::fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
     let name = target.file_name().unwrap_or_default().to_string_lossy();
@@ -773,6 +966,49 @@ pub struct Convention {
     /// convention, so they are written as before. Not part of the id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub promoted_from_practice: Option<String>,
+    /// Drift proposed this convention from one of its maps, not from mining: which
+    /// fact it rests on (`practice`: a place of the practice map that qualifies for
+    /// promotion, proposed for a person to accept; `layering`: a pair of layers of the
+    /// structure map where one never imports the other; `manifest`: a workspace
+    /// package that imports only what its manifest declares). Such a proposal goes
+    /// through none of mining's gates and changes none of mining's output; like every
+    /// proposal, nothing checks it until a person accepts it. Absent for every mined
+    /// or hand-promoted convention, so they are written as before. Not part of the id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_map: Option<String>,
+    /// The evidence as it stood when a person accepted the convention: `drift init`
+    /// refreshes [`Convention::evidence`] on every run, so without this nobody can tell
+    /// that the role a block was accepted on has since shrunk or changed. Frozen the
+    /// first time a run meets the convention accepted ([`ConventionsFile::merge`], and
+    /// [`Convention::freeze_accepted_evidence`] for a command that accepts), and carried
+    /// with the decision when its id changes. Absent until then, so every file written
+    /// before is written as before. Not part of the id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accepted_evidence: Option<AcceptedEvidence>,
+}
+
+/// What a person saw when they accepted a convention ([`Convention::accepted_evidence`]):
+/// the role's size, how many of the members the rule is about followed it, and the
+/// confidence Drift had.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AcceptedEvidence {
+    /// Members of the role ([`Evidence::role_size`]): the size the block floor reads.
+    pub role_size: usize,
+    /// Members that followed the rule, of `total`.
+    pub holders: usize,
+    pub total: usize,
+    pub lower_bound: f64,
+}
+
+impl AcceptedEvidence {
+    pub fn of(e: &Evidence) -> Self {
+        AcceptedEvidence {
+            role_size: e.role_size(),
+            holders: e.holders,
+            total: e.total,
+            lower_bound: e.lower_bound,
+        }
+    }
 }
 
 /// A file a person set apart from its convention as a different kind of thing
@@ -791,12 +1027,19 @@ pub struct DifferentKind {
 /// A path as [`DifferentKind::path`] names it: repo-relative, without `.` or `..`
 /// segments, no control characters. Refused otherwise.
 pub fn different_kind_path(text: &str) -> anyhow::Result<String> {
+    // Windows: `\` is a separator there, never part of a name (on Unix it may be one),
+    // and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = text.replace('\\', "/");
+    #[cfg(windows)]
+    let text = owned.as_str();
     if text.is_empty()
         || text.len() > 1024
         || text.contains('#')
         || text.chars().any(char::is_control)
         || text.starts_with('/')
         || text.contains('\\')
+        || (cfg!(windows) && text.contains(':'))
         || text
             .split('/')
             .any(|p| p == ".." || p == "." || p.is_empty())
@@ -814,7 +1057,8 @@ pub fn different_kind_path(text: &str) -> anyhow::Result<String> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Exception {
     /// `path#symbol`, as `drift.lock` keys members: it survives the member moving within
-    /// its file, not a rename or a move to another file.
+    /// its file. A move or a rename is followed through the fingerprint the lock keeps
+    /// beside the member's line ([`carry_moved_exceptions`]).
     pub member: String,
     /// Why it is fine, in the reviewer's words: one line, at most
     /// [`MAX_EXCEPTION_REASON`] characters. Echoed to agents only through
@@ -846,6 +1090,15 @@ pub fn exception_reason(text: &str) -> anyhow::Result<String> {
 /// A member as an exception names it: `path#symbol` with a repo-relative path, as
 /// `drift check` and `drift.lock` print members. Refused otherwise.
 pub fn exception_member(text: &str) -> anyhow::Result<String> {
+    // Windows: `\` in the path is a separator there, never part of a name (on Unix it
+    // may be one), and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = match text.split_once('#') {
+        Some((path, symbol)) => format!("{}#{symbol}", path.replace('\\', "/")),
+        None => text.to_string(),
+    };
+    #[cfg(windows)]
+    let text = owned.as_str();
     let bad = || {
         anyhow::anyhow!(
             "expected a member as path#symbol (as `drift review --show <id>` and `drift check` print it), got {:?}",
@@ -859,6 +1112,7 @@ pub fn exception_member(text: &str) -> anyhow::Result<String> {
         || text.chars().any(char::is_control)
         || path.starts_with('/')
         || path.contains('\\')
+        || (cfg!(windows) && path.contains(':'))
         || path
             .split('/')
             .any(|p| p == ".." || p == "." || p.is_empty())
@@ -869,6 +1123,15 @@ pub fn exception_member(text: &str) -> anyhow::Result<String> {
 }
 
 impl Convention {
+    /// Keep the evidence as it is now as what the person accepted
+    /// ([`Convention::accepted_evidence`]), unless it was kept already: for a command that
+    /// records an acceptance.
+    pub fn freeze_accepted_evidence(&mut self) {
+        if self.accepted_evidence.is_none() {
+            self.accepted_evidence = Some(AcceptedEvidence::of(&self.evidence));
+        }
+    }
+
     /// The exception a reviewer recorded for `member` (`path#symbol`), if any.
     pub fn exception(&self, member: &str) -> Option<&Exception> {
         self.exceptions.iter().find(|e| e.member == member)
@@ -1003,35 +1266,191 @@ impl Switch {
     }
 }
 
-/// The text of the policy file at `p`, `None` when there is none. Anything else
+/// The text of the policy file `root/rel`, `None` when there is none. Anything else
 /// that cannot be read is an error, never an empty policy: a FIFO or a link to
 /// `/dev/zero` (which a pull request can commit in place of `drift.lock`) is
-/// refused without blocking or exhausting memory
-/// ([`drift_core::fsutil::read_regular`]), as is text that is not UTF-8.
-fn read_policy_file(p: &Path) -> anyhow::Result<Option<String>> {
-    match drift_core::fsutil::read_regular_to_string(p, drift_core::fsutil::MAX_CONFIG_BYTES) {
-        Ok(text) => Ok(Some(text)),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e).with_context(|| format!("reading {}", p.display())),
+/// refused without blocking or exhausting memory, as is a link that leads outside the
+/// repository or to nothing ([`crate::owned_file::read`]). A leading byte-order mark
+/// (a Windows editor's) is not text: before, it made the first line of a `drift.lock`
+/// neither a comment nor its entry.
+fn read_policy_file(root: &Path, rel: &str) -> anyhow::Result<Option<String>> {
+    Ok(crate::owned_file::read(root, Path::new(rel))?.map(|text| {
+        match text.strip_prefix('\u{feff}') {
+            Some(rest) => rest.to_string(),
+            None => text,
+        }
+    }))
+}
+
+/// The one field read before the rest of a policy ([`ConventionsFile::load`]).
+#[derive(Deserialize)]
+struct VersionOnly {
+    version: u32,
+}
+
+/// A policy written in a format newer than this Drift reads ([`POLICY_VERSION`]): the
+/// error [`ConventionsFile::load`] returns for it, so a caller that hides other
+/// policy errors from agents (they can quote the file) can still say this one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewerPolicy {
+    /// The policy file, as the error names it.
+    pub path: String,
+    /// The format it says it is in.
+    pub version: u32,
+}
+
+impl NewerPolicy {
+    /// The error as an agent's hook or tool says it: no path (the hook's message is
+    /// cut at 200 characters), no text of the file.
+    pub fn for_agents(&self) -> String {
+        format!(
+            "{CONVENTIONS_FILE} was written by a newer Drift (format {}): upgrade Drift (`drift --version` shows this one); no convention is shown to agents until then",
+            self.version
+        )
     }
 }
 
+impl std::fmt::Display for NewerPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} was written by a newer Drift (policy format {}; this Drift reads up to {POLICY_VERSION}). Upgrade Drift to the version that wrote it (`drift --version` shows the one installed here; every machine and CI that reads this repository needs it), or restore the file from before that change",
+            self.path, self.version
+        )
+    }
+}
+
+impl std::error::Error for NewerPolicy {}
+
+/// The format `f` is written in: the oldest that holds everything in it, so a file
+/// with none of a newer format's forms is written as before, byte for byte, and stays
+/// readable by every Drift that read it. Without packages, version 1 (a file a person
+/// hand-wrote as 0 keeps it, as it always did); with packages, 2; with a form of
+/// version 3 ([`misread_before_forms`]), 3 either way; with a rule kind of version 4
+/// ([`misread_before_rules`]), 4 whatever else. Decided from the content on
+/// every write, as the selector version is per convention
+/// ([`selector_version_of`]): a file whose last such form is removed goes back down.
+pub fn written_version(f: &ConventionsFile) -> u32 {
+    let base = if f.packages.is_empty() {
+        f.version.min(POLICY_VERSION_SINGLE)
+    } else {
+        POLICY_VERSION_PACKAGES
+    };
+    if f.conventions.iter().any(misread_before_rules) {
+        base.max(POLICY_VERSION_RULES)
+    } else if f.conventions.iter().any(misread_before_forms) {
+        base.max(POLICY_VERSION_FORMS)
+    } else {
+        base
+    }
+}
+
+/// Whether a Drift that reads up to [`POLICY_VERSION_FORMS`] does not know the rule kind
+/// of `c` ([`Rule::ImportsDeclared`]): it could not parse the file, and a proposal is
+/// enough for that, so the status does not matter.
+pub fn misread_before_rules(c: &Convention) -> bool {
+    matches!(c.rule, Rule::ImportsDeclared)
+}
+
+/// Whether `c` makes the file be written above [`POLICY_VERSION_PACKAGES`]: a form of
+/// [`POLICY_VERSION_FORMS`] or a rule kind of [`POLICY_VERSION_RULES`].
+pub fn raises_version(c: &Convention) -> bool {
+    misread_before_forms(c) || misread_before_rules(c)
+}
+
+/// Whether a Drift that reads up to [`POLICY_VERSION_PACKAGES`] would read `c` as a
+/// different rule than it is: serde skips a field it does not know, so such a Drift
+/// would parse the file, check the rule without the field, and (when it writes the
+/// file back, `drift init`, `drift review`) drop it. Whatever the status: a proposal or
+/// a rejection read wrong is rewritten wrong too.
+///
+/// Raising the version (the file is refused, "written by a newer Drift"):
+/// - a practice's `any_mechanism`: without it the rule is its `any_of` alone, often
+///   empty, so every unit of the place that uses the mechanism by another instrument
+///   is reported as a violation;
+/// - a practice's `any_enforcing`: the same, for every enforcing way not named;
+/// - a practice's place of a kind other than a package or a directory
+///   ([`place_of_a_new_kind`]): read as the whole directory, a wider place.
+///
+/// Not raising it, because a Drift that skips them checks exactly the same rules:
+/// - [`Convention::from_map`]: says where a proposal came from. A proposal is checked
+///   by nobody until a person accepts it; an accepted one is checked by its rule
+///   (layering is `Rule::Avoids`, which every such Drift knows). Such a Drift has no
+///   staleness to exempt it from ([`crate::check`]'s `settle` reads it only for that).
+///   Rewritten by it, the label is lost: the proposal reads as mined, and an accepted
+///   one can later be called stale, which only ever moves it to advise.
+/// - [`Convention::accepted_evidence`]: a record of what a person saw, read by
+///   nothing that decides a violation. Rewritten by such a Drift, it is lost and the
+///   next `drift init` freezes the evidence of that day instead.
+pub fn misread_before_forms(c: &Convention) -> bool {
+    match &c.rule {
+        Rule::Practice {
+            any_mechanism,
+            any_enforcing,
+            ..
+        } => !any_mechanism.is_empty() || *any_enforcing || place_of_a_new_kind(c),
+        _ => false,
+    }
+}
+
+/// Whether the promoted practice `c` holds in a place of a kind a Drift that reads up
+/// to [`POLICY_VERSION_PACKAGES`] does not know: anything but a package or one
+/// directory of it. Such a Drift reads a practice's place from its role's package and
+/// directory only ([`crate::practices::promote::place_of`]), so it would check one
+/// file's or one route prefix's practice over the whole directory.
+fn place_of_a_new_kind(c: &Convention) -> bool {
+    matches!(
+        &c.rule,
+        Rule::Practice { in_file, under_route, .. } if in_file.is_some() || under_route.is_some()
+    )
+}
+
 impl ConventionsFile {
+    /// The policy at `root`, `None` without one. Read once in a process that asked for
+    /// it ([`remember_configs`]).
     pub fn load(root: &Path) -> anyhow::Result<Option<Self>> {
         let p = root.join(CONVENTIONS_FILE);
-        if !p.exists() {
-            return Ok(None);
+        if let Some(kept) = remembered(&REMEMBERED_POLICIES, &p) {
+            return Ok(Some(kept));
         }
-        let Some(text) = read_policy_file(&p)? else {
+        let read = Self::read(root, &p)?;
+        if let Some(f) = &read {
+            remember(&REMEMBERED_POLICIES, &p, f);
+        }
+        Ok(read)
+    }
+
+    fn read(root: &Path, p: &Path) -> anyhow::Result<Option<Self>> {
+        let Some(text) = read_policy_file(root, CONVENTIONS_FILE)? else {
             return Ok(None);
         };
-        let f: Self =
-            serde_saphyr::from_str(&text).with_context(|| format!("parsing {}", p.display()))?;
-        anyhow::ensure!(
-            f.version <= POLICY_VERSION,
-            "{} was written by a newer Drift",
-            p.display()
-        );
+        drift_core::work::note(drift_core::work::Work::PolicyLoad);
+        // The version first, read alone: a newer Drift's file can hold a rule type or a
+        // shape this one cannot parse, and the person needs to hear "upgrade", not a
+        // parse error. Where even the version cannot be read, the full parse says why.
+        // Read alone only when the full parse fails: a file that parses has the same
+        // `version` field, which the check below reads, so the answer is the same with
+        // one parse instead of two.
+        let f: Self = match serde_saphyr::from_str(&text) {
+            Ok(f) => f,
+            Err(e) => {
+                if let Ok(v) = serde_saphyr::from_str::<VersionOnly>(&text)
+                    && v.version > POLICY_VERSION
+                {
+                    return Err(anyhow::Error::new(NewerPolicy {
+                        path: p.display().to_string(),
+                        version: v.version,
+                    }));
+                }
+                return Err(e).with_context(|| format!("parsing {}", p.display()));
+            }
+        };
+        if f.version > POLICY_VERSION {
+            return Err(anyhow::Error::new(NewerPolicy {
+                path: p.display().to_string(),
+                version: f.version,
+            }));
+        }
         let mut f = f;
         // Wiring rules are experimental suggestions: they advise, whatever the file
         // says, until they have been blind-labelled.
@@ -1064,11 +1483,7 @@ impl ConventionsFile {
 
     pub fn save(&self, root: &Path) -> anyhow::Result<()> {
         let mut this = std::borrow::Cow::Borrowed(self);
-        let version = if self.packages.is_empty() {
-            self.version.min(POLICY_VERSION_SINGLE)
-        } else {
-            POLICY_VERSION
-        };
+        let version = written_version(self);
         if version != self.version {
             this.to_mut().version = version;
         }
@@ -1090,6 +1505,32 @@ impl ConventionsFile {
         kinds: FileKinds,
         candidates: &[Candidate],
     ) -> Self {
+        Self::merge_carrying(existing, engine, kinds, candidates).0
+    }
+
+    /// [`ConventionsFile::merge`], and the new cards that descend from an old one:
+    /// `(old id, new id)` pairs, sorted. A convention's id hashes its role and rule
+    /// ([`crate::mine::convention_id`]), so a mined rule that gains an alternative (a
+    /// second wrapper beside the first) comes back under a new id. Where a new
+    /// candidate's role is an accepted or proposed convention's and its rule is that
+    /// convention's with alternatives added ([`gains_alternatives`]), and mining no
+    /// longer proposes the old one, the new card is a proposal like any other, and the
+    /// old card stays as it is: nobody accepted the added alternative, so the narrower
+    /// rule a person accepted stays the one checked and shown to agents until a person
+    /// decides the wider one. The new card takes over the old one's exceptions (a
+    /// reviewer's "fine because…" about a member), nothing that enforces; `drift init`
+    /// copies the old id's lock lines to it ([`Lock::copy_lines`]), so its legacy debt
+    /// is the old one's and nothing written since is baselined under the new id. The
+    /// ids themselves are computed as they always were: changing that would orphan
+    /// every decision made.
+    pub fn merge_carrying(
+        existing: Option<Self>,
+        engine: &str,
+        kinds: FileKinds,
+        candidates: &[Candidate],
+    ) -> (Self, Vec<(String, String)>) {
+        let mut carried: Vec<(String, String)> = Vec::new();
+        let mined: BTreeSet<&str> = candidates.iter().map(|c| c.id.as_str()).collect();
         let mut by_id: BTreeMap<String, Convention> = BTreeMap::new();
         let keep_kinds = existing.as_ref().map(|e| e.file_kinds.clone());
         let suggestion_cap = existing.as_ref().and_then(|e| e.suggestion_cap);
@@ -1112,47 +1553,94 @@ impl ConventionsFile {
                 // summary is never rewritten from the rule. Kept as it is.
                 Some(c) if c.rule.is_practice() => {}
                 Some(c) => {
+                    // A proposal from the map nobody decided, of the id mining drafts
+                    // now (a layering proposal's id is mining's for its role and rule):
+                    // it is mining's proposal from here on. Left marked from the map,
+                    // the from-map step that replaces undecided proposals would drop it
+                    // from the file, and the draft mining printed would be in no file,
+                    // offered by no review and recorded in no lock.
+                    // Nobody decided it, so it is taken whole as mining drafts it.
+                    if c.status == Status::Proposed && c.from_map.is_some() {
+                        c.from_map = None;
+                        c.role = cand.role.clone();
+                        c.rule = cand.rule.clone();
+                        c.selector_version = selector_version_of(&cand.role);
+                    }
                     // Refresh evidence; never touch status, mode or how the frozen
-                    // selector is read.
+                    // selector is read. What the person accepted stays beside it: the
+                    // evidence as the file had it, the first time a run meets it
+                    // accepted.
+                    if c.status == Status::Accepted {
+                        c.freeze_accepted_evidence();
+                    }
                     c.summary = summary;
                     c.evidence = cand.evidence.clone();
                     c.example = cand.example.clone();
                 }
                 None => {
                     let exceptions = carried_exceptions(&by_id, cand);
-                    by_id.insert(
-                        cand.id.clone(),
-                        Convention {
-                            id: cand.id.clone(),
-                            status: Status::Proposed,
-                            mode: Mode::Advise,
-                            summary,
-                            role: cand.role.clone(),
-                            rule: cand.rule.clone(),
-                            evidence: cand.evidence.clone(),
-                            example: cand.example.clone(),
-                            selector_version: selector_version_of(&cand.role),
-                            agents: None,
-                            exceptions,
-                            // [STRICT] Not carried to a new card: what a person set
-                            // apart was set apart from the card they saw.
-                            different_kind: Vec::new(),
-                            promoted_from_hidden: false,
-                            promoted_from_practice: None,
-                        },
-                    );
+                    let from = by_id
+                        .values()
+                        .find(|c| {
+                            c.status != Status::Rejected
+                                && !c.rule.is_practice()
+                                && c.role == cand.role
+                                && !mined.contains(c.id.as_str())
+                                && gains_alternatives(&c.rule, &cand.rule)
+                        })
+                        .map(|c| c.id.clone());
+                    let mut new = Convention {
+                        id: cand.id.clone(),
+                        status: Status::Proposed,
+                        mode: Mode::Advise,
+                        summary,
+                        role: cand.role.clone(),
+                        rule: cand.rule.clone(),
+                        evidence: cand.evidence.clone(),
+                        example: cand.example.clone(),
+                        selector_version: selector_version_of(&cand.role),
+                        agents: None,
+                        exceptions,
+                        // [STRICT] Not carried to a new card: what a person set
+                        // apart was set apart from the card they saw.
+                        different_kind: Vec::new(),
+                        promoted_from_hidden: false,
+                        promoted_from_practice: None,
+                        from_map: None,
+                        accepted_evidence: None,
+                    };
+                    if let Some(old) = from.as_ref().and_then(|id| by_id.get(id)) {
+                        // The same card with more ways to hold it. [RULE 4] What the
+                        // person accepted was the narrower rule: it stays, and the wider
+                        // one is theirs to decide. Only the exceptions come along.
+                        new.exceptions.extend(old.exceptions.iter().cloned());
+                        new.exceptions.sort_by(|a, b| a.member.cmp(&b.member));
+                        new.exceptions.dedup_by(|b, a| a.member == b.member);
+                        carried.push((old.id.clone(), cand.id.clone()));
+                    }
+                    by_id.insert(cand.id.clone(), new);
                 }
             }
         }
-        // Order: accepted first, then proposed by strength, then rejected; ties by id.
+        // Order: accepted first, then proposed, then rejected. A decided convention is
+        // ordered by id alone, so a run that only refreshes evidence moves no line of
+        // what people decided, and a diff or a merge of two branches shows only what
+        // changed. Proposals stay strongest first, the order `drift review` reads
+        // them in: their evidence is rewritten on every run anyway.
         let mut conventions: Vec<Convention> = by_id.into_values().collect();
         conventions.sort_by(|a, b| {
             a.status
                 .cmp(&b.status)
-                .then(b.evidence.lower_bound.total_cmp(&a.evidence.lower_bound))
+                .then_with(|| match (a.status, b.status) {
+                    (Status::Proposed, Status::Proposed) => {
+                        b.evidence.lower_bound.total_cmp(&a.evidence.lower_bound)
+                    }
+                    _ => std::cmp::Ordering::Equal,
+                })
                 .then(a.id.cmp(&b.id))
         });
-        Self {
+        carried.sort();
+        let merged = Self {
             version: POLICY_VERSION_SINGLE,
             engine: engine.to_string(),
             // Keep the frozen vocabulary once it exists, so selectors stay stable.
@@ -1162,16 +1650,22 @@ impl ConventionsFile {
             review_log,
             packages,
             conventions,
-        }
+        };
+        (merged, carried)
     }
 
     /// The `(role, rule)` of every accepted convention: what hysteresis keeps when
     /// `drift init` mines again ([`crate::mine::mine_keeping`]). Not a promoted practice:
     /// mining never drafts one, so there is nothing to keep, and its role is only a place.
+    /// Not a convention proposed from a map ([`Convention::from_map`]) either: mining did
+    /// not draft it, and mining is frozen, so accepting one must not change what is mined
+    /// (a layering convention's id is mining's id for its role and rule, so keeping it
+    /// would keep a mined draft the caps drop).
     pub fn accepted_rules(&self) -> Vec<(RoleSelector, Rule)> {
         self.conventions
             .iter()
             .filter(|c| c.status == Status::Accepted && !c.rule.is_practice())
+            .filter(|c| c.from_map.is_none())
             .map(|c| (c.role.clone(), c.rule.clone()))
             .collect()
     }
@@ -1202,6 +1696,22 @@ impl ConventionsFile {
 
     pub fn get_mut(&mut self, id: &str) -> Option<&mut Convention> {
         self.conventions.iter_mut().find(|c| c.id == id)
+    }
+
+    /// For a command where a person accepts (`drift review`, just before it writes the
+    /// file): keep, beside each accepted convention that has no record yet, the evidence
+    /// as the file has it now, which is what the person was shown when they accepted it
+    /// ([`Convention::accepted_evidence`]). The same record [`ConventionsFile::merge`]
+    /// keeps the first time a run meets it accepted, made at the moment of acceptance
+    /// instead, so a `drift init` that refreshes the evidence first cannot change what
+    /// the person saw. A record already kept is never replaced; promoted practices are
+    /// left as `merge` leaves them.
+    pub fn freeze_accepted_now(&mut self) {
+        for c in &mut self.conventions {
+            if c.status == Status::Accepted && !c.rule.is_practice() {
+                c.freeze_accepted_evidence();
+            }
+        }
     }
 
     /// Add `c`, a card a person promoted from the withheld ones (`drift review --hidden`):
@@ -1239,7 +1749,29 @@ impl Convention {
             different_kind: Vec::new(),
             promoted_from_hidden: false,
             promoted_from_practice: None,
+            from_map: None,
+            accepted_evidence: None,
         }
+    }
+}
+
+/// Whether `new` is `old` with alternatives added and nothing else changed: a wrapper
+/// rule of the same kind whose wrappers are a strict superset of `old`'s
+/// ([`ConventionsFile::merge_carrying`]). A rule that drops an alternative, or changes
+/// in any other way, is another rule: a person decides it anew.
+pub fn gains_alternatives(old: &Rule, new: &Rule) -> bool {
+    match (old, new) {
+        (
+            Rule::WrappedBy {
+                kind: k0,
+                any_of: a0,
+            },
+            Rule::WrappedBy {
+                kind: k1,
+                any_of: a1,
+            },
+        ) => k0 == k1 && a1.len() > a0.len() && a0.iter().all(|w| a1.contains(w)),
+        _ => false,
     }
 }
 
@@ -1289,6 +1821,19 @@ fn carried_exceptions(by_id: &BTreeMap<String, Convention>, cand: &Candidate) ->
 ///
 /// Agents only ever remove lines (by fixing code); people add them. That makes
 /// `merge=union` in `.gitattributes` safe for concurrent branches.
+///
+/// Below each line a baseline writes now, a comment line keys the same violation by
+/// what it is rather than where it is: `#~ <convention id> <fingerprint> <path#symbol>`
+/// ([`crate::roles::Unit::fingerprint`]; in memory, the key [`Lock::fingerprint_key`]).
+/// When the member is known to be gone from its `path#symbol` (its file moved, or was
+/// renamed) and exactly one new violation of the same convention is the same unit by
+/// its fingerprint and name, that violation is the old debt, still baselined
+/// ([`Lock::baseline_moved`]). It is a comment because a Drift that knows no
+/// fingerprint skips comments; as a plain line, an older Drift read it as a member that
+/// is never current, listed it as fixed and counted it as a second violation. The
+/// form `<convention id> ~<fingerprint> <path#symbol>` is still read. Each line stands
+/// alone, so `merge=union` stays safe; a lock written before has no fingerprint lines
+/// and works as it always did.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Lock {
     pub entries: BTreeSet<(String, String)>,
@@ -1296,16 +1841,31 @@ pub struct Lock {
 
 impl Lock {
     pub fn load(root: &Path) -> anyhow::Result<Self> {
-        let p = root.join(LOCK_FILE);
-        let Some(text) = read_policy_file(&p)? else {
+        let Some(text) = read_policy_file(root, LOCK_FILE)? else {
             return Ok(Self::default());
         };
         let mut entries = BTreeSet::new();
         for line in text.lines() {
             let line = line.trim();
+            // A fingerprint line, `#~ <id> <fingerprint> <path#symbol>`: a comment, so a
+            // Drift that knows no fingerprint skips it ([`Lock`]).
+            if let Some(rest) = line.strip_prefix("#~") {
+                let mut parts = rest.trim().splitn(3, ' ');
+                if let (Some(id), Some(fp), Some(member)) =
+                    (parts.next(), parts.next(), parts.next())
+                {
+                    let key = Self::fingerprint_key(fp, member.trim());
+                    if !id.is_empty() && Self::split_fingerprint(&key).is_some() {
+                        entries.insert((id.to_string(), key));
+                    }
+                }
+                continue;
+            }
             if line.is_empty() || line.starts_with('#') {
                 continue;
             }
+            // `<id> <path#symbol>`, or a fingerprint line written as
+            // `<id> ~<fingerprint> <path#symbol>` (read, never written).
             if let Some((id, key)) = line.split_once(' ') {
                 entries.insert((id.to_string(), key.trim().to_string()));
             }
@@ -1317,11 +1877,32 @@ impl Lock {
         let mut out = String::from(
             "# drift.lock: legacy violations that never block. Fix code to remove lines.\n",
         );
+        // Each member line, then its fingerprint lines as comments, `#~ <id>
+        // <fingerprint> <path#symbol>`, sorted: an older Drift skips them, and a person
+        // removing a member line sees its fingerprint line right below it. A fingerprint
+        // line whose member line is gone baselines nothing ([`Lock::baseline_moved`]) and
+        // is not written.
+        let mut prints: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
         for (id, key) in &self.entries {
+            if let Some((fp, member)) = Self::split_fingerprint(key) {
+                prints.entry((id.as_str(), member)).or_default().push(fp);
+            }
+        }
+        for (id, key) in &self.entries {
+            if Self::split_fingerprint(key).is_some() {
+                continue;
+            }
             out.push_str(id);
             out.push(' ');
             out.push_str(key);
             out.push('\n');
+            for fp in prints
+                .get(&(id.as_str(), key.as_str()))
+                .into_iter()
+                .flatten()
+            {
+                out.push_str(&format!("#~ {id} {fp} {key}\n"));
+            }
         }
         write_no_follow(root, Path::new(LOCK_FILE), out.as_bytes())
     }
@@ -1329,6 +1910,241 @@ impl Lock {
     pub fn contains(&self, id: &str, key: &str) -> bool {
         self.entries.contains(&(id.to_string(), key.to_string()))
     }
+
+    /// The key of the fingerprint line of `member` (`path#symbol`):
+    /// `~<fingerprint> <member>`. A member key never starts with `~` followed by a
+    /// fingerprint and a space ([`exception_member`] keeps a path before `#`).
+    pub fn fingerprint_key(fingerprint: &str, member: &str) -> String {
+        format!("~{fingerprint} {member}")
+    }
+
+    /// `(fingerprint, member)` of a fingerprint line's key; `None` for a member line.
+    pub fn split_fingerprint(key: &str) -> Option<(&str, &str)> {
+        let (fp, member) = key.strip_prefix('~')?.split_once(' ')?;
+        (!fp.is_empty() && fp.bytes().all(|b| b.is_ascii_hexdigit()) && !member.is_empty())
+            .then_some((fp, member))
+    }
+
+    /// The member a key names: the key itself, or a fingerprint line's member.
+    pub fn member_of(key: &str) -> &str {
+        Self::split_fingerprint(key).map_or(key, |(_, m)| m)
+    }
+
+    /// Whether any line is a fingerprint line: without one, nothing can have moved.
+    pub fn has_fingerprints(&self) -> bool {
+        self.entries
+            .iter()
+            .any(|(_, k)| Self::split_fingerprint(k).is_some())
+    }
+
+    /// How many violations the lock baselines: its member lines (a fingerprint line
+    /// is the second key of one of them, not another violation).
+    pub fn members(&self) -> usize {
+        self.entries
+            .iter()
+            .filter(|(_, k)| Self::split_fingerprint(k).is_none())
+            .count()
+    }
+
+    /// The lock that baselines `violations`: a member line for each, and its fingerprint
+    /// line where `fingerprint` gives one (the unit's, [`crate::roles::Unit::fingerprint`]).
+    pub fn baselining(
+        violations: &[crate::check::Violation],
+        fingerprint: impl Fn(&crate::check::Violation) -> Option<String>,
+    ) -> Self {
+        let mut entries = BTreeSet::new();
+        for v in violations {
+            let member = format!("{}#{}", v.path, v.symbol);
+            if let Some(fp) = fingerprint(v) {
+                entries.insert((v.id.clone(), Self::fingerprint_key(&fp, &member)));
+            }
+            entries.insert((v.id.clone(), member));
+        }
+        Self { entries }
+    }
+
+    /// Mark baselined each violation that is old debt moved, and return the
+    /// `(id, new path#symbol) -> old path#symbol` of each. A violation is the debt of a
+    /// lock member that moved only when Drift read both ends: the member is gone (not in
+    /// `present`, which holds every unit there is and every member of a file Drift could
+    /// not read; the caller decides moves only with the whole repository's facts), its
+    /// member line is still in the lock (a fingerprint line a person left behind
+    /// baselines nothing), and it is the same unit: the same convention, the same
+    /// fingerprint (`fingerprints`, by `(id, path#symbol)`, [`crate::roles::Unit::fingerprint`],
+    /// which holds its kind) and the same name ([`move_name`]). And only where that is
+    /// one to one: exactly one gone member and exactly one violation not baselined by
+    /// its own line. Two of either is a copy, or a deletion beside a new violation that
+    /// reads the same: which is the old one cannot be told, so every one of them is new.
+    /// The outcome does not depend on the order of `violations`.
+    pub fn baseline_moved(
+        &self,
+        violations: &mut [crate::check::Violation],
+        fingerprints: &BTreeMap<(String, String), String>,
+        present: &BTreeSet<String>,
+    ) -> BTreeMap<(String, String), String> {
+        let mut taken: BTreeMap<(String, String), String> = BTreeMap::new();
+        // (id, fingerprint, name) -> the members gone from the code that had it.
+        let mut gone: BTreeMap<(String, String, String), Vec<String>> = BTreeMap::new();
+        for (id, key) in &self.entries {
+            let Some((fp, member)) = Self::split_fingerprint(key) else {
+                continue;
+            };
+            // Still there: its own line covers it, or it was fixed. Or its member line
+            // was removed by a person: the debt is not baselined any more.
+            if present.contains(member) || !self.contains(id, member) {
+                continue;
+            }
+            gone.entry((id.clone(), fp.to_string(), move_name(member)))
+                .or_default()
+                .push(member.to_string());
+        }
+        if gone.is_empty() {
+            return taken;
+        }
+        // The violations that could be one of them, by the same key.
+        let mut new: BTreeMap<(String, String, String), Vec<usize>> = BTreeMap::new();
+        for (i, v) in violations.iter().enumerate() {
+            if v.baselined {
+                continue;
+            }
+            let key = format!("{}#{}", v.path, v.symbol);
+            let Some(fp) = fingerprints.get(&(v.id.clone(), key.clone())) else {
+                continue;
+            };
+            let k = (v.id.clone(), fp.clone(), move_name(&key));
+            if gone.contains_key(&k) {
+                new.entry(k).or_default().push(i);
+            }
+        }
+        // A member with two fingerprint lines (its code changed between baselines) is
+        // taken once.
+        let mut used: BTreeSet<(String, String)> = BTreeSet::new();
+        for (k, at) in &new {
+            let (Some(from), [i]) = (gone.get(k), at.as_slice()) else {
+                continue;
+            };
+            let [member] = from.as_slice() else {
+                continue;
+            };
+            if !used.insert((k.0.clone(), member.clone())) {
+                continue;
+            }
+            let v = &mut violations[*i];
+            v.baselined = true;
+            taken.insert(
+                (v.id.clone(), format!("{}#{}", v.path, v.symbol)),
+                member.clone(),
+            );
+        }
+        taken
+    }
+
+    /// Rewrite the lines of each legacy violation that moved ([`crate::check::CheckReport::moved`])
+    /// to where it is now: its member line and fingerprint lines under the old
+    /// `path#symbol` give way to a member line and the matched fingerprint under the
+    /// new one. Held by its fingerprint alone, moved debt turned new at the first edit
+    /// that changed the fingerprint, and the old line was listed as fixed. A move whose
+    /// old line is gone, or whose new place already has a line, is left as it is.
+    /// Returns how many moved.
+    pub fn follow_moves(&mut self, moved: &[crate::check::MovedDebt]) -> usize {
+        let mut n = 0;
+        for m in moved {
+            if !self.contains(&m.id, &m.from) || self.contains(&m.id, &m.to) {
+                continue;
+            }
+            self.entries
+                .retain(|(id, key)| *id != m.id || Self::member_of(key) != m.from);
+            self.entries.insert((m.id.clone(), m.to.clone()));
+            self.entries
+                .insert((m.id.clone(), Self::fingerprint_key(&m.fingerprint, &m.to)));
+            n += 1;
+        }
+        n
+    }
+
+    /// Copy every line of convention `from` to `to`, keeping `from`'s: a new card whose
+    /// rule is `from`'s with alternatives added ([`ConventionsFile::merge_carrying`])
+    /// has the same legacy debt, so `drift init` does not baseline it anew, while `from`
+    /// keeps its decision and its lines.
+    pub fn copy_lines(&mut self, from: &str, to: &str) {
+        let copied: Vec<String> = self
+            .entries
+            .iter()
+            .filter(|(id, _)| id == from)
+            .map(|(_, key)| key.clone())
+            .collect();
+        for key in copied {
+            self.entries.insert((to.to_string(), key));
+        }
+    }
+
+    /// Move every line of convention `from` to `to`: the decision moved
+    /// ([`ConventionsFile::merge_carrying`]), and its legacy violations with it.
+    pub fn rename(&mut self, from: &str, to: &str) {
+        let moved: Vec<(String, String)> = self
+            .entries
+            .iter()
+            .filter(|(id, _)| id == from)
+            .cloned()
+            .collect();
+        for (id, key) in moved {
+            self.entries.remove(&(id, key.clone()));
+            self.entries.insert((to.to_string(), key));
+        }
+    }
+}
+
+/// What of a unit's `path#symbol` a move keeps ([`Lock::baseline_moved`]): its name, and
+/// for a file unit ([`crate::roles::FILE_UNIT`]), whose name says nothing, the file's
+/// own name. A symbol that moves to another file keeps its name; a file that moves to
+/// another directory keeps its file name. A rename is not followed: it is reported new.
+fn move_name(member: &str) -> String {
+    let (path, name) = member.split_once('#').unwrap_or(("", member));
+    if name == crate::roles::FILE_UNIT {
+        format!("{name} {}", path.rsplit('/').next().unwrap_or(path))
+    } else {
+        name.to_string()
+    }
+}
+
+/// The exceptions of `conventions` that follow a member that moved: for each move
+/// [`Lock::baseline_moved`] took (`moved`, `(id, new path#symbol) -> old path#symbol`),
+/// the reviewer's exception of the old member covers exactly the violation it moved to,
+/// as if the reviewer had named its new place (unless that one has an exception of its
+/// own). Returns a copy of each convention that gained one, with the exception added
+/// under the violation's `path#symbol` and the reviewer's reason; nothing is written
+/// back, so the policy file keeps the member the reviewer named. A reviewer's exception
+/// for a member the lock has no fingerprint for (one marked fine after it was
+/// baselined, or a lock written before fingerprints) does not follow it.
+pub fn carry_moved_exceptions(
+    conventions: &[&Convention],
+    moved: &BTreeMap<(String, String), String>,
+) -> Vec<Convention> {
+    let mut out: Vec<Convention> = Vec::new();
+    if moved.is_empty() {
+        return out;
+    }
+    let mut done: BTreeSet<&str> = BTreeSet::new();
+    for c in conventions {
+        if c.exceptions.is_empty() || !done.insert(c.id.as_str()) {
+            continue;
+        }
+        let mut gained = (*c).clone();
+        let mut changed = false;
+        for ((id, key), old) in moved {
+            if *id != c.id || gained.exception(key).is_some() {
+                continue;
+            }
+            if let Some(e) = c.exception(old) {
+                gained.set_exception(key, &e.reason);
+                changed = true;
+            }
+        }
+        if changed {
+            out.push(gained);
+        }
+    }
+    out
 }
 
 #[cfg(test)]

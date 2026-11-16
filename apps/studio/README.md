@@ -27,11 +27,83 @@ npm run dev -w drift-studio            # the renderer in a browser, on fixtures
 ```
 
 The desktop app needs the `drift` binary with `census --json` (Drift from this
-branch or newer). It is found on `PATH` (and in `~/.cargo/bin`), or chosen in
-Settings. The Studio runs it without a shell, so on Windows it runs `drift.exe`:
+branch or newer). It is the one chosen in Settings, else the one a packaged build
+carries (see Packaging), else the first on `PATH` (and in `~/.cargo/bin`). When
+none is found, every view says where it looked and to install Drift or choose
+the binary in Settings. The Studio runs it without a shell, so on Windows it runs `drift.exe`:
 the `drift.cmd` that npm installs is followed to the `drift.exe` in Drift's
 per-platform package, never executed (Node refuses `.cmd` without a shell since
 CVE-2024-27980).
+
+## Packaging
+
+```sh
+npm run build -w drift-studio
+node apps/studio/scripts/package.mjs --linux --drift <path to drift>                 # AppImage and deb
+node apps/studio/scripts/package.mjs --mac --drift mac-arm64=<drift> --drift mac-x64=<drift>   # dmg and zip
+node apps/studio/scripts/package.mjs --win --drift <path to drift.exe>               # NSIS installer
+node apps/studio/scripts/package.mjs --linux --dir --drift <drift>                   # unpacked only, for the live test
+```
+
+The packager is [electron-builder](https://www.electron.build), configured by
+`scripts/package-config.ts` (unit-tested in `tests/unit/package-config.test.ts`):
+app id `io.github.dadbodgeoff.drift-studio` (`STUDIO_APP_ID` overrides it),
+product name Drift Studio, `asar` on, Electron fuses set (no `ELECTRON_RUN_AS_NODE`,
+no `NODE_OPTIONS`, the app only from its asar), no file associations or protocols,
+and no publish target, so there is no update feed and no `app-update.yml`. The
+window's sandbox, context isolation and CSP are those of `electron/main.ts`,
+unchanged. electron-builder is not yet a devDependency (adding it changes
+`package-lock.json`): CI installs the pinned version beside the workspace and
+passes it as `ELECTRON_BUILDER=<its cli.js>`; locally, install it the same way
+(`npm install --prefix /tmp/eb --no-save electron-builder@26.17.0`).
+
+**The drift binary is bundled.** Each package carries its platform's `drift` as
+an extra resource (`<resources>/bin/drift`, `drift.exe` on Windows), and the
+script refuses to build without one. A person who downloads the Studio has a
+working app without installing anything else, and the binary is the one this
+Studio was built and tested against: the views check schema versions, and an
+older `drift` on `PATH` would make them refuse. Settings still overrides it, and
+from source the Studio uses `PATH` as before. The Studio never writes the
+binary's path anywhere (it does not install agent hooks), so the bundled path
+inside an app bundle never ends up in a repository.
+
+**Unsigned by default.** Without signing variables the build succeeds and every
+artifact is named `drift-studio-<version>-<os>-<arch>-unsigned.<ext>` (macOS
+signed but not notarised: `-not-notarised`). Linux packages are not code-signed.
+`release/out/SHA256SUMS` lists the installers. CI (`.github/workflows/studio-package.yml`)
+builds the Linux package on every pull request that touches `apps/studio/**` or
+`packages/ui/**` and uploads it as the `studio-linux-x64` artifact; macOS (arm64,
+x64) and Windows (x64) run nightly and on demand.
+
+### What the first signed release needs (owner)
+
+Signing is configuration: the workflow and the script read these, and nothing
+else changes.
+
+| Platform | What | Environment variable (workflow secret) |
+| --- | --- | --- |
+| macOS | A Developer ID Application certificate, exported as .p12 (base64) | `CSC_LINK` (`MAC_CSC_LINK`), `CSC_KEY_PASSWORD` (`MAC_CSC_KEY_PASSWORD`); or `CSC_NAME` for a keychain identity |
+| macOS | Notarisation: an App Store Connect API key (.p8) | `APPLE_API_KEY` (a path; the workflow writes `APPLE_API_KEY_P8` to a file), `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`; or `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` |
+| Windows | An Authenticode code-signing certificate (.pfx, base64) | `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` |
+| all | A release build: refuses to build unsigned, closes the inspector fuse | `STUDIO_RELEASE=1` |
+| all | The bundle id, fixed for ever after the first signed release | `STUDIO_APP_ID` (default above) |
+| Linux | The deb's Maintainer field | `STUDIO_DEB_MAINTAINER` (default `Drift maintainers`) |
+
+To release it, add a job to `release.yml` after `build`:
+`uses: ./.github/workflows/studio-package.yml` with `with: {sign: true}` and the
+secrets above, then attach the `studio-*` artifacts to the GitHub Release.
+
+**Auto-update is not built.** No updater is in the app and no feed is
+configured. Shipping one needs the owner to choose a feed (GitHub Releases, which
+electron-updater reads from `latest*.yml` files the packager writes when a
+`publish` provider is set, or a static server they run), a signed build on macOS
+and Windows (both updaters refuse unsigned updates), and then `electron-updater`
+as a dependency with a `publish` entry in `scripts/package-config.ts`. Until then
+a new version is a new download.
+
+Other owner items: an app icon (`packaging/icon.icns`, `icon.ico`, `icons/*.png`;
+today the packager uses Electron's default), and adding `electron-builder` as a
+devDependency with its lockfile entries.
 
 ## Test
 
@@ -40,6 +112,7 @@ npm run typecheck --workspaces
 npx eslint .
 npm test --workspaces                  # vitest: tokens, contrast, CVD, data layer, IPC, main process
 npm run e2e -w drift-studio            # Playwright + Chromium on the fixture build, axe on every view
+DRIFT_BIN=<drift> xvfb-run -a node apps/studio/tests/e2e/live.mjs   # the real Electron app and drift, live
 node apps/studio/tests/e2e/run.mjs --screens   # also writes docs/screenshots
 ```
 
@@ -48,14 +121,19 @@ Fixtures (`fixtures/`) are produced by the real binary:
 ```sh
 node scripts/make-fixtures.mjs --drift <drift> --work <scratch>          # acme: committed (step 1 from scripts/acme-seed)
 node scripts/make-round11-fixtures.mjs --drift <drift> --work <scratch>  # beacon, quiet, broken: committed
+node scripts/make-harbor-fixtures.mjs --drift <drift> --work <scratch>    # harbor: committed (standing, advice, --top, unreached, guard unknown, the baseline)
+node scripts/make-promote-fixtures.mjs --drift <drift> --work <scratch>  # acme and quiet funnel, acme promote list and runs: committed (after the two above)
 node scripts/make-study-fixtures.mjs [--drift <drift> --eval-repos <dir> --work <scratch>]
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <dir> --work <scratch>  # twenty, dub: git-ignored
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <scratch copies> --work <scratch> --policy <names>  # also policy and check
+node scripts/make-screens-fixtures.mjs --drift <drift> --work <scratch>  # fixtures/screens: from-map, upgrade, feedback marks (after make-fixtures)
 ```
 
 `fixtures/acme/practices.json` is the exception for now: hand-written in the shape the engine prints
 (`drift practices --json` version 1 with `recipes` and `findings`) from acme's own security inventory and
-sources (variant ids are placeholders), until a release build of the engine regenerates it. `acme` is a synthetic monorepo written by `scripts/synth-repo.mjs` (ours,
+sources (variant ids are placeholders), until a release build of the engine regenerates it; so is
+`fixtures/quiet/practices.json`. Their variant ids are not those of `acme/promote-runs.json`, which the real binary
+wrote: the recorded promotions are reached from the May be promoted tab. `acme` is a synthetic monorepo written by `scripts/synth-repo.mjs` (ours,
 Apache-2.0) plus Drift's own parser fixtures; its sessions are synthetic
 transcripts whose hook messages and session state come from running
 `drift hook claude` as the agent works. No third-party code or real
@@ -104,8 +182,9 @@ renderer (React, sandboxed)  ──named channels──▶  preload  ──▶  
   limited to files the last scan listed, resolved inside the repository (no
   symlinks out), 2 MB at most; transcripts only from `~/.claude/projects` by a
   listed session id; session state only from `.drift/cache/sessions/`.
-- Writing: only `drift review` (with a 5 s undo window, block and block --force confirmed) and
-  `drift init` (confirmed) touch a repository. Exports go to a path the person
+- Writing: only `drift review` (with a 5 s undo window, block and block --force confirmed),
+  `drift init` (confirmed) and `drift security --write-baseline` (confirmed, recorded in the audit
+  trail) touch a repository. Exports go to a path the person
   chooses.
 - Untrusted text: repository and transcript content is rendered as React text
   nodes; code is tokenized into plain tokens (no HTML); Markdown exports put it
@@ -140,4 +219,14 @@ Studio does with each Drift feature, and what is in flight, is in
 
 - Linux containers running as root must pass `--no-sandbox` to Electron
   (Chromium's rule); the renderer is still created with `sandbox: true`.
-- Not done yet: packaging, signing, notarisation and auto-update.
+- `tests/e2e/live.mjs` launches the desktop app itself (Playwright's Electron
+  support) against a real `drift` on a repository it writes and commits in a
+  temporary directory (`scripts/synth-beacon.mjs`), after `drift init`: it opens
+  the repository through the Open dialog, checks that the conventions queue lists
+  every convention `drift init` proposed, that the check view runs, that the
+  security view lists the entry points, which binary Settings reports, and that
+  the window is sandboxed and isolated. `DRIFT_BIN` names the binary (chosen in
+  Settings); `STUDIO_APP` runs a packaged app with the drift it carries instead.
+  It needs Electron downloaded (`node node_modules/electron/install.js`, or
+  `ELECTRON_OVERRIDE_DIST_PATH`) and, on Linux without a display, `xvfb-run`.
+- Not done yet: signing, notarisation and auto-update (see Packaging).

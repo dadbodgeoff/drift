@@ -22,7 +22,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use super::{ConcernReport, Example, PRIMARY, PracticesReport, UnitRow, Variant, VariantKind};
+use super::{
+    Concern, ConcernReport, Example, PRIMARY, PracticesReport, UnitRow, Variant, VariantKind,
+};
 use crate::mine::MIN_ROLE_SIZE;
 use crate::report::sanitize;
 
@@ -55,6 +57,12 @@ pub struct Departure {
     pub example: Option<Example>,
     /// The file's units that do not, sorted by line.
     pub units: Vec<DepartingUnit>,
+    /// The command that makes the place's way the rule for new code there (`drift
+    /// practices promote <id> --in <place>`), only when the command would take it as the
+    /// code stands ([`super::promote::candidate_for`]): never one it then refuses. For
+    /// people ([`Departure::line_with_promote`]); an agent may not promote.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub promote: Option<String>,
 }
 
 /// One unit that departs, and what it does instead.
@@ -173,6 +181,21 @@ impl Departure {
         }
         out
     }
+
+    /// [`Departure::line`] for a person (`drift check`'s text, a pull request's notices
+    /// and job summary), with how to make the place's way the rule for new code when the
+    /// command would take it ([`Departure::promote`]). An agent reads [`Departure::line`]:
+    /// promoting is a person's decision, and the hooks refuse the command to an agent.
+    pub fn line_with_promote(&self) -> String {
+        let mut out = self.line();
+        if let Some(cmd) = &self.promote {
+            out.push_str(&format!(
+                "; to make it the rule for new code there: `{}`",
+                sanitize(cmd, 240)
+            ));
+        }
+        out
+    }
 }
 
 /// The departures of `rel`'s units in a report made with every unit listed
@@ -184,7 +207,7 @@ pub fn departures(report: &PracticesReport, rel: Option<&str>) -> Vec<Departure>
         .concerns
         .iter()
         .filter(|c| PRIMARY.contains(&c.id.as_str()))
-        .flat_map(|c| concern_departures(c, rel, &probes))
+        .flat_map(|c| concern_departures(report, c, rel, &probes))
         .collect();
     out.sort_by(|a, b| {
         (&a.concern, &a.path, &a.dir, &a.variant).cmp(&(&b.concern, &b.path, &b.dir, &b.variant))
@@ -219,7 +242,11 @@ pub fn check_text(deps: &[Departure]) -> String {
         files(deps)
     );
     for d in deps.iter().take(CHECK_LISTED) {
-        out.push_str(&format!("  {}: {}\n", sanitize(&d.path, 160), d.line()));
+        out.push_str(&format!(
+            "  {}: {}\n",
+            sanitize(&d.path, 160),
+            d.line_with_promote()
+        ));
     }
     if deps.len() > CHECK_LISTED {
         out.push_str(&format!(
@@ -248,7 +275,7 @@ pub fn github_notices(deps: &[Departure], prefix: &str) -> String {
             github_escape_property(&format!("drift practices: {}", sanitize(&d.concern, 32))),
             github_escape_data(&format!(
                 "{}. A fact, not a rule: it does not fail the check.",
-                d.line()
+                d.line_with_promote()
             )),
         ));
     }
@@ -270,7 +297,7 @@ pub fn github_summary(deps: &[Departure]) -> String {
         out.push_str(&format!(
             "- {}: {}\n",
             md_code(&sanitize(&d.path, 160)),
-            md(&d.line())
+            md(&d.line_with_promote())
         ));
     }
     if deps.len() > CHECK_LISTED {
@@ -513,9 +540,10 @@ fn probes(report: &PracticesReport) -> BTreeSet<UnitAt<'_>> {
         .collect()
 }
 
-/// The uses a variant key names (`dependency:a+dependency:b`).
+/// The uses a variant key names (`dependency:a+dependency:b`), cut only between uses
+/// ([`super::common::split_uses`]: an instrument may hold a `+`).
 fn uses(key: &str) -> BTreeSet<&str> {
-    key.split('+').collect()
+    super::common::split_uses(key).into_iter().collect()
 }
 
 /// The unit does all the dominant way does, and more (`verify_api_key` and
@@ -526,13 +554,79 @@ fn follows(own: &str, dominant: &str) -> bool {
     own != super::TAIL && dominant != super::TAIL && uses(own).is_superset(&uses(dominant))
 }
 
+/// Whether the variant key `key` is what code of the concern does by doing nothing, as
+/// its classifier says ([`super::Concern::passive`]: errors left to the framework): every
+/// alternative of a fold is, or the key's own uses are. A key that names no use (the
+/// tail) is not.
+fn passive_key(k: &dyn Concern, key: &str) -> bool {
+    let alternatives: Vec<&str> = match key
+        .strip_prefix("any_of(")
+        .and_then(|k| k.strip_suffix(')'))
+    {
+        Some(inner) => inner.split('|').collect(),
+        None => vec![key],
+    };
+    !alternatives.is_empty()
+        && alternatives.iter().all(|a| {
+            let uses: Vec<super::Use> = super::common::use_keys(a)
+                .into_iter()
+                .map(super::common::use_from_key)
+                .collect();
+            !uses.is_empty() && k.passive(&uses)
+        })
+}
+
+/// The variants of `c` code follows by doing nothing ([`passive_key`]): never the way a
+/// departure is measured against, nor one to copy. A route that handles no error is not
+/// one to point another route at (audit 3 G4).
+fn passive_variants(c: &ConcernReport) -> BTreeSet<&str> {
+    let Some(k) = super::registry().into_iter().find(|k| k.id() == c.id) else {
+        return BTreeSet::new();
+    };
+    c.variants
+        .iter()
+        .filter(|v| passive_key(k.as_ref(), &v.key))
+        .map(|v| v.id.as_str())
+        .collect()
+}
+
+/// The command that promotes the variant `id` in the place `shown` (a path from the
+/// repository root, `.` the root package), when `drift practices promote` would take it
+/// as `report` stands ([`super::promote::candidate_for`]); `None` when it would refuse.
+fn promote_command(report: &PracticesReport, shown: &str, id: &str) -> Option<String> {
+    let place = super::promote::Place::parse(shown, report)?;
+    let req = super::promote::Request {
+        ways: vec![id.to_string()],
+        ..super::promote::Request::default()
+    };
+    let cand = super::promote::candidate_for(report, Some(&place), &req).ok()?;
+    Some(format!(
+        "drift practices promote {} --in {}",
+        crate::report::shell_word(&sanitize(id, 40)),
+        crate::report::shell_word(&sanitize(&cand.place.shown(), 160))
+    ))
+}
+
+/// A departure's place as `--in` names it: its directory, else its package, else `.`.
+fn shown_place(d: &Departure) -> String {
+    if !d.dir.is_empty() {
+        d.dir.clone()
+    } else if !d.package.is_empty() {
+        d.package.clone()
+    } else {
+        ".".to_string()
+    }
+}
+
 fn concern_departures(
+    report: &PracticesReport,
     c: &ConcernReport,
     rel: Option<&str>,
     probes: &BTreeSet<UnitAt<'_>>,
 ) -> Vec<Departure> {
     let variants: BTreeMap<&str, &Variant> =
         c.variants.iter().map(|v| (v.id.as_str(), v)).collect();
+    let passive = passive_variants(c);
     // (package, directory) -> rows, as the report's exception places.
     let mut places: BTreeMap<(&str, String), Vec<usize>> = BTreeMap::new();
     for (i, u) in c.units.iter().enumerate() {
@@ -569,8 +663,12 @@ fn concern_departures(
             let Some(top) = dominant(&c.units, rows, &u.path, like) else {
                 continue;
             };
-            // The narrowest place with a dominant variant decides.
-            let Some(tv) = variants.get(top.variant).filter(|v| asks(v)) else {
+            // The narrowest place with a dominant variant decides. A way code follows by
+            // doing nothing asks for nothing, as a recorded absence does.
+            let Some(tv) = variants
+                .get(top.variant)
+                .filter(|v| asks(v) && !passive.contains(v.id.as_str()))
+            else {
                 break;
             };
             if top.variant == u.variant || follows(own_key, &tv.key) {
@@ -590,6 +688,7 @@ fn concern_departures(
                     others: top.others,
                     example: top.example.clone(),
                     units: Vec::new(),
+                    promote: None,
                 })
                 .units
                 .push(DepartingUnit {
@@ -612,11 +711,18 @@ fn concern_departures(
             break;
         }
     }
+    // One reading of the place per (place, way), however many files depart from it.
+    let mut commands: BTreeMap<(String, String), Option<String>> = BTreeMap::new();
     found
         .into_values()
         .map(|mut d| {
             d.units.sort();
             d.units.dedup();
+            let shown = shown_place(&d);
+            d.promote = commands
+                .entry((shown.clone(), d.variant.clone()))
+                .or_insert_with(|| promote_command(report, &shown, &d.variant))
+                .clone();
             d
         })
         .collect()
@@ -727,6 +833,10 @@ mod tests {
             does: None,
             key: None,
             route: None,
+            kind: None,
+            uses: Vec::new(),
+            enforces: None,
+            unscoped: None,
             instrument: String::new(),
         }
     }
@@ -1085,6 +1195,74 @@ mod tests {
         assert_eq!(symbols(&r), ["drop", "list"]);
         r.concerns[0].id = crate::practices::API.into();
         assert_eq!(symbols(&r), ["list"]);
+    }
+
+    /// Pins S17 item 6 (audit 3 G4): where most routes leave errors to the framework, a
+    /// route that maps its errors is not told to copy one that handles none. The other
+    /// way round is still a departure, measured against the way that does something.
+    #[test]
+    fn a_way_that_does_nothing_is_never_the_way_to_copy() {
+        let keyed = |id: &str, key: &str| Variant {
+            key: key.into(),
+            ..variant(id, id, VariantKind::Known)
+        };
+        let errors = |units: Vec<UnitRow>| {
+            let mut r = report(units);
+            r.concerns[0].id = crate::practices::ERRORS.into();
+            r.concerns[0].variants = vec![
+                keyed("P-bubble", "bubble:framework_default"),
+                keyed("P-wrapped", "wrap:lib/errors.ts#handle"),
+            ];
+            r
+        };
+        let mut units = api("P-bubble");
+        units.push(row("svc/api/new.py", "mapped", 3, "P-wrapped"));
+        assert_eq!(departures(&errors(units), None), []);
+
+        let mut units = api("P-wrapped");
+        units.push(row("svc/api/new.py", "bare", 3, "P-bubble"));
+        let d = departures(&errors(units), None);
+        assert_eq!(d.len(), 1, "{d:?}");
+        assert_eq!(d[0].variant, "P-wrapped");
+        assert!(
+            d[0].example
+                .as_ref()
+                .is_some_and(|e| e.path != "svc/api/new.py")
+        );
+    }
+
+    /// Pins S17 item 5 and 3: a departure says how to make its place's way the rule,
+    /// with the command `drift practices promote` takes; where the command would refuse
+    /// (the file's own units bring the place below the share), it says none.
+    #[test]
+    fn a_departure_carries_its_promote_command_only_when_it_would_be_taken() {
+        let mut units = api("P-user");
+        units.push(row("svc/api/new.py", "list_widgets", 9, "P-none"));
+        units.push(row("svc/api/new.py", "delete_widget", 14, "P-none"));
+        let d = departures(&report(units.clone()), None);
+        assert_eq!(d.len(), 1, "{d:?}");
+        assert_eq!(
+            d[0].promote.as_deref(),
+            Some("drift practices promote P-user --in svc/api")
+        );
+        assert!(
+            d[0].line_with_promote().ends_with(
+                "; to make it the rule for new code there: `drift practices promote P-user --in svc/api`"
+            ),
+            "{}",
+            d[0].line_with_promote()
+        );
+        // What an agent reads carries no command.
+        assert!(!d[0].line().contains("drift practices promote"));
+        assert!(check_text(&d).contains("drift practices promote P-user --in svc/api"));
+
+        // 10 of the 13 in the place follow (76%): the departure is still a fact about
+        // the others, but promoting there would be refused, so no command.
+        units.push(row("svc/api/new.py", "drop_widget", 20, "P-none"));
+        let d = departures(&report(units), None);
+        assert_eq!(d.len(), 1, "{d:?}");
+        assert_eq!(d[0].promote, None);
+        assert!(!d[0].line_with_promote().contains("promote"));
     }
 
     #[test]

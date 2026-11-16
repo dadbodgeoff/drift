@@ -8,6 +8,11 @@
 //! decorator routes are recorded as candidates and confirmed by the linker.
 
 use super::*;
+use crate::link::unlisted::Family;
+use drift_core::UnlistedReason as Reason;
+
+#[path = "framework_routes.rs"]
+mod framework_routes;
 
 /// Decorator attributes that register a route or task on a receiver.
 const HTTP_VERBS: &[&str] = &[
@@ -214,7 +219,8 @@ fn own_method_calls(f: &ast::StmtFunctionDef) -> Vec<String> {
 }
 
 /// Class-based view methods that handle an HTTP method.
-const HANDLER_METHODS: &[&str] = &["get", "post", "put", "patch", "delete", "head", "options"];
+pub(crate) const HANDLER_METHODS: &[&str] =
+    &["get", "post", "put", "patch", "delete", "head", "options"];
 /// DRF viewset actions and the HTTP method each serves.
 const DRF_ACTIONS: &[(&str, &str)] = &[
     ("list", "GET"),
@@ -255,7 +261,7 @@ const DJANGO_INCLUDE: &[&str] = &[
 ];
 
 /// Base classes that make a class an HTTP view, by adapter.
-fn view_adapter(base: &str) -> Option<&'static str> {
+pub(crate) fn view_adapter(base: &str) -> Option<&'static str> {
     if base.starts_with("rest_framework.") {
         let last = base.rsplit('.').next().unwrap_or(base);
         return (last.ends_with("APIView") || last.ends_with("ViewSet")).then_some("drf");
@@ -1181,21 +1187,28 @@ impl<'t> Lowerer<'t> {
         let els: &[Expr] = match routes {
             Expr::Name(n) => match self.lists.get(n.id.as_str()).copied() {
                 Some(els) => els,
-                None => return,
+                None => return self.unlisted(routes, Reason::TableNotRead, None),
             },
             e => match elements(e) {
                 Some(els) => els,
-                None => return,
+                None => return self.unlisted(routes, Reason::TableNotRead, None),
             },
         };
         for e in els {
-            let Expr::Call(c) = e else { continue };
+            let Expr::Call(c) = e else {
+                self.unlisted(e, Reason::TableNotRead, None);
+                continue;
+            };
             match super::practice::callee_name(&c.func) {
                 Some("Route") => {
                     let (Some(path), Some(endpoint)) = (
                         self.path_value(arg(c, 0, "path")),
                         arg(c, 1, "endpoint").and_then(|v| self.canon(v)),
                     ) else {
+                        // A computed path is read as `?`: the endpoint is not read.
+                        if arg(c, 0, "path").is_some() {
+                            self.unlisted(c, Reason::HandlerNotRead, None);
+                        }
                         continue;
                     };
                     self.out.registrations.push(RawRegistration {
@@ -1210,6 +1223,7 @@ impl<'t> Lowerer<'t> {
                         behind: self.behind(behind, c, keyword(c, "middleware"), "Route"),
                         shapes: vec![],
                         since_guards: vec![],
+                        line: Site(self.line(c)),
                     });
                 }
                 Some("Mount") => {
@@ -1254,7 +1268,8 @@ impl<'t> Lowerer<'t> {
                         self.lower_starlette_routes(app, inner, &at, depth + 1, &behind);
                     }
                 }
-                _ => {}
+                // A `WebSocketRoute`, a `Host`, a helper's call: not read.
+                _ => self.unlisted(c, Reason::TableNotRead, None),
             }
         }
     }
@@ -1305,6 +1320,7 @@ impl<'t> Lowerer<'t> {
                     whole_app: false,
                     unmeasured: false,
                     table: None,
+                    line: Site(self.line(c)),
                 });
             }
         }
@@ -1674,6 +1690,16 @@ impl<'t> Lowerer<'t> {
     pub(crate) fn lower_class(&mut self, c: &'t ast::StmtClassDef) {
         let name = c.name.as_str();
         let mut sym = RawSymbol::empty(name, SymbolKind::Class, self.line(c));
+        // An error class that refuses the caller by the status its own definition
+        // sets ([`drift_core::controls::REFUSAL_STATUS`]), read since the measured
+        // build (S15c): as the TypeScript lowering writes it.
+        if let Some(status) = self.class_status(name).filter(|s| matches!(*s, 401 | 403)) {
+            sym.controls.push(format!(
+                "{}{}{status}",
+                crate::raw::SINCE,
+                drift_core::controls::REFUSAL_STATUS
+            ));
+        }
         // What the class's decorators apply to every method (`name="dispatch"`, or
         // a decorator that is no `method_decorator`).
         let mut wide: Vec<RawRef> = Vec::new();
@@ -2055,6 +2081,9 @@ impl<'t> Lowerer<'t> {
             || bases.iter().any(is_view_base);
         let methods = if viewish {
             self.handler_methods(name, &sym, &c.body)
+        } else if let Some(late) = self.framework_late_methods(c, &sym) {
+            // A Litestar controller: its handlers, for the listed reading only.
+            late
         } else if !bases.is_empty() && !sym.methods.is_empty() {
             // A class on a base of the repository may be a view (`Items(Base)`,
             // `Base(View)`): its handler methods are symbols of the link that reads
@@ -2075,6 +2104,11 @@ impl<'t> Lowerer<'t> {
         } else {
             vec![]
         };
+        // The methods aiohttp's, Tornado's and Falcon's servers, and Django's
+        // management commands, call ([`Lowerer::server_late`]).
+        let mut methods = methods;
+        let late = self.server_late(c, &sym, &methods);
+        methods.extend(late);
         self.self_class = None;
         self.self_methods.clear();
         self.self_bases.clear();
@@ -2239,9 +2273,24 @@ impl<'t> Lowerer<'t> {
                             PARAM_FLOWS,
                             REJECTS_SOME,
                         ]
-                        .contains(&c.as_str())
+                        // (One the lowering wrote for one reading only, too.)
+                        .contains(
+                            &c.strip_prefix(crate::raw::SINCE)
+                                .or_else(|| c.strip_prefix(crate::raw::MEASURED))
+                                .unwrap_or(c.as_str()),
+                        )
                     })
                     .cloned()
+                    // An `except` handler of its own that answers with a response,
+                    // read since the measured build (S15c).
+                    .chain(
+                        tmp.catches
+                            .iter()
+                            .any(|c| c.does.iter().any(|d| matches!(d, RawDoes::Respond(_))))
+                            .then(|| {
+                                format!("{}{}", crate::raw::SINCE, drift_core::CATCH_RESPONDS)
+                            }),
+                    )
                     // A 403 the method answers outside any `except`, as a function's
                     // `responses` hold it.
                     .chain(
@@ -2546,6 +2595,7 @@ impl<'t> Lowerer<'t> {
                         whole_app: false,
                         unmeasured: false,
                         table: None,
+                        line: Site(self.line(a)),
                     });
                 }
             }
@@ -2571,6 +2621,7 @@ impl<'t> Lowerer<'t> {
                         // Not read by the measured build.
                         unmeasured: true,
                         table: None,
+                        line: Site(self.line(value)),
                     });
                 }
             }
@@ -2640,6 +2691,7 @@ impl<'t> Lowerer<'t> {
                         whole_app: false,
                         unmeasured: true,
                         table: None,
+                        line: Site(self.line(e)),
                     });
                 }
             }
@@ -2652,6 +2704,7 @@ impl<'t> Lowerer<'t> {
 
     fn lower_url_entry_at(&mut self, e: &'t Expr, prefix: &str, depth: usize) {
         let Expr::Call(c) = e else { return };
+        self.site = self.line(c);
         let Some(d) = self.dotted_of(&c.func) else {
             return;
         };
@@ -2694,6 +2747,7 @@ impl<'t> Lowerer<'t> {
                         c.arguments.args.first(),
                         c.arguments.args.get(1).and_then(string_value),
                     ) else {
+                        self.unlisted_here(drift_core::UnlistedReason::TargetNotRead, None);
                         return;
                     };
                     let written: Vec<&Expr> = match elements(decorators) {
@@ -2715,6 +2769,7 @@ impl<'t> Lowerer<'t> {
                         whole_app: false,
                         unmeasured: true,
                         table: None,
+                        line: Site(self.site),
                     });
                     return;
                 }
@@ -2739,6 +2794,7 @@ impl<'t> Lowerer<'t> {
                                 whole_app: false,
                                 unmeasured: false,
                                 table: None,
+                                line: Site(self.site),
                             });
                         }
                         Expr::List(_) | Expr::Tuple(_) => {
@@ -2758,6 +2814,7 @@ impl<'t> Lowerer<'t> {
                                     whole_app: false,
                                     unmeasured: false,
                                     table: None,
+                                    line: Site(self.site),
                                 });
                             }
                         }
@@ -2773,6 +2830,9 @@ impl<'t> Lowerer<'t> {
                                 }
                                 _ => MountTarget::Dynamic,
                             };
+                            if target == MountTarget::Dynamic {
+                                self.unlisted_here(drift_core::UnlistedReason::TargetNotRead, None);
+                            }
                             self.out.mounts.push(RawMount {
                                 parent: None,
                                 target,
@@ -2782,6 +2842,7 @@ impl<'t> Lowerer<'t> {
                                 whole_app: false,
                                 unmeasured: false,
                                 table: None,
+                                line: Site(self.site),
                             });
                         }
                     }
@@ -2790,10 +2851,19 @@ impl<'t> Lowerer<'t> {
                 if let Expr::Attribute(a) = c.func.as_ref()
                     && a.attr.as_str() == "as_view"
                 {
-                    if let Some(target) = self.canon(&a.value) {
-                        self.registration(target, None, "django", route, vec![], guards);
+                    match self.canon(&a.value) {
+                        Some(target) => {
+                            self.registration(target, None, "django", route, vec![], guards)
+                        }
+                        None => {
+                            self.unlisted_here(drift_core::UnlistedReason::HandlerNotRead, None)
+                        }
                     }
                     return;
+                }
+                // A view made by a call of nothing (`views.make_view()`): not read.
+                if c.arguments.args.is_empty() {
+                    self.unlisted_here(drift_core::UnlistedReason::HandlerNotRead, None);
                 }
                 // `login_required(views.f)`, `cache_page(60)(views.f)`: a wrapper around the view.
                 if let Some(inner) = c.arguments.args.first() {
@@ -2837,15 +2907,16 @@ impl<'t> Lowerer<'t> {
                         whole_app: false,
                         unmeasured: false,
                         table: None,
+                        line: Site(self.site),
                     });
                 }
             }
-            Expr::Name(_) | Expr::Attribute(_) => {
-                if let Some(target) = self.canon(view) {
-                    self.registration(target, None, "django", route, vec![], guards);
-                }
-            }
-            _ => {}
+            Expr::Name(_) | Expr::Attribute(_) => match self.canon(view) {
+                Some(target) => self.registration(target, None, "django", route, vec![], guards),
+                None => self.unlisted_here(drift_core::UnlistedReason::HandlerNotRead, None),
+            },
+            // A lambda, a subscript, a string: no view Drift reads.
+            _ => self.unlisted_here(drift_core::UnlistedReason::HandlerNotRead, None),
         }
     }
 
@@ -2913,6 +2984,7 @@ impl<'t> Lowerer<'t> {
         locals: Option<&Locals>,
         table: Option<RawTableMount>,
     ) {
+        let site = self.site;
         let mount = |out: &mut RawFile, target: MountTarget| {
             // A mount Drift cannot follow says so, whatever it is behind, but where
             // its routes are listed in the table.
@@ -2929,6 +3001,7 @@ impl<'t> Lowerer<'t> {
                 whole_app: true,
                 unmeasured: false,
                 table: table.map(Box::new),
+                line: Site(site),
             });
         };
         match target {
@@ -2967,6 +3040,7 @@ impl<'t> Lowerer<'t> {
             whole_app: true,
             unmeasured: false,
             table: None,
+            line: Site(self.site),
         });
     }
 
@@ -3012,6 +3086,7 @@ impl<'t> Lowerer<'t> {
             behind: RawBehind::default(),
             shapes: vec![],
             since_guards: vec![],
+            line: Site(self.site),
         });
     }
 
@@ -3061,6 +3136,7 @@ impl<'t> Lowerer<'t> {
                         behind: RawBehind::default(),
                         shapes: vec![],
                         since_guards: vec![],
+                        line: Site(self.site),
                     });
                 }
             }
@@ -3128,6 +3204,7 @@ impl<'t> Lowerer<'t> {
                         behind: RawBehind::default(),
                         shapes: vec![],
                         since_guards: vec![],
+                        line: Site(self.site),
                     });
                 }
             }
@@ -3587,6 +3664,7 @@ impl<'t> Lowerer<'t> {
                     behind: RawBehind::default(),
                     shapes: vec![],
                     since_guards: vec![],
+                    line: Site(self.site),
                 });
             }
             _ => {
@@ -3601,6 +3679,7 @@ impl<'t> Lowerer<'t> {
         func: Option<&str>,
         locals: Option<&Locals>,
     ) {
+        self.site = self.line(c);
         // `app.middleware("http")(function)`: the decorator, called. Recorded twice: as a
         // middleware of the application object (what serves a route), and as a hook of
         // the application (what may guard its routes).
@@ -3726,6 +3805,7 @@ impl<'t> Lowerer<'t> {
                         whole_app: false,
                         unmeasured: false,
                         table: None,
+                        line: Site(self.site),
                     });
                 }
             }
@@ -3734,6 +3814,7 @@ impl<'t> Lowerer<'t> {
                     self.read_targets.insert(t as *const Expr as usize);
                     self.canon_in(t, locals)
                 }) else {
+                    self.unlisted_call(c, arg(c, 0, "router"), &parent, Reason::TargetNotRead);
                     return;
                 };
                 // Dependencies that are not a list written here, or one with an element
@@ -3761,6 +3842,7 @@ impl<'t> Lowerer<'t> {
                     whole_app: false,
                     unmeasured: false,
                     table: None,
+                    line: Site(self.site),
                 });
             }
             "register_blueprint" | "add_namespace" => {
@@ -3768,6 +3850,7 @@ impl<'t> Lowerer<'t> {
                     self.read_targets.insert(t as *const Expr as usize);
                     self.canon_in(t, locals)
                 }) else {
+                    self.unlisted_call(c, arg(c, 0, "blueprint"), &parent, Reason::TargetNotRead);
                     return;
                 };
                 let prefix = if a.attr.as_str() == "add_namespace" {
@@ -3788,6 +3871,7 @@ impl<'t> Lowerer<'t> {
                     whole_app: false,
                     unmeasured: false,
                     table: None,
+                    line: Site(self.site),
                 });
             }
             "add_api_route" => {
@@ -3799,6 +3883,10 @@ impl<'t> Lowerer<'t> {
                     self.path_value(arg(c, 0, "path")),
                     endpoint.and_then(|t| self.canon_in(t, locals)),
                 ) else {
+                    // (A path that is computed is listed as `?`.)
+                    if arg(c, 0, "path").is_some() {
+                        self.unlisted_call(c, endpoint, &parent, Reason::HandlerNotRead);
+                    }
                     return;
                 };
                 let guards = self
@@ -3849,6 +3937,9 @@ impl<'t> Lowerer<'t> {
                 };
                 let placed = view;
                 let Some(view) = view.and_then(|v| self.canon_in(v, locals)) else {
+                    // A view written and not read (`getattr(views, name)`): the views
+                    // the file names are listed at `?`, this registration is not.
+                    self.unlisted_call(c, arg(c, 2, "view_func"), &parent, Reason::HandlerNotRead);
                     return;
                 };
                 let methods = upper_methods(keyword(c, "methods"));
@@ -3881,6 +3972,11 @@ impl<'t> Lowerer<'t> {
                     first.and_then(|t| self.canon_in(t, locals)),
                     c.arguments.args.get(1).and_then(string_value),
                 ) else {
+                    if c.arguments.args.get(1).and_then(string_value).is_none() {
+                        self.unlisted_call(c, resource, &parent, Reason::PathNotRead);
+                    } else {
+                        self.unlisted_call(c, resource, &parent, Reason::HandlerNotRead);
+                    }
                     return;
                 };
                 if let Some(t) = first {
@@ -3900,6 +3996,14 @@ impl<'t> Lowerer<'t> {
                     c.arguments.args.first().and_then(string_value),
                     viewset.and_then(|t| self.canon_in(t, locals)),
                 ) else {
+                    if let Some(router) = &parent {
+                        let on = Some((router.clone(), Family::DrfRouter));
+                        if c.arguments.args.first().and_then(string_value).is_none() {
+                            self.unlisted(c, Reason::PathNotRead, on);
+                        } else {
+                            self.unlisted(c, Reason::HandlerNotRead, on);
+                        }
+                    }
                     return;
                 };
                 if parent.is_some() {

@@ -22,6 +22,14 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "framework_links.rs"]
+mod framework_links;
+#[path = "graphql_link.rs"]
+mod graphql;
+#[path = "servers_link.rs"]
+mod servers;
+#[path = "unlisted.rs"]
+pub(crate) mod unlisted;
 
 /// Maximum hops followed through re-exports (guards cycles).
 const MAX_HOPS: usize = 32;
@@ -381,6 +389,8 @@ struct RouterInfo {
     /// An application (`FastAPI()`, `Flask()`), which serves its routes at their own
     /// paths, not a router or blueprint, which serves nothing until it is mounted.
     root: bool,
+    /// The framework of [`framework_links`] it is of, if any (listed reading only).
+    framework: Option<&'static framework_links::Framework>,
 }
 
 impl RouterInfo {
@@ -417,14 +427,23 @@ struct Extra {
     /// routes it is served on, and the hooks and guards it gave the symbol
     /// ([`Linker::split_routes`]).
     routed: Vec<(String, bool, Vec<String>, Vec<Wrap>)>,
+    /// symbol -> the decorators that registered it as a route, not wraps of it
+    /// (a Litestar handler's `@get`: [`framework_links`]).
+    dropped: BTreeMap<String, BTreeSet<String>>,
 }
 
 /// The link of this symbol itself reads what the measured build did not
-/// ([`Linker::links_differently`]): a decorator that is no name.
+/// ([`Linker::links_differently`]): a decorator that is no name. As the build of
+/// `a0779066` asked it: a reading made after that build is no term of it (a sink
+/// marked [`crate::raw::SINCE`], a fact [`marked_by_reading`]), so that the files
+/// it picks are the ones that build picked.
 fn symbol_unmeasured(s: &RawSymbol) -> bool {
+    fn frozen_sinks(sinks: &[String]) -> bool {
+        sinks.iter().any(|k| !k.starts_with(crate::raw::SINCE))
+    }
     !s.since_wraps.is_empty()
-        || !s.since_sinks.is_empty()
-        || s.members.iter().any(|m| !m.since_sinks.is_empty())
+        || frozen_sinks(&s.since_sinks)
+        || s.members.iter().any(|m| frozen_sinks(&m.since_sinks))
         || s.drf_reassigned.is_some()
         || !s.wraps_only.is_empty()
         || !s.since_only.is_empty()
@@ -436,6 +455,23 @@ fn symbol_unmeasured(s: &RawSymbol) -> bool {
         || s.members
             .iter()
             .any(|m| m.unread.iter().any(|c| c == UNREAD_EXIT_MEASURED))
+}
+
+/// A fact the lowering wrote for one of the two readings only
+/// ([`crate::raw::SINCE`], [`crate::raw::MEASURED`]).
+fn marked_by_reading(fact: &str) -> bool {
+    fact.starts_with(crate::raw::SINCE) || fact.starts_with(crate::raw::MEASURED)
+}
+
+/// The kind of a body's [`RawSymbol::fed_sinks`] entry as a
+/// [`drift_core::controls::SINK_FED`] control, its reading's mark kept in front
+/// ([`Linker::since_marked`] reads it off).
+fn fed_control(kind: &str) -> String {
+    let sink_fed = drift_core::controls::SINK_FED;
+    match kind.strip_prefix(crate::raw::SINCE) {
+        Some(k) => format!("{}{sink_fed}{k}", crate::raw::SINCE),
+        None => format!("{sink_fed}{kind}"),
+    }
 }
 
 /// Packages whose view classes apply the list `decorators` (Flask's `View`) or
@@ -725,12 +761,29 @@ pub struct Linker<'r> {
     /// Link as the last build whose mined proposals were measured did: without the
     /// listings made since ([`Linker::measured`]).
     measured: bool,
+    /// Link as the listed linker of the build `a0779066` did ([`Linker::compat`]):
+    /// every reading that build made since the measured build is made, and none
+    /// made after it ([`Linker::since_frozen`]).
+    compat: bool,
+    /// What the readings of [`framework_links`] add to the tables.
+    frameworks: framework_links::Tables,
     /// A listing made since was met ([`Linker::lists_unmeasured`]).
     unmeasured: std::sync::atomic::AtomicBool,
     /// Entry points declared outside Python code (console scripts, `langgraph.json`),
     /// by file ([`Linker::with_declared`]).
     declared: BTreeMap<String, Vec<EntryPoint>>,
+    /// What the servers and queues of `lower::servers` give each file, in the
+    /// listed reading only ([`servers::Served`]); not built for what mining reads.
+    servers: BTreeMap<String, servers::Served>,
     track: Option<Track>,
+    /// module -> the route decorators and registrations of the file that listed
+    /// nothing, with why ([`unlisted`]). The listed link's only.
+    unlisted: BTreeMap<String, Vec<drift_core::UnlistedRoute>>,
+    /// Some file builds a GraphQL schema ([`RawGraphql::schemas`]).
+    graphql_schemas: bool,
+    /// The GraphQL entry points of the listed reading, built on the first link
+    /// that asks ([`Linker::graphql_of`]).
+    graphql: std::sync::OnceLock<graphql::Table>,
 }
 
 /// For linking one file against a subset of the repo ([`Linker::tracking`]): the
@@ -903,6 +956,51 @@ pub fn join_path(parts: &[&str]) -> String {
     format!("/{}", segs.join("/"))
 }
 
+/// The parameters a route template names, each with its converter, as the template
+/// writes them: `<uuid:pk>` and Flask's `<int:id>` (`<id>` takes the default,
+/// `string`), Starlette's `{id:int}` (`{id}`: `str`). A regex group
+/// (`(?P<pk>\d+)`) is no converter: not listed.
+fn route_converters(route: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for (open, close, default) in [('<', '>', "string"), ('{', '}', "str")] {
+        let mut rest = route;
+        while let Some(i) = rest.find(open) {
+            let after = &rest[i + open.len_utf8()..];
+            let Some(j) = after.find(close) else { break };
+            let inner = &after[..j];
+            // `(?P<pk>...)`: the group's name, not a converter.
+            let regex = open == '<' && rest[..i].ends_with("?P");
+            if !regex && !inner.is_empty() {
+                let (name, conv) = match (open, inner.split_once(':')) {
+                    ('<', Some((conv, name))) => (name, conv),
+                    ('{', Some((name, conv))) => (name, conv),
+                    _ => (inner, default),
+                };
+                out.push((name.trim().to_string(), conv.trim().to_string()));
+            }
+            rest = &after[j + close.len_utf8()..];
+        }
+    }
+    out
+}
+
+/// A route converter that parses its segment rather than taking any text of it:
+/// one the framework itself defines with a pattern that a value can fail (Django's
+/// `int`, `slug` and `uuid`; Werkzeug's `int`, `float`, `uuid` and `any`), a
+/// converter's arguments aside (`int(min=1)`). The framework's own definitions, a
+/// closed set: a converter the repository registers (`register_converter(Hex,
+/// "hex")`, whose pattern may be `.+`) is code this does not read, and is not said
+/// to parse (review R5, row 7). Before, every converter but `str`, `string` and
+/// `path` was.
+fn converter_parses(adapter: &str, conv: &str) -> bool {
+    let name = conv.split('(').next().unwrap_or_default().trim();
+    match adapter {
+        "django" | "drf" => matches!(name, "int" | "slug" | "uuid"),
+        "flask" | "flask_restx" => matches!(name, "int" | "float" | "uuid" | "any"),
+        _ => false,
+    }
+}
+
 impl<'r> Linker<'r> {
     pub fn new(res: &'r Resolver, files: &'r [LoweredFile]) -> Self {
         Self::build(res, files, None, false)
@@ -936,9 +1034,37 @@ impl<'r> Linker<'r> {
         let handed = (!self.handed_given && !self.handed_differs)
             .then(|| (self.handed_on.clone(), self.mounts_unseen.clone()));
         Some(
-            Self::with_tables(self.res, self.files, track, true, tables, handed)
+            Self::with_tables(self.res, self.files, track, (true, false), tables, handed)
                 .with_declared(self.declared.clone()),
         )
+    }
+
+    /// The same linker, linking as the listed linker of the build `a0779066` did:
+    /// each reading that build made since the measured build is made (it asks
+    /// [`Linker::since_measured`]), and none added after it
+    /// ([`Linker::since_frozen`]). What mining reads of a file
+    /// [`Linker::links_differently`] does not pick, which that build took from its
+    /// listed link. Its tables are built as this linker's were (no reading added
+    /// after that build is asked while they are built), none of them given.
+    pub fn compat(&self) -> Self {
+        let track = self.track.as_ref().map(|t| Track {
+            target: t.target.clone(),
+            misses: Mutex::new(BTreeSet::new()),
+        });
+        let tables = (
+            self.index.clone(),
+            self.specs.clone(),
+            self.bindings.clone(),
+        );
+        Self::with_tables(
+            self.res,
+            self.files,
+            track,
+            (self.measured, true),
+            tables,
+            None,
+        )
+        .with_declared(self.declared.clone())
     }
 
     /// Whether `measured` ([`Linker::measured`]) may link file `fi` differently from
@@ -947,6 +1073,13 @@ impl<'r> Linker<'r> {
     /// registrations elsewhere give its symbols, its consumers, and what a call of a
     /// class built by `__new__` binds, which any file may make (`by_new`: some class
     /// of the repository is one).
+    ///
+    /// The test as the build `a0779066` made it, frozen with what mining reads: a
+    /// file it does not pick is linked by [`Linker::compat`], not by `measured`
+    /// (review M2). No reading made after that build is a term of it
+    /// ([`symbol_unmeasured`]), and none feeds one: those are asked with
+    /// [`Linker::since_frozen`], which neither `measured` nor the compat linker
+    /// makes, so a file it does not pick has none of them (review R5, row 1).
     pub fn links_differently(&self, measured: &Self, fi: usize, by_new: bool) -> bool {
         let rel = self.module_of(fi);
         by_new
@@ -960,15 +1093,41 @@ impl<'r> Linker<'r> {
                 }))
     }
 
-    /// The sinks of a symbol or a method: those the measured build read, and, but
-    /// when linking what mining reads, those read since
-    /// ([`RawSymbol::since_sinks`]). Sorted.
-    fn sinks_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
+    /// The env reads of a symbol: those the measured build read, and, where
+    /// [`Linker::since_frozen`] says, those read through a configuration library
+    /// since ([`RawSymbol::since_reads`]). Sorted.
+    fn reads_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
         let mut out = measured.to_vec();
-        if !since.is_empty() && self.since_measured() {
+        if !since.is_empty() && self.since_frozen() {
             out.extend(since.iter().cloned());
             out.sort();
             out.dedup();
+        }
+        out
+    }
+
+    /// The sinks of a symbol or a method: those the measured build read, and, but
+    /// when linking what mining reads, those read since
+    /// ([`RawSymbol::since_sinks`]). Sorted. One marked [`crate::raw::SINCE`] was
+    /// read after the build `a0779066` (`Collector::note_path_sink`): read where
+    /// [`Linker::since_frozen`] says.
+    fn sinks_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
+        let mut out = measured.to_vec();
+        if !since.is_empty() && self.since_measured() {
+            let frozen =
+                since.iter().any(|k| k.starts_with(crate::raw::SINCE)) && self.since_frozen();
+            let read: Vec<String> = since
+                .iter()
+                .filter_map(|k| match k.strip_prefix(crate::raw::SINCE) {
+                    Some(k) => frozen.then(|| k.to_string()),
+                    None => Some(k.clone()),
+                })
+                .collect();
+            if !read.is_empty() {
+                out.extend(read);
+                out.sort();
+                out.dedup();
+            }
         }
         out
     }
@@ -1000,6 +1159,34 @@ impl<'r> Linker<'r> {
         }
     }
 
+    /// The facts the lowering wrote for one reading only: what follows
+    /// [`crate::raw::SINCE`] is kept for the listed reading and dropped from what
+    /// mining reads, what follows [`crate::raw::MEASURED`] the other way round. The
+    /// measured copy is then what the measured build wrote. Nothing is asked of the
+    /// linker where no fact is marked.
+    fn since_marked(&self, facts: &mut Vec<String>) {
+        if !facts.iter().any(|f| marked_by_reading(f)) {
+            return;
+        }
+        // Every mark was written after the build `a0779066`.
+        let since = self.since_frozen();
+        let mut out = Vec::with_capacity(facts.len());
+        for f in facts.drain(..) {
+            if let Some(rest) = f.strip_prefix(crate::raw::SINCE) {
+                if since {
+                    out.push(rest.to_string());
+                }
+            } else if let Some(rest) = f.strip_prefix(crate::raw::MEASURED) {
+                if !since {
+                    out.push(rest.to_string());
+                }
+            } else {
+                out.push(f);
+            }
+        }
+        *facts = out;
+    }
+
     /// Whether the link so far met a listing the measured build did not make.
     pub fn lists_unmeasured(&self) -> bool {
         self.unmeasured.load(std::sync::atomic::Ordering::Relaxed)
@@ -1011,6 +1198,14 @@ impl<'r> Linker<'r> {
         self.unmeasured
             .store(true, std::sync::atomic::Ordering::Relaxed);
         !self.measured
+    }
+
+    /// [`Linker::since_measured`] for a reading made after the build `a0779066`:
+    /// not made by the measured linker, nor by the compat one ([`Linker::compat`]),
+    /// which links as that build's listed linker did. Asked at exactly the readings
+    /// added after that build; the readings that build made ask `since_measured`.
+    fn since_frozen(&self) -> bool {
+        self.since_measured() && !self.compat
     }
 
     /// A linker over a subset of the repo that only links `target`, and records every
@@ -1105,7 +1300,14 @@ impl<'r> Linker<'r> {
             .iter()
             .map(|f| f.raw.bindings.iter().cloned().collect())
             .collect();
-        Self::with_tables(res, files, track, measured, (index, specs, bindings), None)
+        Self::with_tables(
+            res,
+            files,
+            track,
+            (measured, false),
+            (index, specs, bindings),
+            None,
+        )
     }
 
     /// A linker over tables that are the same however the repository's listings are
@@ -1116,7 +1318,7 @@ impl<'r> Linker<'r> {
         res: &'r Resolver,
         files: &'r [LoweredFile],
         track: Option<Track>,
-        measured: bool,
+        (measured, compat): (bool, bool),
         (index, specs, bindings): (
             BTreeMap<String, usize>,
             Vec<BTreeMap<String, String>>,
@@ -1164,11 +1366,24 @@ impl<'r> Linker<'r> {
             mounts_unseen,
             handles: BTreeMap::new(),
             measured,
+            compat,
             unmeasured: std::sync::atomic::AtomicBool::new(false),
             declared: BTreeMap::new(),
+            unlisted: BTreeMap::new(),
+            frameworks: framework_links::Tables::default(),
+            servers: BTreeMap::new(),
+            graphql_schemas: files.iter().any(|f| !f.raw.graphql.schemas.is_empty()),
+            graphql: std::sync::OnceLock::new(),
         };
         l.build_adapter_tables();
         l.build_handles();
+        if !measured {
+            l.servers = l.build_servers();
+            if !l.servers.is_empty() {
+                // A listing made since: the measured link is built beside.
+                l.since_measured();
+            }
+        }
         l
     }
 
@@ -1644,13 +1859,15 @@ impl<'r> Linker<'r> {
         let Some(sym) = self.files[fi].raw.symbols.iter().find(|s| s.name == name) else {
             return false;
         };
+        // Read through a configuration library: in the listed reading only.
+        let reads = !sym.reads.is_empty() || (!sym.since_reads.is_empty() && self.since_frozen());
         if !rest.contains('.') {
-            return !sym.reads.is_empty();
+            return reads;
         }
         if !secret {
             return false;
         }
-        !sym.reads.is_empty()
+        reads
             || sym.calls.iter().any(|r| {
                 let c = self.canon(fi, r);
                 let (cm, cn) = c.split_once('#').unwrap_or_default();
@@ -2741,20 +2958,25 @@ impl<'r> Linker<'r> {
                     }
                     None => continue,
                 };
-                let prefix = match adapter {
-                    "fastapi" => r.prefix.clone(),
-                    "flask" => r.url_prefix.clone(),
-                    "flask_restx" if class.ends_with("#Namespace") || r.path.is_some() => r
+                let framework = self.framework_of(&class);
+                let prefix = match (adapter, framework) {
+                    (_, Some(f)) => self.framework_prefix(f, r),
+                    ("fastapi", _) => r.prefix.clone(),
+                    ("flask", _) => r.url_prefix.clone(),
+                    ("flask_restx", _) if class.ends_with("#Namespace") || r.path.is_some() => r
                         .path
                         .clone()
                         .or_else(|| r.first.as_ref().map(|n| format!("/{n}"))),
                     _ => None,
                 };
-                let deps = r
-                    .deps
-                    .iter()
-                    .flat_map(|d| self.dep_canon(fi, d, false))
-                    .collect();
+                let deps = match framework {
+                    Some(_) => self.framework_guards(fi, &r.name),
+                    None => r
+                        .deps
+                        .iter()
+                        .flat_map(|d| self.dep_canon(fi, d, false))
+                        .collect(),
+                };
                 // A class of the repository built on the library's that writes its own
                 // constructor (`class VersionedRouter(APIRouter): def __init__ ...`)
                 // may give itself a prefix there: what it is built with is then not
@@ -2834,6 +3056,7 @@ impl<'r> Linker<'r> {
                         app: adapter == "flask" && self.is_app_class(&class, 0),
                         root: self.is_app_class(&class, 0)
                             || STARLETTE_APPS.contains(&class.as_str()),
+                        framework,
                     },
                 );
             }
@@ -2925,6 +3148,7 @@ impl<'r> Linker<'r> {
                                 && !APP_ATTRIBUTES.contains(&attr)
                                 && !NO_GUARD_ATTRIBUTES.contains(&attr)
                                 && (!rest.is_empty() || (elsewhere && !explained()))
+                                && !self.framework_explains(&node, fi, r, attr, line)
                             {
                                 unread.push((node.clone(), format!("{how} ({at}:{line})")));
                             }
@@ -3140,6 +3364,7 @@ impl<'r> Linker<'r> {
                 self.app_hooks.entry(root).or_default().push(hook.clone());
             }
         }
+        self.framework_tables();
         self.read_passes();
         for v in self.hooks.values_mut().chain(self.app_hooks.values_mut()) {
             v.sort();
@@ -3149,6 +3374,9 @@ impl<'r> Linker<'r> {
         self.apps = self.app_facts();
         // Routes and registrations, attached to the file defining the symbol.
         let mut extra: BTreeMap<String, Extra> = BTreeMap::new();
+        // What listed nothing, where it is written ([`unlisted`]).
+        let reports = self.reports_unlisted();
+        let mut unlisted = BTreeMap::new();
         for fi in 0..self.files.len() {
             let rel = self.module_of(fi).to_string();
             let raw = &self.files[fi].raw;
@@ -3156,16 +3384,28 @@ impl<'r> Linker<'r> {
             // schedules find tasks by name across files.
             for rt in &raw.routes {
                 if !self.untracked(&rel) || rt.verb == "task" {
-                    self.route(fi, rt, extra.entry(rel.clone()).or_default());
+                    let e = extra.entry(rel.clone()).or_default();
+                    let before = e.entries.len();
+                    self.route(fi, rt, e);
+                    if reports {
+                        let listed = e.entries.len() > before;
+                        self.note_unlisted_route(fi, rt, listed, &mut unlisted);
+                    }
                 }
             }
             for g in &raw.registrations {
                 if g.unmeasured && !self.since_measured() {
                     continue;
                 }
+                let before = reports.then(|| unlisted::listed_count(&extra));
                 self.registration(fi, g, &mut extra);
+                if before.is_some_and(|n| n == unlisted::listed_count(&extra)) {
+                    self.note_unlisted_registration(fi, g, &mut unlisted);
+                }
             }
+            self.framework_registrations(fi, &mut extra);
         }
+        self.unlisted = unlisted;
         for (fi, parent, prefix) in admin_mounts {
             self.admin_entry(fi, &parent, &prefix, &mut extra);
         }
@@ -3428,6 +3668,9 @@ impl<'r> Linker<'r> {
 
     /// Adapter of a router class: a known class, an in-repo subclass of one, or a known name.
     fn router_adapter(&self, class: &str, depth: usize) -> Option<&'static str> {
+        if let Some(f) = self.framework_of(class) {
+            return Some(f.model);
+        }
         if let Some((_, a)) = ROUTER_CLASSES.iter().find(|(c, _)| *c == class) {
             return Some(a);
         }
@@ -3559,7 +3802,7 @@ impl<'r> Linker<'r> {
             info.is_some_and(|i| !i.root && matches!(adapter, "fastapi" | "flask" | "flask_restx"));
         let module = node.split_once('#').map_or(node, |(m, _)| m);
         if router
-            && (self.handed_on.contains_key(node)
+            && ((self.handed_on.contains_key(node) && !self.framework_handed_read(node))
                 || self.handed_on.contains_key(module)
                 || self.under_unseen_mounts(node))
             && self.since_measured()
@@ -3722,6 +3965,9 @@ impl<'r> Linker<'r> {
         if APPS.contains(&class) {
             return true;
         }
+        if let Some(f) = self.framework_of(class) {
+            return f.app;
+        }
         if depth > 8 {
             return false;
         }
@@ -3756,7 +4002,12 @@ impl<'r> Linker<'r> {
 
     fn route(&self, fi: usize, rt: &RawRoute, extra: &mut Extra) {
         let node = self.node_of(fi, &rt.receiver);
-        let adapter = self.router_info(&node).map(|r| r.adapter.as_str());
+        let framework = self.router_info(&node).and_then(|r| r.framework);
+        // A Litestar layer has no route decorators: its routes are its handlers.
+        let adapter = self
+            .router_info(&node)
+            .map(|r| r.adapter.as_str())
+            .filter(|_| framework.is_none_or(|f| f.name != "litestar"));
         let sym = self.files[fi]
             .raw
             .symbols
@@ -3780,6 +4031,9 @@ impl<'r> Linker<'r> {
             ),
             (Some("fastapi"), "websocket") => {
                 ("websocket", vec![], "pkg:fastapi#APIRouter.api_route")
+            }
+            (Some("flask"), "websocket") if framework.is_some() => {
+                ("websocket", vec![], "pkg:flask#Flask.route")
             }
             (Some("flask"), v) if HTTP_VERBS.contains(&v) => (
                 "http",
@@ -3817,7 +4071,15 @@ impl<'r> Linker<'r> {
                 return;
             }
         };
-        let adapter = adapter.unwrap_or_default().to_string();
+        let adapter = match framework {
+            Some(f) => f.adapter,
+            None => adapter.unwrap_or_default(),
+        }
+        .to_string();
+        // A django-ninja API no live URLconf includes serves nothing.
+        if framework.is_some_and(|f| f.name == "ninja") && self.framework_unserved(&node, 0) {
+            return;
+        }
         // A router mounted more than once answers on each mount: one entry point
         // each, with the guards of its own mount. A task is not mounted.
         let mut chains = self.chains(&node, 0);
@@ -3854,6 +4116,9 @@ impl<'r> Linker<'r> {
         if let Some(s) = sym {
             wraps.extend(s.deps.iter().flat_map(|d| self.dep_canon(fi, d, false)));
         }
+        if framework.is_some() {
+            wraps.extend(self.framework_route_guards(fi, rt, &node));
+        }
         {
             // Of every chain, not only what all of them share: a reader that finds
             // one dependency written in two ways on a symbol trusts neither.
@@ -3879,7 +4144,7 @@ impl<'r> Linker<'r> {
         }
         let args = extra.args.entry(rt.symbol.clone()).or_default();
         for k in &rt.keywords {
-            if !matches!(k.as_str(), "methods" | "name") {
+            if !matches!(k.as_str(), "methods" | "name") && !(framework.is_some() && k == "auth") {
                 args.push(format!("{callee}@{KWARG_INDEX}:{k}"));
             }
         }
@@ -4416,7 +4681,13 @@ impl<'r> Linker<'r> {
             }
         }
 
-        let extra = self.extra.get(rel).cloned().unwrap_or_default();
+        let mut extra = self.extra.get(rel).cloned().unwrap_or_default();
+        // The servers and queues of `lower::servers`, made after the build
+        // `a0779066`: the listed reading only.
+        let served = self.servers.get(rel).filter(|_| self.since_frozen());
+        if let Some(s) = served {
+            s.merge_into(&mut extra);
+        }
         let mut entry_points: Vec<EntryPoint> = raw
             .entry_points
             .iter()
@@ -4424,6 +4695,9 @@ impl<'r> Linker<'r> {
             .collect();
         entry_points.extend(extra.entries.iter().cloned());
         entry_points.extend(self.consumers(fi));
+        // The resolvers of a GraphQL schema's root fields: the listed reading's.
+        let gql = self.graphql_of(rel);
+        entry_points.extend(gql.iter().flat_map(|g| g.entries.iter().cloned()));
         // A declared entry point the file's own code already shows (a console script
         // naming the `main` an `if __name__` guard runs through argparse) is that entry
         // point, not a second one: the one read from the code is kept.
@@ -4448,12 +4722,27 @@ impl<'r> Linker<'r> {
             }
         }
 
+        let gql_entries: BTreeSet<&str> = gql
+            .iter()
+            .flat_map(|g| g.entries.iter().map(|e| e.symbol.as_str()))
+            .collect();
         let symbols = raw
             .symbols
             .iter()
             // A handler method of a class no view base is read for is a symbol where
             // an entry point names it ([`RawSymbol::late`]).
-            .filter(|s| !s.late || entry_points.iter().any(|e| e.symbol == s.name))
+            .filter(|s| {
+                !s.late
+                    || entry_points.iter().any(|e| e.symbol == s.name)
+                    || served.is_some_and(|v| v.keep.contains(&s.name))
+            })
+            // And so is a resolver method of a GraphQL type.
+            .chain(
+                raw.graphql
+                    .methods
+                    .iter()
+                    .filter(|s| gql_entries.contains(s.name.as_str())),
+            )
             .map(|s| {
                 let mut wraps: Vec<Wrap> = Vec::new();
                 // A decorator written above the route decorator of a Flask or
@@ -4482,6 +4771,51 @@ impl<'r> Linker<'r> {
                             .and_then(|h| h.drf_permissions.as_ref())
                             .is_some_and(|own| own.contains(r))
                 };
+                // The DRF class attributes of a class served as a view that is no DRF
+                // view (`class SignOut(View): permission_classes = [...]`): Django's
+                // `View` never runs them, so they are no guard of its handlers; where
+                // a base is not read, whether one runs them is not known
+                // ([`config::Linker::drf_attrs`]). Since the measured build.
+                let attrs = holder
+                    .filter(|h| {
+                        h.kind == drift_core::SymbolKind::Class
+                            && (h.drf_permissions.is_some()
+                                || h.drf_authentication.is_some()
+                                || h.drf_reassigned.is_some())
+                    })
+                    .filter(|h| {
+                        let method = format!("{}.", h.name);
+                        let served: Vec<&EntryPoint> = entry_points
+                            .iter()
+                            .filter(|e| {
+                                e.kind == "http"
+                                    && (e.symbol == h.name || e.symbol.starts_with(&method))
+                            })
+                            .collect();
+                        !served.is_empty() && served.iter().all(|e| e.adapter != "drf")
+                    })
+                    .filter(|_| self.since_frozen())
+                    .map_or(config::DrfAttrs::Read, |h| self.drf_attrs(rel, &h.name));
+                let class_attr = |r: &RawRef, k: WrapKind| {
+                    attrs != config::DrfAttrs::Read
+                        && holder.is_some_and(|h| match k {
+                            WrapKind::Call => {
+                                h.drf_permissions.as_ref().is_some_and(|l| l.contains(r))
+                            }
+                            WrapKind::Authenticates => {
+                                h.drf_authentication.as_ref().is_some_and(|l| l.contains(r))
+                            }
+                            _ => false,
+                        })
+                };
+                if let config::DrfAttrs::Unread(base) = &attrs {
+                    wraps.push(Wrap {
+                        wrapper: format!(
+                            "unresolved:permission_classes, run only if {base} reads them"
+                        ),
+                        kind: WrapKind::Call,
+                    });
+                }
                 // A decorator of the class that applies to one method only
                 // ([`RawSymbol::wraps_only`]): no wrap of another method, nor of the
                 // class, since the measured build.
@@ -4498,8 +4832,16 @@ impl<'r> Linker<'r> {
                     .as_ref()
                     .and_then(|_| s.name.rsplit_once('.'))
                     .map(|(_, m)| m);
+                // The decorator that binds a GraphQL resolver, and those above it,
+                // wrap what it hands back ([`RawGqlBind::unwraps`]).
+                let unwraps = gql.and_then(|g| g.unwraps.get(&s.name));
                 for (r, k) in s.wraps.iter().skip(skip) {
-                    if replaced(r, *k) {
+                    if replaced(r, *k) || class_attr(r, *k) {
+                        continue;
+                    }
+                    if *k == WrapKind::Decorator
+                        && unwraps.is_some_and(|u| u.contains(&self.canon(fi, r)))
+                    {
                         continue;
                     }
                     let only: Vec<&Option<String>> = if only_live && *k == WrapKind::Decorator {
@@ -4532,6 +4874,14 @@ impl<'r> Linker<'r> {
                     } else {
                         self.canon(fi, r)
                     };
+                    if *k == WrapKind::Decorator
+                        && extra
+                            .dropped
+                            .get(&s.name)
+                            .is_some_and(|d| d.contains(&wrapper))
+                    {
+                        continue;
+                    }
                     let w = Wrap { wrapper, kind: *k };
                     if !wraps.contains(&w) {
                         wraps.push(w);
@@ -4582,7 +4932,7 @@ impl<'r> Linker<'r> {
                 // A decorator that is no name: kept by its words, since the measured
                 // build ([`RawSymbol::unread_wraps`]). Last first, so that each
                 // lands where it was written.
-                if let Some(now) = reassigned {
+                if let Some(now) = reassigned.filter(|_| attrs == config::DrfAttrs::Read) {
                     let given: Vec<String> = match &now.unread {
                         Some(words) => vec![format!("unresolved:{words}")],
                         None => now
@@ -4724,6 +5074,10 @@ impl<'r> Linker<'r> {
                     }
                 }
                 wraps = all;
+                // A decorator that registers the symbol is no wrap of it.
+                if let Some(gone) = served.and_then(|v| v.dropped(&s.name)) {
+                    wraps.retain(|w| !gone.contains(&w.wrapper));
+                }
                 let mut args: Vec<String> = s
                     .args
                     .iter()
@@ -4773,6 +5127,11 @@ impl<'r> Linker<'r> {
                     controls: {
                         let mut c = s.controls.clone();
                         self.measured_exits(&mut c);
+                        // `response_model=None`: read since the measured build.
+                        let no_model = drift_core::controls::NO_RESPONSE_MODEL;
+                        if c.iter().any(|x| x == no_model) && !self.since_frozen() {
+                            c.retain(|x| x != no_model);
+                        }
                         // A dependency the repository replaces, since the measured
                         // build.
                         if !self.overridden.is_empty()
@@ -4787,6 +5146,22 @@ impl<'r> Linker<'r> {
                             && let Some(x) = self.input_control(fi, u)
                         {
                             c.push(x.to_string());
+                        }
+                        // Every input it takes is parsed by its declared type before
+                        // the body runs, since the measured build.
+                        if http_entries.contains(&s.name)
+                            && let Some(u) = &s.input_use
+                            && self.input_typed(
+                                fi,
+                                u,
+                                &entry_points
+                                    .iter()
+                                    .filter(|e| e.kind == "http" && e.symbol == s.name)
+                                    .collect::<Vec<_>>(),
+                            )
+                            && self.since_frozen()
+                        {
+                            c.push(drift_core::controls::INPUT_TYPED.to_string());
                         }
                         // How what stands at its guard positions is written: its
                         // own calls (a decorator, the call a variable's value is),
@@ -4909,11 +5284,7 @@ impl<'r> Linker<'r> {
                             &s.typed_calls,
                         ));
                         c.extend(self.row_sets(fi, &s.row_sets));
-                        c.extend(
-                            s.fed_sinks
-                                .iter()
-                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
-                        );
+                        c.extend(s.fed_sinks.iter().map(|k| fed_control(k)));
                         // Handed on to code of the repository: what a built-in or a
                         // package does with it is not followed.
                         c.extend(
@@ -4941,13 +5312,15 @@ impl<'r> Linker<'r> {
                         c.extend(s.attr_params.iter().map(|(attr, param, i)| {
                             format!("{}{attr}\t{param}\t{i}", drift_core::controls::ATTR_PARAM)
                         }));
+                        // What the lowering read for one reading only.
+                        self.since_marked(&mut c);
                         c.sort();
                         c.dedup();
                         c
                     },
                     string_literals: s.string_literals,
                     suppressions: s.suppressions.clone(),
-                    reads: s.reads.clone(),
+                    reads: self.reads_read(&s.reads, &s.since_reads),
                     throws: s.throws.iter().map(|r| self.canon(fi, r)).collect(),
                     sinks: self.sinks_read(&s.sinks, &s.since_sinks),
                     order: s.order.iter().map(|r| self.canon(fi, r)).collect(),
@@ -5093,11 +5466,7 @@ impl<'r> Linker<'r> {
                             unread: {
                                 let mut unread = m.unread.clone();
                                 self.measured_exits(&mut unread);
-                                unread.extend(
-                                    m.fed_sinks
-                                        .iter()
-                                        .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
-                                );
+                                unread.extend(m.fed_sinks.iter().map(|k| fed_control(k)));
                                 unread.extend(
                                     m.param_passes
                                         .iter()
@@ -5119,6 +5488,8 @@ impl<'r> Linker<'r> {
                                     &m.typed_calls,
                                 ));
                                 unread.extend(self.row_sets(fi, &m.row_sets));
+                                // What the lowering read for one reading only.
+                                self.since_marked(&mut unread);
                                 unread
                             },
                             is_async: m.is_async,
@@ -5181,18 +5552,31 @@ impl<'r> Linker<'r> {
                         .collect(),
                     catches: s.catches.iter().map(|c| self.catch_fact(fi, c)).collect(),
                     headers: s.headers.clone(),
-                    inputs: s
-                        .inputs
-                        .iter()
-                        .filter_map(|i| match i {
-                            RawInput::Validated(r) => Some(self.canon(fi, r)),
-                            RawInput::Param(r) if http_entries.contains(&s.name) => {
-                                let c = self.canon(fi, r);
-                                self.is_repo_class(&c).then_some(c)
-                            }
-                            RawInput::Param(_) => None,
-                        })
-                        .collect(),
+                    inputs: {
+                        // A GraphQL resolver's typed arguments are its inputs, as an
+                        // HTTP handler's are; and so are those declared for it
+                        // elsewhere (graphene's `Arguments`).
+                        let request =
+                            http_entries.contains(&s.name) || gql_entries.contains(s.name.as_str());
+                        let mut inputs: Vec<String> = s
+                            .inputs
+                            .iter()
+                            .filter_map(|i| match i {
+                                RawInput::Validated(r) => Some(self.canon(fi, r)),
+                                RawInput::Param(r) if request => {
+                                    let c = self.canon(fi, r);
+                                    self.is_repo_class(&c).then_some(c)
+                                }
+                                RawInput::Param(_) => None,
+                            })
+                            .collect();
+                        if let Some(more) = gql.and_then(|g| g.inputs.get(&s.name)) {
+                            inputs.extend(more.iter().cloned());
+                            inputs.sort();
+                            inputs.dedup();
+                        }
+                        inputs
+                    },
                     handles_errors: {
                         let mut h: Vec<String> =
                             s.handles.iter().map(|x| self.handled(fi, x)).collect();
@@ -5261,6 +5645,8 @@ impl<'r> Linker<'r> {
             })
             .collect();
 
+        // Route handlers no entry point lists (listed reading only).
+        let unlisted_routes = self.framework_unlisted(fi, &entry_points);
         let mut facts = FileFacts {
             path: f.rel_path.clone(),
             hash: f.hash.clone(),
@@ -5281,7 +5667,8 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(fi, l))
                 .collect(),
             truncated: vec![],
-            unlisted_routes: vec![],
+            unlisted_routes,
+            unlisted_reasons: self.unlisted_of(fi, test_file),
             discovers: raw.discovers.clone(),
             outgoing: if test_file {
                 vec![]
@@ -5302,7 +5689,11 @@ impl<'r> Linker<'r> {
                 vec![]
             },
             route_matchers: vec![],
-            mounts: extra.mounts.clone(),
+            mounts: {
+                let mut m = extra.mounts.clone();
+                m.extend(gql.iter().flat_map(|g| g.mounts.iter().cloned()));
+                m
+            },
             apps: self.apps.get(rel).cloned().unwrap_or_default(),
             listed: None,
         };
@@ -5317,6 +5708,50 @@ impl<'r> Linker<'r> {
     /// provably reads none ([`drift_core::controls::NO_INPUT`]) when it does neither,
     /// takes no `*args` / `**kwargs`, and never hands the request on whole or calls a
     /// method of `self`. Otherwise not known: no control.
+    /// [`drift_core::controls::INPUT_TYPED`]: the body reads no request input of its
+    /// own, never hands the request on and takes no `*args` / `**kwargs`, and every
+    /// parameter request input arrives through (one at least) is parsed by its
+    /// declared type, on every route `entries` serves it at: FastAPI parses a
+    /// parameter into its annotation ([`RawInputUse::typed`]); Django, DRF and Flask
+    /// pass route kwargs as text, parsed only by the route's converter for that
+    /// parameter (`<uuid:project_id>`), never by an annotation. Any parameter that is
+    /// not, any other adapter, an annotation not read: no.
+    fn input_typed(&self, fi: usize, u: &RawInputUse, entries: &[&EntryPoint]) -> bool {
+        if u.reads
+            || u.escapes
+            || u.variadic
+            || entries.is_empty()
+            || u.typed.len() != u.params.len()
+        {
+            return false;
+        }
+        let bound: Vec<&(String, bool)> = u
+            .params
+            .iter()
+            .zip(&u.typed)
+            .filter(|(p, _)| match p {
+                RawParamKind::Input => true,
+                RawParamKind::Alias(r) => self.dep_items(fi, &RawDep::Alias(r.clone())).is_empty(),
+                RawParamKind::Dep | RawParamKind::Other => false,
+            })
+            .map(|(_, t)| t)
+            .collect();
+        if bound.is_empty() {
+            return false;
+        }
+        entries.iter().all(|e| {
+            let converters = route_converters(e.route.as_deref().unwrap_or_default());
+            bound.iter().all(|(name, typed)| match e.adapter.as_str() {
+                // Annotated parameters are parsed before the handler runs.
+                "fastapi" | "litestar" | "ninja" => *typed,
+                "django" | "drf" | "flask" | "flask_restx" => converters
+                    .iter()
+                    .any(|(n, conv)| n == name && converter_parses(&e.adapter, conv)),
+                _ => false,
+            })
+        })
+    }
+
     fn input_control(&self, fi: usize, u: &RawInputUse) -> Option<&'static str> {
         let param = u.params.iter().any(|p| match p {
             RawParamKind::Input => true,

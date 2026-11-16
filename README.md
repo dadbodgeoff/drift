@@ -122,6 +122,7 @@ drift --version
 returns 404 and no archive exists):
 
 ```sh
+# Not yet: returns 404 until the first release is published.
 npm install -g @dadbodgeoff/drift     # prebuilt binary, no install scripts
 ```
 
@@ -399,17 +400,18 @@ checked against the code and run on a scratch repository.
 | Path | Written by | Commit it? |
 | --- | --- | --- |
 | `.drift/conventions.yaml` | `drift init`, `drift review`, `drift practices promote` | **Yes.** The policy: proposals, decisions, modes, exceptions. CI, the Action, pre-commit and your teammates' hooks all read it. |
-| `drift.lock` | `drift init`; `drift review` when it promotes a withheld card or a practice; `drift practices promote` | **Yes.** Legacy violations that never block, one `<id> <path>#<symbol>` per line. Fix the code to shrink it. |
+| `drift.lock` | `drift init`; `drift review` when it promotes a withheld card or a practice; `drift practices promote` | **Yes.** Legacy violations that never block, one `<id> <path>#<symbol>` per line, each with a `#~` fingerprint comment line below it. Fix the code to shrink it. |
 | `.drift/config.yaml` | you, `drift setup` | **Yes**, so teammates and CI get the same answers (compose files that deploy nothing, Terraform ties, declared practices). |
 | `.drift/cache/` | every command | **No.** The fact cache and the agent session state (`.drift/cache/sessions/`). Drift writes a `.gitignore` of `*` there; a cache that git tracks is not used. |
 | `.drift/review-log/` | `drift review --set-log on` (opt-in) | **No.** Local only; holds its own `.gitignore` of `*`. |
 | `.drift/findings/` | `drift investigate` (a finding) | **No.** What an agent found: local only. Holds its own `.gitignore` of `*`; nothing posts or shares it. |
 | `.drift/gap-reports/` | `drift investigate` (a gap report) | **No.** A minimal example of a construct Drift does not read, with the repository's names replaced. Holds its own `.gitignore` of `*`; nothing sends it. |
+| `.drift/feedback/` | `drift feedback` (beta feedback) | **No.** Your marks, the key that hashes ids, and the exported file. Holds its own `.gitignore` of `*`; nothing sends it. |
 | `.drift/verify-cache.json` | the experimental agent verifier (`agents.verify: on` in `.drift/conventions.yaml`) | **No.** Verdicts an agent on that machine returned; Drift reads it whether or not git tracks it and gives it no `.gitignore`, so ignore it yourself. |
 | `.gitattributes` line `drift.lock merge=union` | you | **Yes**, see below. |
 
-A suggested `.gitignore` block. The cache, the review log, the findings and the
-gap reports are already covered by the `.gitignore` Drift writes inside those
+A suggested `.gitignore` block. The cache, the review log, the findings, the
+gap reports and the feedback are already covered by the `.gitignore` Drift writes inside those
 directories, so listing them only makes it explicit. `.drift/verify-cache.json`
 exists only if you turn on the experimental agent verifier, and Drift does not
 ignore it for you:
@@ -421,6 +423,7 @@ ignore it for you:
 .drift/verify-cache.json
 .drift/findings/
 .drift/gap-reports/
+.drift/feedback/
 ```
 
 Do not ignore `.drift/` as a whole: that would drop the policy that teammates
@@ -602,7 +605,7 @@ codes is in the [command reference](docs/wiki/Command-Reference.md).
 | `drift example FILE` | The existing file to copy from when writing new code like `FILE` | nothing |
 | `drift card PATH` | One file's place: entry points, guards, exposure, siblings, rules, what is not known | nothing |
 | `drift practices` | What the code does per concern (authn, authz, errors, logging, API, validation, config, data access, testing); `--hints` | nothing |
-| `drift practices promote P-ID` | Makes one practice the rule for new code in a place: an accepted convention, today's exceptions baselined; `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--list`, `--json` | `.drift/conventions.yaml`, `drift.lock` (nothing with `--dry-run` or `--list`) |
+| `drift practices promote P-ID` | Makes one practice the rule for new code in a place (a package, a directory, a file or a route prefix): an accepted convention, today's exceptions baselined; `--in`, `--with`, `--concern`, `--mechanism`, `--any-enforcing`, `--block`, `--force`, `--dry-run`, `--list`, `--json` | `.drift/conventions.yaml`, `drift.lock` (nothing with `--dry-run` or `--list`) |
 | `drift security` | Entry points, guards, exposure, risky operations, client leaks, env reads; `--diff-base` for a change | nothing |
 | `drift map` | Packages, layers, dependency graph, entry points, roles | nothing |
 | `drift setup` | The few questions only a person can answer; `--list`, `--json`, `--agent-brief` for agents | `.drift/config.yaml` |
@@ -610,6 +613,7 @@ codes is in the [command reference](docs/wiki/Command-Reference.md).
 | `drift findings` | What an agent found, local only; `--issue ID` an issue draft, `--branch ID` a local branch with the patch | nothing (`--write FILE`; a local branch on request) |
 | `drift export agents-md` / `claude-settings` | A rules block for AGENTS.md or CLAUDE.md; permission entries for read-only lookups | only with `--write` |
 | `drift mcp` | Serves 12 MCP tools over stdio: ten that only read, and `drift_setup_answer` and `drift_investigate_record`, which write ([MCP reference](docs/wiki/MCP-Reference.md)) | `.drift/config.yaml`, findings and gap reports, only through the two writing tools |
+| `drift feedback mark` / `export` | Beta feedback: mark a report true or wrong; write a file of counts you can read and choose to share ([beta feedback](docs/wiki/Beta-Feedback.md)); sends nothing | `.drift/feedback/` (git-ignored), or the file named by `--out` |
 | `drift hook claude EVENT` | The Claude Code hook handler ([hooks reference](docs/wiki/Hooks-Reference.md)) | cache and session state |
 | `drift scan`, `drift facts` | The fact index of the repository, or of one file | cache |
 
@@ -732,6 +736,10 @@ and [`eval/study/runs/dev5-py/dev5-check.md`](eval/study/runs/dev5-py/dev5-check
 - **Python proposals are suggestions only, and their evidence is small.** No
   Python accuracy claim is made, and no Python convention blocks unless a person
   forces it.
+- **Rules proposed from Drift's map of the code are a second channel beside
+  mining.** They do not pass through the miner's measured gates, and their
+  accuracy has **not been measured yet**. They only advise, and nothing checks
+  one until a person accepts it.
 - **Conventions only.** Drift checks what your code already does; it is not a
   linter, a type checker or a security scanner. It is a guardrail, not a
   security control.
@@ -818,7 +826,12 @@ The pipeline, the cache and what "proven" means are in
 
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) lists the gates CI runs
   (`scripts/gates.sh` runs them locally). Releases are made only in CI:
-  [RELEASING.md](RELEASING.md).
+  [RELEASING.md](RELEASING.md). Every change a user can see is recorded in
+  [CHANGELOG.md](CHANGELOG.md). Code of conduct:
+  [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- **The beta:** [docs/BETA.md](docs/BETA.md), and
+  [beta feedback](docs/wiki/Beta-Feedback.md) (`drift feedback`) for telling
+  the maintainers which reports were right; it sends nothing.
 - **Support:** open an issue on the GitHub repository. Report a vulnerability
   privately through the repository's Security tab, as [SECURITY.md](SECURITY.md)
   says; do not open a public issue.

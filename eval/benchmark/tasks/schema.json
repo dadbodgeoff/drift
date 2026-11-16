@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drift-benchmark-task/1",
+  "title": "Agent benchmark task record",
+  "description": "One frozen task, written by select_tasks.py draw and completed at freezing (TASKS.md). Fields under `hidden`, and `conventions`, are never shown to the agent. Only `prompt` reaches the agent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "repository", "pr_number", "merge_commit", "base_commit", "base_branch", "merged_at", "language", "issue", "prompt", "hidden", "test_command", "setup_command", "conventions", "draw"],
+  "properties": {
+    "schema": {"const": "drift-benchmark-task/1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9-]+-pr[0-9]+$", "description": "Repository slug plus pull request number. Never shown to graders, who see packet ids only."},
+    "repository": {"type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$", "description": "owner/name, as in the export."},
+    "pr_number": {"type": "integer", "minimum": 1},
+    "merge_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$", "description": "The commit that landed the change on the base branch (merge or squash commit)."},
+    "base_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$", "description": "First parent of merge_commit: the base branch just before the change. The agent's working copy starts here and holds no later commit."},
+    "base_branch": {"type": "string"},
+    "merged_at": {"type": "string", "format": "date-time"},
+    "language": {"enum": ["typescript-javascript", "python"], "description": "The language of most changed code files Drift reads."},
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "raw_sha256", "stripped"],
+      "properties": {
+        "number": {"type": ["integer", "null"]},
+        "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 of the text \"issue\" + U+001F + title + U+001F + body, before stripping."},
+        "stripped": {
+          "type": "array",
+          "description": "Every removal the stripping rule made (TASKS.md, 'The prompt'), in order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["removed", "rule"],
+            "properties": {
+              "removed": {"type": "string"},
+              "rule": {"enum": ["url-to-fix", "ref-to-pr", "sha-of-fix"]}
+            }
+          }
+        }
+      }
+    },
+    "prompt": {"type": "string", "minLength": 1, "description": "Exactly what the agent receives: the spec's prompt_template filled with the stripped issue title and body. Identical in every arm."},
+    "hidden": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changed_files", "additions", "deletions", "reference_diff"],
+      "properties": {
+        "changed_files": {"type": "array", "items": {"type": "string"}, "description": "Paths the real change touched. For graders and the similarity check only."},
+        "additions": {"type": "integer", "minimum": 0},
+        "deletions": {"type": "integer", "minimum": 0},
+        "reference_diff": {"type": ["string", "null"], "description": "Path, relative to the task directory, of the real change as a diff (base_commit to merge_commit), written by `harness.py freeze` from the local mirror. Null until frozen."}
+      }
+    },
+    "test_command": {"type": ["string", "null"], "description": "The repository's own test command for the touched code, run by the harness after the agent finishes, with a timeout. Taken from the repository's CI or contributing docs at base_commit, written before any run. Null when there is none or it cannot run offline."},
+    "setup_command": {"type": ["string", "null"], "description": "Command that makes test_command runnable (for example installing dependencies from a local cache), run before the arm is prepared. Null when not needed."},
+    "conventions": {
+      "type": "array",
+      "description": "The conventions graders hold this task to, listed by the two graders from the real change and the repository at base_commit, never from Drift's output, and frozen before any run (RUBRIC.md, step 1).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "evidence"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^C[0-9]+$"},
+          "text": {"type": "string", "description": "One sentence a grader can check against a diff."},
+          "evidence": {"type": "array", "items": {"type": "string"}, "description": "Files at base_commit (path or path:line) that show the convention."}
+        }
+      }
+    },
+    "draw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "rank", "export_sha256", "selector_version"],
+      "properties": {
+        "seed": {"type": "string"},
+        "rank": {"type": "integer", "minimum": 1, "description": "Position in the seeded order of all drawn tasks."},
+        "export_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "selector_version": {"type": "integer"}
+      }
+    }
+  }
+}

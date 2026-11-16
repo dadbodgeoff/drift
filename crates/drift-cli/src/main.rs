@@ -5,18 +5,26 @@ mod card;
 mod derived;
 mod export;
 mod findings;
+mod from_map_cli;
+mod guided;
 mod history;
 mod lookup;
 mod mcp;
 mod pr;
 mod practices;
+mod probation;
 mod project;
 mod promote;
 mod review_log;
 mod scan;
+mod sec_diff;
 mod setup;
 mod wiring;
 mod workspace;
+// S23: `drift feedback`.
+mod feedback;
+// S32: `drift upgrade`.
+mod upgrade;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, IsTerminal, Write};
@@ -62,12 +70,14 @@ struct Cli {
     command: Command,
 }
 
-/// How many suggestion-tier conventions a human view lists (`drift_mine::rank`). The
-/// default tier is always listed in full; nothing is hidden from `check` or agents.
+/// How many suggestion-tier conventions a human view lists (`drift_mine::rank`). This
+/// cap never cuts the default tier (mining's own caps can, and a note then says so);
+/// nothing is hidden from `check` or agents.
 #[derive(clap::Args, Debug, Clone, Copy, Default)]
 struct CapArgs {
     /// Suggestions to list, best first (default 5, or `suggestion_cap` in
-    /// .drift/conventions.yaml). The default tier is always listed in full.
+    /// .drift/conventions.yaml). This cap never cuts the default tier; where mining's
+    /// own caps cut a default-tier rule, a note says so (`drift census --why`).
     #[arg(long, value_name = "N", conflicts_with = "all")]
     suggestions: Option<usize>,
     /// List every suggestion.
@@ -135,6 +145,12 @@ enum Command {
         /// known.
         #[arg(long)]
         explain: bool,
+        /// Write no proposals from the map (the practices and layering the map shows,
+        /// which did not go through the miner's measured gates). Setting the
+        /// environment variable DRIFT_NO_FROM_MAP to anything but empty or 0 does the
+        /// same.
+        #[arg(long)]
+        no_from_map: bool,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -190,13 +206,41 @@ enum Command {
         /// proposes was not measured, and nothing is written.
         #[arg(long, conflicts_with = "coverage")]
         listed: bool,
+        /// List what each gate of mining dropped instead of the proposals: how many per
+        /// gate, then the candidates (role, rule, holders of members, the gate's threshold
+        /// and the candidate's value, whether the target is the repository's or a
+        /// dependency's), strongest first. `--why GATE` (`universal`, `wilson`, `lift`,
+        /// `cap_avoid`, ...): only that gate. With --json, every dropped candidate.
+        /// Observation only: what is proposed is exactly what `census` proposes.
+        #[arg(
+            long,
+            value_name = "GATE",
+            num_args = 0..=1,
+            default_missing_value = "",
+            conflicts_with = "coverage"
+        )]
+        why: Option<String>,
+        /// Also list the proposals from the map (practices and layering the map shows,
+        /// not mined) and what qualified but is not proposed, with why. With --json, as
+        /// `from_map`. Writes nothing.
+        #[arg(long, conflicts_with_all = ["coverage", "why"])]
+        from_map: bool,
+        /// Study use (stream S21): also run a candidate change to one of mining's gates,
+        /// for this census only (repeatable): `universal`, `small-roles`,
+        /// `cap-show-aware`, `cap-after-narrow`, `narrow-recheck`, `avoid-cap-own`. Each
+        /// proposal only a candidate makes carries its name (`gate_candidate`) and
+        /// advises only where it adds a rule. Nothing is written; no other command reads it.
+        #[arg(long, value_enum, hide = true, value_name = "NAME")]
+        gate_candidate: Vec<GateCandidateArg>,
         #[command(flatten)]
         cap: CapArgs,
     },
-    /// Answer the few questions only you can answer (which compose files are test
-    /// stacks, which Terraform target group sends requests to a service, whether a
-    /// helper is your check), one at a time; the answers go to .drift/config.yaml.
-    /// Without a terminal, lists the questions with the command that answers each.
+    /// Set Drift up in one guided flow: what it read, each proposal one at a time,
+    /// which compose file is deployed, the security baseline and the agent
+    /// integrations; nothing is accepted or written without your yes. Without a
+    /// terminal or answers (--yes-to, --no-to), prints what it would ask and changes
+    /// nothing. The questions only you can answer (compose files, Terraform, checks)
+    /// one at a time: --interactive; listed: --list.
     #[command(after_help = SETUP_HELP)]
     Setup {
         /// Print the open questions, each with the command that answers it, and change
@@ -263,6 +307,24 @@ enum Command {
         /// and change nothing.
         #[arg(long)]
         agent_brief: bool,
+        /// The guided flow, from a script: say yes to KEYS (comma-separated or
+        /// repeated): a proposal's id, a compose question's id (yes: only for tests),
+        /// `baseline`, `agents-md` or `claude-settings`. A person's run.
+        #[arg(long, value_delimiter = ',', value_name = "KEYS")]
+        yes_to: Vec<String>,
+        /// The guided flow, from a script: say no to KEYS (recorded, not asked again).
+        /// What neither --yes-to nor --no-to names is skipped.
+        #[arg(long, value_delimiter = ',', value_name = "KEYS")]
+        no_to: Vec<String>,
+        /// The guided flow, asking on standard input even when it is not a terminal (a
+        /// person's run: with --by person and DRIFT_SETUP_PERSON=1).
+        #[arg(long)]
+        guided: bool,
+        /// The guided flow asks about no proposal from the map, and the `drift init` it
+        /// runs writes none, as `drift init --no-from-map`. Setting the environment
+        /// variable DRIFT_NO_FROM_MAP to anything but empty or 0 does the same.
+        #[arg(long)]
+        no_from_map: bool,
     },
     /// Every route Drift could not settle (authentication or authorization unknown or
     /// none, reach unknown or inside only), grouped by what would settle it, with the
@@ -507,23 +569,34 @@ enum Command {
         #[arg(long)]
         json: bool,
         /// Report only what the change since the merge base with this ref introduces:
-        /// entry points lacking a guard their siblings share, unguarded entry points
-        /// reaching a risky operation, risky operations and client leaks added, and
-        /// entry points made internet-facing. Facts for a pull request; exit 0.
+        /// every finding the security baseline holds that the merge base did not
+        /// have, by the same key (`added`, by kind; entry points lacking a guard their
+        /// siblings share, unguarded entry points reaching a risky operation, risky
+        /// operations and client leaks are explained with what their siblings do),
+        /// and entry points made internet-facing. A kind that could not be compared is
+        /// said so. Facts for a pull request; exit 0.
         #[arg(long, value_name = "REF")]
         diff_base: Option<String>,
         /// With --diff-base: GitHub Actions output (notice annotations, and a job
         /// summary when GITHUB_STEP_SUMMARY is set).
         #[arg(long, requires = "diff_base")]
         github: bool,
+        /// Output format: `sarif` (SARIF 2.1.0: every finding of the inventory, or with
+        /// --diff-base what the change adds, or with --ratchet what the baseline does
+        /// not hold, a result each under the rule `drift-security/<kind>` that `drift
+        /// check --format sarif` uses), `json` (as --json), `github` (as --github) or
+        /// `text`.
+        #[arg(long, value_enum, conflicts_with_all = ["json", "github", "write_baseline", "top"])]
+        format: Option<Format>,
         /// With --diff-base: exit 1 when the change introduces any of these, by
-        /// name, separated by commas: `unguarded-reaching` (an entry point where
-        /// no guard was found reaching a risky operation), `no-guard` (a new entry
-        /// point with no guard found or one that cannot be read), `guard-gap` (an
-        /// entry point lacking a guard its siblings share), `risky` (a risky
-        /// operation), `leak` (a client leak), `public` (an entry point made
-        /// internet-facing), or `any`. Off unless given: without it the run is
-        /// facts for review and exits 0.
+        /// name, separated by commas: any kind the security baseline holds
+        /// (`unguarded-reaching`, `no-guard` (an entry point the change leaves where
+        /// no guard was found; one whose guard cannot be read is listed apart as
+        /// guard unknown and never counted), `guard-gap`, `scope-gap`,
+        /// `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`,
+        /// `dependency`, `kubernetes`, `leak`), `public` (an entry point made
+        /// internet-facing), or `any`; a kind named that could not be compared fails
+        /// too. Off unless given: without it the run is facts for review and exits 0.
         #[arg(long, value_delimiter = ',', value_name = "KINDS")]
         fail_on: Vec<String>,
         /// Write the security baseline (`.drift/security.lock`): every finding of
@@ -531,15 +604,19 @@ enum Command {
         /// points lacking a guard or a scope their siblings share, entry points that
         /// check nothing of a signed-in caller, unguarded entry points reaching a
         /// risky operation, risky operations, client leaks), keyed
-        /// by handler and route, never by line. Commit it: `--ratchet` reports what
-        /// is found later and is not in it.
+        /// by handler and route, never by line, with the inventory version that
+        /// wrote it. Commit it: `drift check` and `--ratchet` report what is found
+        /// later and is not in it. Every kind fails `drift check` but
+        /// `unscoped-key`, `workflow-hardening` and `image-hardening`, which advise;
+        /// with --fail-on, the kinds named fail too
+        /// (kept when the baseline is written again).
         #[arg(long, conflicts_with_all = ["diff_base", "ratchet"])]
         write_baseline: bool,
         /// Report the findings that are not in the security baseline
         /// (`.drift/security.lock`), and those of it that are gone, with no commit
         /// to compare with. Exits 1 when a finding was added (with --fail-on, only
         /// for the kinds named: `unguarded-reaching`, `no-guard`, `guard-gap`,
-        /// `scope-gap`, `no-authorization`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`): what the repository has today
+        /// `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `workflow-hardening`, `image-hardening`, `dependency`, `kubernetes`, `leak`, or `any`; without it, the kinds the baseline sets to fail): what the repository has today
         /// is accepted as it is, and nothing more of it comes in unseen.
         #[arg(long, conflicts_with = "diff_base")]
         ratchet: bool,
@@ -547,6 +624,18 @@ enum Command {
         /// decorator: always the first 50; exceptions per shared guard: the first 10).
         #[arg(long, default_value_t = 20)]
         max: usize,
+        /// Only the findings to look at first, ranked by what Drift read (default 10;
+        /// 0 for all), repeats through one operation on one line; then how many more,
+        /// and what was not ranked and why (a guard Drift could not read is never
+        /// ranked). With --json, the inventory gains `top`. Changes no exit code.
+        #[arg(
+            long,
+            value_name = "N",
+            num_args = 0..=1,
+            default_missing_value = "10",
+            conflicts_with_all = ["diff_base", "ratchet", "write_baseline"]
+        )]
+        top: Option<usize>,
     },
     /// One file's place in the repository, for an agent about to touch it: package,
     /// entry points with their guards and exposure, risky operations, what its siblings
@@ -653,6 +742,17 @@ enum Command {
         #[arg(long)]
         write: Option<PathBuf>,
     },
+    /// Beta feedback: mark a report true or wrong, and write a file of counts you can
+    /// read in full and choose to share. Sends nothing.
+    Feedback {
+        #[command(subcommand)]
+        action: feedback::FeedbackAction,
+    },
+    /// After installing a newer Drift: what it reads differently in the files an older
+    /// one wrote (changes nothing; exit 3 when something needs doing), and with --apply
+    /// only what changes no decision a person made.
+    #[command(after_help = upgrade::HELP)]
+    Upgrade(upgrade::UpgradeArgs),
 }
 
 // Examples at the end of each command's --help.
@@ -670,10 +770,17 @@ const CENSUS_HELP: &str = "Examples:
   drift census --all              every suggestion (--suggestions N: the N best)
   drift census --tier default     only those a person may set to block
   drift census --all-outliers     every outlier, not the first three
+  drift census --why              what each gate of mining dropped, and why
+  drift census --why wilson       only the rules below the lower bound
   drift census --json > census.json";
 
 const SETUP_HELP: &str = "Examples:
-  drift setup                          in a terminal: one question at a time; Enter skips
+  drift setup                          in a terminal: the guided flow (what Drift read, each
+                                       proposal, the baseline, agents); Enter skips. Without
+                                       one: what it would ask, nothing changed
+  drift setup --by person --yes-to D-1a2b3c,baseline --no-to agents-md
+                                       the guided flow from a script (DRIFT_SETUP_PERSON=1)
+  drift setup --interactive            the questions only you can answer, one at a time
   drift setup --list                   the open questions, each with the command that answers it
   drift setup --json                   the same as data (schema drift-setup-questions)
   drift setup --answer S-1a2b=tests-only
@@ -797,6 +904,8 @@ const PRACTICES_HELP: &str = "Examples:
   drift practices promote --list           the practices that may be made the rule for new code
   drift practices promote P-0f0acb --in app/api
                                            make one a convention (`drift practices promote --help`)
+  drift practices promote --concern authn --any-enforcing --in app/api
+                                           any way Drift reads as turning an unsigned caller away
 
 Facts, not rules: nothing here is enforced until a person promotes a practice
 (`drift practices promote`). authn, authz, validation, errors and api make the recipe;
@@ -895,6 +1004,38 @@ enum CandidateTier {
     D8,
 }
 
+/// A candidate change to a gate of mining, `census --gate-candidate` (study use, stream
+/// S21): [`drift_mine::gate_candidates::GateCandidate`], one to one.
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum GateCandidateArg {
+    /// A rule every member holds (no outlier) is proposed, advise only.
+    Universal,
+    /// Roles of 8 to 18 members: at least 90% held, in-repo target, lift 1.5, 3 files.
+    SmallRoles,
+    /// The per-role cap counts only drafts the show policy shows.
+    CapShowAware,
+    /// The caps run after narrowing and merging.
+    CapAfterNarrow,
+    /// The lower bound is checked again after narrowing recounts.
+    NarrowRecheck,
+    /// The layering share does not cut a default-tier rule.
+    AvoidCapOwn,
+}
+
+impl GateCandidateArg {
+    fn candidate(self) -> drift_mine::gate_candidates::GateCandidate {
+        use drift_mine::gate_candidates::GateCandidate as G;
+        match self {
+            GateCandidateArg::Universal => G::Universal,
+            GateCandidateArg::SmallRoles => G::SmallRoles,
+            GateCandidateArg::CapShowAware => G::CapShowAware,
+            GateCandidateArg::CapAfterNarrow => G::CapAfterNarrow,
+            GateCandidateArg::NarrowRecheck => G::NarrowRecheck,
+            GateCandidateArg::AvoidCapOwn => G::AvoidCapOwn,
+        }
+    }
+}
+
 #[derive(Clone, Copy, ValueEnum)]
 enum Agent {
     Claude,
@@ -931,8 +1072,7 @@ fn check_paths(root: &Path, files: &[String]) -> anyhow::Result<Option<BTreeSet<
     if files.is_empty() {
         return Ok(None);
     }
-    let canon = root
-        .canonicalize()
+    let canon = drift_core::fsutil::canonical(root)
         .with_context(|| format!("opening {}", root.display()))?;
     let mut only = BTreeSet::new();
     for f in files {
@@ -1107,6 +1247,10 @@ fn print_candidate(rank: usize, c: &Candidate, all_outliers: bool) {
         }
     );
     println!("    tier:     {}", c.describe_tier());
+    // Study use only (`census --gate-candidate`, stream S21); never printed otherwise.
+    if let Some(note) = drift_mine::gate_candidates::note_for(&c.id) {
+        println!("    study:    {note}");
+    }
     let agents = drift_mine::admission::candidate_view(c);
     if !agents.shown {
         println!("    agents:   {}", agents.text);
@@ -1385,9 +1529,14 @@ fn census_json(
         if let Some(w) = &c.wiring {
             p["wiring"] = serde_json::to_value(w)?;
         }
+        // Study use only (`--gate-candidate`, stream S21): the candidate change to a gate
+        // without which this proposal would not exist. Absent with no switch on.
+        if let Some(g) = drift_mine::gate_candidates::marked(&c.id) {
+            p["gate_candidate"] = json!(g.name());
+        }
         proposals.push(p);
     }
-    let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    let root = drift_core::fsutil::canonical(root).unwrap_or_else(|_| root.to_path_buf());
     let mut out = json!({
         "schema": CENSUS_SCHEMA,
         "engine": engine(),
@@ -1579,12 +1728,13 @@ fn card_outlier_lines(c: &Convention, r: &CheckReport, cap: OutlierCap) -> Vec<S
             out.push(format!(
                 "    +{} more: `drift review --show {} --all-outliers` lists them all",
                 flagged.len() - shown,
-                c.id
+                drift_mine::report::shell_word(&c.id)
             ));
         }
         out.push(format!(
-            "  fine because...: `drift review --exempt {} --member {}#{} --reason \"<why>\"`",
-            c.id, flagged[0].path, flagged[0].symbol
+            "  fine because...: `drift review --exempt {} --member {} --reason \"<why>\"`",
+            drift_mine::report::shell_word(&c.id),
+            drift_mine::report::shell_word(&format!("{}#{}", flagged[0].path, flagged[0].symbol))
         ));
     }
     if !c.exceptions.is_empty() {
@@ -1666,6 +1816,23 @@ fn review_report(cli: &Cli, policy: &ConventionsFile) -> anyhow::Result<(RepoFac
     let mut facts = load_facts(cli, 0)?;
     let report = review_report_on(cli, &mut facts, policy)?;
     Ok((facts, report))
+}
+
+/// Whether `c` is a proposal from the map accepted where no command recorded its lock
+/// lines: by hand in the file. A practice is taken whenever it has no lock line yet (as
+/// before); a declared or layering rule only while it has no `accepted_evidence`, which
+/// `drift review` and `drift setup` keep when they accept one (and record its lines).
+fn hand_accepted_from_map(c: &drift_mine::policy::Convention) -> bool {
+    c.status == Status::Accepted
+        && c.from_map.is_some()
+        && (c.rule.is_practice() || c.accepted_evidence.is_none())
+}
+
+/// Whether proposals from the map are off for this run: `--no-from-map`, or
+/// `DRIFT_NO_FROM_MAP` set to anything but empty or 0 (for scripts that also run a binary
+/// from before the flag). `drift init` and `drift setup` read it the same way.
+pub(crate) fn no_from_map_asked(flag: bool) -> bool {
+    flag || std::env::var("DRIFT_NO_FROM_MAP").is_ok_and(|v| !v.is_empty() && v != "0")
 }
 
 /// [`review_report`] on facts already read.
@@ -1824,6 +1991,11 @@ fn block_guard(c: &Convention) -> BlockGuard {
 
 fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
     let root = &cli.root;
+    // A hook reads each `.drift/config.yaml` and policy once ([`agent::handle`]), this
+    // reading of the config included.
+    if matches!(cli.command, Command::Hook { .. }) {
+        drift_mine::policy::remember_configs();
+    }
     drift_mine::workspace::configure(root);
     match &cli.command {
         Command::Scan { json, out, threads } => {
@@ -1836,6 +2008,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 scan(root, &opts).with_context(|| format!("scanning {}", root.display()))?;
             let elapsed = started.elapsed();
             if let Some(out) = out {
+                export::refuse_policy_path(root, out, None, "the facts file")?;
                 std::fs::write(out, serde_json::to_vec_pretty(&facts)?)
                     .with_context(|| format!("writing {}", out.display()))?;
             }
@@ -1882,6 +2055,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "  imports:         {} ({internal} in-repo, {unresolved} unresolved)",
                 imports.len()
             );
+            // Read since the measured build: `drift security` and the practice map
+            // read them, mining does not.
+            if !facts.listed_files.is_empty() || !facts.listed_skipped.is_empty() {
+                eprintln!(
+                    "  components:      {} read, {} skipped (Vue, Svelte, Astro scripts; read by `drift security` and the practice map, not mined)",
+                    facts.listed_files.len(),
+                    facts.listed_skipped.len()
+                );
+            }
         }
         Command::Debug {
             what: DebugKind::Imports,
@@ -2032,13 +2214,20 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         "no package `{p}` (the overview lists them)"
                     );
                 }
-                drift_mine::map::overview(
+                let mut v = drift_mine::map::overview(
                     &facts,
                     &map,
                     p,
                     tests_mined,
                     drift_mine::map::Limits { roles: *max },
-                )
+                );
+                // What layering rests on, for the whole repository: the area graph and
+                // its one-way pairs, from the function the layering proposals use.
+                if *json {
+                    v["areas"] =
+                        serde_json::to_value(drift_mine::from_map::area_graph(&facts, &kinds))?;
+                }
+                v
             };
             let mut stdout = std::io::stdout().lock();
             if *json || *files {
@@ -2133,6 +2322,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let scope =
                 practices::checked_scope(&facts, concern.as_deref(), package.as_deref(), rel)?;
             let mut r = practices::report_with(root, &facts, scope, *units)?;
+            // A view of one file reads only its units: an offer to promote said there
+            // must hold for the whole place, as `drift practices promote` reads it.
+            if r.scope.path.is_some() {
+                let full = practices::report_units_kept(root, &facts, None);
+                promote::keep_offers_that_qualify(&full, &mut r);
+            }
             for w in practices::config_warnings(root, &facts) {
                 eprintln!("drift practices: {w}");
             }
@@ -2161,43 +2356,47 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             fail_on,
             write_baseline,
             ratchet,
+            top,
+            format,
         } => {
+            // `--format json` and `--format github` are `--json` and `--github`.
+            let json = &(*json || matches!(format, Some(Format::Json)));
+            let github = &(*github || matches!(format, Some(Format::Github)));
+            let sarif = matches!(format, Some(Format::Sarif));
+            if *github && diff_base.is_none() {
+                anyhow::bail!("--format github needs --diff-base");
+            }
             const FAIL_ON: &[&str] = &[
                 "unguarded-reaching",
                 "no-guard",
                 "guard-gap",
                 "scope-gap",
                 "no-authorization",
+                "unscoped-key",
                 "risky",
                 "whole-row",
                 "workflow",
+                "workflow-hardening",
+                "image-hardening",
                 "dependency",
                 "kubernetes",
                 "leak",
                 "public",
                 "any",
             ];
-            if let Some(unknown) = fail_on.iter().find(|k| !FAIL_ON.contains(&k.as_str())) {
+            // A kind the baseline holds is one, whatever reading added it.
+            if let Some(unknown) = fail_on.iter().find(|k| {
+                !FAIL_ON.contains(&k.as_str())
+                    && !drift_mine::ratchet::KINDS.iter().any(|(x, _)| x == k)
+            }) {
                 anyhow::bail!("--fail-on: `{unknown}` is none of {}", FAIL_ON.join(", "));
             }
-            if !fail_on.is_empty() && diff_base.is_none() && !*ratchet {
-                anyhow::bail!("--fail-on needs --diff-base or --ratchet");
+            if !fail_on.is_empty() && diff_base.is_none() && !*ratchet && !*write_baseline {
+                anyhow::bail!("--fail-on needs --diff-base, --ratchet or --write-baseline");
             }
-            if diff_base.is_some()
-                && let Some(k) = fail_on.iter().find(|k| {
-                    matches!(
-                        k.as_str(),
-                        "scope-gap"
-                            | "no-authorization"
-                            | "whole-row"
-                            | "workflow"
-                            | "dependency"
-                            | "kubernetes"
-                    )
-                })
-            {
+            if *write_baseline && fail_on.iter().any(|k| k == "public") {
                 anyhow::bail!(
-                    "--fail-on {k} is read against the baseline (--ratchet), not against a commit"
+                    "--fail-on public is read against a commit (--diff-base), not against the baseline"
                 );
             }
             if *ratchet && fail_on.iter().any(|k| k == "public") {
@@ -2210,9 +2409,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 &facts,
                 drift_mine::security::Boundaries::load(&cli.root),
             );
-            inv.workflows = drift_mine::workflows::read(root);
+            drift_mine::ci::fill(&mut inv, root);
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
+            drift_mine::hardening::fill(&mut inv, root);
+            drift_mine::serverless::add_unlisted(&mut inv, root, &facts);
             // Each shared guard, linked to the convention that says the same (accepted
             // or proposed), when the project has conventions. A policy that cannot be
             // read only loses the links: the inventory is the repository's, not the
@@ -2243,113 +2444,43 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 ));
             }
             if let Some(base) = diff_base {
-                let scope = pr::DiffScope::from_git(root, base)?;
-                let before = scope.base_inventory(root)?;
-                let regs =
-                    drift_mine::security::regressions(&before, &inv, &|p| scope.touches(p), &|p| {
-                        scope.old_path(p).to_string()
-                    });
-                let files = scope.added() + scope.changed();
-                if !*json {
-                    for w in &inv.warnings {
-                        eprintln!("drift security: {w}");
-                    }
-                }
-                if *json {
-                    let mut v = serde_json::to_value(&regs)?;
-                    v["diff"] = serde_json::json!({
-                        "base": base,
-                        "merge_base": scope.merge_base,
-                        "files": files,
-                    });
-                    if !inv.warnings.is_empty() {
-                        v["warnings"] = serde_json::json!(inv.warnings);
-                    }
-                    println!("{}", serde_json::to_string_pretty(&v)?);
-                } else if *github {
-                    let mut stdout = std::io::stdout().lock();
-                    stdout.write_all(
-                        drift_mine::security::github_regression_annotations(&regs).as_bytes(),
-                    )?;
-                    writeln!(
-                        stdout,
-                        "drift security: {} entry point(s) lacking a shared guard, {} where Drift found no guard in what it read reaching a risky operation, {} new entry point(s) where Drift found no guard or cannot tell, {} risky operation(s) added, {} new client leak(s), {} now internet-facing; facts for review, nothing fails",
-                        regs.guard_gaps.len(),
-                        regs.unguarded_reaching.len(),
-                        regs.added_without_guard.len(),
-                        regs.sinks.len(),
-                        regs.leaks.len(),
-                        regs.now_public.len()
-                    )?;
-                    if let Some(path) =
-                        std::env::var_os("GITHUB_STEP_SUMMARY").filter(|p| !p.is_empty())
-                    {
-                        let md = drift_mine::security::regressions_summary(
-                            &regs,
-                            base,
-                            &scope.merge_base,
-                            files,
-                        );
-                        let mut f = std::fs::OpenOptions::new()
-                            .create(true)
-                            .append(true)
-                            .open(&path)
-                            .with_context(|| {
-                                format!(
-                                    "opening GITHUB_STEP_SUMMARY {}",
-                                    Path::new(&path).display()
-                                )
-                            })?;
-                        f.write_all(md.as_bytes())?;
-                        f.write_all(b"\n")?;
-                    }
-                } else {
-                    print!(
-                        "{}",
-                        drift_mine::security::render_regressions(
-                            &regs,
-                            base,
-                            &scope.merge_base,
-                            files,
-                            Some(&cli.root)
-                        )
-                    );
-                }
-                // A person asked for the run to fail on what the change introduces
-                // (`--fail-on`): counted by kind, said on stderr, exit 1.
-                let on = |k: &str| fail_on.iter().any(|f| f == k || f == "any");
-                let failing: Vec<(&str, usize)> = [
-                    ("unguarded-reaching", regs.unguarded_reaching.len()),
-                    ("no-guard", regs.added_without_guard.len()),
-                    ("guard-gap", regs.guard_gaps.len()),
-                    ("risky", regs.sinks.len()),
-                    ("leak", regs.leaks.len()),
-                    ("public", regs.now_public.len()),
-                ]
-                .into_iter()
-                .filter(|(k, n)| on(k) && *n > 0)
-                .collect();
-                if !failing.is_empty() {
-                    let said: Vec<String> =
-                        failing.iter().map(|(k, n)| format!("{n} {k}")).collect();
-                    eprintln!(
-                        "drift security: failing as asked (--fail-on {}): this change introduces {}",
-                        fail_on.join(","),
-                        said.join(", ")
-                    );
-                    return Ok(ExitCode::from(1));
-                }
-                return Ok(ExitCode::SUCCESS);
+                let out = match (*json, *github, sarif) {
+                    (true, _, _) => sec_diff::Out::Json,
+                    (_, true, _) => sec_diff::Out::Github,
+                    (_, _, true) => sec_diff::Out::Sarif,
+                    _ => sec_diff::Out::Text,
+                };
+                return sec_diff::run(cli, root, &facts, &inv, base, out, fail_on, *max);
             }
             if *write_baseline {
                 let found = baseline_findings(root, &facts, &inv)?;
-                let path = root.join(drift_mine::ratchet::SECURITY_LOCK);
-                if let Some(dir) = path.parent() {
-                    std::fs::create_dir_all(dir)
-                        .with_context(|| format!("creating {}", dir.display()))?;
+                // The kinds that fail: what the baseline set before (a person's
+                // choice, kept), or every kind but those that advise first; and the
+                // kinds named now.
+                let mut fail = match drift_mine::ratchet::load_baseline(root)
+                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
+                {
+                    Some(b) => b.fail_kinds(),
+                    None => drift_mine::ratchet::default_fail(),
+                };
+                for k in fail_on {
+                    if k == "any" {
+                        fail.extend(
+                            drift_mine::ratchet::KINDS
+                                .iter()
+                                .map(|(k, _)| (*k).to_string()),
+                        );
+                    } else {
+                        fail.insert(k.clone());
+                    }
                 }
-                std::fs::write(&path, drift_mine::ratchet::render_lock(&found))
-                    .with_context(|| format!("writing {}", path.display()))?;
+                // Never through a link that leaves the repository, as every other
+                // writer of Drift's files.
+                drift_mine::policy::write_no_follow(
+                    root,
+                    Path::new(drift_mine::ratchet::SECURITY_LOCK),
+                    drift_mine::ratchet::render_lock_with(&found, &fail).as_bytes(),
+                )?;
                 let mut by_kind: BTreeMap<&str, usize> = BTreeMap::new();
                 for (kind, _) in found.keys() {
                     *by_kind.entry(kind.as_str()).or_default() += 1;
@@ -2364,23 +2495,40 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .collect::<Vec<_>>()
                         .join(", ")
                 );
+                let advising: Vec<&str> = drift_mine::ratchet::KINDS
+                    .iter()
+                    .map(|(k, _)| *k)
+                    .filter(|k| !fail.contains(*k))
+                    .collect();
                 println!(
-                    "Commit it. `drift security --ratchet` exits 1 when a finding that is not in it appears, and so does `drift check` where the project has conventions."
+                    "Commit it. While it exists, `drift check` (every run over the repository, with or without accepted conventions; not a run given files to check) and `drift security --ratchet` exit 1 when a finding that is not in it appears{}.",
+                    if advising.is_empty() {
+                        String::new()
+                    } else {
+                        format!(
+                            ", except of {}, which advise (`--write-baseline --fail-on <kind>` sets a kind to fail)",
+                            advising.join(", ")
+                        )
+                    }
                 );
                 return Ok(ExitCode::SUCCESS);
             }
             if *ratchet {
-                let Some(baseline) = drift_mine::ratchet::load(root)
-                    .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
-                else {
+                let Some((baseline, header)) = security_baseline_checked(root, None)? else {
                     anyhow::bail!(
                         "no security baseline ({}): write one with `drift security --write-baseline`",
                         drift_mine::ratchet::SECURITY_LOCK
                     );
                 };
                 let found = baseline_findings(root, &facts, &inv)?;
-                let result = drift_mine::ratchet::compare(&found, &baseline);
-                if *json {
+                // What is held apart as new in this Drift is what the commit that
+                // last wrote the baseline shows to be old code ([`security_compare`]).
+                let mut result =
+                    security_compare(root, &inv, &found, &baseline, None, &BTreeSet::new());
+                result.header = header;
+                if sarif {
+                    sec_diff::ratchet_sarif(root, &result)?;
+                } else if *json {
                     println!("{}", serde_json::to_string_pretty(&result)?);
                 } else {
                     for w in &inv.warnings {
@@ -2390,10 +2538,19 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 let on =
                     |k: &str| fail_on.is_empty() || fail_on.iter().any(|f| f == k || f == "any");
+                // A kind the baseline lets advise fails only where the person names
+                // it; what is new in this version of Drift never does.
+                let named = |k: &str| fail_on.iter().any(|f| f == k || f == "any");
                 let failing: Vec<String> = result
                     .added
                     .iter()
                     .filter(|(k, rows)| on(k) && !rows.is_empty())
+                    .chain(
+                        result
+                            .advised
+                            .iter()
+                            .filter(|(k, rows)| named(k) && !rows.is_empty()),
+                    )
                     .map(|(k, rows)| format!("{} {k}", rows.len()))
                     .collect();
                 if !failing.is_empty() {
@@ -2405,7 +2562,25 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 return Ok(ExitCode::SUCCESS);
             }
-            if *json {
+            // The findings to look at first ([`drift_mine::security_summary`]): ranked
+            // facts for a person; nothing reads them to fail, so the exit code stays 0.
+            if let Some(n) = top {
+                let summary = security_summary(root, &facts, &inv);
+                if *json {
+                    let mut v = serde_json::to_value(&inv)?;
+                    v["top"] = serde_json::to_value(summary.top(*n))?;
+                    println!("{}", serde_json::to_string_pretty(&v)?);
+                } else {
+                    for w in &inv.warnings {
+                        eprintln!("drift security: {w}");
+                    }
+                    print!("{}", drift_mine::security_summary::render(&summary, *n));
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
+            if sarif {
+                sec_diff::inventory(root, &facts, &inv)?;
+            } else if *json {
                 println!("{}", serde_json::to_string_pretty(&inv)?);
             } else {
                 let only: Option<BTreeSet<String>> = (!files.is_empty()).then(|| {
@@ -2431,8 +2606,19 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             kind_roles,
             coverage,
             listed,
+            why,
+            from_map,
+            gate_candidate,
             cap,
         } => {
+            // Study use only (`--gate-candidate`, stream S21): the one place the switches
+            // are set; empty, every gate of mining is as it was.
+            drift_mine::gate_candidates::set(
+                &gate_candidate
+                    .iter()
+                    .map(|g| g.candidate())
+                    .collect::<Vec<_>>(),
+            );
             let tests = drift_mine::policy::test_roles(root, *test_roles);
             let kind_roles = drift_mine::policy::kind_roles(root, *kind_roles);
             let shapes = (tests, kind_roles);
@@ -2456,6 +2642,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             let cap = cap.resolve(policy_cap(root));
             let python = drift_mine::policy::python_proposals(root, *python_proposals);
+            if let Some(gate) = why {
+                return census_why(cli, root, gate, *max, shapes, python, *listed, *json);
+            }
             if *json {
                 // No side effects: the fact cache is used only where the caller points it.
                 let opts = ScanOptions {
@@ -2514,6 +2703,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 // New field: the cards mining withheld, by language, family and reason.
                 out["withheld"] = withheld_json(&mined.withheld);
+                // Only when asked: the proposals from the map.
+                if *from_map {
+                    out["from_map"] = from_map_cli::census_json(&from_map_cli::for_census(
+                        root,
+                        &facts,
+                        &mined,
+                        python.on(),
+                    ));
+                }
                 let mut stdout = std::io::stdout().lock();
                 serde_json::to_writer_pretty(&mut stdout, &out)?;
                 writeln!(stdout)?;
@@ -2584,11 +2782,24 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(n) = withheld_next(&mined.withheld) {
                 println!("{n}");
             }
+            // Only when asked: the proposals from the map, after what census prints.
+            if *from_map {
+                print!(
+                    "{}",
+                    from_map_cli::census_text(&from_map_cli::for_census(
+                        root,
+                        &facts,
+                        &mined,
+                        python.on(),
+                    ))
+                );
+            }
         }
         Command::Init {
             max,
             refresh_kinds,
             explain,
+            no_from_map,
             cap,
         } => {
             let mut facts = load_facts(cli, 0)?;
@@ -2655,8 +2866,27 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 );
             }
             let had = existing.is_some();
-            let mut policy =
-                ConventionsFile::merge(existing, &engine(), mined.kinds.clone(), &mined.candidates);
+            // The conventions the policy already had: only a convention new to it has its
+            // current violations baselined below. A proposal from the map nobody decided
+            // is not one of them: it was left out of the lock, so if mining drafts it now
+            // (`ConventionsFile::merge_carrying` makes it mining's), its outliers are
+            // recorded as a new mined convention's are.
+            let known_ids: BTreeSet<String> = existing
+                .as_ref()
+                .map(|e| {
+                    e.conventions
+                        .iter()
+                        .filter(|c| !from_map_cli::undecided(c))
+                        .map(|c| c.id.clone())
+                        .collect()
+                })
+                .unwrap_or_default();
+            let (mut policy, carried) = ConventionsFile::merge_carrying(
+                existing,
+                &engine(),
+                mined.kinds.clone(),
+                &mined.candidates,
+            );
             // Version 2 in a workspace: the packages mined over (the hooks and MCP find a
             // file's package from them); none, and version 1, in a single package.
             policy.packages = packages
@@ -2679,18 +2909,88 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // Baseline only on first init; afterwards the lock only shrinks unless a person edits it.
             let mut lock = Lock::load(root)?;
             // Promoted practices kept from before are baselined as every convention is.
-            let fresh = practices::baseline_with_practices(root, &facts, &policy);
+            // Proposals from the map are recorded only once a person accepts one.
+            let fresh = practices::baseline_with_practices(
+                root,
+                &facts,
+                &from_map_cli::left_out_of_lock(&policy),
+            );
             if had {
-                // New conventions get their current violations baselined; existing entries are kept.
-                let known: BTreeSet<&str> =
-                    lock.entries.iter().map(|(id, _)| id.as_str()).collect();
+                // A new card whose rule is an old one's with an alternative added has the
+                // old one's legacy violations; the old card keeps its decision and lines.
+                for (from, to) in &carried {
+                    lock.copy_lines(from, to);
+                    eprintln!(
+                        "drift: {to} proposes the rule of {from} with more ways to follow it. {from} stays as it was decided; decide {to} with `drift review` (its legacy violations are those of {from})."
+                    );
+                }
+                // Only a convention new to the policy gets its current violations
+                // baselined; existing entries are kept. A convention the policy had is
+                // never baselined again, not even once every line of its old debt is
+                // fixed: a violation written since is new, not legacy. A line it already
+                // has gains its fingerprint, so that debt follows a move from now on.
+                // (Owned: the lock's lines are rewritten below where debt moved; the
+                // ids stay.)
+                let lock_ids: BTreeSet<String> =
+                    lock.entries.iter().map(|(id, _)| id.clone()).collect();
+                let known: BTreeSet<&str> = known_ids
+                    .iter()
+                    .map(String::as_str)
+                    .chain(carried.iter().map(|(_, to)| to.as_str()))
+                    // A convention the lock already has lines for was baselined before
+                    // (one the policy dropped, as wiring rules are while wiring is off):
+                    // coming back, it is not baselined again.
+                    .chain(lock_ids.iter().map(String::as_str))
+                    .collect();
+                // Legacy debt that moved and is held by its fingerprint only: its lines
+                // name where it is now, so a later edit of it keeps it legacy.
+                let moved = drift_mine::check::check_gated(
+                    &facts,
+                    &policy,
+                    &lock,
+                    Scope::Accepted,
+                    None,
+                    false,
+                )
+                .moved;
+                let followed = lock.follow_moves(&moved);
+                if followed > 0 {
+                    eprintln!(
+                        "drift: {followed} legacy violation(s) moved with their files; their {LOCK_FILE} lines now name where they are"
+                    );
+                }
                 let add: Vec<_> = fresh
                     .entries
                     .iter()
-                    .filter(|(id, _)| !known.contains(id.as_str()))
+                    .filter(|(id, key)| {
+                        !known.contains(id.as_str())
+                            || Lock::split_fingerprint(key)
+                                .is_some_and(|(_, member)| lock.contains(id, member))
+                            // A proposal from the map a person accepted by hand (the
+                            // file says it may be edited so), of any kind (a practice, a
+                            // declared or a layering rule): it was left out of the lock
+                            // while proposed, so its debt of today is recorded once, as
+                            // `drift review` would have. Accepted only, never a
+                            // proposal; once it has a line it is never baselined again.
+                            // A rule that is no practice is repaired once only: a
+                            // command that accepts it records its lines itself and
+                            // keeps what the person was shown (`accepted_evidence`),
+                            // and so does this repair (below), so a break written
+                            // after a yes that recorded nothing is never taken for
+                            // debt.
+                            || (!lock.entries.iter().any(|(i, _)| i == id)
+                                && policy.conventions.iter().any(|c| {
+                                    c.id == *id && hand_accepted_from_map(c)
+                                }))
+                    })
                     .cloned()
                     .collect();
                 lock.entries.extend(add);
+                for c in &mut policy.conventions {
+                    if !c.rule.is_practice() && hand_accepted_from_map(c) {
+                        c.freeze_accepted_evidence();
+                    }
+                }
             } else {
                 lock = fresh;
             }
@@ -2707,6 +3007,40 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let map = practices::first_run(root, &facts);
             if !map.text.is_empty() {
                 println!("\n{}", map.text.trim_end());
+            }
+            // After the first run read the file: the proposals from the map, written as
+            // proposals (advise, shown to no agent, not in the lock until accepted).
+            // `DRIFT_NO_FROM_MAP` does what `--no-from-map` does, for scripts that also
+            // run a binary from before the flag (which ignores the variable).
+            let no_from_map = no_from_map_asked(*no_from_map);
+            // The practice map with units listed, built once for the proposals and the
+            // security summary below: the same facts and options either way (the policy
+            // saved between them changes conventions only, not the file kinds the options
+            // read), and a map of listed facts is the map of the facts.
+            let units_map = std::cell::OnceCell::new();
+            let units_map_of =
+                || units_map.get_or_init(|| practices::report_units_kept(root, &facts, None));
+            let from_map = from_map_cli::for_init_with(
+                &facts,
+                &mut policy,
+                python.on(),
+                no_from_map,
+                units_map_of,
+            );
+            policy.save(root)?;
+            // The inventory, read once for the summary and the baseline offered below.
+            let inv = security_inventory(cli, root, &facts);
+            // The few security findings to look at first, from the inventory: facts, not
+            // conventions, and nothing checks them ([`drift_mine::security_summary`]).
+            {
+                let text = drift_mine::security_summary::render_first_run(&security_summary_of(
+                    &facts,
+                    &inv,
+                    units_map_of(),
+                ));
+                if !text.is_empty() {
+                    println!("\n{}", text.trim_end());
+                }
             }
             println!("\nConventions");
             // The default tier in full, then the best suggestions (`drift_mine::rank`).
@@ -2784,6 +3118,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if withheld > 0 {
                 println!("  {}", python_off_note(withheld));
             }
+            for line in from_map_cli::init_lines(&from_map) {
+                println!("{line}");
+            }
             let kept = if decided > 0 {
                 format!("; {} kept", count(decided, "earlier decision"))
             } else {
@@ -2796,7 +3133,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 } else {
                     ""
                 },
-                match lock.entries.len() {
+                match lock.members() {
                     0 => "no existing violation to record".to_string(),
                     n => format!(
                         "{} recorded, so only new ones are reported",
@@ -2804,6 +3141,33 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     ),
                 }
             );
+            // The security baseline, offered where the repository has none: what it
+            // would hold and the one command that writes it. Never written here:
+            // writing it is what a person accepts. A repository with nothing to hold,
+            // or whose inventory cannot be read, is told nothing.
+            let security_offer: Option<drift_mine::ratchet::Findings> =
+                match drift_mine::ratchet::load_baseline(root) {
+                    Ok(None) => baseline_findings(root, &facts, &inv)
+                        .ok()
+                        .filter(|f| !f.is_empty()),
+                    _ => None,
+                };
+            if let Some(found) = &security_offer {
+                let mut by_kind: BTreeMap<&str, usize> = BTreeMap::new();
+                for (kind, _) in found.keys() {
+                    *by_kind.entry(kind.as_str()).or_default() += 1;
+                }
+                let kinds: Vec<String> = drift_mine::ratchet::KINDS
+                    .iter()
+                    .filter_map(|(k, _)| by_kind.get(k).map(|n| format!("{n} {k}")))
+                    .collect();
+                println!(
+                    "\nSecurity baseline: none yet. It would hold {} ({}), accepted as they are; new ones are reported by `drift check`. `drift security --write-baseline` writes it ({}); nothing was written.",
+                    count(found.len(), "finding"),
+                    kinds.join(", "),
+                    drift_mine::ratchet::SECURITY_LOCK
+                );
+            }
             // One block of what to run next, each with what it is for; nothing where
             // there is nothing to do.
             let mut steps: Vec<String> = Vec::new();
@@ -2860,6 +3224,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .into(),
                 );
             }
+            if let Some(found) = &security_offer {
+                next(
+                    "drift security --write-baseline",
+                    format!(
+                        "accept the {} as they are; `drift check` then reports new ones",
+                        count(found.len(), "security finding")
+                    ),
+                );
+            }
             if !steps.is_empty() {
                 println!("\nNext\n{}", steps.join("\n"));
             }
@@ -2900,6 +3273,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             confirm,
             reject,
             agent_brief,
+            yes_to,
+            no_to,
+            guided: guided_flag,
+            no_from_map,
         } => {
             if *agent_brief {
                 print!("{}", setup::AGENT_BRIEF);
@@ -2918,7 +3295,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 || *review
                 || !confirm.is_empty()
                 || !reject.is_empty()
-                || *interactive;
+                || *interactive
+                || !yes_to.is_empty()
+                || !no_to.is_empty()
+                || *guided_flag;
             setup::person_is_there(by, writes)?;
             let for_person = |what: &str| -> anyhow::Result<()> {
                 if by == setup::By::Agent {
@@ -2948,6 +3328,64 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 })?;
             }
             let terminal = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
+            // `drift setup` with none of the flags of one step: the guided flow.
+            let single = *list
+                || *json
+                || !answer.is_empty()
+                || answers.is_some()
+                || !forget.is_empty()
+                || *all
+                || *interactive
+                || *review
+                || !confirm.is_empty()
+                || !reject.is_empty()
+                || reason.is_some()
+                || evidence.is_some();
+            let scripted = !yes_to.is_empty() || !no_to.is_empty();
+            if single && (scripted || *guided_flag) {
+                bail!(
+                    "--yes-to, --no-to and --guided are the guided flow's (`drift setup` alone); they do not combine with the flags of one step. Nothing was changed."
+                );
+            }
+            if !single {
+                let how = if scripted {
+                    guided::How::Scripted
+                } else if (terminal || *guided_flag) && by == setup::By::Person {
+                    guided::How::Ask
+                } else {
+                    guided::How::Dry
+                };
+                if how != guided::How::Dry {
+                    for_person("the guided setup")?;
+                    // An agent's run asks nothing and writes nothing, `--by person` or not.
+                    if setup::agent_env() {
+                        bail!(
+                            "the guided setup is for a person, and this run is an agent's ({} is set or {}=1): it asks nothing and writes nothing here. Nothing was changed.",
+                            setup::CLAUDE_CODE_ENV,
+                            setup::AGENT_ENV
+                        );
+                    }
+                }
+                let script = guided::Script::new(yes_to, no_to)?;
+                let stdin = std::io::stdin();
+                let mut input = stdin.lock();
+                let mut stdout = std::io::stdout().lock();
+                let missed = guided::run(
+                    cli,
+                    how,
+                    &script,
+                    no_from_map_asked(*no_from_map),
+                    &mut input,
+                    &mut stdout,
+                )?;
+                // A script named an answer that was not recorded: not done, and the
+                // exit code says so (the code `drift upgrade` gives what still needs
+                // doing), with which ones said above.
+                if how == guided::How::Scripted && !missed.is_empty() {
+                    return Ok(ExitCode::from(upgrade::EXIT_PENDING));
+                }
+                return Ok(ExitCode::SUCCESS);
+            }
             // The questions one at a time, in a terminal or with --interactive.
             let asks = answer.is_empty()
                 && answers.is_none()
@@ -3315,6 +3753,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 return Ok(ExitCode::SUCCESS);
             }
             if let Some(path) = export_log {
+                export::refuse_policy_path(root, path, None, "the study file")?;
                 let study = review_log::export(root, *include_paths)?;
                 let n = study["events"].as_array().map_or(0, Vec::len);
                 let mut text = serde_json::to_string_pretty(&study)?;
@@ -3384,7 +3823,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         println!("{n}");
                     }
                     // Promoted practices are never proposals: listed with where they came from.
-                    for line in promote::listed(&policy) {
+                    for line in promote::listed(&from_map_cli::left_out_of_lock(&policy)) {
+                        println!("{line}");
+                    }
+                    // The proposals from the map, apart: they are not mined.
+                    for line in from_map_cli::listed(&policy) {
                         println!("{line}");
                     }
                     ids
@@ -3404,6 +3847,17 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if let Some(a) = answer {
                 let (id, kind) = parse_answer(a)?;
                 known_ids(&policy, std::slice::from_ref(&id))?;
+                // A proposal from the map is accepted only through `--accept` (or the
+                // interactive review), which records what breaks it today in the lock.
+                if policy
+                    .conventions
+                    .iter()
+                    .any(|c| c.id == id && from_map_cli::undecided(c))
+                {
+                    bail!(
+                        "{id} is proposed from the map, not mined: the question is asked of mined proposals only; use --accept or --reject; nothing was changed"
+                    );
+                }
                 if !set_apart.is_empty() && kind != Answer::Different {
                     bail!("--set-apart goes with --answer {id}=different; nothing was changed");
                 }
@@ -3444,6 +3898,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     "accept"
                 };
                 rlog.answered(&before, c, &q, kind.name(), decision, diff.as_ref());
+                policy.freeze_accepted_now();
                 policy.save(root)?;
                 rlog.flush();
                 println!("{}", review_summary(&policy));
@@ -3477,7 +3932,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     });
                 if !flagged {
                     bail!(
-                        "{member} is not an outlier of {id} in the code now (`drift review --show {id}` lists them); nothing was changed"
+                        "{member} is not an outlier of {id} in the code now (`drift review --show {}` lists them); nothing was changed",
+                        drift_mine::report::shell_word(id)
                     );
                 }
                 let before = rlog.before(c);
@@ -3487,7 +3943,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 policy.save(root)?;
                 rlog.flush();
                 println!(
-                    "{id}: {member} marked fine ({reason}). `drift check` lists it as exempt, not as a violation; `drift review --unexempt {id} --member {member}` undoes it."
+                    "{id}: {member} marked fine ({reason}). `drift check` lists it as exempt, not as a violation; `drift review --unexempt {} --member {}` undoes it.",
+                    drift_mine::report::shell_word(id),
+                    drift_mine::report::shell_word(&member)
                 );
                 return Ok(ExitCode::SUCCESS);
             }
@@ -3519,8 +3977,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     println!("{}", nothing_to_ask(&withheld));
                     // The practices that may be promoted are offered all the same.
                     let map = practices::report_units_kept(root, &facts, None);
+                    // The proposals from the map first (they are not in the queue).
+                    let step = from_map_cli::review_step(root, &facts, &map, &mut policy)?;
                     drop(facts);
-                    if promote::review_step(root, &map, &mut policy)? {
+                    let promoted = !step.quit && promote::review_step(root, &map, &mut policy)?;
+                    if step.changed || promoted {
                         policy.save(root)?;
                         println!("{}", review_summary(&policy));
                     }
@@ -3542,8 +4003,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 // be promoted, one at a time.
                 if review_interactive(&mut policy, cap, &report, &questions, more, &mut rlog)? {
                     let map = practices::report_units_kept(root, &facts, None);
+                    // The proposals from the map, then the practices that may be promoted.
+                    let step = from_map_cli::review_step(root, &facts, &map, &mut policy)?;
                     drop(facts);
-                    promote::review_step(root, &map, &mut policy)?;
+                    if !step.quit {
+                        promote::review_step(root, &map, &mut policy)?;
+                    }
                 }
             } else {
                 // Refuse before changing anything: an id that is not in the policy,
@@ -3616,6 +4081,22 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .filter(|_| rlog.on())
                     .map(|c| (c.id.clone(), rlog.before(c)))
                     .collect();
+                // A practice proposed from the map is first written as `drift practices
+                // promote` writes it (and its lock lines added); the decisions apply to that.
+                for line in from_map_cli::accept_ids(
+                    root,
+                    || load_facts(cli, 0),
+                    &mut policy,
+                    &[
+                        accept.as_slice(),
+                        block.as_slice(),
+                        advise.as_slice(),
+                        show_to_agents.as_slice(),
+                    ],
+                    block,
+                )? {
+                    eprintln!("{line}");
+                }
                 let mut logged: Vec<(&str, &String)> = Vec::new();
                 for (ids, status, mode) in [
                     (accept, Status::Accepted, None),
@@ -3680,6 +4161,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     }
                 }
             }
+            policy.freeze_accepted_now();
             policy.save(root)?;
             rlog.flush();
             println!("{}", review_summary(&policy));
@@ -3750,6 +4232,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let block = export::block(&project);
             match write {
                 Some(path) => {
+                    export::refuse_policy_path(root, path, None, "the agents file")?;
                     let existed = path.exists();
                     let existing = std::fs::read_to_string(path).unwrap_or_default();
                     write_out(root, path, export::splice(&existing, &block).as_bytes())?;
@@ -3766,6 +4249,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let entries = lookup::claude_settings("drift");
             match write {
                 Some(path) => {
+                    export::refuse_policy_path(root, path, None, "the settings file")?;
                     let existed = path.exists();
                     let existing = std::fs::read_to_string(path).unwrap_or_default();
                     let merged =
@@ -3868,7 +4352,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // The security baseline, where the repository committed one: a finding
             // that is not in it fails the check as a blocking violation does. The
             // baseline is the rule; writing it is what a person accepted.
-            let security = check_security(cli, root, &facts, only.is_some())?;
+            let security = check_security(cli, root, &facts, only.is_some(), scope.as_ref())?;
             let insecure = security
                 .as_ref()
                 .is_some_and(|s| s.added.values().any(|rows| !rows.is_empty()));
@@ -3887,6 +4371,46 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // files the diff added or changed, or every file. Facts, not rules: listed
             // in every format, after the exit code is decided, and never part of it.
             let base_entries = std::cell::OnceCell::new();
+            // With no security baseline, the merge base's inventory is read once: for
+            // the security advice below, and for what the change adds. Only where a
+            // file the change touched lists an entry point: every row of the advice
+            // is one, so with none there is nothing to advise and the merge base is
+            // not scanned here (what the change adds reads it lazily, as before).
+            let advice_base: Option<drift_mine::security::Inventory> = match (&scope, &security) {
+                (Some(s), None)
+                    if only.is_none()
+                        && facts
+                            .files
+                            .iter()
+                            .any(|f| s.touches(&f.path) && !f.listed_entry_points().is_empty()) =>
+                {
+                    match s.base_inventory(root) {
+                        Ok(inv) => Some(inv),
+                        Err(e) => {
+                            eprintln!(
+                                "drift: security advice skipped: the merge base could not be read ({e:#})"
+                            );
+                            None
+                        }
+                    }
+                }
+                _ => None,
+            };
+            if let Some(inv) = &advice_base {
+                let keys: pr::BaseEntries = inv
+                    .entry_points
+                    .iter()
+                    .map(|e| {
+                        (
+                            e.path.clone(),
+                            e.symbol.clone(),
+                            e.method.clone(),
+                            e.route.clone(),
+                        )
+                    })
+                    .collect();
+                let _ = base_entries.set(Some(keys));
+            }
             let adds =
                 |p: &str, line: u32, symbol: &str, method: Option<&str>, route: Option<&str>| {
                     scope.as_ref().is_some_and(|s| {
@@ -3910,7 +4434,26 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 },
                 scope.is_some().then_some(&adds as practices::Adds<'_>),
                 &reported,
+                &policy,
             );
+            // With no security baseline, what the change adds that the baseline would
+            // hold: advice under its own heading, decided after the exit code and never
+            // part of it.
+            let advice: Vec<drift_mine::ratchet::Advice> = match (&scope, &advice_base) {
+                (Some(s), Some(base)) => check_security_advice(cli, root, &facts, s, base),
+                _ => Vec::new(),
+            };
+            // Promoted practices on probation (experimental `probation`): what the units
+            // added to their place since say. Said in every format, never part of the
+            // exit code; not for a check of named files (a hook's).
+            let on_probation: Vec<probation::Listed> = if only.is_some() {
+                Vec::new()
+            } else {
+                probation::counts(root, &policy, scope.as_ref(), map_of).unwrap_or_else(|e| {
+                    eprintln!("drift: practices on probation not counted: {e:#}");
+                    Vec::new()
+                })
+            };
             match format {
                 Format::Json => {
                     let mut stdout = std::io::stdout().lock();
@@ -3931,6 +4474,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             if let Some(sec) = &security {
                                 v["security"] = serde_json::to_value(sec)?;
                             }
+                            if !advice.is_empty() {
+                                v["security_advice"] = serde_json::to_value(&advice)?;
+                            }
+                            if !on_probation.is_empty() {
+                                v["probation"] = serde_json::to_value(&on_probation)?;
+                            }
                             serde_json::to_writer_pretty(&mut stdout, &v)?;
                         }
                         None => serde_json::to_writer_pretty(
@@ -3940,6 +4489,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 conventions,
                                 practices,
                                 security: security.as_ref(),
+                                probation: &on_probation,
                             },
                         )?,
                     }
@@ -4002,6 +4552,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "locations": at(&format!("{prefix}{}", d.path), d.units.first().map_or(1, |u| u.line)),
                         }));
                     }
+                    // Security advice with no baseline: a fact of the run, not a result.
+                    for a in &advice {
+                        let (path, line) = a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
+                        notes.push(serde_json::json!({
+                            "level": "note",
+                            "message": { "text": format!("Security advice [{}] (no baseline; it does not fail the check): {}: {}", a.kind, drift_mine::report::sanitize(&a.key, 300), drift_mine::report::sanitize(&a.read, 300)) },
+                            "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
+                        }));
+                    }
                     // Promoted practices that could not say all they hold: notifications
                     // of the run (no file to point at), never results.
                     for line in practices::practice_status_lines(&report, &policy) {
@@ -4010,32 +4569,16 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "message": { "text": line.trim_start_matches("drift: ") },
                         }));
                     }
-                    // What the security baseline does not hold fails the check: a
-                    // result, so that code scanning shows why, under a rule per kind.
-                    for (kind, rows) in security.iter().flat_map(|s| &s.added) {
-                        let rule = format!("drift-security/{kind}");
-                        if let Some(rules) =
-                            log["runs"][0]["tool"]["driver"]["rules"].as_array_mut()
-                            && !rules.iter().any(|r| r["id"] == rule.as_str())
-                        {
-                            rules.push(serde_json::json!({
-                                "id": rule,
-                                "shortDescription": { "text": format!("Security finding not in the baseline ({kind})") },
-                                "defaultConfiguration": { "level": "error" },
-                            }));
-                        }
-                        for a in rows {
-                            let (path, line) =
-                                a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
-                            if let Some(results) = log["runs"][0]["results"].as_array_mut() {
-                                results.push(serde_json::json!({
-                                    "ruleId": rule,
-                                    "level": "error",
-                                    "message": { "text": format!("Security [{kind}]: {} is not in the security baseline ({}).", drift_mine::report::sanitize(&a.key, 300), drift_mine::ratchet::SECURITY_LOCK) },
-                                    "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
-                                }));
-                            }
-                        }
+                    for p in &on_probation {
+                        notes.push(serde_json::json!({
+                            "level": "note",
+                            "message": { "text": p.message },
+                        }));
+                    }
+                    // The security baseline's comparison: one writer for this and
+                    // `drift security --format sarif` ([`sec_diff::sarif_ratchet`]).
+                    if let Some(sec) = &security {
+                        sec_diff::sarif_ratchet(&mut log, &mut notes, sec, &prefix);
                     }
                     if !notes.is_empty() {
                         log["runs"][0]["invocations"] = serde_json::json!([{
@@ -4061,6 +4604,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         .map(|c| c.id.as_str())
                         .collect();
                     print_report(&report, &hidden, &practices::practice_concerns(&policy));
+                    // What each rule that reported a new violation rests on.
+                    pr::print_trust(&facts, &policy, &report);
                     if *strict && unread {
                         println!("drift: --strict: files that were not checked fail the check");
                     }
@@ -4069,16 +4614,31 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     for line in practices::practice_status_lines(&report, &policy) {
                         println!("{line}");
                     }
+                    for p in &on_probation {
+                        println!("drift: {}", p.message);
+                    }
                     print!("{}", drift_mine::practices::added_text(&added));
                     print!("{}", drift_mine::practices::departures_text(&departures));
-                    if let Some(sec) = security.as_ref().filter(|_| insecure) {
+                    if let Some(sec) = security.as_ref().filter(|s| s.has_news()) {
                         print!("\n{}", drift_mine::ratchet::render(sec, 20));
+                    }
+                    print!("{}", drift_mine::ratchet::render_advice(&advice));
+                    // After an upgrade (findings held as new in this Drift, or a policy
+                    // another Drift's `drift init` wrote): where to read what changed.
+                    if security
+                        .as_ref()
+                        .is_some_and(|s| !s.new_in_drift.is_empty())
+                        || (!policy.engine.is_empty() && policy.engine != engine())
+                    {
+                        println!(
+                            "\ndrift: `drift upgrade` shows what this Drift reads differently from the one that wrote these files; it changes nothing by itself (only `drift upgrade --apply` writes)"
+                        );
                     }
                 }
                 Format::Github => {
                     // Annotations name files from the git top level ([`project::at_git_top`]).
                     let prefix = project::git_prefix(root);
-                    pr::github_output(
+                    pr::github_output_with(
                         &project::at_git_top(&report, &prefix),
                         scope.as_ref(),
                         &prefix,
@@ -4086,6 +4646,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         *strict,
                         &departures,
                         &added,
+                        &drift_mine::report::Basis::new(&facts, &policy, &report),
                     )?;
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
                         for a in rows {
@@ -4108,58 +4669,381 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             );
                         }
                     }
+                    // What the change adds and baselines itself: a notice each.
+                    if let Some(sec) = &security {
+                        print!("{}", sec_diff::github_baselined(sec, &prefix));
+                    }
+                    // Findings of readings newer than the baseline fail nothing and
+                    // are no annotations: said once, in the log.
+                    if let Some(line) = security
+                        .as_ref()
+                        .and_then(drift_mine::ratchet::newer_readings_line)
+                    {
+                        println!("drift security: {line}");
+                    }
+                    // What the baseline's header says, and why findings of newer
+                    // readings fail: said once, in the log.
+                    for line in security.iter().flat_map(security_said) {
+                        println!("drift security: {line}");
+                    }
+                    for p in &on_probation {
+                        println!("drift: {}", p.message);
+                    }
+                    // Advice is said in the log, not as annotations: the practice
+                    // notices above already point at new entry points.
+                    print!("{}", drift_mine::ratchet::render_advice(&advice));
                 }
             }
             return Ok(ExitCode::from(code));
         }
+        Command::Feedback { action } => return feedback::run(root, cli.no_cache, action),
+        Command::Upgrade(args) => return upgrade::run(cli, args),
     }
     Ok(ExitCode::SUCCESS)
 }
 
+/// The authorization units of the practice map, listed ([`drift_mine::practices::UnitRow`]).
+fn authz_units(
+    root: &Path,
+    facts: &RepoFacts,
+) -> anyhow::Result<Vec<drift_mine::practices::UnitRow>> {
+    let scope = practices::checked_scope(facts, Some("authz"), None, None)?;
+    let report = practices::report_with(root, facts, scope, true)?;
+    Ok(report
+        .concerns
+        .into_iter()
+        .filter(|c| c.id == "authz")
+        .flat_map(|c| c.units)
+        .collect())
+}
+
 /// What the security baseline holds of the repository as it is now: the findings
-/// of the inventory, and the entry points the practice map reads as checking
-/// nothing of a signed-in caller.
+/// of the inventory, the entry points the practice map reads as checking nothing of
+/// a signed-in caller, and those it reads as taking a tenant or owner key nothing
+/// checks ([`drift_mine::ratchet::add_unscoped`]).
 fn baseline_findings(
     root: &Path,
     facts: &RepoFacts,
     inv: &drift_mine::security::Inventory,
 ) -> anyhow::Result<drift_mine::ratchet::Findings> {
     let mut found = drift_mine::ratchet::findings(inv, facts);
-    let scope = practices::checked_scope(facts, Some("authz"), None, None)?;
-    let report = practices::report_with(root, facts, scope, true)?;
-    for c in report.concerns.iter().filter(|c| c.id == "authz") {
-        drift_mine::ratchet::add_unauthorized(&mut found, &c.units);
-    }
+    let units = authz_units(root, facts)?;
+    drift_mine::ratchet::add_unauthorized(&mut found, &units);
+    drift_mine::ratchet::add_unscoped(&mut found, &units);
     Ok(found)
+}
+
+/// The security inventory of the repository as `drift security` reads it, with its
+/// CI workflows, dependencies and Kubernetes manifests.
+fn security_inventory(
+    cli: &Cli,
+    root: &Path,
+    facts: &RepoFacts,
+) -> drift_mine::security::Inventory {
+    let mut inv = drift_mine::security::inventory_with(
+        facts,
+        drift_mine::security::Boundaries::load(&cli.root),
+    );
+    drift_mine::ci::fill(&mut inv, root);
+    inv.dependencies = drift_mine::dependencies::read(root);
+    inv.cluster = drift_mine::kubernetes::read(root);
+    drift_mine::hardening::fill(&mut inv, root);
+    drift_mine::serverless::add_unlisted(&mut inv, root, facts);
+    inv
+}
+
+/// The inventory's findings ranked for a person ([`drift_mine::security_summary`]),
+/// with the practice map's reading of each entry point's input validation (the map
+/// is built with its units for that).
+fn security_summary(
+    root: &Path,
+    facts: &RepoFacts,
+    inv: &drift_mine::security::Inventory,
+) -> drift_mine::security_summary::Summary {
+    let opts = drift_mine::practices::Options {
+        units: true,
+        ..practices::options(root, facts, drift_mine::practices::Scope::default())
+    };
+    let map = drift_mine::practices::practices(facts, &opts);
+    security_summary_of(facts, inv, &map)
+}
+
+/// [`security_summary`] from the practice map with its units already built
+/// ([`practices::report_units_kept`] of the same facts is that map), and what the
+/// facts say of the hooks the whole app runs that guard an entry point
+/// ([`drift_mine::security_summary::Readings::with_hooks`]).
+fn security_summary_of(
+    facts: &RepoFacts,
+    inv: &drift_mine::security::Inventory,
+    map: &drift_mine::practices::PracticesReport,
+) -> drift_mine::security_summary::Summary {
+    drift_mine::security_summary::summarize(
+        inv,
+        &drift_mine::security_summary::Readings::from_practices(map).with_hooks(facts, inv),
+    )
 }
 
 /// `drift check`: what the repository's security baseline does not hold
 /// ([`drift_mine::ratchet`]), where the repository has one and the check is of the
 /// whole tree or of a diff. `None` with no baseline, and where files are named (an
-/// editor's or an agent's check of one file reads no inventory).
+/// editor's or an agent's check of one file reads no inventory). Against a diff
+/// (`scope`), a guard gap in a file the change did not touch is not the change's
+/// ([`drift_mine::ratchet::Ratchet::outside_change`]).
 fn check_security(
     cli: &Cli,
     root: &Path,
     facts: &RepoFacts,
     files_named: bool,
+    scope: Option<&pr::DiffScope>,
 ) -> anyhow::Result<Option<drift_mine::ratchet::Ratchet>> {
     if files_named {
         return Ok(None);
     }
-    let Some(baseline) = drift_mine::ratchet::load(root)
-        .with_context(|| format!("reading {}", drift_mine::ratchet::SECURITY_LOCK))?
-    else {
+    let Some((baseline, header)) = security_baseline_checked(root, scope)? else {
         return Ok(None);
     };
-    let mut inv = drift_mine::security::inventory_with(
-        facts,
-        drift_mine::security::Boundaries::load(&cli.root),
-    );
-    inv.workflows = drift_mine::workflows::read(root);
-    inv.dependencies = drift_mine::dependencies::read(root);
-    inv.cluster = drift_mine::kubernetes::read(root);
+    let inv = security_inventory(cli, root, facts);
     let found = baseline_findings(root, facts, &inv)?;
-    Ok(Some(drift_mine::ratchet::compare(&found, &baseline)))
+    // The lines the change writes into the baseline itself: what of them it also adds
+    // to the code is said ([`drift_mine::ratchet::Ratchet::baselined_by_change`]).
+    let lock_added = scope
+        .map(|s| sec_diff::lock_lines_added(root, s))
+        .unwrap_or_default();
+    let mut r = security_compare(root, &inv, &found, &baseline, scope, &lock_added);
+    let mut said = header;
+    said.append(&mut r.header);
+    r.header = said;
+    Ok(Some(r))
+}
+
+/// What a check says of the security baseline outside its findings: its header
+/// ([`drift_mine::ratchet::Ratchet::header`]) and why findings of newer readings
+/// fail ([`drift_mine::ratchet::unshown_line`]).
+fn security_said(r: &drift_mine::ratchet::Ratchet) -> Vec<String> {
+    r.header
+        .iter()
+        .cloned()
+        .chain(drift_mine::ratchet::unshown_line(r))
+        .collect()
+}
+
+/// The security baseline a check enforces, with what is said of its header
+/// ([`drift_mine::ratchet::Ratchet::header`]); `None` where there is none.
+///
+/// Against a diff, the change's own edit of the header does not decide what checks
+/// it: the merge base's baseline is read too, and the stricter header of the two is
+/// enforced ([`drift_mine::ratchet::stricter`]); a change that deletes the baseline
+/// is checked against the merge base's. With no diff there is no older header to
+/// enforce, so an edit git shows that checks less (against `HEAD`, or else in the
+/// commit that last wrote the file) is said. A header that cannot be read in full
+/// is said in both.
+fn security_baseline_checked(
+    root: &Path,
+    scope: Option<&pr::DiffScope>,
+) -> anyhow::Result<Option<(drift_mine::ratchet::Baseline, Vec<String>)>> {
+    use drift_mine::ratchet::{self, SECURITY_LOCK};
+    // Never through a link that leaves the repository: refused, so the check fails.
+    let text = ratchet::read_text(root).with_context(|| format!("reading {SECURITY_LOCK}"))?;
+    let mut said: Vec<String> = text
+        .as_deref()
+        .map(ratchet::header_problems)
+        .unwrap_or_default();
+    let head = text.as_deref().map(ratchet::parse_baseline);
+    let baseline = match scope {
+        Some(s) => {
+            let base = pr::file_at(root, &s.merge_base, SECURITY_LOCK)
+                .map(|t| ratchet::parse_baseline(&t));
+            match (head, base) {
+                (Some(head), Some(base)) => {
+                    let (kept, weakened) = ratchet::stricter(&head, &base);
+                    said.extend(weakened);
+                    Some(kept)
+                }
+                (None, Some(base)) => {
+                    said.push(format!(
+                        "this change deletes {SECURITY_LOCK}; this check reads the baseline the change starts from"
+                    ));
+                    Some(base)
+                }
+                (head, None) => head,
+            }
+        }
+        None => {
+            if let (Some(now), Some(text)) = (&head, &text) {
+                let at_head = pr::file_at(root, "HEAD", SECURITY_LOCK);
+                let was = match at_head {
+                    Some(t) if !ratchet::same_lines(&t, text) => Some(t),
+                    _ => pr::last_commit_of(root, SECURITY_LOCK)
+                        .ok()
+                        .and_then(|c| pr::file_at(root, &format!("{c}^"), SECURITY_LOCK)),
+                };
+                if let Some(was) = was {
+                    said.extend(ratchet::header_weakened(
+                        &ratchet::parse_baseline(&was),
+                        now,
+                    ));
+                }
+            }
+            head
+        }
+    };
+    Ok(baseline.map(|b| (b, said)))
+}
+
+/// `found` compared with the security baseline ([`drift_mine::ratchet::compare_with`]),
+/// with what shows which findings it does not hold are old code read anew
+/// ([`drift_mine::ratchet::Since`]): what this Drift finds at a commit before the
+/// change, and the files changed since. Against a diff (`scope`) that commit is the
+/// merge base; with none, the commit that last wrote the baseline, so a run on a
+/// branch holds apart nothing the branch added. It is read only where something
+/// could be held apart ([`drift_mine::ratchet::needs_since`]). Where it cannot be
+/// read (no git, the baseline in no commit, the commit not scanned) nothing is held
+/// apart, and the run says why ([`drift_mine::ratchet::Ratchet::unshown_why`]).
+///
+/// Against a diff, the entry points the change adds whose guard cannot be read are
+/// listed too ([`drift_mine::ratchet::Ratchet::guard_unknown`]), and of the lines the
+/// change writes into the baseline (`lock_added`), the findings it also adds to the
+/// code ([`drift_mine::ratchet::Ratchet::baselined_by_change`]).
+fn security_compare(
+    root: &Path,
+    inv: &drift_mine::security::Inventory,
+    found: &drift_mine::ratchet::Findings,
+    baseline: &drift_mine::ratchet::Baseline,
+    scope: Option<&pr::DiffScope>,
+    lock_added: &BTreeSet<(String, String)>,
+) -> drift_mine::ratchet::Ratchet {
+    use drift_mine::ratchet::{self, SECURITY_LOCK, Since};
+    let diff = scope.is_some();
+    let touched = |p: &str| scope.is_some_and(|s| s.touches(p));
+    let unknown_added = scope.is_some_and(|s| {
+        inv.entry_points
+            .iter()
+            .any(|e| s.touches(&e.path) && e.guards.is_empty() && !e.opaque.is_empty())
+    });
+    // Lines the change writes into the baseline for findings found now: whether it also
+    // adds them to the code is read at the merge base.
+    let written: BTreeSet<(String, String)> = lock_added
+        .iter()
+        .filter(|k| diff && found.contains_key(*k))
+        .cloned()
+        .collect();
+    let unread_written = |r: &mut ratchet::Ratchet, why: &str| {
+        if !written.is_empty() {
+            r.header.push(format!(
+                "this change writes {} finding(s) found now into {SECURITY_LOCK}; whether it also adds them to the code is unknown: {why}",
+                written.len()
+            ));
+        }
+    };
+    if written.is_empty()
+        && !unknown_added
+        && !ratchet::needs_since(found, baseline, diff, &touched)
+    {
+        return ratchet::compare_with(found, baseline, None);
+    }
+    // With no diff: the change is everything since the commit that last wrote the
+    // baseline, and the working tree.
+    let since_lock;
+    let (scope, why): (Option<&pr::DiffScope>, Option<String>) = match scope {
+        Some(s) => (Some(s), None),
+        None => match pr::last_commit_of(root, SECURITY_LOCK) {
+            Ok(commit) => match pr::DiffScope::from_git(root, &commit) {
+                Ok(s) => {
+                    since_lock = s;
+                    (Some(&since_lock), None)
+                }
+                Err(_) => (
+                    None,
+                    Some(format!(
+                        "what changed since commit {}, which last wrote {SECURITY_LOCK}, could not be read",
+                        &commit[..commit.len().min(12)]
+                    )),
+                ),
+            },
+            Err(why) => (None, Some(why)),
+        },
+    };
+    // The merge base's findings as the baseline's are read, the practice map's too.
+    let base = scope.map(|s| match sec_diff::read_base(s, root) {
+        Ok(b) if b.authz_error.is_none() => Ok((s, b)),
+        _ => Err(format!(
+            "commit {} could not be read",
+            &s.merge_base[..s.merge_base.len().min(12)]
+        )),
+    });
+    let (s, base) = match base {
+        Some(Ok(read)) => read,
+        Some(Err(why_not)) => {
+            let mut r = ratchet::compare_with(found, baseline, None);
+            unread_written(&mut r, &why_not);
+            r.unshown_why = Some(why_not);
+            return r;
+        }
+        None => {
+            let mut r = ratchet::compare_with(found, baseline, None);
+            r.unshown_why = why;
+            return r;
+        }
+    };
+    let base_inv = &base.inv;
+    let base_found: BTreeSet<(String, String)> = base.found.keys().cloned().collect();
+    let since = Since {
+        commit: s.merge_base.clone(),
+        touched: found
+            .values()
+            .map(|at| at.rsplit_once(':').map_or(at.as_str(), |(p, _)| p))
+            .filter(|p| s.touches(p))
+            .map(str::to_string)
+            .collect(),
+        outside: if diff {
+            ratchet::not_the_changes_gaps(base_inv, inv, &base_found, &|p| s.touches(p))
+        } else {
+            BTreeSet::new()
+        },
+        found: base_found,
+    };
+    let mut r = ratchet::compare_with(found, baseline, Some(&since));
+    if diff {
+        let regs = drift_mine::security::regressions(base_inv, inv, &|p| s.touches(p), &|p| {
+            s.old_path(p).to_string()
+        });
+        r.guard_unknown = ratchet::guard_unknown(&regs.guard_unknown);
+        if !written.is_empty() {
+            // Keyed as now, so a finding that moved with its file is not the change's;
+            // one in a file the merge base could not parse may have been there.
+            let now = drift_mine::security_diff::as_now(&base.found, base_inv, inv, s.renamed());
+            let mut by = drift_mine::security_diff::baselined_by_change(found, &written, &now);
+            for rows in by.values_mut() {
+                rows.retain(|a| {
+                    let path = a.at.rsplit_once(':').map_or(a.at.as_str(), |(p, _)| p);
+                    !base.unparsed.contains(s.old_path(path))
+                });
+            }
+            by.retain(|_, rows| !rows.is_empty());
+            r.baselined_by_change = by;
+        }
+    }
+    r
+}
+
+/// `drift check --diff-base` where the repository has no security baseline: what
+/// the change adds ([`drift_mine::ratchet::advise`]), against the merge base's
+/// inventory `base`. Advice only: never part of the exit code.
+fn check_security_advice(
+    cli: &Cli,
+    root: &Path,
+    facts: &RepoFacts,
+    scope: &pr::DiffScope,
+    base: &drift_mine::security::Inventory,
+) -> Vec<drift_mine::ratchet::Advice> {
+    let head = security_inventory(cli, root, facts);
+    let units = authz_units(root, facts).unwrap_or_else(|e| {
+        eprintln!("drift: security advice: the practice map could not be read ({e:#}); unscoped keys are not said");
+        Vec::new()
+    });
+    drift_mine::ratchet::advise(base, &head, &units, &|p| scope.touches(p), &|p| {
+        scope.old_path(p).to_string()
+    })
 }
 
 /// `drift check --format json`: the report's fields as before (`violations`, `fixed`),
@@ -4176,6 +5060,10 @@ struct CheckJson<'a> {
     /// the repository has no baseline, and where files are named.
     #[serde(skip_serializing_if = "Option::is_none")]
     security: Option<&'a drift_mine::ratchet::Ratchet>,
+    /// Promoted practices on probation, with their counts ([`probation::counts`]).
+    /// Omitted when none (probation off, or nothing on it).
+    #[serde(skip_serializing_if = "<[_]>::is_empty")]
+    probation: &'a [probation::Listed],
 }
 
 /// `drift check --format json` `practices`: what the practice map says of the files
@@ -4358,11 +5246,11 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             println!("[{}] {} ({})", v.id, v.summary, v.evidence);
             match &v.import {
                 Some(hit) => println!("  at   {}:{} {}", v.path, v.line, hit.describe()),
-                None => {
-                    println!("  at   {}:{} {}", v.path, v.line, v.symbol);
-                    println!("  like {}", v.example);
-                }
+                None => println!("  at   {}:{} {}", v.path, v.line, v.symbol),
             }
+            // A layering violation has a file to copy too: one of its role that imports
+            // nothing it should not.
+            println!("  like {}", v.example);
             if let Some(w) = &v.wire {
                 println!("  fix  {}", w.describe(&v.symbol));
             }
@@ -4435,6 +5323,20 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             r.fixed.len()
         );
     }
+    // Moved legacy debt is held by its fingerprint only: the next edit of it would make
+    // it new. `drift check` writes nothing; `drift init` rewrites the lines.
+    if !r.moved.is_empty() {
+        println!(
+            "drift: {} legacy violation(s) moved and are held by their {LOCK_FILE} fingerprint only (an edit of one would make it new): `drift init` rewrites their lines to where they are now",
+            r.moved.len()
+        );
+        for m in r.moved.iter().take(MAX_EXEMPT_LISTED) {
+            println!("  moved [{}] {} -> {}", m.id, m.from, m.to);
+        }
+        if r.moved.len() > MAX_EXEMPT_LISTED {
+            println!("  +{} more", r.moved.len() - MAX_EXEMPT_LISTED);
+        }
+    }
     let unsure: Vec<_> = r.unsure().collect();
     if !unsure.is_empty() {
         println!(
@@ -4455,7 +5357,43 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             println!("  {p}");
         }
     }
+    // What the accepted mined rules could not say, as the promoted practices' status
+    // lines say it: members not checked, rules gone stale, a mode that is not the file's.
+    // None of it changes the exit code by itself.
+    for s in &r.standing {
+        if s.not_checked > 0 {
+            println!(
+                "drift: [{}] {} of {} member(s) not checked: Drift could not read what decides the rule for them, and never reports what it cannot read ({} follow it)",
+                s.id, s.not_checked, s.members, s.holders
+            );
+            let mut why: Vec<(&String, &usize)> = s.not_checked_why.iter().collect();
+            why.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
+            for (reason, n) in why.iter().take(MAX_WHY_LISTED) {
+                println!("  why  {reason} ({n})");
+            }
+            if why.len() > MAX_WHY_LISTED {
+                println!(
+                    "  +{} more reasons: `drift check --format json` lists them all (`standing`)",
+                    why.len() - MAX_WHY_LISTED
+                );
+            }
+        }
+        if let Some(stale) = &s.stale {
+            println!(
+                "drift: [{}] mined rule is stale: {stale}, so its violations in drift.lock advise until a person looks (a violation not in drift.lock is checked as before): `drift review --advise {}` keeps it as advice, `drift review --reject {}` drops it",
+                s.id,
+                drift_mine::report::shell_word(&s.id),
+                drift_mine::report::shell_word(&s.id)
+            );
+        }
+        if let Some(note) = &s.mode_note {
+            println!("drift: [{}] {note}", s.id);
+        }
+    }
 }
+
+/// Reasons a mined rule's members were not checked, listed before pointing to the JSON.
+const MAX_WHY_LISTED: usize = 3;
 
 /// Exempt members `drift check` lists in its text report before pointing to the JSON.
 const MAX_EXEMPT_LISTED: usize = 10;
@@ -4470,7 +5408,7 @@ fn review_queue(
     let mut proposed: Vec<&Convention> = policy
         .conventions
         .iter()
-        .filter(|c| c.status == Status::Proposed)
+        .filter(|c| c.status == Status::Proposed && c.from_map.is_none())
         .collect();
     tier::order_by_tier(&mut proposed, |c| c.tier());
     let placed = rank::place(&proposed, cap);
@@ -4650,6 +5588,84 @@ fn census_mine(
     };
     drop_decided(&mut mined, policy.as_ref());
     (mined, accepted)
+}
+
+/// `drift census --why [GATE]`: mine as `census` does, with every gate's dropped
+/// candidates recorded (`drift_mine::funnel`), and print the funnel instead of the
+/// proposals: how many reached each stage, how many each gate dropped, then the dropped
+/// candidates by gate, strongest first (with --json, all of them). Only `gate`'s when it
+/// names one (`""`: every gate). Observation only: mining is what it is without the record.
+#[allow(clippy::too_many_arguments)]
+fn census_why(
+    cli: &Cli,
+    root: &Path,
+    gate: &str,
+    max: usize,
+    shapes: (bool, bool),
+    python: drift_mine::policy::PythonProposals,
+    listed: bool,
+    json: bool,
+) -> anyhow::Result<ExitCode> {
+    let only = (!gate.is_empty()).then_some(gate);
+    if let Some(g) = only
+        && drift_mine::funnel::gate(g).is_none()
+    {
+        let names: Vec<&str> = drift_mine::funnel::GATES.iter().map(|g| g.name).collect();
+        bail!(
+            "no gate is named `{g}`; the gates are: {}",
+            names.join(", ")
+        );
+    }
+    let mut facts = load_facts(cli, 0)?;
+    if listed {
+        facts = facts.into_listed();
+    }
+    drift_mine::funnel::start_counting();
+    drift_mine::funnel::record(None);
+    let (mut mined, accepted) = census_mine(root, &facts, max, shapes);
+    let mut rows = drift_mine::funnel::take_dropped();
+    let _ = withhold_python(python, &mut mined, &accepted);
+    let counts = drift_mine::funnel::finish();
+    // The show policy's and Python's withheld cards, with their reason as the gate.
+    rows.extend(
+        mined
+            .withheld
+            .iter()
+            .map(|w| drift_mine::funnel::dropped_card(&w.candidate, w.reason)),
+    );
+    drift_mine::funnel::sort(&mut rows);
+    // When mining's caps cut default-tier drafts, how many (less those a person
+    // rejected): said here only, never in the plain `census`, whose text stays as it was.
+    let rejected: BTreeSet<String> = ConventionsFile::load(root)
+        .ok()
+        .flatten()
+        .map(|p| {
+            p.conventions
+                .into_iter()
+                .filter(|c| c.status == Status::Rejected)
+                .map(|c| c.id)
+                .collect()
+        })
+        .unwrap_or_default();
+    let cap_note = only
+        .is_none_or(|g| drift_mine::funnel::CAP_GATES.contains(&g))
+        .then(|| drift_mine::funnel::cap_note(&rows, &rejected))
+        .flatten();
+    if json {
+        let mut v = drift_mine::funnel::why_json(counts.as_ref(), &rows, only);
+        v["cap_note"] = serde_json::json!(cap_note);
+        println!("{}", serde_json::to_string_pretty(&v)?);
+    } else {
+        let per_gate = if only.is_some() { 50 } else { 10 };
+        print!(
+            "{}",
+            drift_mine::funnel::why_text(counts.as_ref(), &rows, only, per_gate)
+        );
+        if let Some(n) = &cap_note {
+            println!("\n{n}");
+        }
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 /// Decision D13-py: with Python proposals off, remove every Python proposal (wiring ones
@@ -4978,7 +5994,7 @@ fn review_interactive(
     let blocking = policy
         .conventions
         .iter()
-        .filter(|c| c.status == Status::Accepted && c.mode == Mode::Block)
+        .filter(|c| c.status == Status::Accepted && drift_mine::check::effective_mode(c) == "block")
         .count();
     if blocking > 0 {
         println!(
@@ -5148,7 +6164,8 @@ fn review_answer(
             if !agents.shown {
                 println!(
                     "  accepted, {}: `a` (or `drift review --show-to-agents {}`) shows it to agents",
-                    agents.text, c.id
+                    agents.text,
+                    drift_mine::report::shell_word(&c.id)
                 );
             }
         }
@@ -5221,7 +6238,10 @@ fn hidden_card_lines(
         ),
         format!("  example:  {}", c.example),
     ];
-    let more = format!("`drift review --show {} --all-outliers`", c.id);
+    let more = format!(
+        "`drift review --show {} --all-outliers`",
+        drift_mine::report::shell_word(&c.id)
+    );
     for line in card_outlier_lines(c, report, cap) {
         if line.starts_with("  fine because...") {
             continue;
@@ -5229,8 +6249,10 @@ fn hidden_card_lines(
         out.push(line.replace(&more, "`drift review --hidden --all-outliers`"));
     }
     out.push(format!(
-        "  promote:  `drift review --hidden --answer {id}=same` (accept), `{id}=different --set-apart PATHS` (accept, those files set apart) or `{id}=not-a-convention` (reject)",
-        id = c.id
+        "  promote:  `drift review --hidden --answer {}` (accept), `{} --set-apart PATHS` (accept, those files set apart) or `{}` (reject)",
+        drift_mine::report::shell_word(&format!("{}=same", c.id)),
+        drift_mine::report::shell_word(&format!("{}=different", c.id)),
+        drift_mine::report::shell_word(&format!("{}=not-a-convention", c.id))
     ));
     out
 }
@@ -5377,6 +6399,7 @@ fn review_hidden(
     rlog.mark_hidden(w, promoted);
     let agents = drift_mine::admission::convention_view(&c);
     policy.add_promoted(c);
+    policy.freeze_accepted_now();
     policy.save(root)?;
     if promoted {
         lock.save(root)?;
@@ -5448,12 +6471,23 @@ pub(crate) fn has_command(name: &str) -> bool {
         .is_some()
 }
 
+/// Whether a `println!` panic says the reader of stdout went away (`drift census |
+/// head`). The message ends with the operating system's own words for the error.
+/// Windows has two for a closed pipe, and neither says `Broken pipe`: the pipe is
+/// being closed (error 232) and the pipe has been ended (error 109).
+fn stdout_reader_gone(msg: &str) -> bool {
+    msg.starts_with("failed printing to stdout")
+        && (msg.contains("Broken pipe")
+            || (cfg!(windows)
+                && (msg.contains("(os error 232)") || msg.contains("(os error 109)"))))
+}
+
 fn main() -> ExitCode {
     // `println!` panics when stdout is a closed pipe: exit quietly with the pipe code.
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let msg = info.payload_as_str().unwrap_or_default();
-        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+        if stdout_reader_gone(msg) {
             std::process::exit(i32::from(PIPE_EXIT.load(Ordering::Relaxed)));
         }
         // A parse that ran out of its memory budget: the file is skipped as too
@@ -5530,6 +6564,8 @@ mod tests {
             different_kind: Vec::new(),
             promoted_from_hidden: false,
             promoted_from_practice: None,
+            from_map: None,
+            accepted_evidence: None,
         }
     }
 

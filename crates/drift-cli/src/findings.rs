@@ -213,7 +213,10 @@ pub fn write_issue(root: &Path, file: &Path, text: &str, force: bool) -> anyhow:
             file.display()
         );
     }
-    let roots = [std::path::absolute(root)?, root.canonicalize()?];
+    let roots = [
+        std::path::absolute(root)?,
+        drift_core::fsutil::canonical(root)?,
+    ];
     if let Some(link) = std::iter::once(abs.as_path())
         .chain(
             abs.ancestors()
@@ -264,8 +267,17 @@ fn id_for(prefix: char, item: &str) -> String {
 
 /// A repository-relative path that stays inside: no `..`, not absolute.
 fn inside(p: &str) -> Option<String> {
+    // Windows: `\` is a separator there, never part of a name (on Unix it may be one),
+    // and `:` is never in a relative path (`C:/x`).
+    #[cfg(windows)]
+    let owned = p.replace('\\', "/");
+    #[cfg(windows)]
+    let p = owned.as_str();
     let p = p.trim();
     if p.is_empty() || p.starts_with('/') || p.contains('\0') || p.contains('\\') {
+        return None;
+    }
+    if cfg!(windows) && p.contains(':') {
         return None;
     }
     let parts: Vec<&str> = p
@@ -393,7 +405,7 @@ pub fn write_finding(
         bail!(
             "none of the routes given is one of {}'s (`drift investigate --json --item {}` lists them)",
             item.id,
-            item.id
+            drift_mine::report::shell_word(&item.id)
         );
     }
     let f = Finding {
@@ -521,7 +533,7 @@ pub fn issue(f: &Finding) -> String {
     if !f.patch.is_empty() {
         out.push_str(&format!(
             "\nA patch is attached to the local finding (`drift findings --branch {}` makes a local branch of it).\n",
-            f.id
+            drift_mine::report::shell_word(&f.id)
         ));
     }
     out.push_str(&format!(
@@ -684,7 +696,8 @@ pub fn branch(root: &Path, id: &str) -> anyhow::Result<String> {
     let f = finding(root, id)?;
     if f.patch.trim().is_empty() {
         bail!(
-            "{id} carries no patch: only a fix the agent wrote can become a branch (`drift findings --issue {id}` drafts an issue instead)"
+            "{id} carries no patch: only a fix the agent wrote can become a branch (`drift findings --issue {}` drafts an issue instead)",
+            drift_mine::report::shell_word(id)
         );
     }
     let name = format!("drift/{}", f.id.to_lowercase());

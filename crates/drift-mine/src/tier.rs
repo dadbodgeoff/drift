@@ -186,6 +186,7 @@ pub fn rule_kind(rule: &Rule) -> &'static str {
         Rule::MirrorsKeys { .. } => "mirrors_keys",
         Rule::ImportsFrom { .. } => "imports_from",
         Rule::Practice { .. } => "practice",
+        Rule::ImportsDeclared => "imports_declared",
     }
 }
 
@@ -226,6 +227,7 @@ pub fn names_package(rule: &Rule) -> bool {
         | Rule::DependencyVersion { .. }
         | Rule::RegisteredIn { .. }
         | Rule::MirrorsKeys { .. }
+        | Rule::ImportsDeclared
         | Rule::Practice { .. } => false,
     }
 }
@@ -349,16 +351,30 @@ macro_rules! tiered {
             }
 
             pub fn tier(&self) -> Tier {
+                // S21 (`census --gate-candidate`, study use): a proposal only the
+                // `universal` or `small-roles` candidate made advises only. With no
+                // switch on (always outside that census) no id is marked.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return Tier::Suggestion;
+                }
                 tier_of(&self.rule, self.evidence.role_size(), self.language())
             }
 
             /// [`tier_reason`] for this convention.
             pub fn tier_reason(&self) -> Option<&'static str> {
+                // S21: see `tier` above.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return Some("gate_candidate");
+                }
                 tier_reason(&self.rule, self.evidence.role_size(), self.language())
             }
 
             /// [`describe`] for this convention.
             pub fn describe_tier(&self) -> String {
+                // S21: see `tier` above.
+                if crate::gate_candidates::advise_only(&self.id) {
+                    return "suggestion (study candidate: advise only)".to_string();
+                }
                 describe(&self.rule, self.evidence.role_size(), self.language())
             }
         }
@@ -770,6 +786,9 @@ mod tests {
                 // study's tier fixture has no case for it: no sample here. Its kind is
                 // not in the default tier's allowlist, so it is a suggestion.
                 Rule::Practice { .. } => {}
+                // Never mined either (proposed from the map, accepted by a person): the
+                // same as a practice, a suggestion by its kind.
+                Rule::ImportsDeclared => {}
             }
         }
         out

@@ -74,6 +74,23 @@ pub enum Position {
     /// A call in a body: it refuses only by raising (what it hands back is the
     /// caller's to return or to drop: [`crate::security::hand_back`]).
     Call,
+    /// What stands around the Django admin's one entry point (`AdminSite.admin_view`
+    /// lets in whom the site's `has_permission` answers yes for, which a site of the
+    /// repository may answer otherwise, and the entry also serves the site's own
+    /// sign-in page to anyone): nothing there is read, so each is unknown, never
+    /// "no guard". Decided by the entry's adapter, not by a name of what stands
+    /// there (review R5, row 9).
+    Admin,
+    /// django-ninja's `auth=`: the callable's answer lets the caller in, and a false
+    /// one turns them away, which neither the decorator's reading nor the
+    /// dependency's follows. What stands there is named, and unknown.
+    Unread,
+    /// A permission class of a GraphQL field (strawberry's `permission_classes`, an
+    /// extension of the field): strawberry runs its `has_permission(source, info)`
+    /// before the resolver, and what it asks of the caller is read through the
+    /// context the schema's view builds, which is not read. Each is named and
+    /// unknown, never "no guard". Decided by the entry's adapter.
+    FieldPermission,
 }
 
 impl Position {
@@ -89,6 +106,16 @@ impl Position {
             // A DRF permission class is listed as a function called with the
             // view is: bare, by its own entry.
             WrapKind::Call if matches!(adapter, "django" | "drf") => Some(Position::Decorator),
+            // The admin's one entry point: `AdminSite.admin_view` wraps its views as
+            // a decorator does, and what the site lets in is not read.
+            WrapKind::Call if adapter == "django_admin" => Some(Position::Admin),
+            // Sanic: a request hook's answer, if any, is the response, as Flask's.
+            WrapKind::Call if adapter == "sanic" => Some(Position::Hook),
+            // Litestar: a guard and a dependency refuse only by raising.
+            WrapKind::Call if adapter == "litestar" => Some(Position::Dependency),
+            WrapKind::Call if adapter == "ninja" => Some(Position::Unread),
+            // What a GraphQL field runs before its resolver: a permission class.
+            WrapKind::Call if adapter == "strawberry" => Some(Position::FieldPermission),
             // A base, a setting: read where they are.
             _ => None,
         }
@@ -311,6 +338,12 @@ fn read_at(
     holders: &[&Symbol],
     authz: bool,
 ) -> Verdict {
+    if matches!(
+        at,
+        Position::Admin | Position::Unread | Position::FieldPermission
+    ) {
+        return UNCLASSIFIED;
+    }
     let w = crate::mine::norm_ref(wrapper);
     // `cache_page(60)(view)` in a URLconf is written `...cache_page()`: the callee
     // called, its arguments where the facts hold them.
@@ -1088,6 +1121,11 @@ const LIBRARY: &[Entry] = &[
     ),
     never_entry("flask_login", "current_user"),
     never_entry("flask_login", "login_user"),
+    // --- Tornado ----------------------------------------------------------------
+    // `tornado.web.authenticated(method)`: a `RequestHandler` method whose
+    // `self.current_user` is falsy redirects to `login_url` (`GET`, `HEAD`) or
+    // raises `HTTPError(403)`. It takes the method and nothing else.
+    guard("tornado", "authenticated", Form::Bare, &[VIEW], &[], &[]),
     never_entry("flask_login", "logout_user"),
     never_entry("flask_login", "confirm_login"),
     never_entry("flask_login", "login_fresh"),
@@ -1491,6 +1529,14 @@ const FRAMEWORKS: &[(&str, &[&str])] = &[
         "rest_framework",
         &["permissions", "authentication", "authtoken"],
     ),
+    // The GraphQL libraries: their decorators and classes declare the schema
+    // (`@strawberry.type` on a root type, whose methods are listed as resolvers) and
+    // check no caller. strawberry's permission classes and `PermissionExtension` are
+    // read where a field names them.
+    ("strawberry", &["permission"]),
+    ("graphene", &[]),
+    ("graphene_django", &[]),
+    ("ariadne", &[]),
 ];
 
 /// Exports of a framework's authenticating modules that authenticate no request:
@@ -2055,5 +2101,37 @@ mod tests {
             Verdict::Nothing
         );
         assert_eq!(member("pkg:company_sso#SSO", "protect", ""), UNCLASSIFIED);
+    }
+
+    /// S3: the Django admin's one entry point is wrapped in `AdminSite.admin_view`,
+    /// which lets in only staff that signed in. What stands there is read at the
+    /// admin's own position, unknown, never "no guard" (pygoat `pygoat/urls.py`
+    /// `/admin`); no list of package paths says so (review R5, row 9).
+    #[test]
+    fn the_admin_view_is_read_and_unknown_not_nothing() {
+        assert_eq!(
+            Position::of(WrapKind::Call, "django_admin"),
+            Some(Position::Admin)
+        );
+        let repo = drift_core::RepoFacts::default();
+        let ctx = RepoContext::new(&repo, &[]);
+        assert_eq!(
+            classify(
+                &ctx,
+                Position::Admin,
+                "pkg:django#contrib.admin.sites.AdminSite.admin_view",
+                &[]
+            ),
+            UNCLASSIFIED
+        );
+        // What the admin module offers outside its site stays as it was.
+        assert_eq!(
+            lib(
+                Position::Decorator,
+                "pkg:django#contrib.admin.register",
+                "(?)"
+            ),
+            Verdict::Nothing
+        );
     }
 }

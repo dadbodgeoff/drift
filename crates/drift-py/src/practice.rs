@@ -810,6 +810,17 @@ impl Lowerer<'_> {
                 Expr::Subscript(s) => self.canon(&s.slice),
                 other => self.canon(other),
             });
+            // `response_model=None`: FastAPI makes no model of the return
+            // annotation. (Kept in the listed reading only, by the linker.)
+            if matches!(keyword(c, "response_model"), Some(Expr::NoneLiteral(_)))
+                && !sym
+                    .controls
+                    .iter()
+                    .any(|x| x == drift_core::controls::NO_RESPONSE_MODEL)
+            {
+                sym.controls
+                    .push(drift_core::controls::NO_RESPONSE_MODEL.to_string());
+            }
             if status.is_some() || model.is_some() {
                 sym.responses.push(RawResponse {
                     status: status.unwrap_or(0),
@@ -1309,6 +1320,108 @@ impl Lowerer<'_> {
             params.vararg.is_some() || params.kwarg.is_some(),
             requests,
         )
+    }
+
+    /// Each of a handler's parameters, in [`Lowerer::input_params`]' order: its name,
+    /// and whether its declared type is one a request value is parsed into and can
+    /// fail to be ([`RawInputUse::typed`]). Read from what the annotation resolves to,
+    /// not from its name: a class of the standard library (`uuid.UUID`,
+    /// `datetime.date`), a builtin scalar (`int`, `float`, `bool`), a `Literal[...]`,
+    /// and a list of such. Not: no annotation, a type every value of a request
+    /// already is (`str`, `bytes`, `object`, `typing.Any`, a bare `dict` or `list`),
+    /// a name Drift cannot resolve, and a class of a package or of the repository
+    /// (review R5, row 7): what one parses is in code this lowering does not read
+    /// (`fastapi.UploadFile` takes any file, a repository's class may be an alias of
+    /// `str`), so it is not said to parse.
+    pub(crate) fn param_types(&self, params: &ast::Parameters) -> Vec<(String, bool)> {
+        params
+            .iter_non_variadic_params()
+            .map(|p| {
+                let name = p.parameter.name.as_str().to_string();
+                let typed = p
+                    .parameter
+                    .annotation()
+                    .is_some_and(|a| self.parsed_type(a, 0));
+                (name, typed)
+            })
+            .collect()
+    }
+
+    /// `e`, a parameter's annotation, is a type a request value is parsed into
+    /// ([`Lowerer::param_types`]).
+    fn parsed_type(&self, e: &Expr, depth: usize) -> bool {
+        if depth > MAX_DEPTH {
+            return false;
+        }
+        match e {
+            Expr::Subscript(s) => match self.dotted_of(&s.value).as_deref() {
+                // `Annotated[T, ...]`: by `T`.
+                Some("typing.Annotated" | "typing_extensions.Annotated") => {
+                    match s.slice.as_ref() {
+                        Expr::Tuple(t) => t
+                            .elts
+                            .first()
+                            .is_some_and(|x| self.parsed_type(x, depth + 1)),
+                        other => self.parsed_type(other, depth + 1),
+                    }
+                }
+                Some("typing.Literal" | "typing_extensions.Literal") => true,
+                Some("typing.Optional" | "typing.List" | "typing.Sequence") => {
+                    self.parsed_type(&s.slice, depth + 1)
+                }
+                _ if matches!(s.value.as_ref(), Expr::Name(n)
+                    if matches!(n.id.as_str(), "list" | "set" | "frozenset")) =>
+                {
+                    self.parsed_type(&s.slice, depth + 1)
+                }
+                _ => false,
+            },
+            // `T | None`: by `T`; a union of types: each must be.
+            Expr::BinOp(b) if matches!(b.op, ast::Operator::BitOr) => {
+                let none = |x: &Expr| matches!(x, Expr::NoneLiteral(_));
+                match (none(&b.left), none(&b.right)) {
+                    (true, true) => false,
+                    (true, false) => self.parsed_type(&b.right, depth + 1),
+                    (false, true) => self.parsed_type(&b.left, depth + 1),
+                    (false, false) => {
+                        self.parsed_type(&b.left, depth + 1)
+                            && self.parsed_type(&b.right, depth + 1)
+                    }
+                }
+            }
+            Expr::Name(_) | Expr::Attribute(_) => match self.canon(e) {
+                // A builtin: every one but those any value is.
+                Some(RawRef {
+                    base: RawBase::Global(name),
+                    member,
+                }) => {
+                    member.is_empty()
+                        && crate::stdlib::is_builtin(&name)
+                        && !matches!(
+                            name.as_str(),
+                            "str" | "bytes" | "object" | "dict" | "list" | "tuple"
+                        )
+                }
+                // A name a star import may bind: not resolved.
+                Some(RawRef {
+                    base: RawBase::Star(_),
+                    ..
+                }) => false,
+                // A class of the standard library, imported: what it parses is
+                // the language's own. `typing`'s bare names (`Any`, `Dict`) parse
+                // nothing.
+                Some(RawRef {
+                    base: RawBase::Import { spec, .. },
+                    ..
+                }) => {
+                    let top = spec.split('.').next().unwrap_or_default();
+                    crate::stdlib::is_stdlib(top) && !matches!(top, "typing" | "typing_extensions")
+                }
+                // A class of a package or of the repository: not read here.
+                Some(_) | None => false,
+            },
+            _ => false,
+        }
     }
 
     /// What each parameter of a function stands for in a check: a header it reads, a

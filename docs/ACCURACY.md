@@ -199,6 +199,13 @@ median was 0, and 20 of 30 repositories had no accepted card.
 A convention needs a role of roughly 20 or more similar symbols where one
 pattern dominates, so small or uniform repositories often get none.
 
+## Rules proposed from the practice map
+
+Rules proposed from Drift's map of the code are a second channel beside mining.
+They do not pass through the miner's gates, so nothing on this page measures
+them. Their accuracy has **not been measured yet**. They only advise, and
+nothing checks one until a person accepts it.
+
 ## What is not claimed
 
 - **No ≥ 95% figure, and no held-out pass** of the default tier (D1) or of
@@ -213,6 +220,7 @@ pattern dominates, so small or uniform repositories often get none.
   README), so it gates nothing.
 - **No recall figure** for this product: recall was not measured on heldout2 or
   dev3.
+- **No figure for rules proposed from the practice map** (above).
 - **No forecast for the next blind pool.** Round 11 draws dev4 (36 TS/JS and 24
   Python repositories) and labels it blind at the round-11 freeze. Its figures
   will replace dev3's here once its report is committed.

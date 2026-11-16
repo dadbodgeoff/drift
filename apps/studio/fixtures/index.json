@@ -5,7 +5,10 @@
    "path": "/work/acme",
    "name": "acme",
    "practices": true,
-   "map": true
+   "map": true,
+   "funnel": true,
+   "promoteList": true,
+   "promoteRuns": true
   },
   {
    "id": "beacon",
@@ -16,13 +19,21 @@
    "id": "quiet",
    "path": "/work/quiet",
    "name": "quiet",
-   "practices": true
+   "practices": true,
+   "funnel": true
   },
   {
    "id": "broken",
    "path": "/work/broken",
    "name": "broken",
    "errors": true
+  },
+  {
+   "id": "harbor",
+   "path": "/work/harbor",
+   "name": "harbor",
+   "securityTop": true,
+   "baseline": true
   }
  ],
  "sessions": [

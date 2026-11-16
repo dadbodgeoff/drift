@@ -56,9 +56,11 @@ mod dupes;
 mod engine;
 pub mod libraries;
 mod matcher;
+pub mod probation;
 pub mod promote;
 mod py_authz;
 mod render;
+mod signin_test;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
@@ -173,6 +175,9 @@ pub struct Cx<'a> {
     test_files: OnceLock<Vec<&'a FileFacts>>,
     serving: OnceLock<BTreeSet<&'a str>>,
     rivals: OnceLock<Vec<testing::Rival<'a>>>,
+    /// The keys this repository's own queries scope rows to the caller by
+    /// (`authz::scope_keys`), learned once for the run.
+    scope_keys: OnceLock<BTreeSet<String>>,
 }
 
 impl<'a> Cx<'a> {
@@ -185,7 +190,17 @@ impl<'a> Cx<'a> {
             test_files: OnceLock::new(),
             serving: OnceLock::new(),
             rivals: OnceLock::new(),
+            scope_keys: OnceLock::new(),
         }
+    }
+
+    /// The keys this repository scopes rows to the caller by, as `learn` finds them
+    /// in the facts: asked for every authorization unit, answered once for the run.
+    pub(super) fn scope_keys(
+        &self,
+        learn: impl FnOnce(&Self) -> BTreeSet<String>,
+    ) -> &BTreeSet<String> {
+        self.scope_keys.get_or_init(|| learn(self))
     }
 
     /// The facts' test files ([`crate::roles::is_test_path`]), in the facts' order.
@@ -652,6 +667,45 @@ pub trait Concern: Sync {
     ) -> Option<String> {
         None
     }
+    /// Whether doing more than a way a person accepted is still doing it: a unit whose
+    /// known uses include every use of an accepted way follows that way
+    /// ([`promote`]). True where the uses are obligations that add up (a route that
+    /// signs the caller in with the accepted guard and checks something else as well
+    /// still signs them in). False, the default, where the concern is the choice of one
+    /// instrument and the extra one is itself the departure (a config value read in
+    /// place beside the config module): there the whole key must be accepted.
+    fn additive(&self) -> bool {
+        false
+    }
+    /// Whether these uses of one known unit enforce the concern, in the classifier's own
+    /// sense (authentication: a use that turns a caller away; authorization: a check it
+    /// proved). `None` when the concern has no such notion, whatever the uses: no
+    /// practice "any way that enforces it" can then be promoted ([`promote`]).
+    fn enforces(&self, _uses: &[Use]) -> Option<bool> {
+        None
+    }
+    /// Whether these uses are what code does by doing nothing: the default or absence
+    /// the classifier records as a way (errors left to the framework). New code follows
+    /// such a way without trying, so a practice of it holds code to nothing; the
+    /// promotion list shows it apart ([`promote::Candidate::passive`]).
+    fn passive(&self, _uses: &[Use]) -> bool {
+        false
+    }
+    /// Whether a unit of the concern is about the caller of a request (sign-in,
+    /// permissions). An entry point of kind `job` ([`common::JOB`]) takes no request:
+    /// it is a unit of the map, and no unit of such a concern for what a promoted
+    /// practice counts, checks or reports.
+    fn needs_a_caller(&self) -> bool {
+        false
+    }
+}
+
+/// The mechanism of one use's key (`wrap` of `wrap:lib/auth.ts#withAuth`), in the
+/// classifier's own vocabulary ([`Use::mechanism`]): what a promoted practice that
+/// accepts a mechanism whole ([`crate::mine::Rule::Practice`] `any_mechanism`) reads.
+/// A key with no `:` is its own mechanism.
+pub fn mechanism_of(key: &str) -> &str {
+    key.split_once(':').map_or(key, |(m, _)| m)
 }
 
 // ---------- the engine ----------
@@ -1086,6 +1140,29 @@ pub struct UnitRow {
     /// what was read and what was seen and not read (additive to v1).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub basis: Option<basis::Basis>,
+    /// The kind of the entry point, as the facts name it (`http`, `server_action`,
+    /// `job`, ...), for a concern whose unit is an entry point: a background job takes
+    /// no request, so it is no unit of sign-in for a promoted practice to count
+    /// (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// The key of each of the unit's known uses, one per use, sorted: what
+    /// [`UnitRow::key`] joins. A unit that does an accepted way and more still follows
+    /// that way, which only its separate uses can show (additive to v1).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub uses: Vec<String>,
+    /// Of a known unit: whether one of its uses enforces the concern, in the
+    /// classifier's own sense (authentication: it turns a caller away;
+    /// authorization: a check it proved). Absent where the concern has no such
+    /// notion or the unit is not known (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enforces: Option<bool>,
+    /// Of an authorization unit: the tenant or owner key the entry point takes from
+    /// the request and neither checks nor scopes, in a body read to the end
+    /// ([`FindingKind::UnscopedKey`], which lists the same units). Absent otherwise
+    /// (additive to v1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unscoped: Option<String>,
     /// Of an unknown unit: the instrument its reason is about (the call whose body was
     /// not read, the name that does not resolve, the check found). For `drift
     /// investigate`, in process only: never serialised, so no output changes.

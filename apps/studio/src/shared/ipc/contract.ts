@@ -37,7 +37,7 @@ export const DriftInfo = z.object({
   path: z.string().nullable(),
   version: z.string().nullable(),
   censusJson: z.boolean(),
-  source: z.enum(["settings", "path", "fixture", "none"]),
+  source: z.enum(["settings", "bundled", "path", "fixture", "none"]),
   error: z.string().optional(),
 });
 export type DriftInfo = z.infer<typeof DriftInfo>;
@@ -88,7 +88,31 @@ export const PracticesEnvelope = z
 /** `drift map --json` (map.rs `overview`, schema 1); packages are checked where read (features/map). */
 export const MapEnvelope = z.object({ schema: z.number(), packages: z.array(z.any()) }).passthrough();
 
-export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable() });
+/** `drift census --why --json` (funnel.rs `why_json`, schema 1): gates and dropped candidates are checked where read (features/funnel). */
+export const FunnelEnvelope = z
+  .object({ schema: z.number(), observation_only: z.boolean(), gate: z.string().nullable(), reached: z.record(z.string(), z.number()), gates: z.array(z.any()), dropped: z.array(z.any()) })
+  .passthrough();
+
+/** `drift census --from-map --json`: census with `from_map`, the proposals from Drift's map and what is not proposed (checked where read, features/from-map). */
+export const FromMapEnvelope = z.object({ schema: z.number(), from_map: z.array(z.any()) }).passthrough();
+/** `drift upgrade --json` (upgrade.rs, schema `drift-upgrade`): a report, or a refusal (`refused: true`); checked where read (features/upgrade). */
+export const UpgradeEnvelope = z.object({ schema: z.literal("drift-upgrade"), version: z.number() }).passthrough();
+/** `.drift/feedback/marks.json` (feedback.rs `MarksFile`); marks are checked where read (features/feedback). */
+export const MarksEnvelope = z.object({ schema: z.string(), version: z.number(), marks: z.array(z.any()) }).passthrough();
+/** A verdict on a report (`drift feedback mark --true|--wrong`). */
+export const Verdict = z.enum(["true", "wrong"]);
+export type Verdict = z.infer<typeof Verdict>;
+/** A mark's `--why`: 1 to 300 characters once whitespace is collapsed, no control characters (validated again in the main process). */
+export const MarkWhy = z
+  .string()
+  .max(4000)
+  .refine((r) => {
+    const t = r.trim().split(/\s+/).join(" ");
+    return t.length > 0 && [...t].length <= 300 && !hasControl(r);
+  }, "a reason of 1 to 300 characters");
+
+/** The files Drift writes that the Studio reads as text: `.drift/conventions.yaml`, `drift.lock`, and `.drift/security.lock` (the security baseline; absent from an older main process). */
+export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable(), securityLock: z.string().nullable().optional() });
 export type PolicyFiles = z.infer<typeof PolicyFiles>;
 
 export const SessionSummary = z.object({
@@ -139,26 +163,57 @@ export type Decision = z.infer<typeof Decision>;
 export const Answer = z.enum(["same", "different", "not-a-convention"]);
 export type Answer = z.infer<typeof Answer>;
 
-/** What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed (`unexempt`), a block candidate's answer, or a practice made a convention (`promote`). */
-export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options, "promote"]);
+/**
+ * What the audit trail records: a `drift review` decision, a reviewer's exception added (`exempt`) or removed
+ * (`unexempt`), a block candidate's answer, a practice made a convention (`promote`), or the security baseline written
+ * (`security-baseline`, `drift security --write-baseline`: no convention id).
+ */
+export const AuditDecision = z.enum([...Decision.options, "exempt", "unexempt", ...Answer.options, "promote", "security-baseline"]);
 export type AuditDecision = z.infer<typeof AuditDecision>;
 
 /** A practice-map variant id (`drift practices --json` `concerns[].variants[].id`): `P-` and 6 hex digits. */
 export const PracticeId = z.string().regex(/^P-[0-9a-f]{6}$/);
 
+const repoPath = (p: string) => !p.startsWith("/") && !p.startsWith("-") && !p.includes("\\") && !/\p{Cc}/u.test(p) && !p.split("/").some((s) => s === ".." || s === "." || s === "");
+
 /**
- * A place for `drift practices promote --in`: `.` (the root package) or a directory from the repository root, as
- * `promotable.place` names it. No `..`, `.` or empty segment, no leading `/` or `-` (it is passed as its own argument),
- * no backslash or control character (validated again in the main process).
+ * A place for `drift practices promote --in`: `.` (the root package), a directory or one file from the repository root,
+ * or a route place `<package>:/<prefix>` (`.:/api/workspaces`, `apps/api:/v2`). No `..`, `.` or empty segment, no
+ * leading `/` or `-` (it is passed as its own argument), no backslash or control character (validated again in the
+ * main process).
  */
 export const PromotePlacePath = z
   .string()
   .min(1)
   .max(1024)
-  .refine((p) => p === "." || (!p.startsWith("/") && !p.startsWith("-") && !p.includes("\\") && !/\p{Cc}/u.test(p) && !p.split("/").some((s) => s === ".." || s === "." || s === "")), "`.` or a repo-relative directory");
+  .refine((p) => {
+    const at = p.indexOf(":/");
+    if (at < 0) return p === "." || repoPath(p);
+    const [pkg, prefix] = [p.slice(0, at), p.slice(at + 1)];
+    return (pkg === "." || repoPath(pkg)) && prefix.length > 1 && !/\p{Cc}|\s|\\/u.test(prefix) && !prefix.slice(1).split("/").some((s) => s === "" || s === ".." || s === ".");
+  }, "`.`, a repo-relative directory or file, or `<package>:/<route prefix>`");
 
-/** What a person asks to promote: a variant, the place, the other ways accepted with it (`--with`), and block mode (`--block`). */
-export const PromoteRequest = z.object({ id: PracticeId, place: PromotePlacePath, with: z.array(PracticeId).max(50), block: z.boolean() });
+/** A concern of the practice map (`concerns[].id`: `authn`, `data_access`, ...). */
+export const ConcernId = z.string().regex(/^[a-z][a-z0-9_]{0,39}$/);
+/** A mechanism in the map's own words (the part before the `:` of a variant key: `wrap`, `membership_guard`, ...). */
+export const MechanismName = z.string().regex(/^[a-z][a-z0-9_]{0,59}$/);
+
+/**
+ * What a person asks to promote, every form `drift practices promote` has: the first way (`id`, a variant) or, with
+ * none, the concern (`--concern`); the place (`--in`); more ways (`--with`), mechanisms accepted whole
+ * (`--mechanism`) and any enforcing way (`--any-enforcing`), which add up; block mode (`--block`) and a promotion
+ * below the share (`--force`, advise only). The optional fields are absent from an older Studio's request.
+ */
+export const PromoteRequest = z.object({
+  id: PracticeId.optional(),
+  concern: ConcernId.optional(),
+  place: PromotePlacePath,
+  with: z.array(PracticeId).max(50),
+  mechanisms: z.array(MechanismName).max(20).optional(),
+  any_enforcing: z.boolean().optional(),
+  block: z.boolean(),
+  force: z.boolean().optional(),
+});
 export type PromoteRequest = z.infer<typeof PromoteRequest>;
 
 /** A member as conventions.yaml `exceptions` name it: `path#symbol` with a repo-relative path (validated again in the main process). */
@@ -245,6 +300,19 @@ export const PromoteRefusedEnvelope = z.object({ refused: z.object({ code: z.str
 
 export const PromoteEnvelope = z.union([PromoteRefusedEnvelope, PromoteResultEnvelope]);
 
+/** One entry of `drift practices promote --list --json`. */
+const PromoteListItemEnvelope = z.object({ place: z.string(), command: z.string(), candidate: z.object({ concern: z.string(), ways: z.array(PromoteWayEnvelope) }).passthrough() }).passthrough();
+
+/** `drift practices promote --list --json` (drift-cli promote.rs `list_of`, exit 0): each candidate is checked where read (features/practices). `passive`: newer drift. */
+export const PromoteListEnvelope = z
+  .object({
+    candidates: z.array(PromoteListItemEnvelope),
+    passive: z.array(PromoteListItemEnvelope).optional(),
+    declined: z.number(),
+    promoted: z.array(z.string()),
+  })
+  .passthrough();
+
 /** One decision made through the Studio (Drift itself keeps no history). */
 export const AuditEntry = z.object({
   at: z.number(),
@@ -298,10 +366,28 @@ export const channels = {
   check: { req: z.union([z.tuple([RepoRef]), z.tuple([RepoRef, CheckOpts])]), res: loaded(CheckEnvelope) },
   /** With `{ base }`, `--diff-base <base>`: the diff payload instead of the inventory. */
   security: { req: z.union([z.tuple([RepoRef]), z.tuple([RepoRef, CheckOpts])]), res: loaded(z.union([SecurityEnvelope, SecurityDiffEnvelope])) },
+  /** `drift security --top N --json` (0: every ranked finding): the inventory with `top`, the findings to look at first. Read-only. */
+  securityTop: { req: z.tuple([RepoRef, z.number().int().min(0).max(1000)]), res: loaded(SecurityEnvelope) },
+  /** `drift security --write-baseline`: an explicit write (`.drift/security.lock`), audited; Drift's output in the entry. */
+  securityBaseline: { req: z.tuple([RepoRef]), res: AuditEntry },
   /** `drift practices --json`: the practice map (facts, not rules; read-only). */
   practices: { req: z.tuple([RepoRef]), res: loaded(PracticesEnvelope) },
   /** `drift map --json`: the structural map (read-only); the Map view reads each package's dependencies. */
   map: { req: z.tuple([RepoRef]), res: loaded(MapEnvelope) },
+  /** `drift census --why --json`: what mining dropped, gate by gate (observation only, read-only). */
+  funnel: { req: z.tuple([RepoRef]), res: loaded(FunnelEnvelope) },
+  /** `drift practices promote --list --json`: every practice that may be promoted now. Writes nothing. */
+  promoteList: { req: z.tuple([RepoRef]), res: loaded(PromoteListEnvelope) },
+  /** `drift census --from-map --json`: the proposals from Drift's map, and what qualified and is not proposed, with why. Read-only. */
+  fromMap: { req: z.tuple([RepoRef]), res: loaded(FromMapEnvelope) },
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote. Changes nothing. */
+  upgrade: { req: z.tuple([RepoRef]), res: loaded(UpgradeEnvelope) },
+  /** `drift upgrade --apply [--security-baseline] --json`: an explicit write of only what changes no decision a person made. */
+  upgradeApply: { req: z.tuple([RepoRef, z.object({ securityBaseline: z.boolean() })]), res: UpgradeEnvelope },
+  /** `drift feedback mark --true|--wrong [--why=<text>] -- <id> <path#symbol>`: a local mark, nothing sent; Drift's output. */
+  feedbackMark: { req: z.tuple([RepoRef, convId, MemberKey, Verdict, MarkWhy.nullable()]), res: z.string() },
+  /** `.drift/feedback/marks.json` as Drift wrote it; null when there is none. Read-only. */
+  feedbackMarks: { req: z.tuple([RepoRef]), res: MarksEnvelope.nullable() },
   policy: { req: z.tuple([RepoRef]), res: PolicyFiles },
   review: { req: z.tuple([RepoRef, Decision, z.array(convId).min(1).max(200)]), res: AuditEntry },
   /** `drift review --exempt <id> --member <m> --reason <r>`, or with a null reason `--unexempt <id> --member <m>`. */

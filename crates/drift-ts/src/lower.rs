@@ -15,7 +15,7 @@ use oxc_span::{GetSpan, SourceType};
 use serde::{Deserialize, Serialize};
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 84;
+pub const LOWERING_VERSION: u32 = 87;
 
 /// What an options object gives a Fastify route: for each hook it names
 /// (`onRequest`, `preHandler`), what that hook runs.
@@ -155,6 +155,18 @@ pub struct RawSymbol {
     /// does ([`RawSymbol::builder_checks`]). TypeScript lowering 70.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refusal_builder: Option<drift_core::CheckOutcome>,
+    /// Classes: the class is an error that answers 401 or 403, read from its own
+    /// definition, not from its name: its constructor passes that status to its
+    /// base (`super(403, message)`, `super(message, 401)`) or sets it on the
+    /// instance (`this.status = 403`, `this.statusCode = 401`), or the class
+    /// declares it as a property (`status = 403`), and nothing in it says another
+    /// ([`Lowerer::class_status`]). A throw of one where a check turns the caller
+    /// away is that check, kept by linking as the checks of a refusal builder are
+    /// ([`RawSymbol::builder_checks`]), and the class carries
+    /// [`drift_core::controls::REFUSAL_STATUS`]; the listed reading only. A class
+    /// whose status is set by a base of another module is not read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refusal_status: Option<drift_core::CheckOutcome>,
     /// The calls of a function of another module this function's own body
     /// returns (`return unauthenticated()`, under a check or not): linking reads
     /// the function as one that refuses by the response it hands back, as one
@@ -237,6 +249,13 @@ pub struct RawSymbol {
     /// Schemas or types request input is validated into ([`drift_core::Symbol::inputs`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<RawRef>,
+    /// Controls of the listed reading only ([`drift_core::Listed`]) whose rest is
+    /// references, made canonical by linking and written tab-separated after the
+    /// prefix: [`drift_core::controls::PARSES_INPUT`] (the callee, then a binding it
+    /// is handed beside what the request sent), [`drift_core::controls::PIPES_INPUT`]
+    /// (the pipe).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_refs: Vec<(String, Vec<RawRef>)>,
     /// Error classes handled, `Text("*")` for any ([`drift_core::Symbol::handles_errors`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub handles_errors: Vec<RawOperand>,
@@ -479,6 +498,23 @@ pub struct RawSymbol {
     pub made_fed_sinks: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub made_passes: Vec<RawRef>,
+    /// [`Self::fed_sinks`] by the parameter that feeds each: the kind and the
+    /// position of a parameter its operand is read off (`#4`; `*` where which one
+    /// is not read; `-` where the operand is given nothing of a parameter and
+    /// another argument is) ([`drift_core::controls::SINK_FED_AT`]). The operand is
+    /// the value the detectors judge: the first argument that is no number.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks_at: Vec<(String, String)>,
+    /// [`Self::param_passes`] by argument: the callee, the argument's position
+    /// (`#1`; `*` at or after a spread) and the position of the parameter it is
+    /// read off (`#0`, `*`) ([`drift_core::controls::PASSES_AT`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes_at: Vec<(RawRef, String, String)>,
+    /// [`Self::made_passes`] by argument: the callee and the position of an
+    /// argument read off a parameter of the function made
+    /// ([`drift_core::controls::PASSES_MADE_AT`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub made_passes_at: Vec<(RawRef, String)>,
     /// Where the body throws for every request for which what a callee gave is
     /// absent, each with the callees that may have given it
     /// ([`drift_core::controls::REFUSES_WITHOUT`]).
@@ -698,7 +734,8 @@ pub struct RawLogCall {
 /// [`drift_core::CatchFact`] before resolution: the classes caught (`Text("*")` for
 /// any), and what the clause does as (kind, reference): `throw` and `report` carry the
 /// reference written after a `:`, the others (`rethrow`, `log`, `respond:<status>`,
-/// `return`, `swallow`) none.
+/// `return`, `swallow`, and `unread` for a clause that hands what it caught on after
+/// a statement not read, [`read_before_forward`]) none.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct RawCatch {
     pub catches: Vec<RawOperand>,
@@ -813,6 +850,13 @@ pub struct RawFile {
     /// of the routes below it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub route_middleware: bool,
+    /// The symbols that are inline Next.js server actions
+    /// ([`crate::nextjs::inline_actions`]): a module-level function whose own
+    /// body says `"use server"`, and each one written inside another function,
+    /// lowered as a symbol of its own ([`Lowerer::lower_inline_actions`]).
+    /// Linking lists them as server actions in the listed reading only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub inline_actions: Vec<String>,
     /// The lines of the registrations written as a route is that the lowering did
     /// not list ([`drift_core::FileFacts::unlisted_routes`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -831,6 +875,11 @@ pub struct RawFile {
     /// ([`drift_core::Listed::rewrites`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rewrites: Vec<drift_core::NextRewrite>,
+    /// What a SvelteKit `hooks.server` `handle` or a Nitro server middleware file
+    /// runs before the routes ([`serverhooks`]): the listed reading only, since the
+    /// measured build did not read it.
+    #[serde(default, skip_serializing_if = "serverhooks::RawServerHooks::is_empty")]
+    pub server_hooks: serverhooks::RawServerHooks,
     /// Top-level one-line environment helpers: functions whose body only returns a
     /// read of `process.env[param]` (`const env = (k) => process.env[k] ?? ""`), as
     /// (local name, parameter index).
@@ -899,6 +948,11 @@ pub struct RawFile {
     /// of those routes: the pattern and what runs.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub handed_calls: Vec<(RawMount, Vec<(String, RawRef)>)>,
+    /// GraphQL resolver maps, what serves them, and the guards a rule map gives
+    /// their fields ([`graphql::RawGraphql`]): linking lists the root fields of the
+    /// maps proven served. The listed reading only.
+    #[serde(default, skip_serializing_if = "graphql::RawGraphql::is_empty")]
+    pub graphql: graphql::RawGraphql,
 }
 
 /// Middleware applied to the routes of a Nest application beside them: one
@@ -961,6 +1015,10 @@ pub struct RawTrpc {
     /// is written with a name ending in "procedure": a procedure only when its builder
     /// (`base`) is proven to be one; otherwise nothing (inline) or `replaces` stays.
     pub candidates: Vec<RawCandidate>,
+    /// The routers of the file and what each is composed of, for the linker to build
+    /// each procedure's dotted path ([`trpc_paths`]). Lowering 87.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub routers: Vec<trpc_paths::RawRouter>,
 }
 
 /// A function that may return a procedure builder (see [`RawTrpc::factories`]).
@@ -1056,6 +1114,8 @@ pub struct RawRegisters {
 
 #[path = "caller.rs"]
 mod caller;
+#[path = "graphql.rs"]
+pub(crate) mod graphql;
 #[path = "input.rs"]
 pub(crate) mod input;
 #[path = "nest.rs"]
@@ -1068,8 +1128,12 @@ pub(crate) mod registries;
 pub(crate) mod routes;
 #[path = "rows.rs"]
 mod rows;
+#[path = "serverhooks.rs"]
+pub mod serverhooks;
 #[path = "signals.rs"]
 pub(crate) mod signals;
+#[path = "trpc_paths.rs"]
+pub(crate) mod trpc_paths;
 
 /// Most callees kept in a symbol's call order.
 const MAX_ORDER: usize = 32;
@@ -1143,7 +1207,21 @@ fn lower_parsed(
     text: &str,
     source_type: SourceType,
 ) -> RawFile {
-    let ret = Parser::new(allocator, text, source_type).parse();
+    lower_parsed_with(allocator, rel_path, text, source_type, Default::default())
+}
+
+/// [`lower_parsed`] with the parser's `options` (a component's script:
+/// [`crate::sfc`]).
+pub(crate) fn lower_parsed_with(
+    allocator: &oxc_allocator::Allocator,
+    rel_path: &str,
+    text: &str,
+    source_type: SourceType,
+    options: oxc_parser::ParseOptions,
+) -> RawFile {
+    let ret = Parser::new(allocator, text, source_type)
+        .with_options(options)
+        .parse();
     if ret.fatal_error {
         return RawFile {
             parse_ok: false,
@@ -1181,8 +1259,17 @@ fn lower_semantic(
     let mut l = Lowerer::new(semantic.scoping(), text);
     l.typescript = source_type.is_typescript();
     l.test_file = is_test_file(rel_path);
+    l.svelte_hooks = !l.test_file && serverhooks::svelte_hooks_file(rel_path);
     l.out.parse_ok = parse_ok;
+    l.member_writes.visit_program(program);
     l.lower_program(program);
+    // Only a file that says so holds one: the walk is skipped everywhere else.
+    if text.contains("use server") {
+        l.lower_inline_actions(program);
+    }
+    if !l.test_file {
+        l.lower_server_hooks(program, rel_path);
+    }
     if rel_path
         .rsplit('/')
         .next()
@@ -1221,7 +1308,22 @@ fn lower_semantic(
         let exported: Vec<&str> = out.exports.iter().map(|e| e.name.as_str()).collect();
         out.file_routes =
             crate::filerouters::candidate(rel_path, &exported) && !routes::unmeasured_listing();
-        out.route_middleware = out.file_routes && crate::filerouters::exports_middleware(&exported);
+        out.route_middleware = out.file_routes
+            && (crate::filerouters::exports_middleware(&exported)
+                || crate::filerouters::astro_middleware(rel_path, &exported));
+    }
+    // That a function hands back a value is said only where the file may hold a
+    // route of a file-convention router, whose answer it is
+    // ([`drift_core::controls::RETURNS_VALUE`]): anywhere else nothing reads it.
+    if !out.file_routes {
+        for sym in out
+            .symbols
+            .iter_mut()
+            .chain(out.trpc.candidates.iter_mut().map(|c| &mut c.symbol))
+        {
+            sym.listed_controls
+                .retain(|c| c != drift_core::controls::RETURNS_VALUE);
+        }
     }
     out.types = std::sync::Arc::new(types);
     for sym in out
@@ -1409,12 +1511,25 @@ struct Lowerer<'s> {
     /// handler = createRequestHandler({ build })`): the callee
     /// ([`RawFile::handed_calls`]).
     module_calls: BTreeMap<String, RawRef>,
+    /// The members this module writes by assignment anywhere in it, by the name of
+    /// what they are written on ([`MemberWrites`]; a write from another module,
+    /// through an import of the object, is not seen): a function an object literal holds
+    /// under such a key may not be the one a call of it runs, and is not read as
+    /// its member ([`Lowerer::lower_object_methods`]).
+    member_writes: MemberWrites,
     /// Class properties initialised with `new X()` in the class being lowered
     /// (`private readonly logger = new Logger(Svc.name)`): the receiver of a log call
     /// through `this.logger`. Read for log calls only.
     this_news: std::cell::RefCell<BTreeMap<String, RawRef>>,
+    /// Path tests a view of a server hook is lowered under, by where the test
+    /// starts and ends, with the value each is taken to have ([`serverhooks`]): a branch
+    /// they decide is read as taken or not, for the routes the view stands before.
+    assume: std::cell::RefCell<Vec<(u32, u32, bool)>>,
     /// The file is a test ([`is_test_file`]): it records the requests its tests make.
     test_file: bool,
+    /// The file is SvelteKit's `hooks.server` ([`serverhooks`]): a hook's `resolve`
+    /// is its continuation.
+    svelte_hooks: bool,
     /// What the file's bindings hold that an SQL sink reads through a name
     /// ([`signals::SqlLocals`]).
     sql: signals::SqlLocals,
@@ -2297,8 +2412,11 @@ impl<'s> Lowerer<'s> {
             env_bound: BTreeSet::new(),
             module_news: BTreeMap::new(),
             module_calls: BTreeMap::new(),
+            member_writes: MemberWrites::default(),
             this_news: std::cell::RefCell::new(BTreeMap::new()),
+            assume: std::cell::RefCell::new(Vec::new()),
             test_file: false,
+            svelte_hooks: false,
             sql: signals::SqlLocals::default(),
             closure_routers: BTreeSet::new(),
             local_refs: HashMap::new(),
@@ -2705,6 +2823,10 @@ impl<'s> Lowerer<'s> {
                         // is under it.
                         if let Some(base) = routes::base_path(init) {
                             self.base_paths.insert(id.name.to_string(), base);
+                        } else if adapter == "koa"
+                            && let Some(base) = routes::koa_prefix(init)
+                        {
+                            self.base_paths.insert(id.name.to_string(), base);
                         }
                     }
                     // Hono: `const route = createRoute({ method, path, middleware })` for `.openapi(route, ...)`.
@@ -2726,6 +2848,7 @@ impl<'s> Lowerer<'s> {
                     .insert(routes::DEFAULT_ROUTER.to_string(), adapter);
             }
         }
+        self.koa_prefixes(program);
         self.out.routers = self.express.keys().cloned().collect();
         self.practice_prepass(program);
         self.request_holders = caller::request_holders(program, self.scoping);
@@ -2769,6 +2892,8 @@ impl<'s> Lowerer<'s> {
         self.lower_nest_global_guards(program);
         self.lower_nest_metadata(program);
         self.out.unlisted_routes = routes::UnlistedRoutes::of(self, program);
+        // Elysia, hapi, Restify and h3 servers, listed only.
+        self.lower_servers(program);
         for sym in &mut self.out.symbols {
             if let Some(o) = self.builders.get(&sym.name) {
                 sym.refusal_builder = Some(*o);
@@ -2784,6 +2909,8 @@ impl<'s> Lowerer<'s> {
         }
         self.lower_node_listeners(program);
         self.lower_rpc_and_jobs_anywhere(program);
+        self.lower_trpc_routers(program);
+        self.lower_graphql(program);
         let mut tests = TestFinder {
             l: self,
             tests: self.test_file,
@@ -3299,7 +3426,15 @@ impl<'s> Lowerer<'s> {
                                     if kind == SymbolKind::Const {
                                         self.record_trpc_binding(&name, init);
                                     }
-                                    self.lower_value_symbol(&name, init, kind, d.span.start)
+                                    self.lower_value_symbol(&name, init, kind, d.span.start);
+                                    // `const Dao = function (db) { this.find = ... }`: a
+                                    // constructor function written as a value, read as
+                                    // one declared is.
+                                    if kind == SymbolKind::Const
+                                        && let Expression::FunctionExpression(f) = unwrap_expr(init)
+                                    {
+                                        self.lower_this_methods(&name, f.body.as_deref());
+                                    }
                                 }
                                 None => self.push_symbol(RawSymbol::empty(
                                     &name,
@@ -3518,7 +3653,100 @@ impl<'s> Lowerer<'s> {
         }
         let status = self.function_input(f);
         record_input(&mut sym, saw_input, status);
+        record_input_unread(&mut sym, self.scoping, &f.params, || {
+            ReachesArguments::of(f.body.as_deref())
+        });
         self.push_symbol(sym);
+    }
+
+    /// Inline Next.js server actions ([`crate::nextjs::inline_actions`]). One
+    /// written inside another function (a server component's body, an object
+    /// of props, a JSX attribute) is lowered as a symbol of its own,
+    /// `<owner>.<name>` (`Page.save`; `Page.anonymous@12` for one bound to no
+    /// name; `@<line>` added where the name is taken), with its own body read as
+    /// any function's is: the guards it calls, what it reads of its arguments
+    /// (a server action's client input), what it validates. What the enclosing
+    /// function did before handing the action out is not its own: a check that
+    /// ran while the component rendered does not run when the action is called,
+    /// and a value it closes over is what the render computed (Next.js sends it
+    /// back with the call), so a check on it is not read as the action's guard.
+    /// The symbol is listed for the practice map and `drift security` only
+    /// ([`RawSymbol::in_place`]), never mined; the enclosing function's own
+    /// facts stay as they were read.
+    fn lower_inline_actions(&mut self, program: &Program) {
+        let mut found: Vec<RawSymbol> = Vec::new();
+        let mut tops: Vec<String> = Vec::new();
+        crate::nextjs::inline_actions(program, &mut |a| {
+            if a.top {
+                tops.extend(a.owner.map(str::to_string));
+                return;
+            }
+            let (start, body, params) = match &a.func {
+                crate::nextjs::ActionFn::Function(f) => {
+                    (f.span.start, f.body.as_deref(), &*f.params)
+                }
+                crate::nextjs::ActionFn::Arrow(x) => {
+                    (x.span.start, x.get_function_body(), &*x.params)
+                }
+            };
+            let line = self.line_of(start);
+            let own = a
+                .name
+                .map_or_else(|| format!("anonymous@{line}"), str::to_string);
+            let base = match a.owner {
+                Some(o) => format!("{o}.{own}"),
+                None => own,
+            };
+            let taken = |n: &str| {
+                self.out.symbols.iter().any(|s| s.name == n) || found.iter().any(|s| s.name == n)
+            };
+            let name = if taken(&base) {
+                format!("{base}@{line}")
+            } else {
+                base
+            };
+            if taken(&name) {
+                return;
+            }
+            let mut sym = RawSymbol::empty(&name, SymbolKind::Function, line);
+            sym.in_place = true;
+            let mut c = Collector::new(self);
+            let status = match &a.func {
+                crate::nextjs::ActionFn::Function(f) => {
+                    if f.return_type.is_some() {
+                        sym.controls.push("typed_return".into());
+                    }
+                    sym.is_async = f.r#async || returns_promise(f.return_type.as_deref());
+                    c.visit_function(f, oxc_semantic::ScopeFlags::Function);
+                    self.function_input(f)
+                }
+                crate::nextjs::ActionFn::Arrow(x) => {
+                    if x.return_type.is_some() {
+                        sym.controls.push("typed_return".into());
+                    }
+                    sym.is_async = x.r#async || returns_promise(x.return_type.as_deref());
+                    c.visit_arrow_function_expression(x);
+                    self.arrow_input(x)
+                }
+            };
+            let saw_input = c.saw_input;
+            c.fill(&mut sym);
+            if let Some(b) = body {
+                self.add_body_wraps(&mut sym, b);
+            }
+            record_input(&mut sym, saw_input, status);
+            record_input_unread(&mut sym, self.scoping, params, || {
+                ReachesArguments::of(body)
+            });
+            found.push(sym);
+        });
+        for sym in found {
+            self.out.inline_actions.push(sym.name.clone());
+            self.push_symbol(sym);
+        }
+        self.out.inline_actions.extend(tops);
+        self.out.inline_actions.sort();
+        self.out.inline_actions.dedup();
     }
 
     fn lower_class_symbol(&mut self, name: &str, class: &Class) {
@@ -3594,6 +3822,16 @@ impl<'s> Lowerer<'s> {
         sym.nest_metadata
             .extend(self.direct_metadata(&class.decorators));
         sym.members = self.class_members(name, class);
+        // What the class answers where it is thrown, read from its definition: the
+        // listed reading only, since the measured build.
+        if let Some(status) = class_status(class)
+            && let Some(outcome) = status_outcome(status)
+            && !routes::unmeasured_listing()
+        {
+            sym.refusal_status = Some(outcome);
+            sym.listed_controls
+                .push(format!("{}{status}", drift_core::controls::REFUSAL_STATUS));
+        }
         sym.attr_types = self
             .this_types
             .borrow()
@@ -3604,6 +3842,7 @@ impl<'s> Lowerer<'s> {
         self.lower_nest_controller(name, class);
         self.lower_nest_configure(name, class);
         self.lower_nest_entries(class);
+        self.lower_type_graphql(class);
         self.this_types.borrow_mut().clear();
         self.this_plain.borrow_mut().clear();
         self.this_request.borrow_mut().clear();
@@ -4063,7 +4302,35 @@ impl<'s> Lowerer<'s> {
     /// (`{ onRequest: guards.authenticate }`), that function is read, not what the
     /// object does as a whole. Listed for the practice map and `drift security` only
     /// ([`RawSymbol::in_place`]), never mined.
+    ///
+    /// Every function of the object is a member of it, addressed `path#<name>.<key>`
+    /// as a class's method is, in the listed reading: a call of one
+    /// (`authenticatedUsers.from(req)`) is followed into that body
+    /// ([`Lowerer::member_function_facts`]: `this.<key>()` of a `function` is a call
+    /// of the sibling). The measured build read only those of an object one of
+    /// whose functions refuses callers (`accessors` false), each as a handler, and
+    /// its reading stays as it was. A key the program writes elsewhere
+    /// (`authenticatedUsers.from = other`, [`MemberWrites`]) is not read: which
+    /// function a call of it runs is not said.
     fn lower_object_methods(&mut self, name: &str, o: &ObjectExpression, accessors: bool) {
+        let owned: Vec<String> = o
+            .properties
+            .iter()
+            .filter_map(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p)
+                    if !p.computed
+                        && matches!(
+                            unwrap_expr(&p.value),
+                            Expression::ArrowFunctionExpression(_)
+                                | Expression::FunctionExpression(_)
+                        ) =>
+                {
+                    key_name(&p.key)
+                }
+                _ => None,
+            })
+            .collect();
+        let keys: BTreeSet<&str> = owned.iter().map(String::as_str).collect();
         for p in &o.properties {
             let ObjectPropertyKind::ObjectProperty(p) = p else {
                 continue;
@@ -4077,9 +4344,9 @@ impl<'s> Lowerer<'s> {
             let Some(key) = key_name(&p.key).filter(|_| !p.computed) else {
                 continue;
             };
-            // Only the functions a call is read as an accessor of by its name
+            // The functions of an object none of whose functions refuses
             // (`accessors`): the listed reading, since the measured build.
-            if accessors && (routes::unmeasured_listing() || !caller::accessor_name(&key)) {
+            if accessors && routes::unmeasured_listing() {
                 continue;
             }
             let member = format!("{name}.{key}");
@@ -4090,8 +4357,101 @@ impl<'s> Lowerer<'s> {
                 RawSymbol::empty(&member, SymbolKind::Function, self.line_of(f.span().start));
             sym.in_place = true;
             sym.is_async = is_async;
-            self.handler_facts(Some(f), &mut sym);
+            if !accessors && routes::unmeasured_listing() {
+                // As the measured build read it.
+                self.handler_facts(Some(f), &mut sym);
+            } else if self.member_writes.written(name, &key) {
+                // Which function a call of it runs is not said: nothing of a body is
+                // recorded, so a reader finds no body to follow.
+                continue;
+            } else {
+                let this_is_value = matches!(f, Expression::FunctionExpression(_));
+                self.member_function_facts(
+                    name,
+                    &keys,
+                    this_is_value,
+                    f,
+                    &HashMap::new(),
+                    &mut sym,
+                );
+            }
             self.push_symbol(sym);
+        }
+    }
+
+    /// The facts of a function a value holds under a key, read as a method of that
+    /// value is ([`Lowerer::class_members`]), with its own parameters, so a check
+    /// on one reads `param:<name>`; where `this` is the
+    /// value (`this_is_value`: a `function` of an object, any function a
+    /// constructor function assigns on `this`), a call `this.<key>()` of a sibling
+    /// in `keys` is a call of `<owner>.<key>`, written as a class's sibling call is
+    /// (`Local(owner)` + `.key`); and the locals of an enclosing function the body
+    /// uses (`closed`: `const users = new UsersDAO(db)` of a constructor function)
+    /// name what they hold, so `users.find(id)` is a call of `UsersDAO.find`. What
+    /// any other name holds is not read, as in any body.
+    fn member_function_facts(
+        &self,
+        owner: &str,
+        keys: &BTreeSet<&str>,
+        this_is_value: bool,
+        f: &Expression,
+        closed: &HashMap<SymbolId, RawRef>,
+        sym: &mut RawSymbol,
+    ) {
+        let status = match f {
+            Expression::ArrowFunctionExpression(a) => input::arrow_input(a, false),
+            Expression::FunctionExpression(x) => input::function_input(x, false),
+            _ => return,
+        };
+        let mut c = Collector::new(self);
+        c.skip_decorators = true;
+        if this_is_value {
+            c.this_methods = Some((
+                owner.to_string(),
+                keys.iter().map(|k| k.to_string()).collect(),
+            ));
+        }
+        for (s, r) in closed {
+            c.aliases.insert(*s, r.clone());
+        }
+        let mut siblings = ThisCalls {
+            names: keys,
+            found: BTreeSet::new(),
+        };
+        match f {
+            // An arrow has no `this` of its own: walked whole, as a handler written
+            // in place is ([`Lowerer::handler_facts`]), so what its expression
+            // hands back is read as one's is.
+            Expression::ArrowFunctionExpression(_) => {
+                c.visit_expression(f);
+                siblings.visit_expression(f);
+            }
+            // A `function` is walked from its body, as a class's method is: there,
+            // `this` is the value it is called on.
+            Expression::FunctionExpression(x) => {
+                let Some(b) = x.body.as_deref() else {
+                    return;
+                };
+                c.fn_depth = 1;
+                let names = c.continuation_names_of(&x.params);
+                c.continuation_names.push(names);
+                c.continuations.push(positional_continuation(&x.params));
+                c.note_params(&x.params);
+                c.visit_function_body(b);
+                siblings.visit_function_body(b);
+            }
+            _ => return,
+        }
+        let saw_input = c.saw_input;
+        c.fill(sym);
+        record_input(sym, saw_input, status);
+        if this_is_value {
+            sym.calls.extend(siblings.found.into_iter().map(|m| RawRef {
+                base: RawBase::Local(owner.to_string()),
+                member: format!(".{m}"),
+            }));
+            sym.calls.sort();
+            sym.calls.dedup();
         }
     }
 
@@ -4133,6 +4493,23 @@ impl<'s> Lowerer<'s> {
         {
             return;
         }
+        // Each is read as a method of the instance ([`Lowerer::member_function_facts`]):
+        // `this` is the instance, so `this.<key>()` of another function assigned
+        // once is a call of `<name>.<key>`; and an instance the constructor builds
+        // in a `const` at the top of its body (`const users = new UsersDAO(db)`)
+        // is what a call through that name is made on, `UsersDAO.<method>`, as
+        // the routes a function lists name a method of an instance it builds.
+        let keys: BTreeSet<&str> = assigned
+            .iter()
+            .filter(|(k, f)| {
+                matches!(
+                    f,
+                    Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)
+                ) && assigned.iter().filter(|(x, _)| x == k).count() == 1
+            })
+            .map(|(k, _)| *k)
+            .collect();
+        let closed = self.constructed_locals(body);
         for (key, f) in &assigned {
             let is_async = match f {
                 Expression::ArrowFunctionExpression(a) => a.r#async,
@@ -4149,9 +4526,42 @@ impl<'s> Lowerer<'s> {
                 RawSymbol::empty(&member, SymbolKind::Function, self.line_of(f.span().start));
             sym.in_place = true;
             sym.is_async = is_async;
-            self.handler_facts(Some(f), &mut sym);
+            self.member_function_facts(name, &keys, true, f, &closed, &mut sym);
             self.push_symbol(sym);
         }
+    }
+
+    /// The `const`s at the top of a function's body bound to an instance a class or
+    /// a constructor function of the repository or of a package builds (`const
+    /// users = new UsersDAO(db)`), each as what it is built from (`UsersDAO`): a
+    /// function written in that body that calls a method through one calls that
+    /// method of what built it ([`Lowerer::member_function_facts`]). A `let`, and a
+    /// name the body declares more than once, are not read.
+    fn constructed_locals(&self, body: &FunctionBody) -> HashMap<SymbolId, RawRef> {
+        let mut out = HashMap::new();
+        for st in &body.statements {
+            let Statement::VariableDeclaration(v) = st else {
+                continue;
+            };
+            if !v.kind.is_const() {
+                continue;
+            }
+            for d in &v.declarations {
+                let (BindingPattern::BindingIdentifier(id), Some(init)) = (&d.id, &d.init) else {
+                    continue;
+                };
+                let Expression::NewExpression(n) = unwrap_expr(init) else {
+                    continue;
+                };
+                if let (Some(sym), Some(r)) = (id.symbol_id.get(), self.canon(&n.callee))
+                    && matches!(r.base, RawBase::Import { .. } | RawBase::Local(_))
+                    && r.member.is_empty()
+                {
+                    out.insert(sym, r);
+                }
+            }
+        }
+        out
     }
 
     fn decorator_ref(&self, d: &Decorator) -> Option<RawRef> {
@@ -4426,6 +4836,19 @@ impl<'s> Lowerer<'s> {
             sym.kind = SymbolKind::Component;
         }
         record_input(&mut sym, saw_input, status);
+        match cur {
+            Expression::ArrowFunctionExpression(a) => {
+                record_input_unread(&mut sym, self.scoping, &a.params, || {
+                    ReachesArguments::of_arrow(&a.body)
+                });
+            }
+            Expression::FunctionExpression(f) => {
+                record_input_unread(&mut sym, self.scoping, &f.params, || {
+                    ReachesArguments::of(f.body.as_deref())
+                });
+            }
+            _ => {}
+        }
         // A value the lowering already reads as a function or class is not a product.
         // Nor is a PascalCase one (`export const SearchIcon = createIcon(...)`): what
         // a factory makes under such a name may be a component or a class, which a
@@ -4541,9 +4964,11 @@ impl<'s> Lowerer<'s> {
         if let Expression::ObjectExpression(o) = cur
             && plain
         {
-            // Every function of an object that turns callers away; else those a
-            // call is read as a sign-in accessor by its name (`auth.getUser(req)`):
+            // Every function of the object, each read for itself where a call of
+            // it is followed (`authenticatedUsers.from(req)`, `auth.getUser(req)`):
             // what one gives is what its own body returns, not what it is called.
+            // Of an object none of whose functions turns callers away, in the
+            // listed reading only.
             self.lower_object_methods(name, o, rejects == 0);
         }
     }
@@ -5100,6 +5525,54 @@ fn absence_asked<'b, 'a>(test: &'b Expression<'a>) -> Option<(&'b Expression<'a>
     }
 }
 
+/// The values a joined test asks: `a && b` asks each present (`false`), `!a ||
+/// !b` each absent (`true`), and their negations; every part is one
+/// [`absence_asked`] reads, asked the same way. A branch taken where the test
+/// says absent is taken where any one of them is absent. `None` where the
+/// parts are asked differently or are no such test.
+fn absences_joined<'b, 'a>(test: &'b Expression<'a>) -> Option<(Vec<&'b Expression<'a>>, bool)> {
+    fn parts<'b, 'a>(
+        e: &'b Expression<'a>,
+        op: LogicalOperator,
+        absent: bool,
+        out: &mut Vec<&'b Expression<'a>>,
+        depth: usize,
+    ) -> bool {
+        if depth > 6 || out.len() > 8 {
+            return false;
+        }
+        match peel(e) {
+            Expression::LogicalExpression(l) if l.operator == op => {
+                parts(&l.left, op, absent, out, depth + 1)
+                    && parts(&l.right, op, absent, out, depth + 1)
+            }
+            _ => match absence_asked(e) {
+                Some((v, a)) if a == absent => {
+                    out.push(v);
+                    true
+                }
+                _ => false,
+            },
+        }
+    }
+    match peel(test) {
+        Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
+            absences_joined(&u.argument).map(|(v, absent)| (v, !absent))
+        }
+        Expression::LogicalExpression(l) => {
+            let absent = match l.operator {
+                LogicalOperator::And => false,
+                LogicalOperator::Or => true,
+                _ => return None,
+            };
+            let mut out = Vec::new();
+            (parts(test, l.operator, absent, &mut out, 0) && out.len() >= 2)
+                .then_some((out, absent))
+        }
+        _ => None,
+    }
+}
+
 impl RawSymbol {
     fn empty(name: &str, kind: SymbolKind, line: u32) -> Self {
         Self {
@@ -5120,6 +5593,7 @@ impl RawSymbol {
             order: vec![],
             returns_calls: vec![],
             refusal_builder: None,
+            refusal_status: None,
             returns_builder: Vec::new(),
             other_rejection: false,
             builder_checks: vec![],
@@ -5138,6 +5612,7 @@ impl RawSymbol {
             catches: vec![],
             headers: vec![],
             inputs: vec![],
+            listed_refs: vec![],
             handles_errors: vec![],
             env_calls: vec![],
             decorator_args: vec![],
@@ -5187,6 +5662,9 @@ impl RawSymbol {
             loose_sides: vec![],
             made_fed_sinks: vec![],
             made_passes: vec![],
+            fed_sinks_at: vec![],
+            param_passes_at: vec![],
+            made_passes_at: vec![],
             param_flows: false,
             tags: vec![],
         }
@@ -5203,6 +5681,61 @@ const INPUT_NAMES: &[&str] = &["input", "parsedInput", "rawInput", "params", "se
 enum MemberBody<'b, 'a> {
     Block(&'b FunctionBody<'a>),
     Arrow(&'b ArrowFunctionBody<'a>),
+}
+
+/// The members a module writes by assignment, anywhere in it (not those another
+/// module writes through an import of the object), by the name of what they are
+/// written on: `guards.authenticate = other` as (`guards`,
+/// `authenticate`); and the names whose members are written under a key that is
+/// not read (`guards[key] = f`) or handed whole to a built-in of `Object` that
+/// writes them (`Object.assign(guards, extra)`), every member of which may then
+/// hold something else ([`Lowerer::member_writes`]).
+#[derive(Default)]
+struct MemberWrites {
+    named: BTreeSet<(String, String)>,
+    whole: BTreeSet<String>,
+}
+
+impl MemberWrites {
+    /// A member `key` of what `name` holds may be given another value than the
+    /// one written where `name` is bound.
+    fn written(&self, name: &str, key: &str) -> bool {
+        self.whole.contains(name) || self.named.contains(&(name.to_string(), key.to_string()))
+    }
+}
+
+impl<'a> Visit<'a> for MemberWrites {
+    fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
+        match &it.left {
+            AssignmentTarget::StaticMemberExpression(m) => {
+                if let Expression::Identifier(id) = unwrap_expr(&m.object) {
+                    self.named
+                        .insert((id.name.to_string(), m.property.name.to_string()));
+                }
+            }
+            AssignmentTarget::ComputedMemberExpression(m) => {
+                if let Expression::Identifier(id) = unwrap_expr(&m.object) {
+                    self.whole.insert(id.name.to_string());
+                }
+            }
+            _ => {}
+        }
+        walk::walk_assignment_expression(self, it);
+    }
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee)
+            && matches!(unwrap_expr(&m.object), Expression::Identifier(o) if o.name == "Object")
+            && let Some(Expression::Identifier(id)) = it
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .map(unwrap_expr)
+        {
+            self.whole.insert(id.name.to_string());
+        }
+        walk::walk_call_expression(self, it);
+    }
 }
 
 /// Calls of sibling methods through `this` (`this.upload(...)`) in one method's body.
@@ -5241,6 +5774,9 @@ struct Collector<'l, 's> {
     sinks: BTreeSet<String>,
     /// [`RawSymbol::caller_keys`].
     caller_keys: BTreeSet<(RawRef, String)>,
+    /// A call the facts do not record was handed a value and writes no response
+    /// ([`drift_core::controls::UNREAD_RESPONDS`]).
+    unread_elsewhere: bool,
     /// [`RawSymbol::fed_sinks`].
     fed_sinks: BTreeSet<String>,
     /// [`RawSymbol::param_passes`].
@@ -5248,6 +5784,22 @@ struct Collector<'l, 's> {
     /// [`RawSymbol::made_fed_sinks`], [`RawSymbol::made_passes`].
     made_fed_sinks: BTreeSet<String>,
     made_passes: BTreeSet<RawRef>,
+    /// [`RawSymbol::fed_sinks_at`], [`RawSymbol::param_passes_at`],
+    /// [`RawSymbol::made_passes_at`].
+    fed_sinks_at: BTreeSet<(String, String)>,
+    param_passes_at: BTreeSet<(RawRef, String, String)>,
+    made_passes_at: BTreeSet<(RawRef, String)>,
+    /// The positions of the parameters of the walk's own function each of
+    /// [`Collector::own_locals`] is read off (`#0`, `*`): which parameter a value
+    /// the body hands on carries.
+    own_local_at: HashMap<SymbolId, BTreeSet<String>>,
+    /// The locals bound to a function written in the body that hands back a
+    /// MongoDB `$where` built from a part that is no constant (`const criteria =
+    /// () => ({ $where: \`this.x > '${threshold}'\` })`), with the positions of the
+    /// parameters of the walk's own function the text is read off
+    /// ([`Collector::where_maker`]): a query given what it hands back is given that
+    /// text.
+    where_makers: HashMap<SymbolId, BTreeSet<String>>,
     /// The parameters of the function the walk's own function hands back (`export
     /// function login() { return (req, res) => { ... } }`: `req`, `res`), and the
     /// locals bound to a value read off one: what the function made is called
@@ -5378,6 +5930,10 @@ struct Collector<'l, 's> {
     unauth_goes_on: u32,
     /// The check being recorded stands in such a branch.
     check_goes_on: bool,
+    /// A branch of the function's own body that a path test of a server hook's
+    /// view decides was taken, and it leaves: nothing after it runs in that view
+    /// ([`Lowerer::assume`]).
+    assumed_left: bool,
     /// For each list of statements being walked, innermost last, what comes after
     /// the statement being walked: nothing (0), a statement that leaves the
     /// function (1), anything else (2). With [`Collector::followed_saved`] for the
@@ -5435,6 +5991,13 @@ struct Collector<'l, 's> {
     /// is bound to, from its parameters (`({ next: go })`, `(req, res, next)`,
     /// `(ctx, next)`; [`continuation_params`]).
     continuation_names: Vec<Vec<String>>,
+    /// Per function being walked (innermost last): the parameter it takes last
+    /// where it takes three or four, which is where a framework hands a
+    /// middleware its continuation (`(req, res, next)`, `(err, req, res, next)`),
+    /// read by position and never by name ([`positional_continuation`]). A catch
+    /// clause that gives what it caught to one passes the error on
+    /// ([`Collector::forwards_caught`]).
+    continuations: Vec<Option<SymbolId>>,
     /// The body hands the request on where the facts do not follow
     /// ([`drift_core::SymbolCalls::hands_on`]).
     hands_on: bool,
@@ -5472,6 +6035,16 @@ struct Collector<'l, 's> {
     /// and anything else.
     returns_fn: u32,
     returns_other: bool,
+    /// The `const` locals bound to a comparison of a header the request sent with
+    /// a value read from the environment, with whether the comparison is an
+    /// equality and the header ([`drift_core::controls::REFUSES_SECRET`]).
+    secret_tests: HashMap<SymbolId, (bool, String)>,
+    /// The headers a branch every request reaches leaves on where they differ from
+    /// such a value ([`drift_core::controls::REFUSES_SECRET`]).
+    secret_refusals: BTreeSet<String>,
+    /// The span starts of the last statement of each function body walked: an `if`
+    /// there has nothing after it in its function.
+    last_statements: HashSet<u32>,
     /// The calls of exports of packages on the guard lists
     /// ([`RawSymbol::guard_calls`]).
     guard_calls: Vec<RawGuardCall>,
@@ -5600,6 +6173,10 @@ struct Practice {
     initialised: HashSet<SymbolId>,
     /// Locals bound to request input (`const body = await req.json()`).
     input_vars: HashSet<SymbolId>,
+    /// Of those, the ones bound to what a call gave back for the input (`const user
+    /// = await prisma.user.findFirst({ where: { username: params.username } })`): a
+    /// row, not what the request sent ([`Collector::hands_input`]).
+    call_results: HashSet<SymbolId>,
     /// Locals bound to an object built with an env-derived secret
     /// (`const wh = new Webhook(process.env.SVIX_SECRET)`).
     env_secrets: HashSet<SymbolId>,
@@ -5619,6 +6196,16 @@ struct Practice {
     catches: BTreeSet<RawCatch>,
     headers: BTreeSet<String>,
     inputs: BTreeSet<RawRef>,
+    /// Calls handed what the request sent and a binding beside it: the callee and
+    /// the binding ([`drift_core::controls::PARSES_INPUT`]).
+    parsed: BTreeSet<(RawRef, RawRef)>,
+    /// Calls that are not a built-in's handed what the request sent
+    /// ([`drift_core::controls::INPUT_HANDED`]).
+    handed: BTreeSet<RawRef>,
+    /// A call was handed what the request sent past [`MAX_PARSED`] callees: its
+    /// callee is not kept, so what it does with the input is not read, and the
+    /// body is unknown, never "nothing validates it" ([`HANDED_UNREAD`]).
+    handed_unread: bool,
     handles: BTreeSet<RawOperand>,
     env_calls: BTreeSet<(RawRef, u32, String, bool)>,
     /// Span starts of calls already read as part of a response (`res.status(401)` in
@@ -5684,10 +6271,16 @@ impl<'l, 's> Collector<'l, 's> {
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
             caller_keys: BTreeSet::new(),
+            unread_elsewhere: false,
             fed_sinks: BTreeSet::new(),
             param_passes: BTreeSet::new(),
             made_fed_sinks: BTreeSet::new(),
             made_passes: BTreeSet::new(),
+            fed_sinks_at: BTreeSet::new(),
+            param_passes_at: BTreeSet::new(),
+            made_passes_at: BTreeSet::new(),
+            own_local_at: HashMap::new(),
+            where_makers: HashMap::new(),
             product_params: HashSet::new(),
             own_locals: HashSet::new(),
             cred_seeds: HashSet::new(),
@@ -5739,6 +6332,7 @@ impl<'l, 's> Collector<'l, 's> {
             unauth_notes: 0,
             unauth_goes_on: 0,
             check_goes_on: false,
+            assumed_left: false,
             followed: Vec::new(),
             followed_saved: Vec::new(),
             returned_rejections: BTreeSet::new(),
@@ -5760,6 +6354,7 @@ impl<'l, 's> Collector<'l, 's> {
             result_used: BTreeSet::new(),
             result_returned: BTreeSet::new(),
             continuation_names: Vec::new(),
+            continuations: Vec::new(),
             hands_on: false,
             in_try: 0,
             cred_present: 0,
@@ -5777,6 +6372,9 @@ impl<'l, 's> Collector<'l, 's> {
             params_outside: BTreeSet::new(),
             returns_fn: 0,
             returns_other: false,
+            secret_tests: HashMap::new(),
+            secret_refusals: BTreeSet::new(),
+            last_statements: HashSet::new(),
             guard_calls: Vec::new(),
             continuation_vars: BTreeSet::new(),
             before_calls: BTreeSet::new(),
@@ -6356,6 +6954,25 @@ impl<'l, 's> Collector<'l, 's> {
         sym.catches.extend(p.catches);
         sym.headers.extend(p.headers);
         sym.inputs.extend(p.inputs);
+        sym.listed_refs
+            .extend(p.parsed.into_iter().map(|(callee, given)| {
+                (
+                    drift_core::controls::PARSES_INPUT.to_string(),
+                    vec![callee, given],
+                )
+            }));
+        for callee in p.handed {
+            let entry = (drift_core::controls::INPUT_HANDED.to_string(), vec![callee]);
+            if !sym.listed_refs.contains(&entry) {
+                sym.listed_refs.push(entry);
+            }
+        }
+        if p.handed_unread {
+            let c = format!("{}{HANDED_UNREAD}", drift_core::controls::INPUT_HANDED);
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
         sym.handles_errors.extend(p.handles);
         sym.env_calls.extend(p.env_calls);
         sym.param_calls.extend(p.param_calls);
@@ -6430,6 +7047,26 @@ impl<'l, 's> Collector<'l, 's> {
         // What follows is said of a function: of what calling it does and gives. A
         // class or an object holds functions and is called as none of them.
         let callable = matches!(sym.kind, SymbolKind::Function | SymbolKind::Component);
+        // Some `return` hands back a value that is no function written there: what
+        // a framework that answers with it sends ([`drift_core::controls::RETURNS_VALUE`]).
+        // Kept only where the file may hold a route of a file-convention router
+        // ([`lower_parsed`]).
+        if callable && self.returns_other && !routes::unmeasured_listing() {
+            let c = drift_core::controls::RETURNS_VALUE.to_string();
+            if !sym.listed_controls.contains(&c) {
+                sym.listed_controls.push(c);
+            }
+        }
+        // The body leaves where a header differs from a secret of the environment
+        // ([`drift_core::controls::REFUSES_SECRET`]).
+        if callable {
+            for header in std::mem::take(&mut self.secret_refusals) {
+                let c = format!("{}{header}", drift_core::controls::REFUSES_SECRET);
+                if !sym.listed_controls.contains(&c) {
+                    sym.listed_controls.push(c);
+                }
+            }
+        }
         // The body calls its continuation: it stands before what serves.
         if callable && self.calls_on {
             let c = drift_core::controls::CONTINUES.to_string();
@@ -6462,6 +7099,12 @@ impl<'l, 's> Collector<'l, 's> {
             .extend(std::mem::take(&mut self.made_fed_sinks));
         sym.made_passes
             .extend(std::mem::take(&mut self.made_passes));
+        sym.fed_sinks_at
+            .extend(std::mem::take(&mut self.fed_sinks_at));
+        sym.param_passes_at
+            .extend(std::mem::take(&mut self.param_passes_at));
+        sym.made_passes_at
+            .extend(std::mem::take(&mut self.made_passes_at));
         for r in std::mem::take(&mut self.returns_calls) {
             if !sym.returns_calls.contains(&r) {
                 sym.returns_calls.push(r);
@@ -6605,6 +7248,18 @@ impl<'l, 's> Collector<'l, 's> {
         for (r, key) in &self.result_returned {
             sym.result_uses.push((r.clone(), format!("return:{key}")));
         }
+        // Every call the facts do not record that the body hands a value to writes
+        // the response: the listed reading says so.
+        if !self.unread_elsewhere
+            && self.controls.contains(drift_core::controls::UNREAD_CALL)
+            && !sym
+                .listed_controls
+                .iter()
+                .any(|c| c == drift_core::controls::UNREAD_RESPONDS)
+        {
+            sym.listed_controls
+                .push(drift_core::controls::UNREAD_RESPONDS.to_string());
+        }
         let (calls, renders, args, controls, strings) = self.into_parts();
         sym.calls.extend(calls);
         sym.renders.extend(renders);
@@ -6706,6 +7361,149 @@ impl Collector<'_, '_> {
         self.names_one(e, &|s| {
             self.flow.own_param(s) || self.own_locals.contains(&s)
         })
+    }
+
+    /// The positions among the parameters of the walk's own function that `e`
+    /// reads a value off ([`Collector::reads_own_param`]): `#0` for the first, `*`
+    /// where which one is not read (a rest parameter, a local whose value was not
+    /// followed to one, a value the flow says is a parameter's by no name in `e`).
+    /// Empty where `e` reads none.
+    fn param_positions(&self, e: &Expression) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for s in self.names_in(e) {
+            if self.flow.own_param(s) {
+                match self.flow.own_at.get(&s) {
+                    Some((_, token)) => {
+                        let at = token.split('.').next().unwrap_or(token);
+                        out.insert(at.to_string());
+                    }
+                    None => {
+                        out.insert("*".to_string());
+                    }
+                }
+                // Its default's ([`Collector::note_params`]).
+                if let Some(at) = self.own_local_at.get(&s) {
+                    out.extend(at.iter().cloned());
+                }
+            } else if self.own_locals.contains(&s) {
+                match self.own_local_at.get(&s) {
+                    Some(at) if !at.is_empty() => out.extend(at.iter().cloned()),
+                    _ => {
+                        out.insert("*".to_string());
+                    }
+                }
+            }
+        }
+        if out.is_empty() && self.taint(e).of_a_parameter() {
+            out.insert("*".to_string());
+        }
+        out
+    }
+
+    /// The bindings the names written in `e` refer to, functions written in it
+    /// included, as [`Collector::names_one`] reads them.
+    fn names_in(&self, e: &Expression) -> Vec<SymbolId> {
+        struct Names<'s> {
+            scoping: &'s Scoping,
+            found: Vec<SymbolId>,
+        }
+        impl<'a> Visit<'a> for Names<'_> {
+            fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
+                if let Some(s) = it
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.scoping.get_reference(r).symbol_id())
+                    && !self.found.contains(&s)
+                {
+                    self.found.push(s);
+                }
+            }
+        }
+        let mut names = Names {
+            scoping: self.l.scoping,
+            found: Vec::new(),
+        };
+        names.visit_expression(e);
+        names.found
+    }
+
+    /// A function written in the body (`() => { ... }`, `function () { ... }`) one
+    /// of whose own `return`s hands back an object written in place with a
+    /// MongoDB `$where` built from a part that is no constant: the positions of the
+    /// parameters of the walk's own function that text is read off
+    /// ([`Collector::param_positions`]), empty where it reads none. None for any
+    /// other value, and for an async function or a generator, whose value is no
+    /// such object.
+    fn where_maker(&self, f: &Expression) -> Option<BTreeSet<String>> {
+        struct Returns<'b, 'a> {
+            out: Vec<&'b Expression<'a>>,
+        }
+        impl<'b, 'a> Returns<'b, 'a> {
+            fn statements(&mut self, body: &'b [Statement<'a>]) {
+                for st in body {
+                    self.statement(st);
+                }
+            }
+            // The `return`s of the function's own body: not those of a function
+            // written in it.
+            fn statement(&mut self, st: &'b Statement<'a>) {
+                match st {
+                    Statement::ReturnStatement(r) => self.out.extend(r.argument.as_ref()),
+                    Statement::BlockStatement(b) => self.statements(&b.body),
+                    Statement::IfStatement(i) => {
+                        self.statement(&i.consequent);
+                        if let Some(a) = &i.alternate {
+                            self.statement(a);
+                        }
+                    }
+                    Statement::TryStatement(t) => {
+                        self.statements(&t.block.body);
+                        if let Some(h) = &t.handler {
+                            self.statements(&h.body.body);
+                        }
+                        if let Some(f) = &t.finalizer {
+                            self.statements(&f.body);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut returns = Returns { out: Vec::new() };
+        match unwrap_expr(f) {
+            Expression::ArrowFunctionExpression(a) if !a.r#async => match &a.body {
+                ArrowFunctionBody::FunctionBody(b) => returns.statements(&b.statements),
+                other => returns.out.extend(other.as_expression()),
+            },
+            Expression::FunctionExpression(g) if !g.r#async && !g.generator => {
+                if let Some(body) = &g.body {
+                    returns.statements(&body.statements);
+                }
+            }
+            _ => return None,
+        }
+        let mut found = false;
+        let mut at = BTreeSet::new();
+        for r in returns.out {
+            let Expression::ObjectExpression(o) = peel(r) else {
+                continue;
+            };
+            for p in &o.properties {
+                let ObjectPropertyKind::ObjectProperty(p) = p else {
+                    continue;
+                };
+                if !p.computed
+                    && p.key
+                        .static_name()
+                        .is_some_and(|k| k.as_str() == Some("$where"))
+                    && self.l.sql.builds_text(self.l.scoping, &p.value)
+                {
+                    found = true;
+                    at.extend(self.param_positions(&p.value));
+                }
+            }
+        }
+        found.then_some(at)
     }
 
     /// Some name written in `e` is a binding `of` holds.
@@ -7183,21 +7981,118 @@ impl Collector<'_, '_> {
                 } else {
                     format!("{prefix}.{k}")
                 };
+                // The items of an `AND` list of objects each narrow the rows (Prisma's
+                // `where: { AND: [{ orgId }, { archived: false }] }`): their keys by
+                // position (`where.AND.0.orgId`), as the sides of the call write
+                // them. The listed reading only; what the list was read as before
+                // stays beside them.
+                if k == "AND"
+                    && depth + 1 < MAX_SIDE_DEPTH
+                    && let Expression::ArrayExpression(list) = unwrap_expr(&p.value)
+                    && list.elements.iter().any(|item| {
+                        item.as_expression().is_some_and(|e| {
+                            matches!(unwrap_expr(e), Expression::ObjectExpression(_))
+                        })
+                    })
+                    && !routes::unmeasured_listing()
+                {
+                    for (i, item) in list.elements.iter().enumerate() {
+                        if let Some(e) = item.as_expression() {
+                            self.caller_keys_at(callee, e, &format!("{key}.{i}"), depth + 1);
+                        }
+                    }
+                }
+                // A Drizzle condition given as a relational query's filter
+                // (`db.query.projects.findMany({ where: eq(projects.orgId, x) })`):
+                // its columns under the key ([`Collector::drizzle_keys`]).
+                if self.drizzle_condition(&p.value) && !routes::unmeasured_listing() {
+                    self.drizzle_keys(callee, &p.value, &key, depth);
+                }
                 if matches!(unwrap_expr(&p.value), Expression::ObjectExpression(_)) {
                     if depth + 1 < MAX_KEY_DEPTH {
                         self.caller_keys_at(callee, &p.value, &key, depth + 1);
                     }
-                } else if self.taint(&p.value).proven_own() {
-                    self.caller_keys.insert((callee.clone(), key));
-                } else if let Some((name, at)) = self.param_root(&p.value) {
-                    self.param_keys
-                        .insert((callee.clone(), key, format!("param {name} {at}")));
-                } else if let Some(given) = self.row_root(&p.value) {
-                    // Read off what a call of the body handed back: the caller's
-                    // where linking says the callee gives the caller.
-                    self.param_keys.insert((callee.clone(), key, given));
+                } else {
+                    self.key_value(callee, key, &p.value);
                 }
             }
+        }
+    }
+
+    /// Records where the value `value` a call gives under `key` comes from: a value
+    /// of the caller by its own source ([`RawSymbol::caller_keys`]), one read off a
+    /// parameter of the function, or off what a call of the body handed back
+    /// ([`RawSymbol::param_keys`]). Nothing for any other.
+    fn key_value(&mut self, callee: &RawRef, key: String, value: &Expression) {
+        if self.taint(value).proven_own() {
+            self.caller_keys.insert((callee.clone(), key));
+        } else if let Some((name, at)) = self.param_root(value) {
+            self.param_keys
+                .insert((callee.clone(), key, format!("param {name} {at}")));
+        } else if let Some(given) = self.row_root(value) {
+            // Read off what a call of the body handed back: the caller's
+            // where linking says the callee gives the caller.
+            self.param_keys.insert((callee.clone(), key, given));
+        }
+    }
+
+    /// A Drizzle condition: a call of `eq` or `and` as `drizzle-orm` exports them
+    /// (`import { and, eq } from "drizzle-orm"`), its documented operators of
+    /// equality and conjunction.
+    fn drizzle_condition(&self, e: &Expression) -> bool {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return false;
+        };
+        matches!(
+            self.l.canon_callee(&c.callee),
+            Some(RawRef { base: RawBase::Import { spec, name }, member })
+                if spec == "drizzle-orm" && member.is_empty() && matches!(name.as_str(), "eq" | "and")
+        )
+    }
+
+    /// The columns a Drizzle condition narrows the rows of `callee` by, under
+    /// `prefix` (`where`): `eq(projects.orgId, value)` gives `where.orgId` the value
+    /// ([`Collector::key_value`]), and `and(...)` each of its conditions. Any other
+    /// operator (`or`, `not`, `ne`, `inArray`, a `sql` template) narrows nothing to
+    /// one value and is not read, nor is an `eq` whose first argument is no column
+    /// of a table binding (`table.column`). The listed reading only.
+    fn drizzle_keys(&mut self, callee: &RawRef, e: &Expression, prefix: &str, depth: usize) {
+        let Expression::CallExpression(c) = unwrap_expr(e) else {
+            return;
+        };
+        if !self.drizzle_condition(e) || depth >= MAX_SIDE_DEPTH {
+            return;
+        }
+        let Some(RawRef {
+            base: RawBase::Import { name, .. },
+            ..
+        }) = self.l.canon_callee(&c.callee)
+        else {
+            return;
+        };
+        let args: Vec<&Expression> = c
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .collect();
+        if args.len() != c.arguments.len() {
+            return;
+        }
+        match (name.as_str(), args.as_slice()) {
+            ("and", conditions) => {
+                for cond in conditions {
+                    self.drizzle_keys(callee, cond, prefix, depth + 1);
+                }
+            }
+            ("eq", [column, value]) => {
+                if let Expression::StaticMemberExpression(m) = unwrap_expr(column)
+                    && matches!(unwrap_expr(&m.object), Expression::Identifier(_))
+                {
+                    let key = format!("{prefix}.{}", m.property.name);
+                    self.key_value(callee, key, value);
+                }
+            }
+            _ => {}
         }
     }
 
@@ -7516,6 +8411,20 @@ fn continuation_params(params: &FormalParameters) -> Vec<String> {
         out.push(last.clone());
     }
     out
+}
+
+/// The parameter a function of three or four parameters takes last, where it is
+/// a plain name: where Express, Connect and the frameworks built like them hand a
+/// middleware its continuation (`(req, res, next)`, `(err, req, res, next)`). By
+/// position only, whatever it is called ([`Collector::continuations`]).
+fn positional_continuation(params: &FormalParameters) -> Option<SymbolId> {
+    if !matches!(params.items.len(), 3 | 4) {
+        return None;
+    }
+    match &params.items.last()?.pattern {
+        BindingPattern::BindingIdentifier(b) => b.symbol_id.get(),
+        _ => None,
+    }
 }
 
 /// `if (<name>) return <name>;`, with the test also written `<name> instanceof
@@ -8327,6 +9236,34 @@ const REPORT_CALLS: &[&str] = &[
     "trackException",
     "recordException",
 ];
+
+/// A statement of a `catch` clause, before the call that hands what it caught to the
+/// framework's continuation, that Drift reads as answering nothing: a log line (a level-named
+/// method, [`drift_core::practice::LOG_LEVELS`], `print` aside), a report to an error
+/// tracker ([`REPORT_CALLS`]), or a declaration none of whose values is a call or a
+/// construction. Any other statement may answer the request itself
+/// (`sendError(res, e)`), which the clause's facts do not say.
+fn read_before_forward(s: &Statement<'_>) -> bool {
+    match s {
+        Statement::ExpressionStatement(x) => match peel(&x.expression) {
+            Expression::CallExpression(c) => {
+                let log = matches!(unwrap_expr(&c.callee), Expression::StaticMemberExpression(m)
+                    if drift_core::practice::normalize_level(m.property.name.as_str())
+                        .is_some_and(|l| l != "print"));
+                log || call_name(&c.callee).is_some_and(|n| REPORT_CALLS.contains(&n))
+            }
+            _ => false,
+        },
+        Statement::VariableDeclaration(d) => d.declarations.iter().all(|v| {
+            !matches!(
+                v.init.as_ref().map(peel),
+                Some(Expression::CallExpression(_) | Expression::NewExpression(_))
+            )
+        }),
+        _ => false,
+    }
+}
+
 /// Header-reading methods on a headers object (`req.headers.get(...)`).
 const HEADER_GETTERS: &[&str] = &["get", "has"];
 /// Members of a headers object that are methods, not header names.
@@ -8342,6 +9279,15 @@ const HEADER_METHODS: &[&str] = &[
     "values",
     "getSetCookie",
 ];
+/// The most calls and bindings a body records as handed what the request sent
+/// ([`drift_core::controls::PARSES_INPUT`]).
+const MAX_PARSED: usize = 16;
+
+/// The callee written for input handed where the lowering stops reading
+/// (`input_handed:unresolved:handed_unread`, [`Practice::handed_unread`]): a call
+/// that did not resolve, so the reader says unknown.
+const HANDED_UNREAD: &str = "unresolved:handed_unread";
+
 /// Validation methods whose receiver is the schema (`Schema.parse(body)`).
 const SCHEMA_METHODS: &[&str] = &[
     "parse",
@@ -8373,6 +9319,144 @@ fn status_outcome(s: u16) -> Option<drift_core::CheckOutcome> {
         404 => Some(CheckOutcome::NotFound),
         429 => Some(CheckOutcome::Throttled),
         _ => None,
+    }
+}
+
+/// The status an error class answers by its own definition, where it is 401 or
+/// 403 and the only one the class writes ([`RawSymbol::refusal_status`]): what its
+/// constructor passes to its base as a literal (`super(403, message)`, `super(
+/// message, HttpStatus.UNAUTHORIZED)`), sets on the instance at the top level of
+/// its body (`this.status = 403`, `this.statusCode = 401`), or what an instance
+/// property of that name is declared with (`status = 403`), where nothing else in
+/// the class writes the status (under a condition, in another method, by a
+/// getter) or calls the base ([`StatusWrites`]). `status` and
+/// `statusCode` are the names HTTP's own response objects give the status. A
+/// status the class writes that is not a literal, or two statuses, say nothing;
+/// nor does a class that writes none: what a base of another module sets is not
+/// read. Never by the class's name.
+fn class_status(class: &Class) -> Option<u16> {
+    let status_key = |k: &str| matches!(k, "status" | "statusCode");
+    let mut found: BTreeSet<u16> = BTreeSet::new();
+    // The writes of the status and the calls of the base read at the top level of
+    // the constructor: any other the class makes (under a condition, in another
+    // method, in a callback) is a status that is not read.
+    let (mut read_writes, mut read_supers) = (0usize, 0usize);
+    for el in &class.body.body {
+        match el {
+            ClassElement::PropertyDefinition(p) if !p.r#static => {
+                if key_name(&p.key).is_some_and(|k| status_key(k.as_str())) {
+                    found.insert(p.value.as_ref().and_then(literal_status)?);
+                }
+            }
+            // `get status() { ... }`: the status is what a method answers.
+            ClassElement::MethodDefinition(m)
+                if !m.kind.is_constructor()
+                    && key_name(&m.key).is_some_and(|k| status_key(k.as_str())) =>
+            {
+                return None;
+            }
+            ClassElement::MethodDefinition(m) if m.kind.is_constructor() => {
+                let Some(body) = m.value.body.as_deref() else {
+                    continue;
+                };
+                for st in &body.statements {
+                    let Statement::ExpressionStatement(es) = st else {
+                        continue;
+                    };
+                    match unwrap_expr(&es.expression) {
+                        Expression::CallExpression(c)
+                            if matches!(unwrap_expr(&c.callee), Expression::Super(_)) =>
+                        {
+                            read_supers += 1;
+                            found.extend(
+                                c.arguments
+                                    .iter()
+                                    .filter_map(|a| a.as_expression())
+                                    .filter_map(literal_status),
+                            );
+                        }
+                        Expression::AssignmentExpression(a) => {
+                            if let AssignmentTarget::StaticMemberExpression(m) = &a.left
+                                && matches!(unwrap_expr(&m.object), Expression::ThisExpression(_))
+                                && status_key(m.property.name.as_str())
+                            {
+                                read_writes += 1;
+                                found.insert(literal_status(&a.right)?);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut all = StatusWrites::default();
+    all.visit_class_body(&class.body);
+    if all.unread || all.writes > read_writes || all.supers > read_supers {
+        return None;
+    }
+    let mut it = found.into_iter();
+    match (it.next(), it.next()) {
+        (Some(n @ (401 | 403)), None) => Some(n),
+        _ => None,
+    }
+}
+
+/// Every write of `this.status` / `this.statusCode` and every call of the base a
+/// class body makes, wherever it stands ([`class_status`]); `unread` where it
+/// writes a member of `this` whose key is not a literal (`this[key] = code`).
+#[derive(Default)]
+struct StatusWrites {
+    writes: usize,
+    supers: usize,
+    unread: bool,
+}
+
+impl StatusWrites {
+    fn target(&mut self, m: &MemberExpression) {
+        if !matches!(unwrap_expr(m.object()), Expression::ThisExpression(_)) {
+            return;
+        }
+        match m {
+            MemberExpression::StaticMemberExpression(s) => {
+                if matches!(s.property.name.as_str(), "status" | "statusCode") {
+                    self.writes += 1;
+                }
+            }
+            MemberExpression::ComputedMemberExpression(c) => match unwrap_expr(&c.expression) {
+                Expression::StringLiteral(l) => {
+                    if l.value == "status" || l.value == "statusCode" {
+                        self.writes += 1;
+                    }
+                }
+                _ => self.unread = true,
+            },
+            MemberExpression::PrivateFieldExpression(_) => {}
+        }
+    }
+}
+
+impl<'a> Visit<'a> for StatusWrites {
+    fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
+        if let Some(m) = it.left.as_member_expression() {
+            self.target(m);
+        }
+        walk::walk_assignment_expression(self, it);
+    }
+
+    fn visit_update_expression(&mut self, it: &UpdateExpression<'a>) {
+        if let Some(m) = it.argument.as_member_expression() {
+            self.target(m);
+        }
+        walk::walk_update_expression(self, it);
+    }
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if matches!(unwrap_expr(&it.callee), Expression::Super(_)) {
+            self.supers += 1;
+        }
+        walk::walk_call_expression(self, it);
     }
 }
 
@@ -8492,6 +9576,29 @@ impl Collector<'_, '_> {
         }
         self.p.params.extend(found);
         self.flow_params(params);
+        // A parameter whose default is read off another (`url = req.query.u`) holds
+        // what that one holds where the caller leaves it out: its positions are
+        // that one's too ([`Collector::param_positions`]). A default read off no
+        // parameter (`hook = process.env.HOOK`) adds nothing.
+        if self.fn_depth == 1 {
+            for item in &params.items {
+                let Some(init) = &item.initializer else {
+                    continue;
+                };
+                let from = self.param_positions(init);
+                if from.is_empty() {
+                    continue;
+                }
+                let mut bound = Vec::new();
+                walk(&item.pattern, &mut bound);
+                for (s, _) in bound {
+                    self.own_local_at
+                        .entry(s)
+                        .or_default()
+                        .extend(from.iter().cloned());
+                }
+            }
+        }
     }
 
     /// A call through a parameter's members (`server.services.project.getProject()`,
@@ -8715,6 +9822,114 @@ impl Collector<'_, '_> {
             }),
             _ => false,
         }
+    }
+
+    /// A request header the value is, as it was sent: a header read
+    /// ([`Collector::header_read`]) or a local bound to one.
+    fn header_value(&self, e: &Expression) -> Option<String> {
+        match peel(e) {
+            Expression::CallExpression(c) => self.header_read(c),
+            Expression::Identifier(_) => match self.operand(e, 0) {
+                Some((RawOperand::Text(t), path)) if path.is_empty() => {
+                    t.strip_prefix("header:").map(str::to_string)
+                }
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// The branch hands the request on to what the function guards: it calls the
+    /// continuation with what goes on (`next()`, [`Collector::hands_on`]) anywhere
+    /// in it, a function written there included, or it returns a call of a
+    /// function the body was handed (`return handler(req)` of a wrapper).
+    fn lets_through(&self, s: &Statement) -> bool {
+        let mut on = HandsOn {
+            c: self,
+            found: false,
+        };
+        on.visit_statement(s);
+        if on.found {
+            return true;
+        }
+        let returned = match s {
+            Statement::ReturnStatement(r) => r.argument.as_ref(),
+            Statement::BlockStatement(b) => match b.body.last() {
+                Some(Statement::ReturnStatement(r)) => r.argument.as_ref(),
+                _ => None,
+            },
+            _ => None,
+        };
+        returned.is_some_and(|e| {
+            matches!(peel(e), Expression::CallExpression(c)
+                if matches!(unwrap_expr(&c.callee), Expression::Identifier(id)
+                    if self.symbol_of(id).is_some_and(|s| self.l.params.contains_key(&s))))
+        })
+    }
+
+    /// The branch a secret mismatch takes refuses the caller, as the lowering reads
+    /// a refusal ([`Collector::branch_outcome`], a refusal builder of this file, a
+    /// refusing status written and left on, a `throw`): an answer that serves
+    /// (`return Response.json(data)`) or one not read is no refusal. A `throw` under
+    /// a `try` of this function whose handler runs is caught here, and what the
+    /// handler answers is not read: no refusal. A package's function returned
+    /// ([`Collector::builder_returned`] with a callee) is not proven here either.
+    fn secret_branch_refuses(&self, s: &Statement) -> bool {
+        let caught = self.in_try > 0;
+        let first = match s {
+            Statement::BlockStatement(b) => {
+                b.body.iter().find(|x| self.branch_outcome(x).is_some())
+            }
+            x => Some(x).filter(|x| self.branch_outcome(x).is_some()),
+        };
+        if let Some(first) = first {
+            return !(caught && matches!(first, Statement::ThrowStatement(_)));
+        }
+        (!caught && always_throws(s))
+            || matches!(self.builder_returned(s), Some((_, None)))
+            || status_assigned(s).is_some()
+    }
+
+    /// `header === secret` (or `!==`, either side): a request header compared
+    /// whole with a value the environment holds. Gives whether the test is true
+    /// where they are equal, and the header. Only a comparison of the two as they
+    /// are is read: a header the value was computed from is not asked.
+    fn secret_compare(&self, e: &Expression) -> Option<(bool, String)> {
+        let Expression::BinaryExpression(b) = peel(e) else {
+            return None;
+        };
+        let equal = match b.operator {
+            BinaryOperator::StrictEquality | BinaryOperator::Equality => true,
+            BinaryOperator::StrictInequality | BinaryOperator::Inequality => false,
+            _ => return None,
+        };
+        let header = match (self.header_value(&b.left), self.header_value(&b.right)) {
+            (Some(h), None) if self.env_derived(&b.right, 0) => h,
+            (None, Some(h)) if self.env_derived(&b.left, 0) => h,
+            _ => return None,
+        };
+        Some((equal, header))
+    }
+
+    /// The test is true exactly where the request's header does not match the
+    /// shared secret ([`Collector::secret_compare`]): `!ok` of `const ok = h ===
+    /// secret`, `h !== secret`. Gives the header.
+    fn secret_mismatch(&self, e: &Expression, negated: bool, depth: usize) -> Option<String> {
+        if depth > 4 {
+            return None;
+        }
+        let (equal, header) = match peel(e) {
+            Expression::UnaryExpression(u) if u.operator == UnaryOperator::LogicalNot => {
+                return self.secret_mismatch(&u.argument, !negated, depth + 1);
+            }
+            Expression::Identifier(id) => {
+                let s = self.symbol_of(id)?;
+                self.secret_tests.get(&s).cloned()?
+            }
+            x => self.secret_compare(x)?,
+        };
+        // True where equal, negated: true where they differ.
+        (equal == negated).then_some(header)
     }
 
     /// What a value wrapped for a comparison stands for (`Buffer.from(sig)` -> `sig`).
@@ -8941,7 +10156,20 @@ impl Collector<'_, '_> {
                         words(x)
                     }
                 };
-                for (side, guard) in [(&l.left, other(&l.right)), (&l.right, other(&l.left))] {
+                for (side, guard, beside) in [
+                    (&l.left, other(&l.right), &l.right),
+                    (&l.right, other(&l.left), &l.left),
+                ] {
+                    // An operand a server hook's view takes to hold says nothing
+                    // of the caller, and asks nothing of the other one.
+                    let holds = |x: &Expression| self.assumed_value(x) == Some(!negated);
+                    if holds(side) {
+                        continue;
+                    }
+                    if holds(beside) {
+                        self.condition(side, out, depth + 1, negated);
+                        continue;
+                    }
                     let mut inner = Vec::new();
                     self.condition(side, &mut inner, depth + 1, negated);
                     out.extend(inner.into_iter().map(|(a, b, c, d, g)| {
@@ -9109,6 +10337,22 @@ impl Collector<'_, '_> {
     fn exit_outcome(&self, e: &Expression) -> Option<drift_core::CheckOutcome> {
         use drift_core::CheckOutcome;
         let e = peel(e);
+        // The continuation called with what lets the request through (`next({ ctx:
+        // { error: "Unauthorized" } })` of tRPC, `next()`), or one that goes on to
+        // the route whatever it is handed (tRPC's destructured `next`, Koa's `(ctx,
+        // next)`): the words it carries turn no one away. Only the continuation a
+        // middleware takes last of three or four, of this function or one around it
+        // (`jwt.verify(t, k, (err) => next(new AuthError(err)))`), answers an error
+        // ([`Collector::continuations`]). The listed reading only, since the
+        // measured build.
+        if let Expression::CallExpression(c) = e
+            && self.continues(&c.callee)
+            && (self.hands_on(c) || !self.positional_in_scope(&c.callee))
+            && rejection_marker(e, 0).is_some()
+            && !routes::unmeasured_listing()
+        {
+            return None;
+        }
         if let Expression::Identifier(id) = e {
             return self
                 .rejection_vars
@@ -9134,6 +10378,15 @@ impl Collector<'_, '_> {
             Expression::NewExpression(n) => (&n.callee, &n.arguments),
             _ => return None,
         };
+        // Koa's `ctx.throw(401)`, SvelteKit's `redirect(303, "/login")`, h3's
+        // `sendRedirect(event, "/login")`: the listed reading only, since the
+        // measured build.
+        if let Expression::CallExpression(c) = e
+            && let Some(o) = self.framework_refusal(c)
+            && !routes::unmeasured_listing()
+        {
+            return Some(o);
+        }
         let first = args.first().and_then(|a| a.as_expression());
         match call_name(callee) {
             Some("notFound") => return Some(CheckOutcome::NotFound),
@@ -9216,7 +10469,17 @@ impl Collector<'_, '_> {
         }
         if let Expression::CallExpression(c) = e {
             if self.continues(&c.callee) {
-                return self.exit_outcome(c.arguments.first()?.as_expression()?);
+                let o = self.exit_outcome(c.arguments.first()?.as_expression()?);
+                // A continuation that goes on whatever it is handed (tRPC's, Koa's)
+                // answers no error ([`Collector::positional_in_scope`]): the listed
+                // reading only, since the measured build.
+                if o.is_some()
+                    && !self.positional_in_scope(&c.callee)
+                    && !routes::unmeasured_listing()
+                {
+                    return None;
+                }
+                return o;
             }
             if call_name(&c.callee) == Some("unauthorized") && self.named_refusal(&c.callee) {
                 return Some(drift_core::CheckOutcome::Unauthenticated);
@@ -9264,6 +10527,35 @@ impl Collector<'_, '_> {
                     Some(Expression::ObjectExpression(_) | Expression::StringLiteral(_)) | None
                 ),
             }
+    }
+
+    /// `s`, a statement at the top level of a catch clause, hands what the clause
+    /// caught (`caught`) on to the continuation the framework gave the function
+    /// the clause is written in, and only that: `next(err)`, `return next(err)`,
+    /// where `next` is the parameter that function takes last of three or four
+    /// ([`Collector::continuations`]), by position and whatever its name.
+    fn forwards_caught(&self, s: &Statement, caught: Option<SymbolId>) -> bool {
+        let Some(caught) = caught else { return false };
+        let e = match s {
+            Statement::ReturnStatement(r) => r.argument.as_ref(),
+            Statement::ExpressionStatement(x) => Some(&x.expression),
+            _ => None,
+        };
+        let Some(Expression::CallExpression(c)) = e.map(peel) else {
+            return false;
+        };
+        let Expression::Identifier(callee) = unwrap_expr(&c.callee) else {
+            return false;
+        };
+        let given = c.arguments.len() == 1
+            && matches!(
+                c.arguments.first().and_then(|a| a.as_expression()).map(unwrap_expr),
+                Some(Expression::Identifier(id)) if self.symbol_of(id) == Some(caught)
+            );
+        given
+            && self
+                .symbol_of(callee)
+                .is_some_and(|s| self.continuations.last() == Some(&Some(s)))
     }
 
     /// `try { request.operator = await request.jwtVerify<Operator>() } catch {
@@ -9322,7 +10614,7 @@ impl Collector<'_, '_> {
                 && c.arguments.len() == 1
                 && (self.continues(&c.callee) || call_name(&c.callee) == Some("send"))
         };
-        let verifies_jwt = it.block.body.iter().find_map(|s| {
+        let first_call = it.block.body.iter().find_map(|s| {
             let value = match s {
                 Statement::ExpressionStatement(x) => Some(&x.expression),
                 Statement::VariableDeclaration(v) => {
@@ -9333,9 +10625,17 @@ impl Collector<'_, '_> {
             };
             value.and_then(verified_call)
         });
-        let verifies_jwt = verifies_jwt.is_some_and(|c| {
+        let verifies_jwt = first_call.is_some_and(|c| {
             matches!(unwrap_expr(&c.callee), Expression::StaticMemberExpression(m)
                 if m.property.name == "jwtVerify")
+        });
+        // What the `try` calls first is handed a credential the request carries
+        // (`jwt.verify(token, secret)`, `token` read from the `Authorization`
+        // header): what it throws is that credential refused.
+        let verifies_credential = first_call.is_some_and(|c| {
+            c.arguments
+                .iter()
+                .any(|a| a.as_expression().is_some_and(|x| self.credential_read(x)))
         });
         let at = stmts.iter().position(|s| {
             self.handler_outcome(s) == Some(Unauthenticated) || (verifies_jwt && sends_caught(s))
@@ -9368,8 +10668,18 @@ impl Collector<'_, '_> {
                     nested.visit_statement(s);
                 }
                 // The caught error handed on with a status that is not read: the
-                // request is refused, and not known to be for want of a sign-in.
-                if !nested.found && !stmts.iter().any(sends_caught) {
+                // request is refused, and not known to be for want of a sign-in:
+                // a swallowed (not proven) check. The listed reading keeps it only
+                // where the `try` hands a credential to what it calls
+                // (`try { req.user = jwt.verify(token, key); next() } catch (e) {
+                // next(e) }`): where it ran anything else (`catch (e) { next(e) }`
+                // after a query) the failure may be of any kind. What the error
+                // handler answers is not read either way. The measured build
+                // recorded a swallowed one wherever the error was handed on.
+                if !nested.found
+                    && (!stmts.iter().any(sends_caught)
+                        || (!verifies_credential && !routes::unmeasured_listing()))
+                {
                     return;
                 }
                 why = SWALLOWED;
@@ -9610,18 +10920,160 @@ impl Collector<'_, '_> {
         if !self.check_condition().is_empty() {
             return None;
         }
-        let (value, absent) = absence_asked(&it.test)?;
+        // One value asked, or, in the listed reading, several joined so that the
+        // branch is taken where any one is absent (`a && b` asked present, `!a ||
+        // !b` asked absent): a request missing that one is turned away all the same.
+        let (values, absent) = match absence_asked(&it.test) {
+            Some((value, absent)) => (vec![value], absent),
+            None if !routes::unmeasured_listing() => absences_joined(&it.test)?,
+            None => return None,
+        };
+        // The `if` is the last statement of the function's own body: a branch that
+        // hands an error on without a `return` leaves all the same, nothing of the
+        // body being left to run ([`Collector::continuation_exit`]).
+        let at_end = self.last_statements.contains(&it.span.start);
+        // Or the branch hands an error to the framework's continuation and leaves
+        // ([`Collector::continuation_exit`]): the listed reading only.
+        let refuses = |s: &Statement| {
+            always_throws(s)
+                || (self.continuation_exit(s, at_end) == Some(Some(true))
+                    && !routes::unmeasured_listing())
+        };
         let otherwise = match (absent, &it.alternate) {
-            (true, _) if always_throws(&it.consequent) => false,
-            (false, Some(a)) if always_throws(a) => true,
+            (true, _) if refuses(&it.consequent) => false,
+            (false, Some(a)) if refuses(a) => true,
             _ => return None,
         };
-        let taint = self.taint(value);
-        if taint.callers_own() || self.credential_identity(value) {
-            return (!routes::unmeasured_listing()).then_some(NoCaller::Own(otherwise));
+        for value in &values {
+            let taint = self.taint(value);
+            if taint.callers_own() || self.credential_identity(value) {
+                return (!routes::unmeasured_listing()).then_some(NoCaller::Own(otherwise));
+            }
         }
-        let by = taint.given_by();
-        (!by.is_empty()).then(|| NoCaller::Given(by.to_vec()))
+        for value in &values {
+            let by = self.taint(value).given_by().to_vec();
+            if !by.is_empty() {
+                return Some(NoCaller::Given(by));
+            }
+        }
+        None
+    }
+
+    /// How the statement, the branch of a check, leaves by the continuation of the
+    /// function it is written in: `None` where it does not; `Some(Some(true))` it
+    /// hands that continuation an error and leaves (`return next(err)`,
+    /// `next(new Error("..."))` then `return` in the same block, or, where the
+    /// branch is the last statement of the function's own body (`at_end`),
+    /// `next(err)` alone, nothing of the body being left to run);
+    /// `Some(Some(false))` it hands the request on or skips (`next()`,
+    /// `next(null)`, `next("route")`); `Some(None)` what it hands on is not read
+    /// ([`Collector::continuation_error`]). The framework answers for an error: no
+    /// request that takes the branch goes on in this body.
+    fn continuation_exit(&self, s: &Statement, at_end: bool) -> Option<Option<bool>> {
+        match s {
+            Statement::ReturnStatement(r) => self.continuation_handed(r.argument.as_ref()?),
+            Statement::ExpressionStatement(e) if at_end => self.continuation_handed(&e.expression),
+            Statement::BlockStatement(b) => match b.body.as_slice() {
+                [
+                    ..,
+                    Statement::ExpressionStatement(e),
+                    Statement::ReturnStatement(r),
+                ] if r.argument.is_none() => self.continuation_handed(&e.expression),
+                [.., last] => self.continuation_exit(last, at_end),
+                [] => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// Where `e` calls the continuation of the function it is written in, what it
+    /// hands it ([`Collector::continuation_error`]); `None` where it calls no such
+    /// thing. That continuation is the parameter the innermost function takes last
+    /// of three or four, by its position and whatever its name
+    /// ([`Collector::continuations`]): the shape Express and Connect give a
+    /// middleware, and the one place an error handed on refuses. A continuation
+    /// destructured from an object (`({ ctx, next })` of tRPC) or taken second of
+    /// two (`(ctx, next)` of Koa) goes on to the route whatever it is handed, and
+    /// one of a function around this one does not leave this one.
+    fn continuation_handed(&self, e: &Expression) -> Option<Option<bool>> {
+        let Expression::CallExpression(c) = peel(e) else {
+            return None;
+        };
+        let Expression::Identifier(id) = unwrap_expr(&c.callee) else {
+            return None;
+        };
+        let own = self.continuations.last().copied().flatten()?;
+        (self.symbol_of(id) == Some(own)).then(|| self.continuation_error(c))
+    }
+
+    /// The callee is the continuation a function being walked takes last of three
+    /// or four, this one's or one around it ([`Collector::continuations`]).
+    fn positional_in_scope(&self, callee: &Expression) -> bool {
+        matches!(unwrap_expr(callee), Expression::Identifier(id)
+            if self.symbol_of(id).is_some_and(|s| self.continuations.contains(&Some(s))))
+    }
+
+    /// What a call of a middleware's continuation hands it, as Express reads it:
+    /// `Some(true)` an error Drift sees is one: a `new` of a class (`new
+    /// Error("...")`, `new HttpError(401)`), the binding of a catch clause the body
+    /// does not assign, or a call or a local the facts read as a refusal
+    /// ([`Collector::exit_outcome`]: `createError(401)`). `Some(false)` a value
+    /// that goes on or skips: nothing, `null`, `undefined`, `void 0`, a boolean,
+    /// `"route"` / `"router"`. `None` anything else: a value Drift does not read
+    /// (`next(e)` of a local, `next(result.error)`, `next({ status: 401 })`, a
+    /// string or a number), which a reader takes as unknown, never as a refusal.
+    fn continuation_error(&self, c: &CallExpression) -> Option<bool> {
+        let a = match c.arguments.as_slice() {
+            [] => return Some(false),
+            [a] => a.as_expression()?,
+            _ => return None,
+        };
+        match peel(a) {
+            Expression::NewExpression(_) => Some(true),
+            Expression::NullLiteral(_) | Expression::BooleanLiteral(_) => Some(false),
+            Expression::StringLiteral(l) => {
+                (l.value == "route" || l.value == "router").then_some(false)
+            }
+            Expression::UnaryExpression(u) if u.operator == UnaryOperator::Void => Some(false),
+            Expression::Identifier(id) => match self.symbol_of(id) {
+                None if id.name == "undefined" => Some(false),
+                None => None,
+                Some(s)
+                    if self.l.scoping.symbol_flags(s).is_catch_variable()
+                        && !self.l.scoping.symbol_is_mutated(s) =>
+                {
+                    Some(true)
+                }
+                Some(_) => self.exit_outcome(a).map(|_| true),
+            },
+            Expression::CallExpression(_) => self.exit_outcome(a).map(|_| true),
+            _ => None,
+        }
+    }
+
+    /// The `if` takes a branch where a value is absent, every request reaching it,
+    /// and that branch leaves by the function's continuation handing it a value
+    /// Drift does not read ([`Collector::continuation_exit`]): a refusal that may
+    /// be here and could not be read. The listed reading only.
+    fn continuation_unread(&self, it: &IfStatement) -> bool {
+        if !self.check_condition().is_empty() {
+            return false;
+        }
+        let absent = match absence_asked(&it.test) {
+            Some((_, absent)) => absent,
+            None => match absences_joined(&it.test) {
+                Some((_, absent)) => absent,
+                None => return false,
+            },
+        };
+        let branch = if absent {
+            Some(&it.consequent)
+        } else {
+            it.alternate.as_ref()
+        };
+        let at_end = self.last_statements.contains(&it.span.start);
+        branch.is_some_and(|b| self.continuation_exit(b, at_end) == Some(None))
+            && !routes::unmeasured_listing()
     }
 
     /// `e` reads a credential the request carries, as it was sent: its `Cookie`
@@ -10111,7 +11563,31 @@ impl Collector<'_, '_> {
                                 self.refuses_without.insert(by);
                                 return false;
                             }
-                            None => return false,
+                            // A branch that throws an error of the repository
+                            // whose arguments say nothing (`throw new
+                            // ForbiddenError()`): a check where the class answers
+                            // 401 or 403 by its own definition, kept by linking
+                            // with that status as a builder's is
+                            // ([`RawSymbol::refusal_status`]). The listed reading
+                            // only, since the measured build.
+                            None => match self.thrown_class(&it.consequent) {
+                                Some(class) if !routes::unmeasured_listing() => {
+                                    pending = Some(class);
+                                    (drift_core::CheckOutcome::Unauthenticated, false, false)
+                                }
+                                // A branch that leaves by the continuation handing
+                                // it a value that is not read (`return next(e)` of
+                                // a local): a refusal that may be here and could
+                                // not be read, never one
+                                // ([`drift_core::controls::EXIT_UNREAD`]).
+                                _ => {
+                                    if self.continuation_unread(it) {
+                                        let sources = self.sources_of(&it.test);
+                                        self.note_unread_exit(None, &sources);
+                                    }
+                                    return false;
+                                }
+                            },
                         },
                     },
                 },
@@ -10435,6 +11911,32 @@ impl Collector<'_, '_> {
     /// ([`RawSymbol::refusal_builder`]): one of this file, with its status, or
     /// one of another module of the repository, to be told by linking (its
     /// reference; `Unauthenticated` stands until linking says).
+    /// The class of the repository a branch throws an instance of, where the branch
+    /// is that throw (`throw new ForbiddenError()`, `{ throw new NotSignedIn(msg)
+    /// }`): a class of this file or one an import names. What it answers is read
+    /// where it is defined ([`RawSymbol::refusal_status`]); a package's class, a
+    /// global (`Error`) and a member of anything are not read here.
+    fn thrown_class(&self, s: &Statement) -> Option<RawRef> {
+        let t = match s {
+            Statement::ThrowStatement(t) => t,
+            Statement::BlockStatement(b) => match b.body.as_slice() {
+                [Statement::ThrowStatement(t)] => t,
+                _ => return None,
+            },
+            _ => return None,
+        };
+        let Expression::NewExpression(n) = peel(&t.argument) else {
+            return None;
+        };
+        let Expression::Identifier(_) = unwrap_expr(&n.callee) else {
+            return None;
+        };
+        self.l
+            .canon(&n.callee)
+            .filter(|r| r.member.is_empty())
+            .filter(|r| matches!(r.base, RawBase::Local(_) | RawBase::Import { .. }))
+    }
+
     fn builder_returned(
         &self,
         s: &Statement,
@@ -10523,6 +12025,15 @@ impl Collector<'_, '_> {
                     && i.alternate
                         .as_ref()
                         .is_some_and(|a| self.leaves_for_good(a))
+            }
+            // Koa's `ctx.throw()` and SvelteKit's `error()` and `redirect()` throw
+            // too: the listed reading only, since the measured build.
+            Statement::ExpressionStatement(x)
+                if matches!(peel(&x.expression), Expression::CallExpression(c)
+                    if self.throws_by_framework(c))
+                    && !routes::unmeasured_listing() =>
+            {
+                true
             }
             // Next.js's `redirect()`, `notFound()`, `unauthorized()` and
             // `forbidden()` throw: nothing after them runs.
@@ -10933,6 +12444,71 @@ impl Collector<'_, '_> {
         }
     }
 
+    /// The expression is what the request sent ([`Self::mentions_input`]), not what a
+    /// call of a package or of the repository gave back for it: `prisma.user.findFirst
+    /// ({ where: { username: params.username } })` is a row, and so is a local bound
+    /// to it ([`Practice::call_results`]). A call on the input itself
+    /// (`request.formData()`, `body.trim()`) and a built-in's (`JSON.parse(text)`,
+    /// `Number(params.id)`) hand on what they were given. For the listed reading of
+    /// [`drift_core::controls::INPUT_HANDED`] only.
+    fn hands_input(&self, e: &Expression, depth: usize) -> bool {
+        if depth > 4 {
+            return false;
+        }
+        match peel(e) {
+            Expression::Identifier(id)
+                if self
+                    .symbol_of(id)
+                    .is_some_and(|s| self.p.call_results.contains(&s)) =>
+            {
+                false
+            }
+            Expression::StaticMemberExpression(m) => {
+                let mut root = peel(&m.object);
+                while let Expression::StaticMemberExpression(o) = root {
+                    root = peel(&o.object);
+                }
+                match root {
+                    Expression::Identifier(id)
+                        if self
+                            .symbol_of(id)
+                            .is_some_and(|s| self.p.call_results.contains(&s)) =>
+                    {
+                        false
+                    }
+                    Expression::CallExpression(c) if self.gives_back(c) => false,
+                    _ => self.mentions_input(e, depth),
+                }
+            }
+            Expression::CallExpression(c) => {
+                !self.gives_back(c)
+                    && (self.mentions_input(&c.callee, depth + 1)
+                        || c.arguments
+                            .iter()
+                            .filter_map(|a| a.as_expression())
+                            .any(|a| self.hands_input(a, depth + 1)))
+            }
+            Expression::ObjectExpression(o) => o.properties.iter().any(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) => self.hands_input(&p.value, depth + 1),
+                ObjectPropertyKind::SpreadProperty(s) => self.hands_input(&s.argument, depth + 1),
+            }),
+            x => self.mentions_input(x, depth),
+        }
+    }
+
+    /// A call whose result is its own, not what it was handed ([`Self::hands_input`]):
+    /// of a package or of the repository (any callee not a built-in), made on
+    /// something other than the input.
+    fn gives_back(&self, c: &CallExpression) -> bool {
+        !matches!(
+            self.l.canon_callee(&c.callee),
+            Some(RawRef {
+                base: RawBase::Global(_),
+                ..
+            })
+        ) && !self.mentions_input(&c.callee, 0)
+    }
+
     /// Schemas request input is validated into: `Schema.parse(await req.json())`,
     /// valibot `parse(Schema, body)`, class-transformer `plainToInstance(Dto, body)`,
     /// next-safe-action `.schema(S).action(fn)` / `.inputSchema(S)`.
@@ -10984,6 +12560,101 @@ impl Collector<'_, '_> {
         if let Some(r) = found {
             self.p.inputs.insert(r);
         }
+    }
+
+    /// A call handed what the request sent and, beside it, a value read off a
+    /// binding (`parseWithZod(formData, { schema: Schema.superRefine(fn) })`,
+    /// `check(body, Schema)`, `{ schema: (intent) => Schema.transform(fn) }`): the
+    /// callee and each such binding ([`drift_core::controls::PARSES_INPUT`]), for
+    /// the listed reading. An object written in place is read property by property.
+    /// Whether a binding is a schema is read where it is defined, by the reader; no
+    /// name of the callee is asked.
+    fn note_parse(&mut self, it: &CallExpression) {
+        let Some(callee) = self
+            .l
+            .canon_callee(&it.callee)
+            .filter(|r| !matches!(r.base, RawBase::Global(_)))
+        else {
+            return;
+        };
+        let mut parts: Vec<&Expression> = Vec::new();
+        for a in it.arguments.iter().filter_map(|a| a.as_expression()) {
+            match peel(a) {
+                Expression::ObjectExpression(o) => {
+                    for p in &o.properties {
+                        if let ObjectPropertyKind::ObjectProperty(p) = p {
+                            parts.push(&p.value);
+                        }
+                    }
+                }
+                x => parts.push(x),
+            }
+        }
+        let given: Vec<bool> = parts.iter().map(|x| self.mentions_input(x, 0)).collect();
+        // Input handed by a spread (`fn(...input)`, `create({ ...input })`) is
+        // handed all the same ([`Practice::handed`]); a spread inside a property's
+        // value (`{ data: { ...input } }`) is read by `mentions_input`.
+        let spread = it.arguments.iter().any(|a| match a {
+            Argument::SpreadElement(s) => self.mentions_input(&s.argument, 0),
+            _ => matches!(a.as_expression().map(peel), Some(Expression::ObjectExpression(o))
+                if o.properties.iter().any(|p| matches!(p,
+                    ObjectPropertyKind::SpreadProperty(s) if self.mentions_input(&s.argument, 0)))),
+        });
+        if !spread && !given.iter().any(|g| *g) {
+            return;
+        }
+        // What the request sent is handed to it, schema or not: what the call does
+        // with it is for a reader to say ([`drift_core::controls::INPUT_HANDED`]).
+        // Past the cap the callee is not kept: unknown, not "nothing validates it".
+        // What a call of a package or of the repository handed the input gave back
+        // (a row a query found by `params.username`) is not what the request sent
+        // ([`Collector::hands_input`]).
+        let hands = it.arguments.iter().any(|a| match a {
+            Argument::SpreadElement(s) => self.hands_input(&s.argument, 0),
+            _ => a.as_expression().is_some_and(|x| self.hands_input(x, 0)),
+        });
+        if hands && self.p.handed.len() < MAX_PARSED {
+            self.p.handed.insert(callee.clone());
+        } else if hands && !self.p.handed.contains(&callee) {
+            self.p.handed_unread = true;
+        }
+        for (x, input) in parts.iter().zip(&given) {
+            if *input || self.p.parsed.len() >= MAX_PARSED {
+                continue;
+            }
+            if let Some(binding) = self.bound_root(x) {
+                self.p.parsed.insert((callee.clone(), binding));
+            }
+        }
+    }
+
+    /// The binding of the module (or an import) a value is read off: the root of a
+    /// chain of members and calls on it (`Schema.superRefine(fn)`, `z.object({})`),
+    /// also as what a function written in place with a concise body hands back
+    /// (`(intent) => Schema.transform(fn)`). None for a local, a global or anything
+    /// else.
+    fn bound_root(&self, e: &Expression) -> Option<RawRef> {
+        let mut cur = peel(e);
+        if let Expression::ArrowFunctionExpression(f) = cur {
+            cur = peel(f.get_expression()?);
+        }
+        for _ in 0..12 {
+            cur = match cur {
+                Expression::CallExpression(c) => peel(&c.callee),
+                Expression::StaticMemberExpression(m) => peel(&m.object),
+                Expression::Identifier(id) => {
+                    return match self.l.resolve_ident(id)? {
+                        RawBase::Global(_) => None,
+                        base => Some(RawRef {
+                            base,
+                            member: String::new(),
+                        }),
+                    };
+                }
+                _ => return None,
+            };
+        }
+        None
     }
 
     /// The argument registers a handler: a function written in place, or a name bound
@@ -11118,6 +12789,9 @@ impl Collector<'_, '_> {
             }
         }
         let input = self.mentions_input(init, 0);
+        // What a call gave back for the input is no input of its own
+        // ([`Practice::call_results`]).
+        let result = input && !self.hands_input(init, 0);
         // The answer of a constant-time compare is what the compare says, not the
         // secret it was given (`const ok = timingSafeEqual(given, secret)`).
         let compare = matches!(peel(init), Expression::CallExpression(c)
@@ -11140,6 +12814,9 @@ impl Collector<'_, '_> {
                 self.p.initialised.insert(s);
                 if input {
                     self.p.input_vars.insert(s);
+                }
+                if result {
+                    self.p.call_results.insert(s);
                 }
                 if let Expression::NewExpression(n) = peel(init)
                     && n.arguments
@@ -11166,6 +12843,9 @@ impl Collector<'_, '_> {
                     let Some(s) = b.symbol_id.get() else { continue };
                     if input {
                         self.p.input_vars.insert(s);
+                    }
+                    if result {
+                        self.p.call_results.insert(s);
                     }
                     if !p.computed
                         && let Some(k) = key_name(&p.key)
@@ -11559,6 +13239,117 @@ fn routes_object_has(o: &ObjectExpression, key: &str) -> bool {
     })
 }
 
+/// The function takes one destructured object whose input keys
+/// ([`input::INPUT_KEYS`]) are each bound to a name the body never reads, and
+/// whose other keys are all known to carry no input ([`input::NON_INPUT_KEYS`]):
+/// `async ({ ctx, input }) => handler({ ctx })`. Naming a key is not reading it:
+/// the input the caller hands is never looked at. A rest element, a computed
+/// key, a nested pattern or any other key leaves it unproven (`false`).
+fn input_keys_unread(scoping: &Scoping, params: &FormalParameters) -> bool {
+    if !input::takes_one_object(params) {
+        return false;
+    }
+    let BindingPattern::ObjectPattern(o) = &params.items[0].pattern else {
+        return false;
+    };
+    if o.rest.is_some() {
+        return false;
+    }
+    let mut unread = 0;
+    for p in &o.properties {
+        if p.computed {
+            return false;
+        }
+        let Some(k) = key_name(&p.key) else {
+            return false;
+        };
+        if input::NON_INPUT_KEYS.contains(&k.as_str()) {
+            continue;
+        }
+        if !input::INPUT_KEYS.contains(&k.as_str()) {
+            return false;
+        }
+        let b = match &p.value {
+            BindingPattern::BindingIdentifier(b) => b,
+            BindingPattern::AssignmentPattern(a) => match &a.left {
+                BindingPattern::BindingIdentifier(b) => b,
+                _ => return false,
+            },
+            _ => return false,
+        };
+        let Some(s) = b.symbol_id.get() else {
+            return false;
+        };
+        if !scoping.get_resolved_reference_ids(s).is_empty() {
+            return false;
+        }
+        unread += 1;
+    }
+    unread > 0
+}
+
+/// Say on a function symbol that the input its parameter names is never read
+/// ([`input_keys_unread`], [`drift_core::controls::INPUT_UNREAD`]), where its body
+/// reaches the arguments no other way ([`ReachesArguments`]). The listed reading
+/// only.
+fn record_input_unread(
+    sym: &mut RawSymbol,
+    scoping: &Scoping,
+    params: &FormalParameters,
+    reaches_arguments: impl FnOnce() -> bool,
+) {
+    if sym.kind == SymbolKind::Function
+        && input_keys_unread(scoping, params)
+        && !reaches_arguments()
+        && !routes::unmeasured_listing()
+    {
+        let c = drift_core::controls::INPUT_UNREAD.to_string();
+        if !sym.listed_controls.contains(&c) {
+            sym.listed_controls.push(c);
+        }
+    }
+}
+
+/// A body that may read what its function was handed other than through the names
+/// its parameter binds ([`record_input_unread`]): `arguments` (`handler(arguments[0])`
+/// hands the whole object on, input key and all), or a request reached through
+/// another key under a name the input reading gives the request
+/// ([`input::REQUEST_KEYS`]: `ctx.req.json()`, `ctx.request.body`): there, the input is read
+/// from what the request sent, whatever the parameter names.
+struct ReachesArguments {
+    found: bool,
+}
+
+impl ReachesArguments {
+    fn of(body: Option<&FunctionBody>) -> bool {
+        let Some(body) = body else { return true };
+        let mut v = Self { found: false };
+        v.visit_function_body(body);
+        v.found
+    }
+
+    fn of_arrow(body: &ArrowFunctionBody) -> bool {
+        let mut v = Self { found: false };
+        v.visit_arrow_function_body(body);
+        v.found
+    }
+}
+
+impl<'a> Visit<'a> for ReachesArguments {
+    fn visit_identifier_reference(&mut self, it: &IdentifierReference<'a>) {
+        if it.name == "arguments" {
+            self.found = true;
+        }
+    }
+
+    fn visit_static_member_expression(&mut self, it: &StaticMemberExpression<'a>) {
+        if input::REQUEST_KEYS.contains(&it.property.name.as_str()) {
+            self.found = true;
+        }
+        walk::walk_static_member_expression(self, it);
+    }
+}
+
 /// An Express error middleware's parameters: four, the first named for the error.
 fn error_middleware(params: &FormalParameters) -> bool {
     params.items.len() == 4
@@ -11609,6 +13400,19 @@ impl<'b, 'a> Sent<'b, 'a> {
 
 /// HTTP methods a test may call a route handler or a client by.
 const HTTP_VERBS: &[&str] = &["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
+
+/// The assertions of `node:assert` and `chai`'s `assert` that say two values are
+/// equal ([`TestFinder::assert_call`]). A by-name reading of the testing practice
+/// only (`test_requests`), as the `expect` matchers are; mining never reads it.
+/// Not to be extended to decide anything else.
+const EQUALITY_ASSERTIONS: &[&str] = &["equal", "strictEqual", "deepEqual", "deepStrictEqual"];
+
+/// Cypress's runner ([`TestFinder::cypress`]): its ambient global `cy` and the two
+/// commands that reach a route, `cy.visit` (a page, `GET`) and `cy.request`. A
+/// by-name reading of the testing practice only (`test_requests`): a Cypress test
+/// imports nothing that would name the runner. Mining never reads it. Not to be
+/// extended to decide anything else.
+const CYPRESS_GLOBAL: &str = "cy";
 
 /// A request URL that is not a literal: a template with placeholders, or any other
 /// expression (`` `${baseUrl}/api/x` ``, `url`). Which route is requested is unknown.
@@ -12256,6 +14060,7 @@ impl TestFinder<'_, '_> {
     /// `expect(response.status()).toBe(n)`, `expect(res).toHaveStatus(n)`, supertest's
     /// `.expect(401)`.
     fn assertion(&mut self, it: &CallExpression) {
+        self.assert_call(it);
         let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee) else {
             return;
         };
@@ -12292,6 +14097,103 @@ impl TestFinder<'_, '_> {
         };
         if ok {
             self.status(n);
+        }
+    }
+}
+
+impl TestFinder<'_, '_> {
+    /// `assert.equal(res.status, 401)`, `assert.strictEqual(401, res.statusCode)`: a
+    /// package's assertion (`node:assert`, `assert`, `chai`'s `assert`), by the
+    /// import it resolves to, handed a status read and a literal status in either
+    /// order. By name, as the `expect(..).toBe(..)` matchers above are: only the
+    /// equality assertions ([`EQUALITY_ASSERTIONS`]) say the status the test
+    /// asserts; a negated one (`notEqual`) or a comparison (`isAbove(res.status,
+    /// 399)`, `isAtLeast(res.status, 400)`) asserts none, and the shape of the call
+    /// cannot tell them apart.
+    fn assert_call(&mut self, it: &CallExpression) {
+        let Some(RawRef {
+            base: RawBase::Import { spec, .. },
+            ..
+        }) = self.l.canon_callee(&it.callee)
+        else {
+            return;
+        };
+        if spec.starts_with('.') || spec.starts_with('/') {
+            return;
+        }
+        if call_name(&it.callee).is_none_or(|n| !EQUALITY_ASSERTIONS.contains(&n)) {
+            return;
+        }
+        let status_of = |e: &Expression| match peel(e) {
+            Expression::StaticMemberExpression(s) => {
+                matches!(s.property.name.as_str(), "status" | "statusCode")
+            }
+            Expression::CallExpression(c) => {
+                call_name(&c.callee) == Some("status") && c.arguments.is_empty()
+            }
+            _ => false,
+        };
+        let args: Vec<&Expression> = it
+            .arguments
+            .iter()
+            .take(2)
+            .filter_map(|a| a.as_expression())
+            .collect();
+        let &[a, b] = args.as_slice() else {
+            return;
+        };
+        let n = match (literal_status(a), literal_status(b)) {
+            (None, Some(n)) if status_of(a) => n,
+            (Some(n), None) if status_of(b) => n,
+            _ => return,
+        };
+        self.status(n);
+    }
+
+    /// Cypress `cy.visit("/x")` (a page, `GET`), `cy.request("/x")`,
+    /// `cy.request("POST", "/x")`, `cy.request({ method, url })`: `cy` is the
+    /// runner's ambient global, as `fetch` is the platform's.
+    fn cypress(&mut self, it: &CallExpression, callee: Option<&RawRef>) {
+        let Some(RawRef {
+            base: RawBase::Global(g),
+            member,
+        }) = callee
+        else {
+            return;
+        };
+        if g != CYPRESS_GLOBAL {
+            return;
+        }
+        let arg = |i: usize| it.arguments.get(i).and_then(|a| a.as_expression());
+        let literal = |e: Option<&Expression>| match e.map(unwrap_expr) {
+            Some(Expression::StringLiteral(l)) => Some(lit(l)),
+            _ => None,
+        };
+        match member.as_str() {
+            ".visit" => self.request("GET", arg(0).and_then(url_path), None, non_literal(arg(0))),
+            ".request" => match arg(0).map(unwrap_expr) {
+                Some(Expression::ObjectExpression(o)) => {
+                    let method = routes::object_prop(o, "method")
+                        .and_then(|m| literal(Some(m)))
+                        .unwrap_or_else(|| "GET".into());
+                    let raw = routes::object_prop(o, "url");
+                    self.request(&method, raw.and_then(url_path), None, non_literal(raw));
+                }
+                _ => match literal(arg(0))
+                    .filter(|m| HTTP_VERBS.contains(&m.to_ascii_uppercase().as_str()))
+                {
+                    Some(method) => self.request(
+                        &method,
+                        arg(1).and_then(url_path),
+                        None,
+                        non_literal(arg(1)),
+                    ),
+                    None => {
+                        self.request("GET", arg(0).and_then(url_path), None, non_literal(arg(0)))
+                    }
+                },
+            },
+            _ => {}
         }
     }
 }
@@ -12334,6 +14236,7 @@ impl<'a> Visit<'a> for TestFinder<'_, '_> {
         }
         if self.tests {
             self.assertion(it);
+            self.cypress(it, callee.as_ref());
             let verb = name.map(str::to_ascii_uppercase);
             let is_verb = verb.as_deref().is_some_and(|v| HTTP_VERBS.contains(&v));
             if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee) {
@@ -12516,7 +14419,11 @@ fn status_assigned(s: &Statement) -> Option<drift_core::CheckOutcome> {
         let AssignmentTarget::StaticMemberExpression(m) = &a.left else {
             return None;
         };
-        if m.property.name != "statusCode" {
+        // Koa's `ctx.status = 401`: the listed reading only, since the measured
+        // build.
+        if m.property.name != "statusCode"
+            && (m.property.name != "status" || routes::unmeasured_listing())
+        {
             return None;
         }
         literal_status(&a.right).and_then(status_outcome)
@@ -12575,6 +14482,32 @@ fn hands_value_on(c: &CallExpression) -> bool {
     })
 }
 
+/// The sink kinds whose detector judges the call's first argument that is no number
+/// (`signals.rs` `call_sinks`): the code run, the query, the address, the path, the
+/// template, the markup. Any other kind is judged by what any argument holds
+/// (`mass_assignment` reads the arguments after the target of `Object.assign`,
+/// `nosql_injection` a `$where` in any of them), so its operand is every argument
+/// ([`drift_core::controls::SINK_FED_AT`]). Drift's own kind vocabulary.
+const OPERAND_KINDS: &[&str] = &[
+    signals::kind::EVAL,
+    signals::kind::EXEC,
+    signals::kind::SQL_RAW,
+    signals::kind::SQL_INTERP,
+    signals::kind::REDIRECT,
+    signals::kind::FETCH,
+    signals::kind::PATH,
+    signals::kind::TEMPLATE,
+    signals::kind::HTML,
+];
+
+/// The call runs a function through the language's own `call` / `apply`
+/// (`helper.call(this, req)`): the receiver comes first, so the arguments are not
+/// at the function's own positions ([`drift_core::controls::PASSES_AT`]).
+fn calls_through_receiver(callee: &Expression) -> bool {
+    matches!(unwrap_expr(callee), Expression::StaticMemberExpression(m)
+        if matches!(m.property.name.as_str(), "call" | "apply"))
+}
+
 impl<'a> Visit<'a> for Collector<'_, '_> {
     fn visit_decorator(&mut self, it: &Decorator<'a>) {
         if !self.skip_decorators {
@@ -12589,6 +14522,23 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         }
         self.note_data_callbacks(it);
         self.note_left_out(it);
+        // A framework's call that throws where it stands (Koa's `ctx.throw()`,
+        // SvelteKit's `error()`) may refuse the request whatever it is given: the
+        // listed reading only, since the measured build.
+        if self.throws_by_framework(it) && !routes::unmeasured_listing() {
+            self.controls.insert("throw".into());
+            // One that throws a 401, a 403 or a redirect to the sign-in page turns
+            // the caller away, as a thrown error built with one does.
+            use drift_core::CheckOutcome::{SignInRedirect, Unauthenticated};
+            use drift_core::controls::Rejection;
+            match self.framework_refusal(it) {
+                Some(Unauthenticated | SignInRedirect) => {
+                    self.note(Some(Rejection::Unauthenticated))
+                }
+                Some(drift_core::CheckOutcome::Forbidden) => self.note(Some(Rejection::Forbidden)),
+                _ => {}
+            }
+        }
         let kinds = self.l.call_sinks(it);
         // The call is given a value read off a parameter of the function: an
         // operation fed by it ([`drift_core::controls::SINK_FED`]), a callee it is
@@ -12613,6 +14563,78 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if let Some(r) = self.l.canon_callee(&it.callee) {
                 self.param_passes.insert(r);
             }
+            // The same by position: which argument carries which parameter on,
+            // and which parameter the operation's operand is read off. A reader
+            // follows what an entry point was sent through the parameter that
+            // carries it, not through any parameter handed on.
+            let callee = self.l.canon_callee(&it.callee);
+            // Through `call` / `apply` no argument is at its own position.
+            let mut spread = calls_through_receiver(&it.callee);
+            for (j, a) in it.arguments.iter().enumerate() {
+                spread |= matches!(a, Argument::SpreadElement(_));
+                let Some(e) = argument(a) else {
+                    continue;
+                };
+                let at = self.param_positions(e);
+                let pos = if spread {
+                    "*".to_string()
+                } else {
+                    format!("#{j}")
+                };
+                if let Some(r) = &callee {
+                    for p in &at {
+                        self.param_passes_at
+                            .insert((r.clone(), pos.clone(), p.clone()));
+                    }
+                }
+            }
+            if !kinds.is_empty() {
+                // The operand a detector judges is the first argument that is no
+                // number for the kinds in [`OPERAND_KINDS`]; any other kind is
+                // judged by what any argument holds (`Object.assign({}, req.body)`,
+                // a `$where` anywhere in what a query is given), so every argument
+                // is its operand. `-` (fed by none of the parameters) is said only
+                // of an operand that was read; behind a spread, or where the
+                // function is called through `call` / `apply` (the arguments move
+                // by one), which argument it is is not known: `*`, as fed as the
+                // whole call was before positions were read.
+                let args: Vec<&Argument> = it.arguments.iter().collect();
+                let operand_at = args.iter().position(|a| {
+                    argument(a)
+                        .is_some_and(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)))
+                });
+                let unplaced = calls_through_receiver(&it.callee)
+                    || operand_at.is_some_and(|i| {
+                        args[..=i]
+                            .iter()
+                            .any(|a| matches!(a, Argument::SpreadElement(_)))
+                    });
+                for k in &kinds {
+                    let mut at: BTreeSet<String> = BTreeSet::new();
+                    if OPERAND_KINDS.contains(k) {
+                        if unplaced {
+                            at.insert("*".to_string());
+                        } else if let Some(e) = operand_at.and_then(|i| argument(args[i])) {
+                            at.extend(self.param_positions(e));
+                        }
+                    } else {
+                        for e in args.iter().filter_map(|a| argument(a)) {
+                            at.extend(self.param_positions(e));
+                        }
+                        if at.is_empty() || unplaced {
+                            // Some argument was read off a parameter
+                            // (`given_a_parameter`), by no position read here.
+                            at.insert("*".to_string());
+                        }
+                    }
+                    if at.is_empty() {
+                        at.insert("-".to_string());
+                    }
+                    for p in at {
+                        self.fed_sinks_at.insert((k.to_string(), p));
+                    }
+                }
+            }
         }
         // What the callee is handed, where it is code a reader can follow.
         if self.fn_depth >= 1
@@ -12625,7 +14647,51 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.made_fed_sinks
                 .extend(kinds.iter().map(|k| k.to_string()));
             if let Some(r) = self.l.canon_callee(&it.callee) {
-                self.made_passes.insert(r);
+                self.made_passes.insert(r.clone());
+                // Which arguments carry what the function made was called with.
+                let mut spread = calls_through_receiver(&it.callee);
+                for (j, a) in it.arguments.iter().enumerate() {
+                    spread |= matches!(a, Argument::SpreadElement(_));
+                    if argument(a).is_some_and(|e| self.reads_product_param(e)) {
+                        let pos = if spread {
+                            "*".to_string()
+                        } else {
+                            format!("#{j}")
+                        };
+                        self.made_passes_at.insert((r.clone(), pos));
+                    }
+                }
+            }
+        }
+        // A query given what a function of the body builds a `$where` in
+        // ([`Collector::where_makers`]): the text is the query's. Read since the
+        // measured build (the listed reading only).
+        let made_where: Vec<BTreeSet<String>> = it
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .filter_map(|e| match peel(e) {
+                Expression::CallExpression(c) => match unwrap_expr(&c.callee) {
+                    Expression::Identifier(id) => id
+                        .reference_id
+                        .get()
+                        .and_then(|r| self.l.scoping.get_reference(r).symbol_id())
+                        .and_then(|s| self.where_makers.get(&s))
+                        .cloned(),
+                    _ => None,
+                },
+                _ => None,
+            })
+            .collect();
+        if !made_where.is_empty() && !routes::unmeasured_listing() {
+            let nosql = signals::kind::NOSQL.to_string();
+            self.sinks.insert(nosql.clone());
+            let at: BTreeSet<String> = made_where.into_iter().flatten().collect();
+            if !at.is_empty() {
+                self.fed_sinks.insert(nosql.clone());
+                for p in at {
+                    self.fed_sinks_at.insert((nosql.clone(), p));
+                }
             }
         }
         for s in kinds {
@@ -12727,6 +14793,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.p.headers.insert(h);
         }
         self.note_input(it);
+        self.note_parse(it);
         self.note_verifier(it);
         self.note_error_handler(it);
         self.note_env_call(it);
@@ -12784,6 +14851,15 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                     // branch scopes the requests that take it.
                     if self.counting() && self.branches == 0 && !self.served {
                         self.caller_keys_at(&r, e, "", 0);
+                        // A Drizzle query builder's filter (`db.select().from(t)
+                        // .where(eq(t.orgId, x))`): its columns under `where`.
+                        if i == 0
+                            && r.member.ends_with(".where")
+                            && self.drizzle_condition(e)
+                            && !routes::unmeasured_listing()
+                        {
+                            self.drizzle_keys(&r, e, "where", 0);
+                        }
                     }
                 }
             }
@@ -12899,6 +14975,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if named.is_none() && hands_value_on(it) {
                 self.controls
                     .insert(drift_core::controls::UNREAD_CALL.into());
+                // A response written with the value (`res.json(rows)`) hands it to
+                // the framework, which sends it ([`drift_core::controls::UNREAD_RESPONDS`]).
+                if !self.flow_response(&it.callee) {
+                    self.unread_elsewhere = true;
+                }
             }
             // Given a parameter itself (the request, the response, the
             // continuation), or a method of a local given a value: what runs then
@@ -13204,10 +15285,12 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.own_this += 1;
         let of_value = self.object_fns.remove(&it.span.start);
         self.value_methods.push(of_value);
-        self.continuation_names
-            .push(continuation_params(&it.params));
+        let names = self.continuation_names_of(&it.params);
+        self.continuation_names.push(names);
+        self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         walk::walk_function(self, it, flags);
+        self.continuations.pop();
         self.continuation_names.pop();
         self.value_methods.pop();
         self.own_this -= 1;
@@ -13247,8 +15330,9 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             }
         }
         let outer = self.enter_fn(it.span.start, later);
-        self.continuation_names
-            .push(continuation_params(&it.params));
+        let names = self.continuation_names_of(&it.params);
+        self.continuation_names.push(names);
+        self.continuations.push(positional_continuation(&it.params));
         self.note_params(&it.params);
         if self.fn_depth == 1
             && let Some(body) = it.body.as_expression()
@@ -13261,6 +15345,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.in_lost += lost;
         walk::walk_arrow_function_expression(self, it);
         self.in_lost -= lost;
+        self.continuations.pop();
         self.continuation_names.pop();
         self.leave_fn(outer);
     }
@@ -13346,6 +15431,48 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
     }
 
     fn visit_if_statement(&mut self, it: &IfStatement<'a>) {
+        // A path test a view of a server hook is lowered under decides the
+        // branch: it is read as plain statements of the body, or not at all.
+        if let Some(taken) = self.assumed_value(&it.test) {
+            let branch = if taken {
+                Some(&it.consequent)
+            } else {
+                it.alternate.as_ref()
+            };
+            if let Some(b) = branch {
+                self.visit_statement(b);
+                self.assumed_left |= leaves(b);
+            }
+            return;
+        }
+        // A test of the function's own body, outside every branch, that leaves
+        // where a request header does not match a secret the environment holds
+        // (`if (!isAuthorized) return redirect(..)` of `const isAuthorized =
+        // request.headers.get("Authorization") === `Bearer ${token}``): every
+        // request that goes on carries the secret. What the branch answers is not
+        // asked: the refusal is that the function is left. A branch that leaves by
+        // handing the request on (`return next()`, `return handler(req)`) lets it
+        // through without the secret, and refuses no one
+        // ([`Collector::lets_through`]). The listed reading only.
+        // Only a branch that refuses counts ([`Collector::secret_branch_refuses`]);
+        // one that leaves with an answer the lowering does not read as a refusal
+        // (`return Response.json(published)`, `return redirect("/")`) is an exit
+        // not read ([`drift_core::controls::EXIT_UNREAD`]), never a refusal.
+        if self.counting()
+            && self.fn_depth <= 1
+            && self.branches == 0
+            && !self.served
+            && leaves(&it.consequent)
+            && let Some(header) = self.secret_mismatch(&it.test, false, 0)
+            && !routes::unmeasured_listing()
+            && !self.lets_through(&it.consequent)
+        {
+            if self.secret_branch_refuses(&it.consequent) {
+                self.secret_refusals.insert(header);
+            } else {
+                self.note_unread_exit(None, &[RawOperand::Text(format!("header:{header}"))]);
+            }
+        }
         // A branch that answers and does not leave, after which the function goes
         // on (`if (!token) { res.status(401).json({}); } next();`): found, not
         // proven to turn anyone away.
@@ -13551,6 +15678,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
     }
 
     fn visit_function_body(&mut self, it: &FunctionBody<'a>) {
+        // The last statement of a function's own body: nothing of that function
+        // follows it ([`Collector::continuation_exit`]).
+        if let Some(last) = it.statements.last() {
+            self.last_statements.insert(last.span().start);
+        }
         self.at_body = true;
         walk::walk_function_body(self, it);
         self.at_body = false;
@@ -13574,6 +15706,11 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             });
             self.visit_statement(st);
             self.followed.pop();
+            // A branch a server hook's view takes left the function: what follows
+            // does not run in that view.
+            if body && std::mem::take(&mut self.assumed_left) {
+                break;
+            }
             if let Statement::IfStatement(i) = st
                 && i.alternate.is_none()
                 && leaves(&i.consequent)
@@ -13614,6 +15751,16 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         {
             self.sinks.insert(signals::kind::KEY_WRITE.into());
             self.fed_sinks.insert(signals::kind::KEY_WRITE.into());
+            // The key is the operand: the parameter it is read off; `*` where it
+            // reads one at no position read here (never "fed by none").
+            let mut at = self.param_positions(&m.expression);
+            if at.is_empty() {
+                at.insert("*".to_string());
+            }
+            for p in at {
+                self.fed_sinks_at
+                    .insert((signals::kind::KEY_WRITE.to_string(), p));
+            }
         }
         // `res = unauthorized();`
         if self.counting()
@@ -13997,7 +16144,40 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         self.in_catch += 1;
         walk::walk_catch_clause(self, it);
         self.in_catch -= 1;
-        if let Some(f) = self.p.frames.pop() {
+        // `catch (e) { next(e) }`: what was caught is handed to the continuation the
+        // framework gave the function, and the framework's error handling answers
+        // it. The error goes on, as a rethrow does; it is not swallowed, and a
+        // `return next(e)` is not a return of the request served. The listed
+        // reading only: the measured build read it as nothing ([`RawCatch`]). Only
+        // where handing it on is the clause's last statement and nothing before it
+        // can leave: `catch (e) { if (e.code === "ENOENT") return; next(e) }` still
+        // swallows some errors.
+        //
+        // A clause that answered first (`res.status(500).json(...); next(e)`) is the
+        // handler answering, as the measured build read it: what it sent is the
+        // answer, not the framework's handling. One where a statement before the
+        // hand-on is no log line, no report to an error tracker and no plain
+        // declaration ([`read_before_forward`]: `sendError(res, e); next(e)`) may
+        // have answered too: `unread`, neither the framework's nor the handler's.
+        let (forwards, unread_before) = match it.body.body.as_slice() {
+            [before @ .., last] if self.forwards_caught(last, param) => {
+                let plain = before.iter().all(|s| {
+                    matches!(
+                        s,
+                        Statement::ExpressionStatement(_) | Statement::VariableDeclaration(_)
+                    )
+                });
+                (plain, plain && !before.iter().all(read_before_forward))
+            }
+            _ => (false, false),
+        };
+        if let Some(mut f) = self.p.frames.pop() {
+            let answered = f.does.iter().any(|(d, _)| d.starts_with("respond:"));
+            if forwards && !answered && !routes::unmeasured_listing() {
+                f.does.remove(&("return".to_string(), None));
+                let what = if unread_before { "unread" } else { "rethrow" };
+                f.does.insert((what.to_string(), None));
+            }
             let mut catches: Vec<RawOperand> = f.classes.into_iter().collect();
             if catches.is_empty() {
                 catches.push(RawOperand::Text("*".into()));
@@ -14036,12 +16216,22 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 if let Some(r) = self.built_in_place(init) {
                     self.built_locals.insert(sym, r);
                 }
+                if let Some(test) = self.secret_compare(init) {
+                    self.secret_tests.insert(sym, test);
+                }
             }
             if self.reads_product_param(init) {
                 self.product_params.insert(sym);
             }
             if self.reads_own_param(init) {
                 self.own_locals.insert(sym);
+                let at = self.param_positions(init);
+                self.own_local_at.insert(sym, at);
+            }
+            if self.const_decl
+                && let Some(at) = self.where_maker(init)
+            {
+                self.where_makers.insert(sym, at);
             }
             if let Some(of) = self.param_chain(init) {
                 self.param_values.insert(sym, of);

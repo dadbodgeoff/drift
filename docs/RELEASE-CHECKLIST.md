@@ -11,7 +11,17 @@ creates the GitHub Release and then waits for approval to run `npm publish`
 > version, which commit) in the release pull request before the tag is pushed.
 > A checked box below is not a go-ahead.
 
-## 0. Open question: release identity (blocks everything else)
+A box is ticked only when someone verified it, with the date and how. Ticks from
+2026-11-16 were made on the `gap/release-dryrun` branch (based on
+`map-to-enforcement` at `525d956a`) on a Linux x86_64 machine with no GitHub
+Actions; nothing was run on GitHub.
+
+## A. Only the owner can do these
+
+These need the owner's accounts (GitHub repository settings, npm scope) or are
+the owner's decisions. Nobody else can tick them.
+
+### A1. Release identity (blocks everything else)
 
 The code lives in the development repository (GeoffreyFernald/Driftv22). Every
 release-facing file names **dadbodgeoff/drift** and the npm package
@@ -22,81 +32,119 @@ release-facing file names **dadbodgeoff/drift** and the npm package
 | `npm/config.json` | `name: @dadbodgeoff/drift`, `repository: https://github.com/dadbodgeoff/drift` (platform packages are `@dadbodgeoff/drift-<platform>`) |
 | `Cargo.toml` (`[workspace.package] repository`) | `https://github.com/dadbodgeoff/drift` |
 | `integrations/claude-code/.claude-plugin/plugin.json` | `homepage` and `repository`: `https://github.com/dadbodgeoff/drift` |
-| `action.yml` | builds Drift with `cargo install --git https://github.com/dadbodgeoff/drift` |
+| `scripts/action/install.sh` (the Action) | downloads release archives from, and builds Drift from, `https://github.com/dadbodgeoff/drift` (`scripts/action/test.sh` checks it matches `npm/config.json`) |
 | `README.md` | `npm install -g @dadbodgeoff/drift`, `claude plugin marketplace add dadbodgeoff/drift`, `uses: dadbodgeoff/drift@…`, the pre-commit `repo:` URL |
 | `RELEASING.md` | `gh attestation verify … --repo dadbodgeoff/drift` |
 
 `npm/ci-check.mjs` checks that `Cargo.toml`, `plugin.json`, `action.yml`, the npm
 launcher and `RELEASING.md` all name the repository in `npm/config.json`.
 
-The intended answer (owner's task) is to **push v2 to dadbodgeoff/drift and
-publish under the npm scope @dadbodgeoff**. Before that is done, decide and
-record:
-
 - [ ] **How v2 reaches dadbodgeoff/drift.** Push this repository's `main`
-      history there, or replace what is there. What dadbodgeoff/drift holds
-      today was **not checked** for this checklist (the session had no access
-      to it). Anything published from it now (its default branch, its tags) is
-      what `uses: dadbodgeoff/drift@main`, the pre-commit hook and the plugin
-      marketplace command give users today.
+      history there, or replace what is there. The 2026-11-07 dry run
+      ([DRYRUN.md](../eval/release/2026-11-07/DRYRUN.md)) found that
+      dadbodgeoff/drift's `main` is another code base with tags up to `v0.9.46`:
+      a first version of `0.1.0` would sort below them. Until the push,
+      `uses: dadbodgeoff/drift@main` and `claude plugin marketplace add
+      dadbodgeoff/drift` reach the old code.
 - [ ] **The release runs in dadbodgeoff/drift.** Trusted publishing,
       provenance (`gh attestation verify --repo dadbodgeoff/drift`) and the
-      Action's `cargo install --git` all assume the workflow runs there, not in
+      Action's release download (and its fallback build from source) all assume the workflow runs there, not in
       the development repository.
 - [ ] **The npm scope.** `@dadbodgeoff` must be the owner's npm user or
-      organisation. On 2026-11-08 the registry answered "Not found" for
-      `@dadbodgeoff/drift`: the name is not published yet. Who owns the scope
-      was not checked.
+      organisation (npmjs.com, signed in: `https://www.npmjs.com/settings/dadbodgeoff/packages`).
+      On 2026-11-08 the registry answered "Not found" for `@dadbodgeoff/drift`.
 - [ ] **If the identity changes** (another owner, repository or package name),
       change `npm/config.json` first, then every row of the table above, and
-      run `node npm/ci-check.mjs` (it fails on any file that disagrees).
+      run `node npm/ci-check.mjs <dir with the yaml package>` (it fails on any
+      file that disagrees).
 
-## 1. One-time setup in the release repository and on npm
+### A2. One-time setup in the release repository and on npm
 
-From [RELEASING.md](../RELEASING.md), "One-time setup":
-
-- [ ] **GitHub Actions are enabled** in the release repository. (They are off in
-      the development repository: no workflow there has been run on GitHub,
-      including CI's `packaging` job.)
+- [ ] **GitHub Actions are enabled** in the release repository (Settings >
+      Actions > General). They are off in the development repository: no
+      workflow there has run on GitHub.
 - [ ] **Trusted publishing** on npmjs.com for `@dadbodgeoff/drift` and each
       platform package (`-linux-x64`, `-linux-arm64`, `-darwin-x64`,
-      `-darwin-arm64`, `-win32-x64`), bound to that repository and
-      `release.yml`.
-- [ ] **An `npm` environment with required reviewers** in that repository, so
-      every npm publish waits for a person.
-- [ ] **Tag protection** on `v*`, so only maintainers can push release tags.
+      `-darwin-arm64`, `-win32-x64`), bound to the release repository and the
+      workflow file `release.yml`, environment `npm` (each package's page >
+      Settings > Trusted publishing).
+- [ ] **The first publish of each name.** Not verified (the npm documentation
+      was not reachable from the machine that wrote this): if npm lets a trusted
+      publisher be added only to a package that already exists, the first
+      publish of the six names needs a one-time granular token or a first
+      publish by hand. The workflow reads no secret, so this would fail on the
+      first tag unless decided beforehand.
+- [ ] **An `npm` environment with required reviewers** (Settings >
+      Environments > New environment `npm` > Required reviewers), so every npm
+      publish waits for a person.
+- [ ] **Tag protection** on `v*` (Settings > Rules > Rulesets > New tag
+      ruleset, target `v*`, restrict creation to maintainers).
 - [ ] **2FA** on GitHub and npm for every maintainer.
 
-## 2. The release commit
+### A3. The release itself
 
-- [ ] **Version.** `node npm/set-version.mjs X.Y.Z` on a release branch, for
-      example `0.1.0-beta.1` for the beta. A prerelease tag is published to npm
-      under `next`, not `latest`, and becomes a GitHub prerelease. The version
-      number is the owner's choice.
-- [ ] **Gates pass on the release commit** (GitHub Actions are off here, so
-      locally):
+- [ ] **The version number**, then `node npm/set-version.mjs X.Y.Z` on a
+      release branch (for example `0.1.0-beta.1`, or above `0.9.46`: see A1). A
+      prerelease tag is published to npm under `next`, not `latest`, and becomes
+      a GitHub prerelease.
+- [ ] **The full rehearsal ran green on the release commit** in the release
+      repository: `gh workflow run release.yml --ref <release-branch>`, then
+      `gh run watch <run id>`, then `gh run download <run id>` and a look at
+      `release-archives` (five tarballs and `SHA256SUMS`) and `npm-tarballs`
+      (six tarballs). Needs Actions (A2).
+- [ ] **The owner's go-ahead is recorded** (who, when, version, commit) in the
+      release pull request.
+- [ ] Merge the release pull request, then push the tag from the release
+      repository: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+- [ ] A person approves the `npm` environment (the run's page > Review
+      deployments) only after checking the GitHub Release: five tarballs,
+      `SHA256SUMS`, provenance.
+
+## B. The release path (anyone can verify; tick with date and how)
+
+- [x] **The versions agree, and one command sets them.** 2026-11-16:
+      `node npm/set-version.mjs --check` prints `version 0.1.0-dev: 11 places
+      agree` (Cargo.toml workspace version and 4 path dependencies, Cargo.lock's
+      5 members, plugin.json); `node --test npm/set-version.test.mjs` passes 8
+      tests (set and round trip on a copy, a failure for each place that
+      disagrees).
+- [x] **CI's `packaging` job passes locally.** 2026-11-16: `node
+      npm/ci-check.mjs <dir with yaml 2.9.1>` ok (Node 22, npm 10.9.9). It ran
+      release.yml's verify, version, archive, pack, install-test and publish
+      steps on stubs. 11 hand-made breakages were each caught: the npm job
+      without its tag-only condition, `dry_run` defaulting to false, a matrix
+      artifact name without the target, a manual run that publishes, an
+      archive step that drops the executable bit, write permission on a job that
+      publishes nothing, the main package published before the platform
+      packages, a plugin version that disagrees, a secret read, a launcher that
+      drops arguments, and a platform binary packed without its executable bit.
+- [ ] **Dry run on a release binary.** `npm/dry-run.sh X.Y.Z` (it builds the
+      `x86_64-unknown-linux-musl` release binary; about 7 minutes). On
+      2026-11-16 it was **not** run with a release build: `BIN=<debug build of
+      this branch> npm/dry-run.sh` passed (versions, archive, `SHA256SUMS`, a
+      tampered archive rejected, six npm tarballs, install from the tarballs
+      offline, `drift 0.1.0-dev` through the launcher, census, init, review
+      --block, check exit 0 then 1 on a new unwrapped route, practices promote,
+      and all six plugin hooks with Stop blocking). The release-profile musl
+      build last ran on 2026-11-07 ([DRYRUN.md](../eval/release/2026-11-07/DRYRUN.md)).
+      CI's `release-rehearsal` job runs the full script on GitHub.
+- [ ] **Gates pass on the release commit:**
   - [ ] `cargo fmt --all --check`
   - [ ] `cargo clippy --all-targets --locked -- -D warnings`
   - [ ] `RUSTFLAGS="-D warnings" INSTA_UPDATE=no cargo test --all --locked`
   - [ ] `node --test eval/study/*.test.mjs`
   - [ ] `cargo deny check`
   - [ ] Studio: `npm ci --ignore-scripts`, then typecheck, lint, vitest and build
-  - [ ] `node npm/ci-check.mjs <dir with the yaml package>` (CI's `packaging` job)
-- [ ] **Dry run.** `npm/dry-run.sh X.Y.Z` passes: versions agree, the linux-x64
-      release binary builds, a tampered archive fails `sha256sum -c`, the npm
-      packages install into a scratch project, and `census`, `init`,
-      `review --block`, `check` and each Claude Code hook run once on a
-      synthetic repository.
+  - [ ] `node npm/ci-check.mjs <dir with the yaml package>` and
+        `node --test npm/set-version.test.mjs` (CI's `packaging` job)
 - [ ] **The release commit is the measured product, or the difference is
       stated.** The out-of-sample figures in [ACCURACY.md](ACCURACY.md) were
-      measured at the round-10 freeze `F10` (`5151e5c`); the D13 changes since
-      left the TypeScript/JavaScript card set unchanged. If anything that
-      changes mining, check or what agents see merges after the current main,
-      either re-run the dev3 census comparison (as
-      `eval/study/runs/dev3-recensus-2026-11-08/`) or say in the release notes
-      that the figures are for an earlier product.
+      measured at the round-10 freeze `F10` (`5151e5c`). If anything that
+      changes mining, check or what agents see merged since, either re-run the
+      dev3 census comparison (as `eval/study/runs/dev3-recensus-2026-11-08/`)
+      or say in the release notes that the figures are for an earlier product.
 
-## 3. Documentation is honest
+## C. Documentation is honest
 
 - [ ] [ACCURACY.md](ACCURACY.md) matches the committed run and plan READMEs it
       cites, marks every figure in-sample or out-of-sample, and quotes no card
@@ -112,10 +160,13 @@ From [RELEASING.md](../RELEASING.md), "One-time setup":
 - [ ] The README renders on the npm package page (npm ships the root
       `README.md` in the main package): its relative links to `docs/` and
       `eval/` resolve, or are made absolute to the release repository.
+- [ ] The README's Install section says the npm package and the release
+      archives exist (today it says nothing is published, which stays true until
+      the tag).
 - [ ] [RELEASE-NOTES-beta.md](RELEASE-NOTES-beta.md) has the final version,
       date and repository, and its "Known limits" are still true.
 
-## 4. Product state for this beta
+## D. Product state for this beta
 
 These describe the round-11 product (decision D13). Check each on the release
 binary with a synthetic repository (the dry run's is enough):
@@ -136,25 +187,22 @@ binary with a synthetic repository (the dry run's is enough):
 - [ ] `agents.verify`, `review_log` and `experimental: [wiring]` are off by
       default.
 
-## 5. Not part of this publish
+## E. Not part of this publish
 
-- **The Studio** is not packaged, signed or notarised; it runs from a checkout.
-  It is not in any npm package.
+- **The Studio** is packaged unsigned by `.github/workflows/studio-package.yml`
+  (CI artifacts only); it is not signed, notarised, attached to a release or in
+  any npm package. What its first signed release needs is in
+  `apps/studio/README.md` (Packaging).
 - **Code signing.** The release binaries are not code-signed or notarised;
   checksums and SLSA build provenance are what users can verify.
+- **darwin-x64** is cross-compiled on Apple silicon and has no runner of its
+  own: the rehearsal's install test covers linux-x64, linux-arm64, darwin-arm64
+  and win32-x64.
 
-## 6. Publish (only after the owner's go-ahead)
+## F. After publishing (owner, or anyone the owner asks)
 
-- [ ] The owner's go-ahead is recorded (who, when, version, commit).
-- [ ] Merge the release pull request, then push the tag from the release
-      repository: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-- [ ] The `verify` job agrees on the tag, `Cargo.toml` and `plugin.json`
-      versions; the release job checks `drift --version` of the built binary.
-- [ ] A person approves the `npm` environment only after checking the GitHub
-      Release: five tarballs, `SHA256SUMS`, provenance.
-
-## 7. After publishing
-
+- [ ] The `verify` job agreed on the tag and the repository's versions; the
+      package job checked `drift --version` of the built binary.
 - [ ] On a clean machine: `npm install -g @dadbodgeoff/drift@next` (or the
       version), `drift --version`, then `drift census` on a small repository.
 - [ ] `sha256sum -c SHA256SUMS --ignore-missing` and `gh attestation verify

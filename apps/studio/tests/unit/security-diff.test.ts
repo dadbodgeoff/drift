@@ -57,6 +57,21 @@ describe("security --diff-base: contract and IPC", () => {
     expect(json<SecurityDiff>("beacon/security-diff.json").guard_gaps.length).toBe(1);
   });
 
+  it("carries every kind the security baseline holds, keyed as the lock keys it, and what was not compared", () => {
+    const d: SecurityDiff = {
+      ...full,
+      added: { workflow: [{ key: "untrusted_checkout in .github/workflows/pr.yml job test: github.event.pull_request.head.sha", at: ".github/workflows/pr.yml:6" }] },
+      not_compared: [{ kind: "no-authorization", why: "the practice map could not be read" }],
+    };
+    expect(SecurityDiffEnvelope.safeParse(d).success).toBe(true);
+    // The fields as Drift writes them (crates/drift-cli/src/sec_diff.rs, drift-mine security_diff.rs and ratchet.rs).
+    const rs = (p: string) => readFileSync(new URL(`../../../../${p}`, import.meta.url), "utf8");
+    const cli = rs("crates/drift-cli/src/sec_diff.rs");
+    for (const field of ["added", "outside_change", "not_compared"]) expect(cli).toContain(`v["${field}"]`);
+    expect(rs("crates/drift-mine/src/security_diff.rs")).toContain("pub rows: Vec<Added>");
+    expect(rs("crates/drift-mine/src/ratchet.rs")).toContain("pub baselined_by_change: BTreeMap<String, Vec<Added>>");
+  });
+
   it("takes a base only as a plain ref, in the request schema and again in the main process", () => {
     expect(channels.security.req.safeParse([repo]).success).toBe(true);
     expect(channels.security.req.safeParse([repo, { base: "origin/main" }]).success).toBe(true);
@@ -102,7 +117,7 @@ describe("security --diff-base: contract and IPC", () => {
 
 describe("security --diff-base: the Changes view", () => {
   it("counts each section as the --github line does", () => {
-    expect(diffCounts(full)).toEqual({ guardGaps: 1, unguardedReaching: 1, sinks: 1, leaks: 1, nowPublic: 1, total: 5 });
+    expect(diffCounts(full)).toEqual({ guardGaps: 1, unguardedReaching: 1, sinks: 1, leaks: 1, nowPublic: 1, addedWithoutGuard: 0, guardUnknown: 0, total: 5 });
     expect(diffCounts(json<SecurityDiff>("acme/security-diff.json"))).toMatchObject({ guardGaps: 2, total: 2 });
     expect(placeOf("", "")).toBe("the repository");
     expect(placeOf("apps/web", "")).toBe("package apps/web");

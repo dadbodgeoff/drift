@@ -46,11 +46,15 @@ const CheckView = lazy(() => import("@/features/check").then((m) => ({ default: 
 const MapView = lazy(() => import("@/features/map").then((m) => ({ default: m.MapView })));
 const SecurityView = lazy(() => import("@/features/security").then((m) => ({ default: m.SecurityView })));
 const PracticesView = lazy(() => import("@/features/practices").then((m) => ({ default: m.PracticesView })));
+const FunnelView = lazy(() => import("@/features/funnel").then((m) => ({ default: m.FunnelView })));
 const SessionsView = lazy(() => import("@/features/sessions").then((m) => ({ default: m.SessionsView })));
 const StudiesView = lazy(() => import("@/features/studies").then((m) => ({ default: m.StudiesView })));
 const LogsView = lazy(() => import("@/features/logs").then((m) => ({ default: m.LogsView })));
 const SettingsView = lazy(() => import("@/features/settings").then((m) => ({ default: m.SettingsView })));
 const GalleryView = lazy(() => import("@/features/gallery").then((m) => ({ default: m.GalleryView })));
+const FromMapView = lazy(() => import("@/features/from-map").then((m) => ({ default: m.FromMapView })));
+const UpgradeView = lazy(() => import("@/features/upgrade").then((m) => ({ default: m.UpgradeView })));
+const FeedbackView = lazy(() => import("@/features/feedback").then((m) => ({ default: m.FeedbackView })));
 
 interface NavItem {
   id: ViewId;
@@ -61,12 +65,20 @@ interface NavItem {
 
 const SECTIONS: { title: MessageKey | null; items: NavItem[] }[] = [
   { title: null, items: [{ id: "attention", label: "nav.attention", icon: "home", key: "h" }] },
-  { title: "nav.review", items: [{ id: "conventions", label: "nav.conventions", icon: "review", key: "c" }] },
+  {
+    title: "nav.review",
+    items: [
+      { id: "conventions", label: "nav.conventions", icon: "review", key: "c" },
+      { id: "funnel", label: "nav.funnel", icon: "filter", key: "f" },
+      { id: "from-map", label: "nav.fromMap", icon: "map", key: "w" },
+    ],
+  },
   {
     title: "nav.investigate",
     items: [
       { id: "check", label: "nav.check", icon: "violation", key: "v" },
       { id: "sessions", label: "nav.sessions", icon: "session", key: "s" },
+      { id: "feedback", label: "nav.feedback", icon: "check", key: "b" },
     ],
   },
   {
@@ -81,6 +93,7 @@ const SECTIONS: { title: MessageKey | null; items: NavItem[] }[] = [
 ];
 const FOOTER: NavItem[] = [
   { id: "logs", label: "nav.logs", icon: "logs", key: "l" },
+  { id: "upgrade", label: "nav.upgrade", icon: "refresh", key: "y" },
   { id: "settings", label: "nav.settings", icon: "settings", key: "," },
   { id: "gallery", label: "nav.gallery", icon: "grid", key: "u" },
 ];
@@ -376,6 +389,8 @@ function renderView(view: ViewId, param: string | null, query: URLSearchParams):
       return <SecurityView tab={param} />;
     case "practices":
       return <PracticesView tab={param} concern={query.get("concern")} />;
+    case "funnel":
+      return <FunnelView gate={param} />;
     case "sessions":
       return <SessionsView sessionId={param} />;
     case "studies":
@@ -386,6 +401,12 @@ function renderView(view: ViewId, param: string | null, query: URLSearchParams):
       return <SettingsView />;
     case "gallery":
       return <GalleryView />;
+    case "from-map":
+      return <FromMapView />;
+    case "upgrade":
+      return <UpgradeView />;
+    case "feedback":
+      return <FeedbackView />;
   }
 }
 

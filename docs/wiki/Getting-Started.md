@@ -38,6 +38,33 @@ drift --version
 
 **After the first release.** The release channels will be an npm package (`@dadbodgeoff/drift`; a beta under npm's `next` dist-tag, so `@dadbodgeoff/drift@next`) and prebuilt archives on the repository's GitHub Releases, with checksums and build provenance. Neither exists today: `npm install -g @dadbodgeoff/drift` returns 404. When they do, the archive steps are in [RELEASING.md](https://github.com/dadbodgeoff/drift/blob/main/RELEASING.md).
 
+## The first ten minutes: `drift setup`
+
+After installing, one command walks you through the rest of this page:
+
+```bash
+drift setup
+```
+
+In a terminal it reads the repository (on a large one, wait for the first line), then:
+
+1. **What Drift read**: the files by language, the entry points and how many have a guard Drift found, and what it could not read.
+2. **Proposals, one at a time**: the mined conventions first, then the practices and the layering it read from the map, each labelled with where it came from. Each shows the rule, the evidence (how many follow it, differ, or could not be read), one file that follows and one that differs. `y` accepts it, advising (`drift check` reports a new violation of it and fails nothing), `n` declines it (not offered again), Enter skips it (asked again next time), `q` skips the rest. Where there is no `.drift/conventions.yaml` yet, the first answer runs `drift init`.
+3. **Which compose file is deployed**: asked only when two compose files describe the same code with a different reach.
+4. **The security baseline**: what it is, how many findings it would hold today, and whether to record them. Enter means no for now.
+5. **Agents**: the `AGENTS.md` block and the Claude Code permission entries, one question each, what each tells the agent first. Enter means no for now. The Claude Code plugin is installed by Claude Code; the flow prints its two commands.
+6. **Done**: what was decided and written, the command that changes each decision later, the files to commit, and the one command for CI (`drift check --diff-base origin/main`).
+
+Nothing is accepted, baselined, written or shown to an agent unless you answer yes. Run it again at any time: it asks only what is still undecided.
+
+Without a terminal (in a script or CI), `drift setup` asks nothing and writes nothing: it prints each question with the flag that answers it. To answer from a script a person runs:
+
+```bash
+DRIFT_SETUP_PERSON=1 drift setup --by person --yes-to D-1a2b3c,baseline --no-to agents-md
+```
+
+`--yes-to` and `--no-to` take a proposal's id, a compose question's id, `baseline`, `agents-md` or `claude-settings`; what neither names is skipped. The sections below are the same steps one command at a time.
+
 ## 2. Preview what Drift would propose
 
 Run these from the repository root (or pass `--root <dir>` to every command). `drift census` changes nothing:
@@ -112,7 +139,10 @@ Read it top to bottom:
 
 - **`What the code does`** is read from the code and is there whether or not Drift proposes anything: each kind of entry point, how many of them sign a caller in and how, check permissions, handle errors and answer. Each line adds up to its total: `nothing found` is what Drift read to the end and found no guard in, `could not tell` is what it could not read. These are what the code does, and nothing checks them until a person promotes one (step 7 below). See [Practices Map](Practices-Map).
 - **`Worth a look first`** is at most five things from that map, the costliest first: a signed-in caller reaching what is not theirs, entry points with no sign-in, input nothing validates, two ways of doing one thing side by side.
-- **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the two sections above are the first result.
+- **`From the security inventory (what Drift read; not conventions, and nothing here is checked)`** comes before `Conventions` where the inventory has a finding to rank: the first few findings of `drift security --top`, each with what Drift read and what it did not. A guard Drift could not read is never ranked. Nothing here is a convention or fails a check.
+- **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the sections above are the first result.
+- **`From the map (not mined: ...)`** comes after `Conventions` where the practice map or the structure map shows a rule that qualifies: proposals that did not go through the miner's measured gates, each labelled as coming from the map, with how many units Drift could read follow it and how many it could not read. A unit Drift could not read is never reported. Like every proposal, nothing from the map is checked, baselined or shown to an agent until you accept it in `drift review`, and an accepted one advises. `drift init --no-from-map` leaves them out. See [Proposals from the map](Conventions-and-Review#proposals-from-the-map).
+- **`Security baseline`** appears where the repository has no `.drift/security.lock` and the security inventory finds something: `Security baseline: none yet. It would hold N findings (n kind, ...), accepted as they are; new ones are reported by `drift check`. `drift security --write-baseline` writes it (.drift/security.lock); nothing was written.` `Next` then has the line `drift security --write-baseline   accept the N security findings as they are; `drift check` then reports new ones`. Writing it is your decision; once it is committed, `drift check` fails on a new finding of a kind it sets to fail ([Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen)).
 - **`Next`** lists only the commands that have something to do in this repository.
 
 `drift init --explain` prints the same screen and then the long account: what the show policy kept back and why, and a line per package in a monorepo.
@@ -124,7 +154,7 @@ Read the card like this:
 - **`tier: default`** is the stronger of the two tiers. Default-tier proposals are *block candidates*: they are listed first, and they reach no agent until you accept them. See [Conventions and Review](Conventions-and-Review).
 - **Outliers** are the members that do not follow the rule today. They are baselined in `drift.lock`, so they never fail a check; only new violations do.
 
-Everything starts as a proposal. A proposal is not checked at all.
+Everything starts as a proposal. A proposal is not checked at all. An accepted one advises until a person sets it to block.
 
 If Drift proposes nothing, it says why and names the largest role it saw:
 
@@ -215,7 +245,7 @@ Commit `.drift/conventions.yaml` and `drift.lock`. Only promote a card you would
 
 ## 4. Answer the setup questions, if there are any
 
-When the `Next` block `drift init` ends with lists `drift setup` (questions only you can answer), run it. If it has nothing to ask it says so:
+When the `Next` block `drift init` ends with lists `drift setup` (questions only you can answer), run `drift setup --interactive` to answer them one at a time (`drift setup` alone runs the guided flow above, which asks the compose question among its steps). If it has nothing to ask it says so:
 
 ```
 Nothing to ask: Drift has no question only you can answer.

@@ -1,0 +1,1422 @@
+{
+ "schema": 1,
+ "about": "One verdict per promote candidate and census proposal, from audits 8 (§2c) and 9 (§4). `keep` normalises the audit's words: yes; yes_qualified (yes, but in a narrow, wrong or mis-stated place, or 'yes-ish'); trivial; trivial_or_wrong; wrong; yes_probably / yes_plausibly (census). `audit_verdict` keeps the audit's words. A candidate is matched by `key` (repository|concern|package|dir|file|route|way keys|mechanisms), a census proposal by repository:id. Candidates and proposals of a new build that match nothing count as unlabelled: add a row with a verdict for each. `from_map` holds verdicts for `census --from-map --json` proposals (id repository:id), empty until a person reads them.",
+ "candidates": [
+  {
+   "key": "epic|authn||app/routes/settings|||body_call:app/utils/auth.server.ts#requireUserId|",
+   "repository": "epic",
+   "concern": "authn",
+   "place": {
+    "package": "",
+    "dir": "app/routes/settings"
+   },
+   "ways": [
+    "P-5660b1"
+   ],
+   "follows": 20,
+   "total": 21,
+   "keep": "yes",
+   "audit_verdict": "**yes** (1 false exception)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "epic|errors|||||bubble:framework_default|",
+   "repository": "epic",
+   "concern": "errors",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 65,
+   "total": 68,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "epic|logging|||||message:console|",
+   "repository": "epic",
+   "concern": "logging",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 18,
+   "total": 20,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "epic|data_access||app/utils|||service:@prisma/client|",
+   "repository": "epic",
+   "concern": "data_access",
+   "place": {
+    "package": "",
+    "dir": "app/utils"
+   },
+   "ways": [
+    "P-288461"
+   ],
+   "follows": 9,
+   "total": 10,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|logging|||||message_repo_logger:lib/logger.ts#default|",
+   "repository": "juice-shop",
+   "concern": "logging",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-68ac73"
+   ],
+   "follows": 67,
+   "total": 82,
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|logging|frontend||||message:console|",
+   "repository": "juice-shop",
+   "concern": "logging",
+   "place": {
+    "package": "frontend",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 53,
+   "total": 53,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|config||lib/startup|||env_schema:config|",
+   "repository": "juice-shop",
+   "concern": "config",
+   "place": {
+    "package": "",
+    "dir": "lib/startup"
+   },
+   "ways": [
+    "P-3fdab9"
+   ],
+   "follows": 14,
+   "total": 15,
+   "keep": "yes_qualified",
+   "audit_verdict": "yes, but in the least important place",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|data_access||data|||repository:sequelize|",
+   "repository": "juice-shop",
+   "concern": "data_access",
+   "place": {
+    "package": "",
+    "dir": "data"
+   },
+   "ways": [
+    "P-438812"
+   ],
+   "follows": 20,
+   "total": 24,
+   "keep": "wrong",
+   "audit_verdict": "**wrong**: the place is mostly challenge snippets",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|data_access||models|||repository:sequelize|",
+   "repository": "juice-shop",
+   "concern": "data_access",
+   "place": {
+    "package": "",
+    "dir": "models"
+   },
+   "ways": [
+    "P-438812"
+   ],
+   "follows": 24,
+   "total": 24,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "juice-shop|data_access||routes|||service:sequelize|",
+   "repository": "juice-shop",
+   "concern": "data_access",
+   "place": {
+    "package": "",
+    "dir": "routes"
+   },
+   "ways": [
+    "P-2b405b"
+   ],
+   "follows": 53,
+   "total": 57,
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|authn|apps/api/v2|src/modules/cal-unified-calendars|||decorator:apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts#ApiAuthGuard|",
+   "repository": "cal.com",
+   "concern": "authn",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": "src/modules/cal-unified-calendars"
+   },
+   "ways": [
+    "P-6f65c2"
+   ],
+   "follows": 15,
+   "total": 15,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, but too narrow to matter",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|authn|apps/api/v2|src/modules/verified-resources|||decorator:apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts#ApiAuthGuard|",
+   "repository": "cal.com",
+   "concern": "authn",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": "src/modules/verified-resources"
+   },
+   "ways": [
+    "P-6f65c2"
+   ],
+   "follows": 8,
+   "total": 8,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, but too narrow to matter",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|authn|apps/api/v2|src/platform/schedules|||decorator:apps/api/v2/src/modules/auth/guards/api-auth/api-auth.guard.ts#ApiAuthGuard|",
+   "repository": "cal.com",
+   "concern": "authn",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": "src/platform/schedules"
+   },
+   "ways": [
+    "P-6f65c2"
+   ],
+   "follows": 12,
+   "total": 12,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, but too narrow to matter",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|authn|packages/trpc||||any_of(wrap:packages/trpc/server/middlewares/sessionMiddleware.ts#isAdminMiddleware|wrap:packages/trpc/server/middlewares/sessionMiddleware.ts#isAuthed)|",
+   "repository": "cal.com",
+   "concern": "authn",
+   "place": {
+    "package": "packages/trpc",
+    "dir": ""
+   },
+   "ways": [
+    "P-9ce3ee"
+   ],
+   "follows": 143,
+   "total": 179,
+   "keep": "yes",
+   "audit_verdict": "**yes** (10 false exceptions, and overlaps census D-594d38)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|authz|packages/trpc|server/routers/viewer/admin|||role_guard:packages/trpc/server/procedures/authedProcedure.ts#authedAdminProcedure|",
+   "repository": "cal.com",
+   "concern": "authz",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/admin"
+   },
+   "ways": [
+    "P-fa7ed4"
+   ],
+   "follows": 21,
+   "total": 22,
+   "keep": "yes",
+   "audit_verdict": "**yes** (1 false exception)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|apps/api/v2||||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": ""
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 151,
+   "total": 178,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|apps/web|app/(use-page-wrapper)|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "apps/web",
+    "dir": "app/(use-page-wrapper)"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 9,
+   "total": 9,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|apps/web|pages|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "apps/web",
+    "dir": "pages"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 32,
+   "total": 35,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/loggedInViewer|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/loggedInViewer"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 8,
+   "total": 9,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/admin|||app_handler:packages/trpc/server/trpc.ts#tRPCContext|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/admin"
+   },
+   "ways": [
+    "P-0130b3"
+   ],
+   "follows": 22,
+   "total": 22,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/apps|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/apps"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 14,
+   "total": 14,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/availability|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/availability"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 13,
+   "total": 13,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/bookings|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/bookings"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 14,
+   "total": 14,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/eventTypes|||app_handler:packages/trpc/server/trpc.ts#tRPCContext|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/eventTypes"
+   },
+   "ways": [
+    "P-0130b3"
+   ],
+   "follows": 22,
+   "total": 22,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|errors|packages/trpc|server/routers/viewer/oAuth|||bubble:framework_default|",
+   "repository": "cal.com",
+   "concern": "errors",
+   "place": {
+    "package": "packages/trpc",
+    "dir": "server/routers/viewer/oAuth"
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 8,
+   "total": 8,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|||||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 22,
+   "total": 22,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|apps/api/v2|src/modules/oauth-clients|||message:@nestjs/common#Logger|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": "src/modules/oauth-clients"
+   },
+   "ways": [
+    "P-c495b1"
+   ],
+   "follows": 12,
+   "total": 12,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|apps/web|components|||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "apps/web",
+    "dir": "components"
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 9,
+   "total": 10,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|apps/web|modules|||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "apps/web",
+    "dir": "modules"
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 16,
+   "total": 16,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|packages/app-store||||message:tslog|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "packages/app-store",
+    "dir": ""
+   },
+   "ways": [
+    "P-bc03fd"
+   ],
+   "follows": 12,
+   "total": 15,
+   "keep": "yes",
+   "audit_verdict": "tslog in packages/lib/domainManager and packages/app-store is a **yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|packages/emails||||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "packages/emails",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 10,
+   "total": 11,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|packages/embeds/embed-core||||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "packages/embeds/embed-core",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 13,
+   "total": 13,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|packages/lib|domainManager|||message:tslog|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "packages/lib",
+    "dir": "domainManager"
+   },
+   "ways": [
+    "P-bc03fd"
+   ],
+   "follows": 8,
+   "total": 8,
+   "keep": "yes",
+   "audit_verdict": "tslog in packages/lib/domainManager and packages/app-store is a **yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|logging|packages/prisma||||message:console|",
+   "repository": "cal.com",
+   "concern": "logging",
+   "place": {
+    "package": "packages/prisma",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 8,
+   "total": 8,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|api|apps/api/v2||||builder:return_value|",
+   "repository": "cal.com",
+   "concern": "api",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": ""
+   },
+   "ways": [
+    "P-7ed24a"
+   ],
+   "follows": 175,
+   "total": 177,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|validation|packages/trpc||||schema:zod|",
+   "repository": "cal.com",
+   "concern": "validation",
+   "place": {
+    "package": "packages/trpc",
+    "dir": ""
+   },
+   "ways": [
+    "P-cd2572"
+   ],
+   "follows": 142,
+   "total": 148,
+   "keep": "yes",
+   "audit_verdict": "**yes** (1 false exception)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|||||in_place:process.env|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 18,
+   "total": 22,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|apps/api/v2|src/modules|||env_schema:@nestjs/config|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "apps/api/v2",
+    "dir": "src/modules"
+   },
+   "ways": [
+    "P-53d779"
+   ],
+   "follows": 22,
+   "total": 25,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|apps/web||||in_place:process.env|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "apps/web",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 52,
+   "total": 60,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|example-apps/credential-sync||||config_module:example-apps/credential-sync/constants.ts|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "example-apps/credential-sync",
+    "dir": ""
+   },
+   "ways": [
+    "P-e5c6ff"
+   ],
+   "follows": 10,
+   "total": 11,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|packages/features||||in_place:process.env|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "packages/features",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 22,
+   "total": 26,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|packages/features/auth||||in_place:process.env|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "packages/features/auth",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 10,
+   "total": 12,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "cal.com|config|packages/trpc||||in_place:process.env|",
+   "repository": "cal.com",
+   "concern": "config",
+   "place": {
+    "package": "packages/trpc",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 11,
+   "total": 12,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "NodeGoat|errors|||||app_handler:app/routes/error.js#errorHandler|",
+   "repository": "NodeGoat",
+   "concern": "errors",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-db3dcf"
+   ],
+   "follows": 20,
+   "total": 20,
+   "keep": "yes",
+   "audit_verdict": "yes (errors)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "NodeGoat|logging|||||message:console|",
+   "repository": "NodeGoat",
+   "concern": "logging",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 25,
+   "total": 25,
+   "keep": "trivial",
+   "audit_verdict": "trivial",
+   "source": "audit 8 §2c"
+  },
+  {
+   "key": "full-stack-fastapi-template|data_access|backend|app/api|||entry_direct:sqlmodel|",
+   "repository": "full-stack-fastapi-template",
+   "concern": "data_access",
+   "place": {
+    "package": "backend",
+    "dir": "app/api"
+   },
+   "ways": [
+    "P-137ba4"
+   ],
+   "follows": 15,
+   "total": 17,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: its 2 exceptions are the dependency providers",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authn|apps/api|plane/app|||any_of(dependency:apps/api/plane/app/permissions/project.py#ProjectEntityPermission|dependency:pkg:rest_framework#permissions.IsAuthenticated)|",
+   "repository": "plane",
+   "concern": "authn",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app"
+   },
+   "ways": [
+    "P-3e1e50"
+   ],
+   "follows": 247,
+   "total": 297,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, but mis-stated (P2)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authz|apps/api|plane/app/views/analytic|||membership_guard:apps/api/plane/app/permissions/base.py#allow_permission|",
+   "repository": "plane",
+   "concern": "authz",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/views/analytic"
+   },
+   "ways": [
+    "P-66064a"
+   ],
+   "follows": 11,
+   "total": 12,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, too narrow (P3)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authz|apps/api|plane/app/views/cycle|||membership_guard:apps/api/plane/app/permissions/base.py#allow_permission|",
+   "repository": "plane",
+   "concern": "authz",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/views/cycle"
+   },
+   "ways": [
+    "P-66064a"
+   ],
+   "follows": 17,
+   "total": 19,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, too narrow (P3)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authz|apps/api|plane/app/views/intake|||membership_guard:apps/api/plane/app/permissions/base.py#allow_permission|",
+   "repository": "plane",
+   "concern": "authz",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/views/intake"
+   },
+   "ways": [
+    "P-66064a"
+   ],
+   "follows": 8,
+   "total": 8,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, too narrow (P3)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authz|apps/api|plane/app/views/view|||membership_guard:apps/api/plane/app/permissions/base.py#allow_permission|",
+   "repository": "plane",
+   "concern": "authz",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/views/view"
+   },
+   "ways": [
+    "P-66064a"
+   ],
+   "follows": 12,
+   "total": 13,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes**, too narrow (P3)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|authz|apps/api|plane/license|||role_guard:apps/api/plane/license/api/permissions/instance.py#InstanceAdminPermission|",
+   "repository": "plane",
+   "concern": "authz",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/license"
+   },
+   "ways": [
+    "P-2611cf"
+   ],
+   "follows": 11,
+   "total": 13,
+   "keep": "yes",
+   "audit_verdict": "**yes**; both exceptions are supersets",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|errors|apps/api||||app_handler:apps/api/plane/authentication/adapter/exception.py#auth_exception_handler|",
+   "repository": "plane",
+   "concern": "errors",
+   "place": {
+    "package": "apps/api",
+    "dir": ""
+   },
+   "ways": [
+    "P-f78e14"
+   ],
+   "follows": 431,
+   "total": 538,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**: a settings value every DRF view gets",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|errors|apps/api|plane/authentication/views/app|||in_body_try:return|",
+   "repository": "plane",
+   "concern": "errors",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/authentication/views/app"
+   },
+   "ways": [
+    "P-c4d213"
+   ],
+   "follows": 14,
+   "total": 17,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes-ish** (P18)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|errors|apps/api|plane/authentication/views/space|||in_body_try:return|",
+   "repository": "plane",
+   "concern": "errors",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/authentication/views/space"
+   },
+   "ways": [
+    "P-c4d213"
+   ],
+   "follows": 14,
+   "total": 17,
+   "keep": "yes_qualified",
+   "audit_verdict": "**yes-ish** (P18)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|apps/admin||||message:console|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "apps/admin",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 18,
+   "total": 18,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|apps/api|plane/bgtasks|||message:logging|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/bgtasks"
+   },
+   "ways": [
+    "P-c8c212"
+   ],
+   "follows": 33,
+   "total": 37,
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|apps/live||||message:winston|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "apps/live",
+    "dir": ""
+   },
+   "ways": [
+    "P-5655e5"
+   ],
+   "follows": 23,
+   "total": 27,
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|apps/web||||message:console|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "apps/web",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 117,
+   "total": 118,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|packages/editor||||message:console|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "packages/editor",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 47,
+   "total": 47,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|logging|packages/utils||||message:console|",
+   "repository": "plane",
+   "concern": "logging",
+   "place": {
+    "package": "packages/utils",
+    "dir": ""
+   },
+   "ways": [
+    "P-4c9b4b"
+   ],
+   "follows": 9,
+   "total": 9,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|api|apps/api|plane/app/views/user|||builder:pkg:rest_framework#response.Response|",
+   "repository": "plane",
+   "concern": "api",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/views/user"
+   },
+   "ways": [
+    "P-4b33cd"
+   ],
+   "follows": 8,
+   "total": 10,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|api|apps/api|plane/space|||builder:pkg:rest_framework#response.Response+envelope:{error}|",
+   "repository": "plane",
+   "concern": "api",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/space"
+   },
+   "ways": [
+    "P-8988db"
+   ],
+   "follows": 25,
+   "total": 31,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong** (envelope per unit)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|config|apps/api|plane/settings|||config_module:apps/api/plane/settings/common.py|",
+   "repository": "plane",
+   "concern": "config",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/settings"
+   },
+   "ways": [
+    "P-8f0826"
+   ],
+   "follows": 49,
+   "total": 58,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|config|packages/constants||||in_place:process.env|",
+   "repository": "plane",
+   "concern": "config",
+   "place": {
+    "package": "packages/constants",
+    "dir": ""
+   },
+   "ways": [
+    "P-4d1afc"
+   ],
+   "follows": 12,
+   "total": 12,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/api/serializers|||service:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/api/serializers"
+   },
+   "ways": [
+    "P-22ad1f"
+   ],
+   "follows": 15,
+   "total": 15,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/app/permissions|||service:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/permissions"
+   },
+   "ways": [
+    "P-22ad1f"
+   ],
+   "follows": 16,
+   "total": 16,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/app/serializers|||service:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/serializers"
+   },
+   "ways": [
+    "P-22ad1f"
+   ],
+   "follows": 21,
+   "total": 21,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/app/urls|||service:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/app/urls"
+   },
+   "ways": [
+    "P-22ad1f"
+   ],
+   "follows": 14,
+   "total": 14,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/db|||repository:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/db"
+   },
+   "ways": [
+    "P-099726"
+   ],
+   "follows": 100,
+   "total": 111,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/db/management|||script:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/db/management"
+   },
+   "ways": [
+    "P-cbba94"
+   ],
+   "follows": 11,
+   "total": 11,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "plane|data_access|apps/api|plane/utils|||service:django|",
+   "repository": "plane",
+   "concern": "data_access",
+   "place": {
+    "package": "apps/api",
+    "dir": "plane/utils"
+   },
+   "ways": [
+    "P-22ad1f"
+   ],
+   "follows": 37,
+   "total": 37,
+   "keep": "trivial_or_wrong",
+   "audit_verdict": "**trivial / wrong**: they restate which layer a file is in",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "pygoat|authn||introduction|||body_check:param:request.user.is_authenticated|",
+   "repository": "pygoat",
+   "concern": "authn",
+   "place": {
+    "package": "",
+    "dir": "introduction"
+   },
+   "ways": [
+    "P-330b9e"
+   ],
+   "follows": 21,
+   "total": 26,
+   "keep": "yes",
+   "audit_verdict": "**yes** (needs --with P-224a1f)",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "pygoat|errors|||||bubble:framework_default|",
+   "repository": "pygoat",
+   "concern": "errors",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-6123b9"
+   ],
+   "follows": 173,
+   "total": 204,
+   "keep": "wrong",
+   "audit_verdict": "**wrong**: . is 24 unrelated apps; the challenge views catch on purpose",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "pygoat|api||challenge/labs/business_logic_lab|||builder:return_value|",
+   "repository": "pygoat",
+   "concern": "api",
+   "place": {
+    "package": "",
+    "dir": "challenge/labs/business_logic_lab"
+   },
+   "ways": [
+    "P-7ed24a"
+   ],
+   "follows": 9,
+   "total": 11,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "pygoat|api||challenge/labs/security_headers_lab|||builder:return_value|",
+   "repository": "pygoat",
+   "concern": "api",
+   "place": {
+    "package": "",
+    "dir": "challenge/labs/security_headers_lab"
+   },
+   "ways": [
+    "P-7ed24a"
+   ],
+   "follows": 10,
+   "total": 12,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  },
+  {
+   "key": "pygoat|config|||||in_place:os.environ|",
+   "repository": "pygoat",
+   "concern": "config",
+   "place": {
+    "package": "",
+    "dir": ""
+   },
+   "ways": [
+    "P-63de26"
+   ],
+   "follows": 14,
+   "total": 14,
+   "keep": "trivial",
+   "audit_verdict": "**trivial**",
+   "source": "audit 9 §4"
+  }
+ ],
+ "census": [
+  {
+   "id": "juice-shop:D-619617",
+   "tier": "default",
+   "rule_kind": "avoids:import",
+   "keep": "wrong",
+   "audit_verdict": "**wrong**: 98 of the files are data/static/codefixes snippets; the outlier is the seeder",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-594d38",
+   "tier": "default",
+   "rule_kind": "wrapped_by:call",
+   "keep": "yes",
+   "audit_verdict": "**yes** (the 15 outliers are the deliberate publicProcedures)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-85e09a",
+   "tier": "default",
+   "rule_kind": "wrapped_by:call",
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-2f232d",
+   "tier": "default",
+   "rule_kind": "avoids:import",
+   "keep": "yes",
+   "audit_verdict": "**yes** (declared in biome.json:238-250)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-441d0e",
+   "tier": "default",
+   "rule_kind": "avoids:import",
+   "keep": "yes",
+   "audit_verdict": "**yes** (declared in biome.json:238-250)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-31be39",
+   "tier": "default",
+   "rule_kind": "avoids:import",
+   "keep": "yes_probably",
+   "audit_verdict": "**yes, probably** (not declared in biome.json)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-f26528",
+   "tier": "default",
+   "rule_kind": "avoids:import",
+   "keep": "yes_probably",
+   "audit_verdict": "**yes, probably** (not declared in biome.json)",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "cal.com:D-8d7d13",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes",
+   "audit_verdict": "**yes**",
+   "source": "audit 8 §2c"
+  },
+  {
+   "id": "plane:D-2e288c",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes",
+   "audit_verdict": "**yes** (126/126 in app/serializers)",
+   "source": "audit 9 §4"
+  },
+  {
+   "id": "plane:D-19c071",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes_plausibly",
+   "audit_verdict": "yes, plausibly",
+   "source": "audit 9 §4"
+  },
+  {
+   "id": "plane:D-aeef61",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes_plausibly",
+   "audit_verdict": "yes, plausibly",
+   "source": "audit 9 §4"
+  },
+  {
+   "id": "plane:D-d79e8f",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes_plausibly",
+   "audit_verdict": "yes, plausibly",
+   "source": "audit 9 §4"
+  },
+  {
+   "id": "plane:D-2fd519",
+   "tier": "suggestion",
+   "rule_kind": "named",
+   "keep": "yes_plausibly",
+   "audit_verdict": "yes, plausibly",
+   "source": "audit 9 §4"
+  }
+ ],
+ "from_map": []
+}

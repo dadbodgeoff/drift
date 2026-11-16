@@ -1,5 +1,11 @@
 /target
-.drift/
+# Drift: local state. Commit .drift/conventions.yaml, .drift/config.yaml and drift.lock.
+.drift/cache/
+.drift/review-log/
+.drift/verify-cache.json
+.drift/findings/
+.drift/gap-reports/
+.drift/feedback/
 *.snap.new
 *.pending-snap
 node_modules/
@@ -9,3 +15,4 @@ apps/studio/dist-electron/
 apps/studio/fixtures/local/
 apps/studio/.local-work/
 apps/studio/test-results/
+apps/studio/release/

@@ -1205,10 +1205,15 @@ ACCEPT.
 - Django: mixins (`LoginRequiredMixin`, netbox's `ConditionalLoginRequiredMixin`) are
   `Extends` wraps, which `drift security` does not count as guards (TypeScript base
   classes share that rule), so class-based views guarded only by a mixin read as
-  unguarded. The admin is
+  unguarded. (Since then: an access mixin is a guard where it comes before the view
+  class in the method resolution order, no guard after it, and unknown where what
+  comes before it is not read; see `docs/wiki/Security-Inventory.md`.) The admin is
   one entry point; `ModelAdmin` permissions are not modelled.
 - DRF: `get_permissions()` / `get_authenticators()` overrides are not read (the
   defaults are assumed), nor are `permission_classes` set by third-party base classes.
+  (Since then: a `get_permissions()` whose body only tests the request's method or
+  the view's action and returns lists of classes is read handler by handler; any
+  other body is unknown. `get_authenticators()` is still not read.)
   Decorators other than schema ones count as guards, whatever they do.
 - Flask: a helper's parameter is matched to the factory's app only when the app is
   passed directly (`init_hooks(app)`, positionally or by keyword); hooks registered

@@ -46,6 +46,22 @@ No conventions found: roles need roughly 20+ similar symbols where one pattern c
 - In a monorepo, run `drift init` at the root so packages are mined in their own scope; `drift census` lists each package with its cards, or why it is silent.
 - If `drift init` said `No conventions shown: Drift found N candidate(s) and none has a track record strong enough to propose`, the cards exist: `drift review --hidden` lists them, and `drift review --hidden --answer <id>=same` promotes one. A promoted suggestion reaches agents only after `drift review --show-to-agents <id>`. See [Getting Started](Getting-Started).
 
+## Why did Drift propose so little?
+
+**Symptom.** `drift init` or `drift census` proposes fewer conventions than you expected, or none, and you want to know what it saw and dropped.
+
+**Fix.** Run:
+
+```bash
+drift census --why
+```
+
+It mines as `drift census` does and lists, gate by gate, the candidate rules that did not become proposals: how many each gate dropped, then each one with its role, its rule, how many members follow it, the gate's threshold and the candidate's value, and whether its target is the repository's own code or a dependency's. It writes nothing and changes no proposal. To see one gate, name it: `drift census --why wilson` lists the rules below the lower bound. `--json` lists every dropped candidate. The gates are listed on [How Drift Works](How-Drift-Works#what-mining-drops-and-why).
+
+Read the first lines first: how many roles had 8 or more members across files, and how many candidates were observed, drafted, mined and proposed. A repository with no role of 8 members has nothing to mine, and no gate is to blame.
+
+**Default-tier rules cut by a cap.** Mining keeps at most 5 rules per role, at most a quarter of `--max` layering rules, and at most `--max` (15) in all. When these caps cut a default-tier rule, `drift census` says so (`N default-tier rule(s) was not proposed because of mining's caps (...)`). `drift census --why cap_role`, `--why cap_avoid` or `--why cap_repo` lists them, and `drift census --max 30` raises the repository cap. The `--suggestions` cap is different: it only shortens the listing and never hides a default-tier proposal.
+
 ## A route is not listed
 
 **Symptom.** `drift security`, `drift card` or `drift practices` does not show an entry point you know exists.
@@ -93,10 +109,10 @@ Treat both as "nothing found in what Drift read". On code Drift was not tuned on
 
 **Fix.**
 
-- Measure first. Set `DRIFT_HOOK_TRACE=<file>` and each hook appends one JSON line with the event, the path it took (`single_file`, `full_scan:<reason>`, `skipped:<reason>`), whether it answered, and how long it took in milliseconds:
+- Measure first. Set `DRIFT_HOOK_TRACE=<file>` and each hook appends one JSON line with the event, the path it took (`single_file`, `full_scan:<reason>`, `skipped:<reason>`), whether it answered, how long it took in milliseconds, and the work it did (`work`: walks, files read and parsed, scans, config and policy reads):
 
   ```
-  {"event":"SessionStart","path":"none","answered":true,"ms":294}
+  {"event":"SessionStart","path":"full_scan:session_start","answered":true,"ms":294,"work":{"walks":1,"source_reads":0,"parses":0,"full_scans":1,"file_scans":0,"config_loads":1,"policy_loads":1}}
   ```
 
   It changes no output and is off by default.
@@ -131,6 +147,8 @@ Nothing was written.
 Fix, in order: read the units that differ. If several use another way that is also right, add it with `--with <P-id>`. If one directory does it differently on purpose, promote in a narrower place with `--in`. If the practice is still the rule you want, `--force` promotes it all the same: it then advises only and can never block.
 
 **Too much unknown** (`too_unknown`). More than 20% of the units in the place are ones the map cannot tell. Drift cannot hold code to what it cannot read, and `--force` does not lift this. Fix:
+
+When every unknown unit is unknown for one cause outside them (one wrapper, one call), the refusal names it, with the `.drift/config.yaml` line that would let Drift read it when there is one: `All N are unknown for one cause outside them: ...`. Settle that one cause and the place may qualify. Otherwise:
 
 1. See why they are unknown: `drift practices --concern <concern> --all`, or `drift card <file>` for one of them. The reason says what Drift could not read.
 2. Run `drift practices --hints`. If a wrapper or check Drift cannot classify alone is yours, and you have read it, merge the line it prints under `practices:` in `.drift/config.yaml`. Its units then count as known.
@@ -176,6 +194,14 @@ drift: practices (facts, not rules; they never fail the check): 2 file(s) do a c
 ```
 
 **Fix.** Run `drift practices --concern <concern> --all` to find the new way's `P-` id, then promote it in the same place (`drift practices promote <new P-id> --in <place>`). That updates the same convention, under the same id. If the practice is no longer the rule, `drift review --reject <id>`.
+
+## An accepted convention reports nothing for some members
+
+`drift check` prints `drift: [<id>] N of M member(s) not checked: Drift could not read what decides the rule for them, and never reports what it cannot read (H follow it)`, with the reasons under it. For those members, what decides the rule is in code Drift did not read: a wrapper that does not resolve, one built by a factory, a call that unpacks a value into its arguments, a component that does not resolve, or, for a sign-in or permissions rule, an entry point the practice map cannot tell. This is by design: Drift does not report what it cannot read. Their `drift.lock` lines stay. Each reason names what Drift could not read; `drift check --format json` lists them all under `standing`. See [Conventions and Review](Conventions-and-Review#what-drift-check-could-not-tell).
+
+## An accepted convention advises though it is set to block
+
+`drift check` prints why on a line of its own: `drift: [<id>] was block, now advise because ...`. When the reason is `it is stale: ...`, the rule's evidence no longer holds: its role has fallen under 8 members, or under 75% of the members Drift can tell follow it. Look at the rule: `drift review --advise <id>` keeps it as advice, `drift review --reject <id>` drops it. When the reason is that the role had fewer than 15 members when it was mined, the rule can never block.
 
 ## A promoted practice reports nothing for some routes
 

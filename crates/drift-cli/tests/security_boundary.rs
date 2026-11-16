@@ -351,9 +351,10 @@ fn what_a_gateway_may_route_is_unknown_never_internal() {
         ),
         (
             "",
-            "  location ~ ^/int { proxy_pass http://api:8000; }\n",
+            // A plain anchored prefix (`~ ^/int`) is evaluated; this one is not.
+            "  location ~ ^/(int|ext) { proxy_pass http://api:8000; }\n",
             "FastAPI()",
-            format!("unknown|{gw} may route /internal/v1/jobs/lease to api: location ~ ^/int is a regular expression, which Drift does not evaluate"),
+            format!("unknown|{gw} may route /internal/v1/jobs/lease to api: location ~ ^/(int|ext) is a regular expression, which Drift does not evaluate"),
         ),
         (
             "",
@@ -2185,6 +2186,22 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
         let e = claim(&inv);
         assert_eq!(e["exposure"], "unknown", "{e:#}");
         let boundary = e["boundary"].as_str().unwrap();
+        // Kubernetes is read: the Ingress sends to a Service the manifests do not
+        // hold, so what it reaches is not known. The rest are not read.
+        if kind == "Kubernetes" {
+            assert!(
+                boundary.contains("reachable only inside the compose network")
+                    && boundary.contains("Ingress api (k8s/ingress.yaml:1) routes / (Prefix)"),
+                "{boundary}"
+            );
+            write(
+                r,
+                ".drift/config.yaml",
+                &format!("security:\n  not_deployed:\n    - {left}\n"),
+            );
+            assert_eq!(claim(&inventory(r))["exposure"], "internal");
+            continue;
+        }
         // The compose finding is kept, and the files are named. For Terraform the
         // way out is a tie, which is said; never leaving it out.
         let hint = match kind {
@@ -2232,12 +2249,14 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
     service(r);
     write(r, "web/vercel.json", "{}\n");
     assert_eq!(exposures(r)[CLAIM].0, "internal");
-    write(r, "services/api/fly.toml", "app = \"api\"\n");
+    // A Procfile with no app.json is not read as a Heroku app (a `fly.toml` with no
+    // service is read since, and keeps the code internal: `gap_platform_exposure.rs`).
+    write(r, "services/api/Procfile", "web: uvicorn app.main:app\n");
     let got = exposures(r);
     assert_eq!(got[CLAIM].0, "unknown", "{got:#?}");
     assert!(
         got[CLAIM].1.ends_with(
-            "; but Fly.io (services/api/fly.toml) in the repository is not read and may route to it"
+            "; but Procfile (services/api/Procfile) in the repository is not read and may route to it"
         ),
         "{got:#?}"
     );
@@ -2255,12 +2274,13 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
 /// definition, an AWS Copilot manifest, a Cloudflare Worker, App Engine's dispatch,
 /// an Azure Developer CLI project, Kamal, and a platform's file that routes
 /// elsewhere: Vercel rewrites to another host, Netlify proxy redirects, Firebase
-/// rewrites to a service, a Render Blueprint with a `rootDir`, a `fly.toml` that
-/// builds another directory) by every place it may be (beside the services, at the
+/// rewrites to a service, a `fly.toml` that builds another directory) by every place
+/// it may be (beside the services, at the
 /// root, deep in an infrastructure tree). A file that only looks related (a
 /// `package.json` with no infrastructure library, a `vercel.json` that rewrites
 /// within its application, an OpenAPI document with no gateway extension, a JSON
-/// configuration) and a platform's file of another directory change nothing.
+/// configuration) and a platform's file of another directory change nothing. (A
+/// Render Blueprint is read since: `gap_platform_exposure.rs` pins what it says.)
 #[test]
 fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
     const CLAIM: &str = "POST /internal/v1/jobs/lease";
@@ -2410,11 +2430,6 @@ fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
             "Firebase rewrites",
         ),
         (
-            "render.yaml",
-            "services:\n  - type: web\n    name: api\n    rootDir: services/api\n",
-            "Render Blueprint",
-        ),
-        (
             "fly.toml",
             "app = \"api\"\n[build]\n  dockerfile = \"../services/api/Dockerfile\"\n",
             "Fly.io build",
@@ -2436,10 +2451,15 @@ fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
             write(r, &path, text);
             let got = exposures(r);
             let (exposure, boundary) = &got[CLAIM];
+            // A Kubernetes manifest Drift reads (the Knative Service) keeps the route
+            // unknown by what it says, with its file and line; one it cannot read
+            // whole is named as not read.
+            let read = *kind == "Kubernetes" && boundary.contains(&format!("({path}:"));
             if exposure != "unknown"
-                || !boundary.ends_with(&format!(
-                    "; but {kind} ({path}) in the repository is not read and may route to it"
-                ))
+                || !(read
+                    || boundary.ends_with(&format!(
+                        "; but {kind} ({path}) in the repository is not read and may route to it"
+                    )))
             {
                 wrong.push(format!("{path} ({kind}): {exposure}: {boundary}"));
             }

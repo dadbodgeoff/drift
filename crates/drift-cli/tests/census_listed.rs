@@ -141,8 +141,11 @@ fn the_experimental_feature_makes_every_command_mine_and_check_the_listed_routes
         .and_then(|p| p["id"].as_str())
         .unwrap()
         .to_string();
-    // `init` writes it, and its one outlier is baselined.
-    let (code, out) = run(root, &["init"]);
+    // `init` writes it, and its one outlier is baselined. Without the proposals from the
+    // practice map (S10): the practice map always reads the listed routes, so its own
+    // sign-in proposal, accepted below with the rest, would report `/added` with the
+    // feature off too; this test is about what mining reads.
+    let (code, out) = run(root, &["init", "--no-from-map"]);
     assert_eq!(code, 0, "{out}");
     let policy = std::fs::read_to_string(root.join(".drift/conventions.yaml")).unwrap();
     assert!(policy.contains(&id), "{policy}");

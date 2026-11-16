@@ -2,9 +2,11 @@
 //! SvelteKit, Nuxt's Nitro) and of `@koa/router`, which the last measured build did
 //! not list at all: `drift security` had no row for them.
 //!
-//! They are listed with their path. What runs before one (a parent route, a server
-//! hook, a Koa middleware) is not read, so a route with no guard found in its own
-//! body reads guard unknown, never "no guard found". Nothing runs before a React
+//! They are listed with their path. What runs before a SvelteKit, Nitro or Koa
+//! route (a server hook, a server middleware, a Koa middleware) is read where it
+//! runs (`gap_ts_router_guards.rs`): with none of them, a SvelteKit or Koa route
+//! that checks nothing has no guard; a Nitro route is still wrapped by
+//! `defineEventHandler`, which is not read. Nothing runs before a React
 //! Router or Remix handler but what the package itself puts there (a server of its
 //! own, a route middleware): without one, its own body decides.
 //!
@@ -319,12 +321,10 @@ fn sveltekit_and_nitro_routes_are_listed() {
             "export async function load() {\n  return {};\n}\n",
         ),
     ]);
+    // No `hooks.server` and no layout: nothing runs before them.
     expect(
         &routes(dir.path()),
-        &[
-            ("GET /api/items/:id", "unknown"),
-            ("GET /settings", "unknown"),
-        ],
+        &[("GET /api/items/:id", "none"), ("GET /settings", "none")],
     );
     let dir = write(&[
         (
@@ -336,6 +336,8 @@ fn sveltekit_and_nitro_routes_are_listed() {
             "export default defineEventHandler(async (event) => {\n  return { id: 1 };\n});\n",
         ),
     ]);
+    // No server middleware runs before it, but what `defineEventHandler`, a
+    // global Nuxt imports for the file, does with the handler is not read.
     expect(&routes(dir.path()), &[("GET /api/users/:id", "unknown")]);
 }
 
@@ -360,7 +362,7 @@ fn a_package_built_with_none_of_them_lists_nothing() {
 }
 
 #[test]
-fn koa_router_routes_are_listed_with_their_middleware_unread() {
+fn koa_router_routes_are_listed_with_what_runs_before_them() {
     let dir = write(&[
         (
             "package.json",
@@ -373,7 +375,8 @@ fn koa_router_routes_are_listed_with_their_middleware_unread() {
     ]);
     expect(
         &routes(dir.path()),
-        &[("GET /items", "unknown"), ("POST /items", "unknown")],
+        // Nothing runs before them, and neither handler checks anything.
+        &[("GET /items", "none"), ("POST /items", "none")],
     );
 }
 

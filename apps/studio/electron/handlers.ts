@@ -8,18 +8,22 @@
 // - source reads are limited to files the last scan listed, inside the repo;
 // - transcripts are read only from Claude Code's projects directory, by the
 //   session ids the last listing returned;
-// - the only writes to a repository are `drift review`, `drift init` and
+// - the only writes to a repository are `drift review`, `drift init`,
 //   `drift practices promote` (the `promote` channel; `promotePreview` always
-//   runs it with `--dry-run`). ops.ts `writesRepository` is the list; a new
-//   write is added there, and here, on purpose.
-import { existsSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+//   runs it with `--dry-run`), `drift upgrade --apply` (`upgradeApply`),
+//   `drift feedback mark` (`feedbackMark`, a git-ignored local file) and
+//   `drift security --write-baseline` (the `securityBaseline` channel). ops.ts
+//   `writesRepository` is the list; a new write is added there, and here, on purpose.
+import { existsSync, lstatSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { RepoFacts } from "../src/shared/contract/drift";
 import { slimFacts } from "../src/shared/contract/slim";
+import { baselineCommand } from "../src/shared/lib/baseline";
 import type { AuditEntry, Decision, LogEntry, PromoteRequest, Provenance, RepoRef, Snapshot } from "../src/shared/ipc/contract";
 import { DriftError, resolveDrift, runDrift } from "./drift";
 import { gitInfo } from "./git";
 import { InvalidArgument, neighbourGate, answerFlags, assertAnswer, assertConventionIds, assertDecision, assertGitRef, assertRelPath, assertSessionId, driftErrorLine, exemptFlags, isInside, promoteFlags, reviewFlags, writesRepository } from "./ops";
+import { assertVerdict } from "./screens-ops";
 import { listSessionFiles, sessionTitle } from "./sessions";
 import type { Store } from "./store";
 
@@ -36,13 +40,38 @@ export interface MainDeps {
   user: string;
   appVersion: string;
   platform: string;
+  /** The drift a packaged build carries (`bundledDrift`); absent when running from source. */
+  bundledDrift?: string | null;
 }
+
+/** What a person reads when no drift is found: where the Studio looked, and the two ways out. */
+export const NO_DRIFT = "drift was not found: this build carries none, and none is on PATH or in ~/.cargo/bin. Install Drift or choose the binary in Settings";
 
 const MAX_SOURCE = 2 * 1024 * 1024;
 const MAX_TRANSCRIPT = 200 * 1024 * 1024;
 const MAX_POLICY = 16 * 1024 * 1024;
 /** What the Studio says when the binary predates `drift practices` (round 13). */
 export const NO_PRACTICES = "this drift binary has no `practices` command: the practice map needs a Drift from round 13 or newer (choose one in Settings)";
+/** A Drift from before the miner's funnel has no `census --why`. */
+export const NO_FUNNEL = "this drift binary has no `census --why`: what mining dropped needs a newer Drift (choose one in Settings)";
+/** A Drift from before the promote list has no `practices promote --list` (or no `practices` at all). */
+export const NO_PROMOTE_LIST = "this drift binary has no `practices promote --list`: the list of practices that may be promoted needs a newer Drift (choose one in Settings)";
+
+/** A Drift from before the ranked summary has no `security --top`. */
+export const NO_TOP = "this drift binary has no `security --top`: the findings to look at first need a newer Drift (choose one in Settings)";
+
+/** Read-only drift commands that print one JSON document on stdout. */
+type JsonOp = "census" | "check" | "security" | "practices" | "map" | "funnel" | "promoteList" | "fromMap" | "upgrade";
+
+/** A Drift from before proposals from the map has no `census --from-map`. */
+export const NO_FROM_MAP = "this drift binary has no `census --from-map`: proposals from Drift's map need a newer Drift (choose one in Settings)";
+/** A Drift from before `drift upgrade`. */
+export const NO_UPGRADE = "this drift binary has no `upgrade` command: what a newer Drift reads differently needs a newer Drift (choose one in Settings)";
+/** A Drift from before `drift feedback`. */
+export const NO_FEEDBACK = "this drift binary has no `feedback` command: marking a report true or wrong needs a newer Drift (choose one in Settings)";
+
+/** What clap prints for a subcommand or flag this binary does not have. */
+const OLD_BINARY = /unrecognized subcommand|unexpected argument/;
 
 /** What the Studio says when the binary predates `drift practices promote`. */
 export const NO_PROMOTE = "this drift binary cannot make a practice a convention: `drift practices promote` needs a newer Drift (choose one in Settings)";
@@ -133,14 +162,14 @@ export class StudioMain {
   // ---------- the binary ----------
 
   private bin(): string {
-    const b = resolveDrift(this.d.store.settings().driftPath);
-    if (!b.path) throw new DriftError("drift was not found: install it or choose the binary in Settings");
+    const b = resolveDrift(this.d.store.settings().driftPath, process.env, process.platform, this.d.bundledDrift ?? null);
+    if (!b.path) throw new DriftError(NO_DRIFT);
     return b.path;
   }
 
   async driftInfo() {
-    const b = resolveDrift(this.d.store.settings().driftPath);
-    if (!b.path) return { path: null, version: null, censusJson: false, source: "none" as const, error: "drift is not on PATH; choose the binary in Settings" };
+    const b = resolveDrift(this.d.store.settings().driftPath, process.env, process.platform, this.d.bundledDrift ?? null);
+    if (!b.path) return { path: null, version: null, censusJson: false, source: "none" as const, error: NO_DRIFT };
     if (this.infoCache?.path !== b.path) {
       try {
         const v = await runDrift(b.path, ".", { op: "version" }, { cacheDir: this.d.store.dir, cwd: this.d.store.dir });
@@ -210,20 +239,27 @@ export class StudioMain {
     return { data, at: Date.now(), cached: false, ms: res.ms, provenance: this.provenance(root) };
   }
 
-  private async json(r: RepoRef, op: "census" | "check" | "security" | "practices" | "map", requestId?: string, base: string | null = null) {
+  private async json(r: RepoRef, op: JsonOp, requestId?: string, base: string | null = null) {
     const root = this.repo(r);
     let res: Awaited<ReturnType<StudioMain["run"]>>;
     try {
-      res = await this.run(root, op === "census" || op === "practices" || op === "map" ? { op } : { op, base: base ? assertGitRef(base) : null }, requestId);
+      res = await this.run(root, op === "check" || op === "security" ? { op, base: base ? assertGitRef(base) : null } : { op }, requestId);
     } catch (e) {
       // A Drift from before the practice map (round 13) has no `practices` subcommand: say so, not clap's last line.
       if (op === "practices" && e instanceof DriftError && /unrecognized subcommand/.test(e.result?.stderr ?? "")) throw new DriftError(NO_PRACTICES);
+      // The same for a Drift from before the miner's funnel or the promote list.
+      if (op === "funnel" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FUNNEL);
+      if (op === "promoteList" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_PROMOTE_LIST);
+      if (op === "fromMap" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FROM_MAP);
+      if (op === "upgrade" && e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_UPGRADE);
       throw e;
     }
     let data: unknown;
     try {
       data = JSON.parse(res.stdout);
     } catch {
+      // `drift upgrade` exits 2 when it refuses, so clap's own exit 2 (no such subcommand) reaches here.
+      if (op === "upgrade" && OLD_BINARY.test(res.stderr)) throw new DriftError(NO_UPGRADE, res);
       throw new DriftError(`drift ${op} did not print JSON (is this binary too old for ${op === "census" ? "census --json" : "JSON output"}?)`);
     }
     const provenance = this.provenance(root);
@@ -241,6 +277,25 @@ export class StudioMain {
     return this.json(r, "security", id, opts?.base ?? null);
   }
 
+  /** `drift security --top N --json`: the inventory with `top`, the findings to look at first (0: all of them). Read-only; exit 0. */
+  async securityTop(r: RepoRef, n: number, requestId?: string) {
+    const root = this.repo(r);
+    let res: Awaited<ReturnType<StudioMain["run"]>>;
+    try {
+      res = await this.run(root, { op: "securityTop", n }, requestId);
+    } catch (e) {
+      if (e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_TOP);
+      throw e;
+    }
+    let data: unknown;
+    try {
+      data = JSON.parse(res.stdout);
+    } catch {
+      throw new DriftError("drift security --top did not print JSON (is this binary too old for --top with --json?)");
+    }
+    return { data, at: Date.now(), cached: false, ms: res.ms, provenance: this.provenance(root) };
+  }
+
   /** `drift practices --json`: what the codebase does for each concern (facts, not rules; exit 0). */
   practices(r: RepoRef, id?: string) {
     return this.json(r, "practices", id);
@@ -249,6 +304,86 @@ export class StudioMain {
   /** `drift map --json`: packages with their production (`depends_on`) and test (`dependencies_test`) dependencies. Read-only. */
   map(r: RepoRef, id?: string) {
     return this.json(r, "map", id);
+  }
+
+  /** `drift census --why --json`: what mining dropped, gate by gate. Observation only; exit 0; read-only. */
+  funnel(r: RepoRef, id?: string) {
+    return this.json(r, "funnel", id);
+  }
+
+  /** `drift practices promote --list --json`: every practice that may be promoted now, with its command. Writes nothing. */
+  promoteList(r: RepoRef, id?: string) {
+    return this.json(r, "promoteList", id);
+  }
+
+  /** `drift census --from-map --json`: the proposals from Drift's map, and what qualified and is not proposed, with why. Read-only. */
+  fromMap(r: RepoRef, id?: string) {
+    return this.json(r, "fromMap", id);
+  }
+
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote. Changes nothing (exit 0, 3, or 2: refused). */
+  upgrade(r: RepoRef, id?: string) {
+    return this.json(r, "upgrade", id);
+  }
+
+  /**
+   * `drift upgrade --apply --json` (and `--security-baseline` when the person ticked it): only what changes no decision a
+   * person made. Drift's report is returned as it printed it, a refusal (exit 2) and a failed write (exit 1) included;
+   * exit 1 with no report on stdout is an error, thrown with what Drift said.
+   */
+  async upgradeApply(r: RepoRef, opts: { securityBaseline: boolean }): Promise<unknown> {
+    const root = this.repo(r);
+    const res = await this.run(root, { op: "upgradeApply", securityBaseline: opts.securityBaseline });
+    try {
+      return JSON.parse(res.stdout) as unknown;
+    } catch {
+      if (OLD_BINARY.test(res.stderr)) throw new DriftError(NO_UPGRADE, res);
+      throw new DriftError(`drift upgrade --apply failed: ${driftErrorLine(res.stderr) ?? "it printed no report"}`, res);
+    }
+  }
+
+  /** `drift feedback mark`: a person's verdict on one violation, kept in .drift/feedback on this machine. Drift's output. */
+  async feedbackMark(r: RepoRef, id: string, member: string, verdict: string, why: string | null): Promise<string> {
+    const root = this.repo(r);
+    const [cid] = assertConventionIds([id]);
+    const v = assertVerdict(verdict);
+    try {
+      const res = await this.run(root, { op: "feedbackMark", id: cid, member, verdict: v, why });
+      return `${res.stdout}${res.stderr}`.trim().slice(0, 4000);
+    } catch (e) {
+      if (e instanceof DriftError && OLD_BINARY.test(e.result?.stderr ?? "")) throw new DriftError(NO_FEEDBACK);
+      throw e;
+    }
+  }
+
+  /**
+   * `.drift/feedback/marks.json` as `drift feedback mark` wrote it, parsed; null when there is none. Read the way Drift
+   * reads it: never through a symbolic link (`.drift` or `.drift/feedback` as a link is refused), inside the
+   * repository, at most 16 MB.
+   */
+  feedbackMarks(r: RepoRef): unknown {
+    const root = this.repo(r);
+    for (const rel of [".drift", ".drift/feedback"]) {
+      try {
+        if (lstatSync(join(root, rel)).isSymbolicLink()) throw new DriftError(`${rel} is a symbolic link; the Studio does not follow it`);
+      } catch (e) {
+        if (e instanceof DriftError) throw e;
+        return null;
+      }
+    }
+    const p = join(root, ".drift/feedback/marks.json");
+    let st;
+    try {
+      st = lstatSync(p);
+    } catch {
+      return null;
+    }
+    if (!st.isFile() || st.size > MAX_POLICY) throw new DriftError(".drift/feedback/marks.json is not a file the Studio reads");
+    try {
+      return JSON.parse(readFileSync(p, "utf8")) as unknown;
+    } catch {
+      throw new DriftError(".drift/feedback/marks.json is not JSON (drift feedback mark refuses it too until it is restored)");
+    }
   }
 
   policy(r: RepoRef) {
@@ -262,7 +397,7 @@ export class StudioMain {
         return null;
       }
     };
-    return { conventions: read(".drift/conventions.yaml"), lock: read("drift.lock") };
+    return { conventions: read(".drift/conventions.yaml"), lock: read("drift.lock"), securityLock: read(".drift/security.lock") };
   }
 
   // ---------- writes (explicit person actions) ----------
@@ -380,6 +515,27 @@ export class StudioMain {
       entry = { at: Date.now(), user: this.d.user, decision: a, ids: [cid], command, ok: true, output: `${res.stdout}${res.stderr}`.trim().slice(0, 4000) };
     } catch (e) {
       entry = { at: Date.now(), user: this.d.user, decision: a, ids: [cid], command, ok: false, output: (e as Error).message.slice(0, 4000) };
+    }
+    const dir = this.repoDir(root);
+    const h = this.d.store.history(dir);
+    this.d.store.saveHistory(dir, { ...h, audit: [...h.audit, entry] });
+    return entry;
+  }
+
+  /**
+   * The security baseline: `drift security --write-baseline` writes `.drift/security.lock` with every finding the
+   * inventory holds now, accepted as it is; while it exists `drift check` fails on a finding not in it. Audited like a
+   * decision (no convention id), with what Drift printed.
+   */
+  async securityBaseline(r: RepoRef): Promise<AuditEntry> {
+    const root = this.repo(r);
+    const command = baselineCommand(root);
+    let entry: AuditEntry;
+    try {
+      const res = await this.run(root, { op: "securityBaseline" });
+      entry = { at: Date.now(), user: this.d.user, decision: "security-baseline", ids: [], command, ok: true, output: `${res.stdout}${res.stderr}`.trim().slice(0, 4000) };
+    } catch (e) {
+      entry = { at: Date.now(), user: this.d.user, decision: "security-baseline", ids: [], command, ok: false, output: (e as Error).message.slice(0, 4000) };
     }
     const dir = this.repoDir(root);
     const h = this.d.store.history(dir);

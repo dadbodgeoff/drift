@@ -1,8 +1,10 @@
 // StudioApi over the preload bridge. Every response is validated against the
 // IPC contract before it reaches a view; cancellation aborts the drift process.
-import type { Census, CheckReport, Inventory, MapPackage, PracticesReport, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
+import type { Census, CensusWhy, CheckReport, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import { type Bridge, type Channel, IPC_VERSION, IpcError, type Res, RepoChange, channels } from "@/shared/ipc/contract";
 import type { Answer, Decision, Loaded, PromoteRequest, RepoRef, StudiesData, StudioApi } from "./types";
+import type { FeedbackMarks, UpgradeOutcome } from "@/shared/contract/screens";
+import type { Verdict } from "@/shared/ipc/contract";
 
 let seq = 0;
 
@@ -69,6 +71,33 @@ export class ElectronApi implements StudioApi {
   }
   async map(repo: RepoRef, opts?: { signal?: AbortSignal }) {
     return (await this.call("map", [repo], opts?.signal)) as unknown as Loaded<{ schema: number; packages: MapPackage[] }>;
+  }
+  async securityTop(repo: RepoRef, n: number, opts?: { signal?: AbortSignal }) {
+    return (await this.call("securityTop", [repo, n], opts?.signal)) as unknown as Loaded<Inventory>;
+  }
+  securityBaseline(repo: RepoRef) {
+    return this.call("securityBaseline", [repo]);
+  }
+  async funnel(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("funnel", [repo], opts?.signal)) as unknown as Loaded<CensusWhy>;
+  }
+  async promoteList(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("promoteList", [repo], opts?.signal)) as unknown as Loaded<PromoteList>;
+  }
+  async fromMap(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("fromMap", [repo], opts?.signal)) as unknown as Loaded<Census>;
+  }
+  async upgrade(repo: RepoRef, opts?: { signal?: AbortSignal }) {
+    return (await this.call("upgrade", [repo], opts?.signal)) as unknown as Loaded<UpgradeOutcome>;
+  }
+  async upgradeApply(repo: RepoRef, opts: { securityBaseline: boolean }) {
+    return (await this.call("upgradeApply", [repo, { securityBaseline: opts.securityBaseline }])) as unknown as UpgradeOutcome;
+  }
+  feedbackMark(repo: RepoRef, id: string, member: string, verdict: Verdict, why: string | null) {
+    return this.call("feedbackMark", [repo, id, member, verdict, why]);
+  }
+  async feedbackMarks(repo: RepoRef) {
+    return (await this.call("feedbackMarks", [repo])) as unknown as FeedbackMarks | null;
   }
   policy(repo: RepoRef) {
     return this.call("policy", [repo]);

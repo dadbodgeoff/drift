@@ -1,0 +1,41 @@
+# Power of the pre-registered analysis (simulation, seed 'bench-power-v1', 2000 sims per point)
+# Monte Carlo error of a power near 0.8: about +/- 0.009
+
+## A. Smallest standardized paired effect detected with 80% power
+Primary test: two-sided exact Wilcoxon signed-rank on task-level differences.
+dz = mean of task differences / SD of task differences (normal differences).
+- alpha 0.05:
+  n=20 tasks: dz = 0.68 (Wilcoxon power 0.80, paired t at same dz 0.82)
+  n=25 tasks: dz = 0.59 (Wilcoxon power 0.80, paired t at same dz 0.82)
+  n=30 tasks: dz = 0.54 (Wilcoxon power 0.80, paired t at same dz 0.81)
+- alpha 0.0167 (Holm, 3 tests, worst case):
+  n=20 tasks: dz = 0.82 (Wilcoxon power 0.80, paired t at same dz 0.83)
+  n=25 tasks: dz = 0.70 (Wilcoxon power 0.80, paired t at same dz 0.83)
+  n=30 tasks: dz = 0.64 (Wilcoxon power 0.80, paired t at same dz 0.81)
+
+## B. Smallest relative reduction in violations per run detected with 80% power
+Count model: per task a base rate (gamma, shape 1, given mean), Poisson runs,
+3 runs per arm averaged per task, alpha 0.05 two-sided, effect in the right direction.
+  n=20, no-Drift mean 0.25 violations/run: reduction >= 90% (power 0.88)
+  n=20, no-Drift mean 0.50 violations/run: reduction >= 70% (power 0.84)
+  n=20, no-Drift mean 1.00 violations/run: reduction >= 60% (power 0.92)
+  n=20, no-Drift mean 2.00 violations/run: reduction >= 40% (power 0.82)
+  n=20, no-Drift mean 4.00 violations/run: reduction >= 30% (power 0.84)
+  n=25, no-Drift mean 0.25 violations/run: reduction >= 80% (power 0.84)
+  n=25, no-Drift mean 0.50 violations/run: reduction >= 70% (power 0.94)
+  n=25, no-Drift mean 1.00 violations/run: reduction >= 50% (power 0.87)
+  n=25, no-Drift mean 2.00 violations/run: reduction >= 40% (power 0.90)
+  n=25, no-Drift mean 4.00 violations/run: reduction >= 30% (power 0.91)
+  n=30, no-Drift mean 0.25 violations/run: reduction >= 80% (power 0.91)
+  n=30, no-Drift mean 0.50 violations/run: reduction >= 60% (power 0.86)
+  n=30, no-Drift mean 1.00 violations/run: reduction >= 50% (power 0.92)
+  n=30, no-Drift mean 2.00 violations/run: reduction >= 40% (power 0.94)
+  n=30, no-Drift mean 4.00 violations/run: reduction >= 30% (power 0.95)
+
+## C. Non-inferiority of task success (arms truly equal)
+Per task base success uniform on [0.2, 0.9]; 3 runs per arm; one-sided 95% t lower bound.
+  n=20: chance to show non-inferiority: margin 10 points: 0.31; margin 15 points: 0.55; margin 20 points: 0.75
+  n=25: chance to show non-inferiority: margin 10 points: 0.37; margin 15 points: 0.61; margin 20 points: 0.84
+  n=30: chance to show non-inferiority: margin 10 points: 0.43; margin 15 points: 0.70; margin 20 points: 0.89
+  n=25, true drop 5 points, margin 15: chance to (wrongly) show non-inferiority 0.36
+  n=25, true drop 10 points, margin 15: chance to (wrongly) show non-inferiority 0.16

@@ -726,7 +726,19 @@ fn a_rename_into_a_role_with_edits_away_from_the_declaration() {
 }
 
 /// Changes that break untouched routes from another file: plain check fails, so PR
-/// mode must too (main would go red on push). The merge-base worktree is cleaned up.
+/// mode must too (main would go red on push). To tell the change's violations from
+/// main's it compares with the merge base. The merge-base worktree is cleaned up.
+///
+/// S7 made a mined rule fewer than 75% of whose tellable members follow it stale, and a
+/// stale rule advised; both changes then left the auth rule stale and every check passed.
+/// Review fix v1, item 1: what a change breaks (violations not in `drift.lock`) counts as
+/// following for staleness, and staleness never demotes such a violation. So:
+/// - re-export the wrapper: every route breaks anew; the rule is not stale and blocks,
+///   in the plain check and in PR mode, as before S7;
+/// - delete the wrapper: every guarded route is "cannot tell" (the wrapper resolves to
+///   no code Drift read), and unknown is never a violation, so the change reports
+///   nothing; the plain check still fails on main's own unguarded route, which is not
+///   in the lock, though the rule is stale on the lock's two legacy routes.
 #[test]
 fn cross_file_causes_compare_with_the_merge_base() {
     for case in ["delete the wrapper", "re-export the wrapper"] {
@@ -751,6 +763,20 @@ fn cross_file_causes_compare_with_the_merge_base() {
         git(r, &["commit", "-qm", "pr"]);
         let (plain, out, _) = drift(r, &["check"], &[]);
         assert_eq!(plain, 1, "{case}: plain check fails: {out}");
+        if case == "delete the wrapper" {
+            assert!(
+                out.contains(
+                    "it is wrapped in withAuth, which does not resolve to code Drift read"
+                ),
+                "{case}: {out}"
+            );
+            assert!(
+                out.contains("a violation not in drift.lock still blocks"),
+                "{case}: {out}"
+            );
+        } else {
+            assert!(!out.contains("is stale"), "{case}: {out}");
+        }
         let status = git_out(r, &["status", "--porcelain"]);
         let indexes = cache_indexes(r);
         let (code, out, err) = drift(
@@ -758,14 +784,20 @@ fn cross_file_causes_compare_with_the_merge_base() {
             &["check", "--diff-base", "main", "--format", "json"],
             &[],
         );
-        assert_eq!(code, 1, "{case}: {out}{err}");
         let report = json(&out);
         assert_eq!(report["diff"]["base_checked"], true, "{case}");
         let new = new_in(&report);
-        assert!(
-            new.contains(&t(&ids.auth, "app/api/r00/route.ts", "GET")),
-            "{case}: {new:?}"
-        );
+        if case == "delete the wrapper" {
+            // Every route is cannot-tell: nothing of the change's is reported.
+            assert_eq!(code, 0, "{case}: {out}{err}");
+            assert!(new.is_empty(), "{case}: {new:?}");
+        } else {
+            assert_eq!(code, 1, "{case}: {out}{err}");
+            assert!(
+                new.contains(&t(&ids.auth, "app/api/r00/route.ts", "GET")),
+                "{case}: {new:?}"
+            );
+        }
         // What main already had is still not the pull request's.
         assert!(
             !new.contains(&t(&ids.auth, "app/api/old/route.ts", "GET")),
@@ -836,9 +868,11 @@ fn check_json_lists_policy_conventions_after_the_report() {
     without.as_object_mut().unwrap().remove("conventions");
     assert_eq!(old, without);
     // `exempt` is #45's (here `src/lib/log.ts#logLine`, a shared part of its role, #52).
+    // `standing` is S7's (`CheckReport::standing`: per accepted mined rule, what the
+    // check read of its members), serialised with the report, before `conventions`.
     assert_eq!(
         old.as_object().unwrap().keys().collect::<Vec<_>>(),
-        ["violations", "fixed", "exempt"]
+        ["violations", "fixed", "exempt", "standing"]
     );
     assert!(
         old["exempt"]

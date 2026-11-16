@@ -710,6 +710,9 @@ const practices = JSON.parse(run(["practices", "--json"]));
 practices.commit = null;
 json("practices.json", practices);
 json("map.json", JSON.parse(run(["map", "--json"])));
+// What mining dropped, gate by gate (observation only), and the practices that may be promoted now (writes nothing).
+json("funnel.json", JSON.parse(run(["census", "--why", "--json"])));
+json("promote-list.json", JSON.parse(run(["practices", "promote", "--list", "--json"])));
 json("version.json", { version: run(["--version"]).trim() });
 json("history.json", { snapshots: [{ ...before, files: facts.files.length }], audit: [] });
 copyFileSync(join(repo, ".drift/conventions.yaml"), join(acmeOut, "conventions.yaml"));
@@ -753,5 +756,5 @@ const studies = existsSync(studiesDir)
   : (prev.studies ?? { census: [], ab: [] });
 // The other committed repositories (scripts/make-round11-fixtures.mjs) keep their entries, after acme.
 const others = (prev.repos ?? []).filter((r) => r.id !== "acme");
-writeFileSync(join(out, "index.json"), JSON.stringify({ repos: [{ id: "acme", path: ROOT, name: "acme", practices: true, map: true }, ...others], sessions: index, studies }, null, 1) + "\n");
+writeFileSync(join(out, "index.json"), JSON.stringify({ repos: [{ id: "acme", path: ROOT, name: "acme", practices: true, map: true, funnel: true, promoteList: true }, ...others], sessions: index, studies }, null, 1) + "\n");
 console.log(`fixtures written to ${out}: ${facts.files.length} files, ${census.proposals.length} proposals, ${sessions.length} sessions`);

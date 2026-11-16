@@ -97,7 +97,8 @@
   "registered_in": null,
   "mirrors_keys": null,
   "imports_from": "import_source",
-  "practice": null
+  "practice": null,
+  "imports_declared": null
  },
  "languages": {
   "ts": {

@@ -108,6 +108,22 @@ pub struct Project {
     /// suggestions agents are not shown that the host agent may verify (no verdict, or a
     /// stale one). Empty otherwise.
     pub unverified: Vec<String>,
+    /// The repository's facts of the one full scan [`Project::repository_facts`] made,
+    /// once a caller asked for them; with the error, as text, when it failed.
+    pub(crate) scanned: std::sync::OnceLock<Result<RepoFacts, String>>,
+}
+
+/// Whether [`Project::open_for_agents`] keeps the facts of the scan it made to compare
+/// cached verdicts ([`drift_mine::verify::statuses`]) for the callers after it
+/// ([`Project::repository_facts`]). Set by a process that is one agent hook
+/// ([`keep_repository_facts`]); another process (the MCP server, a command) drops them
+/// there, as before, so as not to hold two copies of a large repository's facts.
+static KEEP_FACTS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// From now on, a project opened for agents keeps the facts of a scan it made for its
+/// own use ([`KEEP_FACTS`]): an agent hook, which needs the whole repository at most once.
+pub(crate) fn keep_repository_facts() {
+    KEEP_FACTS.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
 /// Directory for the fact cache (or `None` when disabled).
@@ -235,14 +251,21 @@ pub fn rel_in(root: &Path, path: &str) -> Option<String> {
         rest.push(existing.file_name()?.to_os_string());
         existing = existing.parent()?;
     }
-    let mut resolved = existing.canonicalize().ok()?;
+    let mut resolved = drift_core::fsutil::canonical(existing).ok()?;
     for part in rest.iter().rev() {
         if part == ".." {
             return None;
         }
         resolved.push(part);
     }
-    drift_core::ingest::rel_posix(root, &resolved)
+    drift_core::ingest::rel_posix(root, &resolved).or_else(|| {
+        // Windows: a root std spelled `\\?\C:\…`, compared in the spelling of `resolved`.
+        if cfg!(windows) {
+            drift_core::ingest::rel_posix(&drift_core::fsutil::canonical(root).ok()?, &resolved)
+        } else {
+            None
+        }
+    })
 }
 
 /// Where `root` is in its git work tree: `web/` for a `--root web` at the top level,
@@ -282,6 +305,34 @@ pub fn at_git_top(report: &CheckReport, prefix: &str) -> CheckReport {
     r
 }
 
+/// [`Project::in_scope`] on `policy`.
+fn in_scope_of(policy: &ConventionsFile, c: &Convention, rel: &str) -> bool {
+    if policy.packages.is_empty() {
+        return true;
+    }
+    let pkg = drift_mine::workspace::package_of(policy.packages.iter().map(String::as_str), rel);
+    c.role.kind == SymbolKind::Package
+        || c.role.kind == SymbolKind::Model
+        || c.role.parts().iter().any(|p| p.package == pkg)
+}
+
+/// [`Project::accepted_in_scope_given`] on `policy` as [`ConventionsFile::load`] read it,
+/// before a project is opened: opening one only takes conventions away (the wiring gate,
+/// what agents are not shown), so where this is true it is true of the project too. What
+/// lets the hook before an edit say nothing without loading the lock or the config.
+pub fn accepted_in_scope_given_in(
+    policy: &ConventionsFile,
+    rel: &str,
+    given: &BTreeSet<String>,
+) -> bool {
+    policy
+        .conventions
+        .iter()
+        .filter(|c| c.status == Status::Accepted)
+        .filter(|c| in_scope_of(policy, c, rel))
+        .all(|c| given.contains(&c.id))
+}
+
 /// Walk up from `start` to the directory holding `.drift/conventions.yaml`.
 pub fn find_root(start: &Path) -> Option<PathBuf> {
     let mut d = Some(start);
@@ -305,14 +356,14 @@ impl Project {
         // Hooks and MCP: wiring conventions are inert while the feature is off.
         crate::wiring::gate(root, &mut policy, false)?;
         let lock = Lock::load(root)?;
-        let root = root
-            .canonicalize()
+        let root = drift_core::fsutil::canonical(root)
             .with_context(|| format!("opening {}", root.display()))?;
         Ok(Self {
             root,
             policy,
             lock,
             unverified: Vec::new(),
+            scanned: std::sync::OnceLock::new(),
         })
     }
 
@@ -331,13 +382,31 @@ impl Project {
     /// quote it either: the error names the file and the command that says why, never the
     /// lines a parser would quote (they hold convention summaries).
     pub fn open_for_agents(root: &Path) -> anyhow::Result<Self> {
-        let policy = ConventionsFile::load(root).map_err(|_| {
+        let policy = ConventionsFile::load(root).map_err(|e| {
+            // A file in a newer format quotes nothing of the file: say what to do.
+            if let Some(newer) = e.downcast_ref::<drift_mine::policy::NewerPolicy>() {
+                return anyhow::anyhow!("{}", newer.for_agents());
+            }
             anyhow::anyhow!(
                 "{CONVENTIONS_FILE} could not be read, so no convention is shown to agents until it is fixed (`drift review --list` says why)"
             )
         })?;
+        Self::open_for_agents_with(root, policy)
+    }
+
+    /// [`Project::open_for_agents`] from a policy the caller already loaded with
+    /// [`ConventionsFile::load`] (a hook that read it to decide whether to open the
+    /// project at all): the file is not parsed a second time.
+    pub fn open_for_agents_with(
+        root: &Path,
+        policy: Option<ConventionsFile>,
+    ) -> anyhow::Result<Self> {
         let mut p = Self::with_policy(root, policy)?;
-        let statuses = drift_mine::verify::statuses(&p.root, &p.policy, || p.scan(false).ok());
+        let statuses =
+            drift_mine::verify::statuses(&p.root, &p.policy, || p.repository_facts().ok());
+        if !KEEP_FACTS.load(std::sync::atomic::Ordering::Relaxed) {
+            p.scanned = std::sync::OnceLock::new();
+        }
         let shown =
             |c: &Convention| drift_mine::verify::convention_view(c, statuses.as_ref()).shown;
         if let Some(st) = &statuses {
@@ -371,10 +440,23 @@ impl Project {
         Ok(facts)
     }
 
-    /// Facts sufficient to check the file `rel`: computed for that file alone from
-    /// the scan index when possible (same result as a full scan), else a full scan.
-    /// With them, whether they are the whole repository's (the full scan was made).
-    pub fn scan_for_file(&self, rel: &str) -> anyhow::Result<(RepoFacts, bool)> {
+    /// The repository's facts, as [`Project::scan`] gives them (the fact cache on), from
+    /// one full scan made the first time any caller asks and shared by every caller after
+    /// it: a hook that needs the whole repository for several things (the verifier's
+    /// statuses, the practice map, the inventory, the conventions' check) scans it once.
+    /// A scan that failed fails each caller with the same message.
+    pub fn repository_facts(&self) -> anyhow::Result<&RepoFacts> {
+        self.scanned
+            .get_or_init(|| self.scan(false).map_err(|e| format!("{e:#}")))
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("{e}"))
+    }
+
+    /// Facts for the file `rel` alone, from the scan index, when they are enough to check
+    /// it (the same facts a full scan gives the file): `None` when the repository must
+    /// be scanned instead (no index, a file that cannot be done alone, a practice that
+    /// covers it), which [`Project::scan_for_file`] then does. The trace names which.
+    pub fn scan_one_file(&self, rel: &str) -> Option<RepoFacts> {
         let opts = ScanOptions {
             cache_dir: cache_dir(&self.root, false),
             threads: 0,
@@ -385,20 +467,30 @@ impl Project {
         match scan_file(&self.root, &opts, rel) {
             Ok(Some(facts)) if !drift_mine::check::needs_full_scan(&facts, &self.policy) => {
                 crate::agent::trace::took("single_file");
-                Ok((facts, false))
+                Some(facts)
             }
             Ok(Some(_)) => {
                 crate::agent::trace::took("full_scan:needs_full_scan");
-                Ok((self.scan(false)?, true))
+                None
             }
             Ok(None) => {
                 crate::agent::trace::took("full_scan:no_single_file_scan");
-                Ok((self.scan(false)?, true))
+                None
             }
             Err(_) => {
                 crate::agent::trace::took("full_scan:single_file_error");
-                Ok((self.scan(false)?, true))
+                None
             }
+        }
+    }
+
+    /// Facts sufficient to check the file `rel`: computed for that file alone from
+    /// the scan index when possible (same result as a full scan), else a full scan.
+    /// With them, whether they are the whole repository's (the full scan was made).
+    pub fn scan_for_file(&self, rel: &str) -> anyhow::Result<(RepoFacts, bool)> {
+        match self.scan_one_file(rel) {
+            Some(facts) => Ok((facts, false)),
+            None => Ok((self.scan(false)?, true)),
         }
     }
 
@@ -406,8 +498,23 @@ impl Project {
     /// included ([`crate::practices::check_with_practices`]). The practice map they are
     /// read from is kept beside the fact cache ([`crate::derived`]): the hook or tool
     /// that asks for it next for the same facts reads it back.
+    // The hooks call [`Project::check_keeping`] now; kept for the callers that build no
+    // map of their own beside it.
+    #[allow(dead_code)]
     pub fn check(&self, facts: &RepoFacts, only: Option<&BTreeSet<String>>) -> CheckReport {
-        let map = std::cell::OnceCell::new();
+        self.check_keeping(facts, only, &std::cell::OnceCell::new())
+    }
+
+    /// [`Project::check`] that leaves the practice map it built in `map` (or takes the one
+    /// already there: it must be the map [`Project::check`] builds of these same `facts`,
+    /// with units listed), so that a later reader of the map in the same process does not
+    /// digest the facts and read it back again.
+    pub fn check_keeping(
+        &self,
+        facts: &RepoFacts,
+        only: Option<&BTreeSet<String>>,
+        map: &std::cell::OnceCell<drift_mine::practices::PracticesReport>,
+    ) -> CheckReport {
         self.check_with_map(facts, only, || {
             map.get_or_init(|| {
                 let kept = crate::derived::Derived::of(cache_dir(&self.root, false), facts);
@@ -494,13 +601,16 @@ impl Project {
     /// Whether convention `c` is scoped to the package of `rel` (some part of its role
     /// is in that package). Always true in a single-package policy.
     fn in_scope(&self, c: &Convention, rel: &str) -> bool {
-        if self.policy.packages.is_empty() {
-            return true;
-        }
-        let pkg = self.package_of(rel);
-        c.role.kind == SymbolKind::Package
-            || c.role.kind == SymbolKind::Model
-            || c.role.parts().iter().any(|p| p.package == pkg)
+        in_scope_of(&self.policy, c, rel)
+    }
+
+    /// Whether every accepted convention in scope for the file at `rel` (of its package,
+    /// `in_scope`) is in `given`. Every convention
+    /// [`Project::conventions_for_path`] returns with `only_accepted` is one of those,
+    /// whatever the file declares, so when this is true none of them is left to say and
+    /// the file's facts need not be read to know it.
+    pub fn accepted_in_scope_given(&self, rel: &str, given: &BTreeSet<String>) -> bool {
+        accepted_in_scope_given_in(&self.policy, rel, given)
     }
 
     /// Repo-relative POSIX path for an absolute or relative path, if inside the root.

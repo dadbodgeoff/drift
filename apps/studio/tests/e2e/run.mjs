@@ -86,11 +86,15 @@ const VIEWS = [
   ["map", ".mp-node"],
   ["security", ".dui-table__row"],
   ["practices", ".pr-recipe"],
+  ["funnel", ".fn-gates"],
   ["sessions", ".dui-tl"],
   ["studies", ".sd-precision"],
   ["logs", ".dui-table"],
   ["settings", ".st-settings"],
   ["gallery", ".gl-section"],
+  ["from-map", ".fm-proposed"],
+  ["upgrade", ".ug-left"],
+  ["feedback", ".fbv-marks"],
 ];
 
 console.log("drift studio e2e");
@@ -1656,6 +1660,378 @@ await test("practices: loading, empty (no concern described) and error (no pract
   expect((await page.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
   expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
   await page.context().close();
+});
+
+// ---------- S16: proposals from the map, what may be promoted, what mining dropped ----------
+
+// One proposal from Drift's structure map, as policy.rs writes it (`from_map`), appended to acme's conventions.yaml.
+const FROM_MAP_YAML = `
+- id: D-5e0a71
+  status: proposed
+  mode: advise
+  summary: Code in packages/ui never imports apps/api (61 files, none do)
+  role:
+    package: packages/ui
+    dir: "**"
+    file: "*"
+    entry: '-'
+    kind: module
+  rule:
+    type: avoids
+    signal: import:apps/api
+  evidence:
+    holders: 61
+    total: 61
+    lower_bound: 0.941
+    lift: 0.0
+  example: packages/ui/src/alert.tsx#(file)
+  selector_version: 3
+  from_map: layering
+`;
+
+// A fixture file the fixture API reads as missing without an HTTP error (an HTML page is "not available").
+const unavailable = (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>x</title>" });
+
+await test("conventions: a proposal from Drift's map of the code says so, and a filter shows mined or from-the-map proposals; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.route("**/acme/conventions.yaml", async (r) => {
+      const body = await (await r.fetch()).text();
+      await r.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: body.trimEnd() + FROM_MAP_YAML });
+    });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "conventions");
+    await page.waitForSelector(".st-qitem");
+    // The queue marks it; the source filter is offered because one row is from the map.
+    expect((await page.textContent(".st-qitem[data-id='D-5e0a71']")).includes("from the map"), "the queue item is marked");
+    await page.click(".dui-segmented button:has-text('From the map')");
+    await page.waitForSelector(".st-detail__title:has-text('never imports apps/api')");
+    const ids = await page.locator(".st-qitem").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-id")));
+    expect(JSON.stringify(ids) === JSON.stringify(["D-5e0a71"]), `only the proposal from the map: ${ids}`);
+    const note = await page.textContent(".cv-frommap-note");
+    expect(note.includes("Proposed from Drift's map of the code (the layers of the structure map), not mined: it did not pass through the miner's measured gates."), `note: ${note}`);
+    expect((await page.textContent(".cv-head .cv-frommap")).includes("from the map · layering"), "the badge in the header");
+    await axe(page, `conventions from the map ${scheme}`);
+    // Mined: every other proposal, and not this one.
+    await page.click(".dui-segmented button:has-text('Mined')");
+    await page.waitForFunction(() => !document.querySelector(".st-qitem[data-id='D-5e0a71']") && document.querySelectorAll(".st-qitem").length > 0);
+    // The detail follows the queue a render later: wait for it to leave the hidden proposal.
+    await page.waitForSelector(".cv-frommap-note", { state: "detached" });
+    expect((await page.locator(".cv-frommap-note").count()) === 0, "a mined proposal carries no from-the-map note");
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // Without a proposal from the map (acme as it is), no source filter is offered.
+  const plain = await newPage();
+  await open(plain, "conventions");
+  await plain.waitForSelector(".st-qitem");
+  expect((await plain.locator(".dui-segmented button:has-text('From the map')").count()) === 0, "no source filter without one");
+  await plain.context().close();
+});
+
+await test("practices: what may be promoted, passive candidates apart and last, unread units not checked with their shared cause; each one opens the promote dialog on its form and place", async () => {
+  const list = JSON.parse(readFileSync(join(app, "fixtures", "acme", "promote-list.json"), "utf8"));
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "practices/candidates");
+    await page.waitForSelector(".pr-cand");
+    // Drift lists the passive candidates apart (`passive`); the view shows them after the others.
+    const listed = [...list.candidates, ...(list.passive ?? [])];
+    expect((await page.locator(".pr-cand").count()) === listed.length, "every candidate Drift listed");
+    const titles = await page.locator(".pr-cand__title").allTextContents();
+    expect(titles[0] === "Authentication in apps/web" && titles[titles.length - 1] === "Error handling in apps/api", `order, passive last: ${titles}`);
+    expect((await page.locator("[data-testid='candidates-passive'] .pr-cand").count()) === list.passive.length, "the passive ones apart");
+    expect((await page.textContent("[data-testid='candidates-passive']")).includes("Followed by doing nothing"), "and said why");
+    const first = await page.textContent(".pr-cand >> nth=0");
+    expect(first.includes("drift practices promote P-9ece30 --in apps/web") && first.includes("18 entry points not checked"), `the command Drift prints, and what it could not read: ${first}`);
+    expect((await page.textContent(".pr-cand >> nth=0 >> [data-testid='cause-hint']")).trim() === list.candidates[0].candidate.unknown_cause.hint, "the config line as Drift wrote it");
+    // Every candidate Drift printed a command for can be promoted from here.
+    expect((await page.locator(".pr-cand .pr-cand__action button").count()) === listed.length, "a Promote button on each");
+    expect((await page.locator(".dui-dialog").count()) === 0, "no dialog until one is chosen");
+    await axe(page, `practices candidates ${scheme}`);
+    // A candidate opens the dialog on its form and place: the dry run Drift answered for its own command.
+    await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    const d = await page.textContent(".dui-dialog");
+    expect(d.includes("89 of the 116 entry points in apps/web use wrap withWorkspace, or wrap getSession") && d.includes("practices promote P-9ece30 --in apps/web --json"), `pre-filled: ${d.slice(0, 600)}`);
+    expect((await page.inputValue(".dui-dialog input[aria-label='Directory']")) === "apps/web", "the place");
+    await axe(page, `promote dialog from a candidate ${scheme}`);
+    await page.click(".dui-dialog button:has-text('Cancel')");
+    // A passive one says why it is listed apart, and any enforcing way is not offered for errors, in Drift's words.
+    await page.click("[data-testid='candidates-passive'] .pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    expect((await page.textContent(".dui-dialog .pr-promote__note")).includes("Listed apart: what this accepts is what code here does by doing nothing"), "the passive note");
+    expect(await page.locator(".dui-dialog .pr-promote__enforcing input").isDisabled(), "no reading of what enforces errors");
+    expect((await page.textContent(".dui-dialog .pr-promote__enforcing")).includes("Drift has no reading of which ways enforce errors: name its ways instead."), "the command's sentence");
+    await page.click(".dui-dialog button:has-text('Cancel')");
+    // One package narrows the list.
+    await page.selectOption("select[aria-label='Package']", "pkg:apps/api");
+    await page.waitForFunction((n) => document.querySelectorAll(".pr-cand").length === n, listed.filter((x) => x.candidate.place.package === "apps/api").length);
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // Loading and error states, like the other views.
+  const slow = await newPage();
+  await slow.goto(`${url}?delay=1500#/practices/candidates`);
+  await slow.waitForSelector(".st-loading[aria-label='Running drift practices promote --list']", { timeout: 15000 });
+  await slow.waitForSelector(".pr-cand", { timeout: 15000 });
+  await slow.context().close();
+  const broken = await newPage();
+  await broken.route("**/acme/promote-list.json", unavailable);
+  await open(broken, "practices/candidates");
+  await broken.waitForSelector(".dui-error:has-text('drift practices promote --list failed')");
+  expect((await broken.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
+  expect(broken.problems.length === 0, `console problems:\n${broken.problems.join("\n")}`);
+  await broken.context().close();
+});
+
+// The real answer of `drift practices promote P-6123b9 --in apps/api --block --dry-run --json` on a shallow clone:
+// no acme run is refused for block (every replay there can run), so this one is injected as Drift printed it elsewhere.
+const BLOCK_REFUSED = {
+  refused: { code: "block_refused", id: "D-97d7a2", replay: null },
+  message:
+    "D-97d7a2: not set to block: blocking needs a replay of the last 15 entry points added to its place, by the commit that first added each file, and Drift could not read when they were added: this is a shallow clone, so the commits that added most files are missing (`git fetch --unshallow` reads them). Nothing was written. Advise mode needs no history: run it again without --block.",
+};
+
+await test("practices: the promote dialog offers every form (ways, mechanism, any enforcing way; directory, route prefix; block; --force after a refusal for the share), says what the command refuses and what Drift answered, then writes; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.route("**/acme/promote-runs.json", async (r) => {
+      const doc = await (await r.fetch()).json();
+      for (const run of doc.runs) if (run.after.length === 0 && run.args.join(" ") === "P-6123b9 --in apps/api --block --dry-run --json") Object.assign(run, { exit: 2, out: BLOCK_REFUSED });
+      await r.fulfill({ json: doc });
+    });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "practices/candidates");
+    await page.waitForSelector(".pr-cand");
+    const dialog = () => page.textContent(".dui-dialog");
+    const cmd = () => page.textContent(".dui-dialog .pr-promote__cmd");
+    const settled = () => page.waitForFunction(() => !document.querySelector(".dui-dialog .pr-promote__preview.is-stale"));
+    // Block refused (the replay could not run), in Drift's words.
+    await page.click("[data-testid='candidates-passive'] .pr-cand >> nth=1 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    await page.click(".dui-dialog .dui-radio:has-text('Block')");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='block_refused']");
+    expect((await page.textContent(".dui-dialog .pr-promote__refused[data-code='block_refused']")).includes("this is a shallow clone, so the commits that added most files are missing"), "why it cannot block");
+    await axe(page, `promote dialog block refused ${scheme}`);
+    await page.click(".dui-dialog button:has-text('Cancel')");
+    await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+
+    // Block: the replay Drift ran, shown as it answered.
+    await page.click(".dui-dialog .dui-radio:has-text('Block')");
+    await page.waitForSelector(".dui-dialog .pr-promote__replay");
+    expect((await page.textContent(".dui-dialog .pr-promote__replay")).includes("Of the 15 entry points most recently added here, 14 follow it as they stand."), "the replay");
+    expect((await cmd()).endsWith("P-9ece30 --in apps/web --block --json"), `block command: ${await cmd()}`);
+    expect((await page.locator(".dui-dialog button:has-text('Make it a blocking convention')").count()) === 1, "the button says what it writes");
+    await page.click(".dui-dialog .dui-radio:has-text('Advise')");
+
+    // A route prefix of the package: `--in apps/web:/api`.
+    await page.click(".dui-dialog .dui-segmented button:has-text('Route prefix')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.includes("--in apps/web:/api --json"));
+    await page.waitForSelector(".dui-dialog .pr-promote__place:has-text('apps/web:/api')");
+    await settled();
+    // A prefix --in cannot take is not run, and says why.
+    await page.fill(".dui-dialog input[aria-label='Route prefix']", "api");
+    await page.waitForSelector(".dui-dialog .pr-promote__placeproblem:has-text('A route prefix starts with')");
+    await page.click(".dui-dialog .dui-segmented button:has-text('Directory')");
+
+    // Another package: Drift refuses below the share, and only then is --force offered, saying what it overrides.
+    await page.fill(".dui-dialog input[aria-label='Directory']", "apps/api");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='below_share']");
+    const force = await page.textContent(".dui-dialog .pr-promote__force");
+    expect(force.includes("In apps/api, 0 of the 49 entry points Drift could read do it the accepted ways (0%), below the 80% a practice needs") && force.includes("it advises only, and never blocks"), `force: ${force}`);
+    expect(await page.locator(".dui-dialog button:has-text('Make it a convention')").isDisabled(), "nothing to write while refused");
+    await axe(page, `promote dialog refused below the share ${scheme}`);
+    await page.click(".dui-dialog .pr-promote__force label");
+    await page.waitForFunction(() => !document.querySelector(".dui-dialog .pr-promote__refused") && document.querySelector(".dui-dialog [data-testid='promote-answer']"));
+    expect((await cmd()).endsWith("P-9ece30 --in apps/api --force --json"), `force command: ${await cmd()}`);
+    expect((await dialog()).includes("Below the 80% share on a person's word: advise only."), "Drift's answer says it was forced");
+    expect(await page.locator(".dui-dialog input[type=radio][value='block']").isDisabled(), "block is not offered with --force");
+    expect((await dialog()).includes("--block and --force do not go together"), "and says the command's sentence");
+    await page.click(".dui-dialog .pr-promote__force label");
+    await page.fill(".dui-dialog input[aria-label='Directory']", "apps/web");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("P-9ece30 --in apps/web --json"));
+    await settled();
+
+    // No way ticked: the command line refuses before reading anything, in its words, and nothing is run.
+    await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withWorkspace, or wrap getSession')");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='nothing_accepted']");
+    expect((await page.textContent(".dui-dialog .pr-promote__refused[data-code='nothing_accepted']")).includes("Drift refuses this before reading anything: Nothing to promote: name a way (a variant id), a mechanism, or any way that enforces the concern."), "nothing accepted");
+    // Any enforcing way, by concern.
+    await page.click(".dui-dialog .pr-promote__enforcing");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("--concern authn --in apps/web --any-enforcing --json"));
+    await page.waitForSelector(".dui-dialog [data-testid='promote-answer']:has-text('any way that turns an unsigned caller away')");
+    await page.click(".dui-dialog .pr-promote__enforcing");
+    // A mechanism whole.
+    await page.click(".dui-dialog .pr-promote__mechanisms label:has-text('--mechanism wrap')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("--concern authn --in apps/web --mechanism wrap --json"));
+    await page.waitForSelector(".dui-dialog .pr-promote__preview:not(.is-stale)");
+    await page.click(".dui-dialog .pr-promote__mechanisms label:has-text('--mechanism wrap')");
+    await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withWorkspace, or wrap getSession')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("P-9ece30 --in apps/web --json"));
+    await settled();
+    await axe(page, `promote dialog forms ${scheme}`);
+
+    // Written, then what Drift answers after it: another form in the same place replaces it.
+    await page.click(".dui-dialog button:has-text('Make it a convention')");
+    await page.waitForSelector(".dui-toast:has-text('Convention D-234880')");
+    expect((await page.locator(".dui-dialog").count()) === 0, "the dialog closes once written");
+    await page.waitForFunction(() => !document.querySelector(".pr-cand .pr-cand__title")?.textContent?.includes("Authentication in apps/web"));
+    expect((await page.locator(".pr-cand").count()) === 7, "the list Drift prints after the write");
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // What it replaces: from the map's Authentication, any enforcing way in apps/web after D-234880 was written.
+  const page = await newPage();
+  await open(page, "practices/candidates");
+  await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+  await page.waitForSelector(".dui-dialog .pr-promote__preview");
+  await page.click(".dui-dialog button:has-text('Make it a convention')");
+  await page.waitForSelector(".dui-toast:has-text('Convention D-234880')");
+  await page.click("[role=tab]:has-text('All concerns')");
+  await page.click(".pr-concern:has-text('Authentication')");
+  await page.click(".dui-segmented button:has-text('Every variant')");
+  await page.click(".pr-stack .pr-variant:not(.pr-group__head):has-text('wrap withAdmin')");
+  await page.click(".pr-detail button:has-text('Make this a convention')");
+  // This variant of the hand-written map was not run after the write: fixture mode says so rather than make it up.
+  await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='not_recorded']");
+  await page.fill(".dui-dialog input[aria-label='Directory']", "apps/web");
+  await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withAdmin')");
+  await page.click(".dui-dialog .pr-promote__enforcing");
+  await page.waitForSelector(".dui-dialog .pr-promote__replaces");
+  const rep = await page.textContent(".dui-dialog .pr-promote__replaces");
+  expect(rep.includes("Would replace D-234880 (Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession), the practice of another form in the same place"), `replaces: ${rep}`);
+  // Fixture mode recorded the dry run of this form after the write, not a second write.
+  expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+  await page.context().close();
+});
+
+await test("funnel: what mining dropped, gate by gate, with each gate's origin and the dropped candidates of the gate chosen; loading, empty and error; read-only", async () => {
+  const doc = JSON.parse(readFileSync(join(app, "fixtures", "acme", "funnel.json"), "utf8"));
+  const slow = await newPage();
+  await slow.goto(`${url}?delay=1500#/funnel`);
+  await slow.waitForSelector(".st-loading[aria-label='Running drift census --why']", { timeout: 15000 });
+  await slow.waitForSelector(".fn-gates", { timeout: 15000 });
+  await slow.context().close();
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "funnel");
+    await page.waitForSelector(".fn-gates");
+    expect((await page.textContent(".fn-head")).includes("Observation only: nothing listed here is proposed, checked or shown to agents"), "observation only");
+    const stages = await page.locator(".fn-stages__list li").allTextContents();
+    expect(stages.length === 6 && stages[0].includes(String(doc.reached.roles)) && stages[5].includes(String(doc.reached.proposed)), `stages: ${stages}`);
+    const gates = await page.locator(".fn-gates tbody tr").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-gate")));
+    expect(JSON.stringify(gates) === JSON.stringify(doc.gates.filter((g) => g.dropped > 0).map((g) => g.name)), `gates that dropped, in Drift's order: ${gates}`);
+    expect((await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("not from the study") && (await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("engineering choice, no study"), "the origin");
+    // The first gate that dropped is chosen; another one by click (the address keeps it).
+    expect((await page.textContent(".fn-detail")).includes("Dropped at universal (10)"), "universal first");
+    await page.click(".fn-gates button:has-text('wilson')");
+    await page.waitForSelector(".fn-detail:has-text('Dropped at wilson (274)')");
+    expect(page.url().endsWith("#/funnel/wilson"), `address: ${page.url()}`);
+    const d = await page.textContent(".fn-detail");
+    expect(d.includes("12 of 13") && d.includes("apps/web: components in components/**: call useState()") && d.includes("lower bound 0.67 under 0.75") && d.includes("MIN_LOWER_BOUND = 0.75"), `wilson: ${d}`);
+    expect((await page.getAttribute(".fn-gates button:has-text('wilson')", "aria-pressed")) === "true", "pressed");
+    await page.click(".fn-quiet summary");
+    expect((await page.textContent(".fn-quiet")).includes("python_family_hidden") && (await page.textContent(".fn-quiet tr[data-gate='python_family_hidden']")).includes("from the study"), "a gate from the study");
+    await axe(page, `funnel ${scheme}`);
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  const quiet = await newPage();
+  await open(quiet, "funnel", REPO("quiet"));
+  await quiet.waitForSelector(".dui-empty:has-text('No candidate was dropped')");
+  await axe(quiet, "funnel empty");
+  await open(quiet, "funnel", REPO("beacon"));
+  await quiet.waitForSelector(".dui-error:has-text('drift census --why failed')");
+  expect((await quiet.textContent(".dui-error")).includes("no funnel.json for beacon"), "the error as the run gave it");
+  expect((await quiet.locator(".dui-error button:has-text('Try again')").count()) === 1, "retry");
+  expect(quiet.problems.length === 0, `console problems:\n${quiet.problems.join("\n")}`);
+  await quiet.context().close();
+});
+
+await (await import("./screens.mjs")).default({ test, newPage, open, axe, expect, REPO, app });
+await test("check and security on harbor: what each rule rests on, the promote hint, security advice, look at these first, nothing reaches, guard unknown, and writing the baseline; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.goto(`${url}?${REPO("harbor")}#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    // Check, whole repository: each accepted mined rule's members, and the command a departure's place could be promoted with.
+    await open(page, "check", REPO("harbor"));
+    await page.waitForSelector("#ck-standing");
+    const standing = await page.textContent("#ck-standing");
+    expect(standing.includes("1 stale, 2 some members break it"), `standing counts: ${standing}`);
+    expect(standing.includes("it is wrapped in withTeam, which does not resolve to code Drift read (1)"), `not checked, with why: ${standing}`);
+    expect(standing.includes("mined rule is stale: its role has 7 member(s) now, under the 8 a mined rule needs") && standing.includes("drift review --advise D-6ff644"), `stale: ${standing}`);
+    expect((await page.locator("#ck-security-advice").count()) === 0, "no security advice outside PR mode");
+    const promote = await page.locator("#ck-practices .ck-promote__cmd").first().textContent();
+    expect(promote === "drift practices promote P-7f5143 --in app/api", `promote hint: ${promote}`);
+    await page.click("#ck-standing button:has-text('D-b941d4')");
+    await page.waitForFunction(() => location.hash.startsWith("#/conventions/D-b941d4"));
+    await open(page, "check", REPO("harbor"));
+    await page.waitForSelector("#ck-standing");
+    await axe(page, `check harbor ${scheme}`);
+    // PR mode: what the change adds, as advice (no baseline), with its location opening the code.
+    await page.fill(".ck-scope__ref input, input.ck-scope__ref", "main");
+    await page.click(".ck-scope button:has-text('Compare')");
+    await page.waitForSelector("#ck-security-advice");
+    const advice = await page.textContent("#ck-security-advice");
+    expect(advice.includes("New entry points where Drift found no guard, reaching an operation fed by the request (1)") && advice.includes("app/api/refunds/route.ts:3") && advice.includes("this does not fail the check"), `advice: ${advice}`);
+    await axe(page, `check harbor diff ${scheme}`);
+    await page.click("#ck-security-advice button:has-text('app/api/refunds/route.ts:3')");
+    await page.waitForSelector(".dui-drawer .dui-code__line.is-focus");
+    await page.keyboard.press("Escape");
+    await page.click(".ck-scope button:has-text('Whole repository')");
+    await page.waitForSelector("#ck-standing");
+    // Security: no baseline yet; look at these first; nothing reaches.
+    await open(page, "security", REPO("harbor"));
+    await page.waitForSelector(".sc-baseline");
+    expect((await page.textContent(".sc-baseline")).includes("No security baseline"), "no baseline yet");
+    await page.click("[role=tab]:has-text('Look at these first')");
+    await page.waitForSelector(".sc-first__item");
+    const first = await page.textContent(".sc-first");
+    expect((await page.locator(".sc-first__item").count()) === 2, "two ranked findings");
+    expect(first.includes("A caller Drift found no guard for can send a value that is written into the text of an SQL query (sql_string_interpolation): GET /api/refunds"), `first: ${first}`);
+    expect(first.includes("Not ranked: 1 where Drift could not read the guard.") && first.includes("its guard is unknown"), `not ranked: ${first}`);
+    await axe(page, `security first ${scheme}`);
+    await page.click("[role=tab]:has-text('Nothing reaches')");
+    await page.waitForSelector("[aria-label='Files nothing reaches']");
+    const unreached = await page.textContent("[aria-label='Files nothing reaches']");
+    expect(unreached.includes("tools/sweep/sweep.ts") && unreached.includes("eval()"), `unreached: ${unreached}`);
+    await axe(page, `security unreached ${scheme}`);
+    // Writing the baseline: confirmed, with the exact command; recorded; the bar then says what the file holds.
+    await page.click(".sc-baseline button:has-text('Write the baseline')");
+    await page.waitForSelector("[role=alertdialog]");
+    expect((await page.textContent("[role=alertdialog] .st-cmd")).trim() === "drift --root /work/harbor security --write-baseline", "the command shown is the one run");
+    await axe(page, `security baseline confirm ${scheme}`);
+    await page.keyboard.press("Escape");
+    expect((await page.locator("[role=alertdialog]").count()) === 0, "Escape cancels");
+    expect((await page.textContent(".sc-baseline")).includes("No security baseline"), "nothing written on cancel");
+    await page.click(".sc-baseline button:has-text('Write the baseline')");
+    await page.click("[role=alertdialog] button:has-text('Write the baseline')");
+    await page.waitForSelector(".dui-toast:has-text('Security baseline written')");
+    await page.waitForSelector(".sc-baseline:has-text('holds')");
+    const bar = await page.textContent(".sc-baseline");
+    expect(/holds \d+ findings? \(inventory version \d+\)/.test(bar) && bar.includes("Last written from the Studio") && bar.includes("Write it again"), `baseline bar: ${bar}`);
+    // Diff mode: the entry points the change adds whose guard Drift could not read, said as unknown.
+    await page.fill(".ck-scope__ref input, input.ck-scope__ref", "main");
+    await page.click(".ck-scope button:has-text('Compare')");
+    await page.waitForSelector("#sc-guard-unknown");
+    const unknown = await page.textContent("#sc-guard-unknown");
+    expect(unknown.includes("New entry points whose guard is unknown (2)") && unknown.includes("app/api/payouts/route.ts") && unknown.includes("it could not read: requireMember") && !unknown.includes("no guard found"), `guard unknown: ${unknown}`);
+    await axe(page, `security diff harbor ${scheme}`);
+    await page.click(".ck-scope button:has-text('Whole repository')");
+    // Back on the tab that was open: the address keeps it.
+    await page.waitForSelector("[aria-label='Files nothing reaches']");
+    expect(page.problems.length === 0, `console problems (${scheme}):\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
 });
 
 if (SCREENS) {

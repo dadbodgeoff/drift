@@ -274,10 +274,13 @@ fn promote_command(v: &Variant) -> Option<String> {
     Some(match &p.place {
         Some(place) => format!(
             "drift practices promote {} --in {}",
-            sanitize(&v.id, 40),
-            sanitize(place, 160)
+            crate::report::shell_word(&sanitize(&v.id, 40)),
+            crate::report::shell_word(&sanitize(place, 160))
         ),
-        None => format!("drift practices promote {}", sanitize(&v.id, 40)),
+        None => format!(
+            "drift practices promote {}",
+            crate::report::shell_word(&sanitize(&v.id, 40))
+        ),
     })
 }
 
@@ -628,6 +631,10 @@ const PLAIN_USES: &[(&str, &str)] = &[
     ("policy", "checked by the policy {}"),
     // errors
     ("mapped by wrapper", "turned into responses by {}"),
+    (
+        "base handler",
+        "turned into responses by the base view's {}",
+    ),
     ("in body try return", "caught in the handler, which returns"),
     ("in body try swallow", "caught in the handler and dropped"),
     (
@@ -651,6 +658,10 @@ const PLAIN_USES: &[(&str, &str)] = &[
         "typed with {}, not checked when a request comes in",
     ),
     ("typed model", "parsed into a typed model by {}"),
+    (
+        "typed param",
+        "parameters parsed by their declared types by {}",
+    ),
     (
         "schema repo schema",
         "checked against a schema of the repository",
@@ -1486,6 +1497,11 @@ mod first_run_tests {
                 "mapped by wrapper withErrors",
                 "turned into responses by withErrors",
             ),
+            // The row S15c added (Python error handling through a base view's handler).
+            (
+                "base handler BaseView.handle_exception",
+                "turned into responses by the base view's BaseView.handle_exception",
+            ),
             ("in body try return", "caught in the handler, which returns"),
             ("in body try swallow", "caught in the handler and dropped"),
             (
@@ -1515,6 +1531,10 @@ mod first_run_tests {
             (
                 "typed model rest_framework",
                 "parsed into a typed model by rest_framework",
+            ),
+            (
+                "typed param fastapi",
+                "parameters parsed by their declared types by fastapi",
             ),
             (
                 "schema repo_schema",

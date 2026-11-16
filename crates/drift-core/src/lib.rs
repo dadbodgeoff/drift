@@ -7,8 +7,12 @@ pub mod guard_lists;
 pub mod ingest;
 pub mod lineage;
 pub mod nesting;
+pub mod pathtext;
 pub mod practice;
 pub mod speculation;
 pub mod stack;
+pub mod unlisted;
+pub mod work;
 
 pub use facts::*;
+pub use unlisted::{UnlistedReason, UnlistedRoute};

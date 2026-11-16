@@ -250,7 +250,9 @@ fn yes_accepts_not_a_convention_rejects_and_unanswered_stays_a_candidate() {
     let out = ok(r, &["review", &format!("--answer={id}=same")]);
     assert!(
         out.contains(&format!("{id}: the same kind of thing: accepted"))
-            && out.contains("1 accepted (0 block), 0 proposed, 0 rejected"),
+            // The one still proposed is the manifest proposal of packages/app
+            // (`from_map: manifest`), which no answer here is about.
+            && out.contains("1 accepted (0 block), 1 proposed, 0 rejected"),
         "{out}"
     );
     assert!(agents_md(r).contains("packages/app"), "{}", agents_md(r));
@@ -270,7 +272,7 @@ fn yes_accepts_not_a_convention_rejects_and_unanswered_stays_a_candidate() {
     );
     assert!(
         out.contains(&format!("{id}: not a convention: rejected"))
-            && out.contains("0 accepted (0 block), 0 proposed, 1 rejected"),
+            && out.contains("0 accepted (0 block), 1 proposed, 1 rejected"),
         "{out}"
     );
     assert!(!agents_md(r).contains("packages/app"));

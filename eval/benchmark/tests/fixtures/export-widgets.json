@@ -1,0 +1,499 @@
+{
+ "exported_at": "2026-11-10T00:00:00Z",
+ "pull_requests": [
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "ecef5c3af6893216b41510c119e34cf7b320b588",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "f261feb4a84339d12883b7a2ea34925d8dc64078"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1001,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "fb589375462db8ada104efd91344affdcc3e8bf8",
+   "merged_at": "2026-03-02T10:00:00Z",
+   "number": 1,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "bot",
+   "base_branch": "main",
+   "base_commit": "b2d4954328a977e3b9172daefdb14eb4555487a3",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "d77f73deca4e3d71102553d83a945704c6c83256"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1002,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "af48cf834de7b3f3bba3f790d359ed8b893502b7",
+   "merged_at": "2026-03-03T10:00:00Z",
+   "number": 2,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "beb399a145cf9b0b0fbbd1860c23ade898cb6405",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "eca3f3bdc13233ec5fd1b5bc3b063156daca5985"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1003,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "ab648aee04a27139c1598f9217b34969cf80c7a8",
+   "merged_at": "2026-03-04T10:00:00Z",
+   "number": 3,
+   "title": "Revert \"Fix widget totals\""
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "f52ed7f0ae391c48901c559751fa022a90ad8827",
+   "changed_files": [
+    {
+     "additions": 30,
+     "deletions": 2,
+     "path": "README.md",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "2af07729c8af2946baff7f47f89ab28f2425ecd9"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1004,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "d997a52e6399c3a1c7f959e89d4052f8a8b4e580",
+   "merged_at": "2026-03-05T10:00:00Z",
+   "number": 4,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "6d24ee78bcaaa5a29cc6ebfdc801982491e2c12e",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "dcfd6d3528f8a4f8461e1dbae06251ad2b83fbb7"
+   ],
+   "linked_issues": [],
+   "merge_commit": "ef34b662574f466617fe1666fb49bdf91fcd4aa1",
+   "merged_at": "2026-03-06T10:00:00Z",
+   "number": 5,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "f34d46d6047d0aae46c5c1f6b5e3920d60013505",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "741fd3d66b489129944a245b23831ba9c3372ed6"
+   ],
+   "linked_issues": [
+    {
+     "body": "too short",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1006,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "5a7fa13abacf311c6367313b35d44d96f067002a",
+   "merged_at": "2026-03-07T10:00:00Z",
+   "number": 6,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "1bb0b436c55b046f85d3ff14d2b90647af8898b2",
+   "changed_files": [
+    {
+     "additions": 900,
+     "deletions": 0,
+     "path": "src/a.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "74ada423c0b5942d4c80212ffd150eb5a2b6f36f"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1007,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "4456f6a458ddc431dacd3096f9034eca215cefeb",
+   "merged_at": "2026-03-08T10:00:00Z",
+   "number": 7,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "6d8492c72fd0f2c0a31ee302c3b5cd7518487bc0",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "6ad4624ea20e97e8a420e03361caf88d512f94d9"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.\n\nFixed by https://github.com/example-org/widgets/pull/8 (see #8, commit 74811f02f). Docs: https://example.invalid/docs",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1008,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "74811f02f8e8408f3afd1e2cf188cebf64408402",
+   "merged_at": "2026-03-09T10:00:00Z",
+   "number": 8,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "1f5f9c514ca9c18b0ae771d4e3dc25ef924d48cf",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "7850bea2cdf600262808045c85b2ce592cb6b94f"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1009,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "204d55f3e08e450f031be887cf31a484017eae48",
+   "merged_at": "2024-01-01T00:00:00Z",
+   "number": 9,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "b20eb9546b7d16bb14bf48f6714e3a107b744852",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "80f1f78228adf1210e321d66294f6a5361de799b"
+   ],
+   "linked_issues": [
+    {
+     "body": "Here is the fix:\n```diff\n- a\n+ b\n```\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1010,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "061476eb668fc70759b9ad6c7e366ff8b3ee2d3a",
+   "merged_at": "2026-03-02T10:00:00Z",
+   "number": 10,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "dfac832ee701b4da51bffd03e285f8300d0b44ba",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "0b8b5a0948b5637294bed9dcd40cb2de94ff37dd"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-12-01T00:00:00Z",
+     "number": 1011,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "66c57bb1ed8d6c752c393603dedb90e2ee195ffa",
+   "merged_at": "2026-03-03T10:00:00Z",
+   "number": 11,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "7ab02ef7fecebcbb30950ea37d226a81c0a4baa9",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "6ae031762e480d11af5ac21df1668bc5439da396"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1012,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "f0692c2be2d2158ecbc6049bffe9ae25526c3d68",
+   "merged_at": "2026-03-04T10:00:00Z",
+   "number": 12,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "51b113c2cc9a6794eac7fd8c889ec864f5d0eabf",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "9a5f40732d09026033984fe1ca8ccfdddb432d88"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1013,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "e63ccd248f9fa19d668347ae3d273f912b20f43f",
+   "merged_at": "2026-03-05T10:00:00Z",
+   "number": 13,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "2ccddb1b57862ff64d9276d4b3290092faba5ee7",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "4395321605f157ea5c8f988df92c97fd2432f532"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1014,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "0dfdee6d84f601bfb719c055bcac902203bccb53",
+   "merged_at": "2026-03-06T10:00:00Z",
+   "number": 14,
+   "title": "Fix widget totals when list is empty"
+  },
+  {
+   "author_kind": "user",
+   "base_branch": "main",
+   "base_commit": "6230a8d67c702b17d9c28311f22243b59fcbedd0",
+   "changed_files": [
+    {
+     "additions": 20,
+     "deletions": 4,
+     "path": "src/api/totals.ts",
+     "status": "modified"
+    },
+    {
+     "additions": 15,
+     "deletions": 0,
+     "path": "src/api/totals.test.ts",
+     "status": "modified"
+    }
+   ],
+   "commits": [
+    "79c340abf46706a64c793660d956527da9878c8e"
+   ],
+   "linked_issues": [
+    {
+     "body": "Calling GET /api/totals with an account that has no widgets returns a 500 instead of a zero total. Expected {\"total\": 0}. Steps: create an account, call the endpoint.",
+     "created_at": "2026-02-01T09:00:00Z",
+     "number": 1015,
+     "title": "Totals endpoint crashes on empty list"
+    }
+   ],
+   "merge_commit": "4b461e6de1d49642dd02df7ac0db08edb6538a28",
+   "merged_at": "2026-03-07T10:00:00Z",
+   "number": 15,
+   "title": "Fix widget totals when list is empty"
+  }
+ ],
+ "repository": "example-org/widgets",
+ "schema": "drift-benchmark-pr-export/1",
+ "source": "made-up fixture for tests; not real data"
+}

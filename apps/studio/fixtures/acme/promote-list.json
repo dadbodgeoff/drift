@@ -1,0 +1,357 @@
+{
+ "candidates": [
+  {
+   "place": "apps/web",
+   "command": "drift practices promote P-9ece30 --in apps/web",
+   "departures": 8,
+   "candidate": {
+    "concern": "authn",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/web",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-9ece30",
+      "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+      "label": "wrap withWorkspace, or wrap getSession",
+      "members": 89,
+      "alternatives": [
+       "wrap:apps/web/lib/auth.ts#getSession",
+       "wrap:apps/web/lib/auth.ts#withWorkspace"
+      ]
+     }
+    ],
+    "other_ways": [],
+    "follows": 89,
+    "exceptions": [
+     {
+      "path": "apps/web/app/api/admin/health/route.ts",
+      "symbol": "GET",
+      "line": 3
+     },
+     {
+      "path": "apps/web/app/api/oauth/callback/route.ts",
+      "symbol": "GET",
+      "line": 3
+     },
+     {
+      "path": "apps/web/app/api/public/preview/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     {
+      "path": "apps/web/app/api/public/status/route.ts",
+      "symbol": "GET",
+      "line": 3
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     {
+      "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     {
+      "path": "apps/web/lib/actions/ban-customer.ts",
+      "symbol": "banCustomer",
+      "line": 5
+     }
+    ],
+    "unknown": 18,
+    "total": 116,
+    "example": {
+     "path": "apps/web/app/api/admin/abuse/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    "forced": false,
+    "unknown_cause": {
+     "reason": "unresolved",
+     "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+     "units": 18,
+     "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+    }
+   }
+  },
+  {
+   "place": "apps/api",
+   "command": "drift practices promote P-5c347c --in apps/api",
+   "departures": 2,
+   "candidate": {
+    "concern": "authn",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/api",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-5c347c",
+      "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+      "label": "decorator AuthGuard",
+      "members": 47
+     }
+    ],
+    "other_ways": [],
+    "follows": 47,
+    "exceptions": [
+     {
+      "path": "apps/api/src/releases/releases.controller.ts",
+      "symbol": "GET /releases/:id",
+      "line": 8
+     },
+     {
+      "path": "apps/api/src/releases/releases.controller.ts",
+      "symbol": "POST /releases",
+      "line": 13
+     }
+    ],
+    "unknown": 0,
+    "total": 49,
+    "example": {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "GET /alerts/:id",
+     "line": 10
+    },
+    "forced": false
+   }
+  },
+  {
+   "place": "apps/web/lib",
+   "command": "drift practices promote P-cd2572 --in apps/web/lib",
+   "departures": 1,
+   "candidate": {
+    "concern": "validation",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/web",
+     "dir": "lib"
+    },
+    "ways": [
+     {
+      "id": "P-cd2572",
+      "key": "schema:zod",
+      "label": "schema zod",
+      "members": 18
+     }
+    ],
+    "other_ways": [],
+    "follows": 18,
+    "exceptions": [
+     {
+      "path": "apps/web/lib/actions/ban-customer.ts",
+      "symbol": "banCustomer",
+      "line": 5
+     }
+    ],
+    "unknown": 0,
+    "total": 19,
+    "example": {
+     "path": "apps/web/lib/actions/archive-link.ts",
+     "symbol": "archiveLinkAction",
+     "line": 7
+    },
+    "forced": false
+   }
+  },
+  {
+   "place": "apps/web",
+   "command": "drift practices promote P-ec0957 --in apps/web",
+   "departures": 0,
+   "candidate": {
+    "concern": "api",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/web",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-ec0957",
+      "key": "builder:pkg:next#NextResponse.json",
+      "label": "builder NextResponse.json",
+      "members": 96
+     }
+    ],
+    "other_ways": [],
+    "follows": 96,
+    "exceptions": [],
+    "unknown": 1,
+    "total": 97,
+    "example": {
+     "path": "apps/web/app/api/admin/abuse/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    "forced": false
+   }
+  },
+  {
+   "place": "apps/web",
+   "command": "drift practices promote P-d65fba --in apps/web",
+   "departures": 0,
+   "candidate": {
+    "concern": "data_access",
+    "unit": "symbol",
+    "place": {
+     "package": "apps/web",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-d65fba",
+      "key": "entry_direct:@prisma/client",
+      "label": "entry direct @prisma/client",
+      "members": 92
+     }
+    ],
+    "other_ways": [
+     {
+      "id": "P-288461",
+      "key": "service:@prisma/client",
+      "label": "service @prisma/client",
+      "members": 1
+     }
+    ],
+    "follows": 92,
+    "exceptions": [
+     {
+      "path": "apps/web/lib/analytics.ts",
+      "symbol": "eventsFor",
+      "line": 3
+     },
+     {
+      "path": "apps/web/lib/auth.ts",
+      "symbol": "withWorkspace",
+      "line": 5
+     }
+    ],
+    "unknown": 0,
+    "total": 94,
+    "example": {
+     "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+     "symbol": "GET",
+     "line": 5
+    },
+    "forced": false
+   }
+  },
+  {
+   "place": "apps/api",
+   "command": "drift practices promote P-7ed24a --in apps/api",
+   "departures": 0,
+   "candidate": {
+    "concern": "api",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/api",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-7ed24a",
+      "key": "builder:return_value",
+      "label": "builder return_value",
+      "members": 49
+     }
+    ],
+    "other_ways": [],
+    "follows": 49,
+    "exceptions": [],
+    "unknown": 0,
+    "total": 49,
+    "example": {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "GET /alerts/:id",
+     "line": 10
+    },
+    "forced": false
+   }
+  }
+ ],
+ "passive": [
+  {
+   "place": "apps/web",
+   "command": "drift practices promote P-6123b9 --in apps/web",
+   "departures": 0,
+   "candidate": {
+    "concern": "errors",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/web",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-6123b9",
+      "key": "bubble:framework_default",
+      "label": "bubble framework_default",
+      "members": 116
+     }
+    ],
+    "other_ways": [],
+    "follows": 116,
+    "exceptions": [],
+    "unknown": 0,
+    "total": 116,
+    "example": {
+     "path": "apps/web/app/api/admin/abuse/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    "forced": false,
+    "passive": true
+   }
+  },
+  {
+   "place": "apps/api",
+   "command": "drift practices promote P-6123b9 --in apps/api",
+   "departures": 0,
+   "candidate": {
+    "concern": "errors",
+    "unit": "entry_point",
+    "place": {
+     "package": "apps/api",
+     "dir": ""
+    },
+    "ways": [
+     {
+      "id": "P-6123b9",
+      "key": "bubble:framework_default",
+      "label": "bubble framework_default",
+      "members": 49
+     }
+    ],
+    "other_ways": [],
+    "follows": 49,
+    "exceptions": [],
+    "unknown": 0,
+    "total": 49,
+    "example": {
+     "path": "apps/api/src/alerts/alerts.controller.ts",
+     "symbol": "GET /alerts/:id",
+     "line": 10
+    },
+    "forced": false,
+    "passive": true
+   }
+  }
+ ],
+ "declined": 0,
+ "promoted": []
+}

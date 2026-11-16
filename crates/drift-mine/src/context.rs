@@ -48,6 +48,9 @@ pub struct RepoContext<'a> {
     /// Package path -> the packages it may run without (peer and optional
     /// dependencies), which it loads lazily if at all.
     optional: BTreeMap<String, BTreeSet<String>>,
+    /// What [`crate::mine::Rule::ImportsDeclared`] reads: the npm manifests Drift read and
+    /// where each file is ([`crate::imports_declared::Index`]).
+    imports_declared: crate::imports_declared::Index<'a>,
     /// Files that read `process.env` directly.
     env_readers: BTreeSet<&'a str>,
     /// What each class decorator registers the classes it decorates under
@@ -772,6 +775,7 @@ impl<'a> RepoContext<'a> {
             packages: repo.packages.iter().collect(),
             declared,
             optional,
+            imports_declared: crate::imports_declared::Index::new(repo),
             registrations: registrations(repo),
             entry_wrappers: entry_wrappers(repo),
         }
@@ -1191,6 +1195,11 @@ impl<'a> RepoContext<'a> {
         symbol: &drift_core::Symbol,
     ) -> Option<usize> {
         self.parts.users_within(role, path, symbol)
+    }
+
+    /// What [`crate::mine::Rule::ImportsDeclared`] reads of the repository.
+    pub fn imports_declared(&self) -> &crate::imports_declared::Index<'a> {
+        &self.imports_declared
     }
 
     /// The package at `package` (its directory, "" for the root) declares a
@@ -2165,6 +2174,7 @@ mod tests {
                 })
                 .collect(),
             scoped: vec![],
+            declared: vec![],
         }
     }
 

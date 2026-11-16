@@ -98,6 +98,7 @@ fn lint(path: &str, rule: &str, level: &str) -> LintConfig {
             options: vec![],
         }],
         scoped: vec![],
+        declared: vec![],
     }
 }
 
@@ -3881,7 +3882,25 @@ fn a_sibling_weaker_on_security_never_joins_the_rule() {
         files.extend(sibling_scenario(pkg, WrapKind::Call, targets, sibling, 4));
     }
     background(&mut files);
-    let r = repo(files);
+    let mut r = repo(files);
+    // The modules that define the procedures, as a full scan of the repository has them
+    // (read for context: they hold no member of a role). Since S7 `check` cannot tell a
+    // call wrapper whose module the facts lack (`Rule::tell_in`: it may be built on the
+    // rule's target there) and reports no violation for it; without these files `odd`
+    // was such a member. Mining does not read this (the outliers below are as before).
+    for pkg in [
+        "bare", "maybe", "mixed", "public", "admin", "session", "non", "same", "floor",
+    ] {
+        for module in [
+            "src/trpc.ts",
+            "src/auth/workspace.ts",
+            "src/auth/session.ts",
+        ] {
+            r.context_files
+                .push(file_with(&format!("{pkg}/{module}"), pkg, Vec::new()));
+        }
+    }
+    r.normalize();
     let cs = mined(&r);
     for pkg in ["bare", "maybe", "public", "admin", "session", "non"] {
         let target = if pkg == "session" {

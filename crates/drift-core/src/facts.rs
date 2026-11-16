@@ -94,6 +94,10 @@ pub struct FileFacts {
     pub discovers: Vec<String>,
     /// Test files only: the requests the tests make. Sorted, at most
     /// [`caps::TEST_REQUESTS`](crate::practice::caps::TEST_REQUESTS); omitted when empty.
+    /// One copy for both readings ([`Listed`] holds none): mining never reads it (the
+    /// testing practice does, `drift_mine::practices::testing`), so a reading added
+    /// since the measured build (TypeScript `assert.equal(res.status, 401)`, Cypress)
+    /// changes it in the measured facts too and leaves what mining proposes as it was.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub test_requests: Vec<TestRequest>,
     /// Canonical modules this file mocks (`vi.mock` / `jest.mock` / `@patch("a.b")` /
@@ -144,6 +148,13 @@ pub struct FileFacts {
     /// empty. Not test files.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unlisted_routes: Vec<u32>,
+    /// The registrations of the file Drift did not list with why
+    /// ([`crate::UnlistedRoute`]): what a reader that can tell why says, where
+    /// [`FileFacts::unlisted_routes`] says only where. Read both with
+    /// [`FileFacts::unlisted`]. Python lowering 75; sorted; omitted when empty.
+    /// Not test files. Reporting only: mining never reads it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_reasons: Vec<crate::UnlistedRoute>,
 }
 
 /// What a file's facts are with every listing of entry points Drift makes
@@ -521,6 +532,14 @@ pub const CALLER_USE_UNREAD: &str = "global#scope_unread";
 /// [`Member::unread`] for a method whose body answers 403.
 pub const ANSWERS_403: &str = "status:403";
 
+/// [`Member::unread`] of a Python method whose own `except` handler answers with a
+/// response. With a call of the same method of its base (`super().<name>(...)` in
+/// [`Member::receiver_calls`]) it is an override of the framework's method that
+/// turns what that method raised into an answer: on an in-repo base of a view, how
+/// the view's errors become responses. Read from what the body does, never from what
+/// the method is called. Python, the listed reading only; mining never reads it.
+pub const CATCH_RESPONDS: &str = "catch_responds";
+
 /// [`Member::unread`] of a permission test, where its body says what it answers a
 /// caller who is not signed in: `has_permission(self, request, view)` of a class (a
 /// DRF permission class reads `request.user`) and `test_func(self)` (a view with
@@ -671,7 +690,16 @@ pub struct CatchFact {
     pub catches: Vec<String>,
     /// What the clause does, sorted: `rethrow`, `throw:<canonical>`, `log`,
     /// `respond:<status>`, `report:<canonical>` (Sentry and the like), `return`,
-    /// `swallow` (none of the others).
+    /// `swallow` (none of the others). `rethrow` is also a clause that hands what
+    /// it caught to the continuation the framework gave the function, by position,
+    /// as its last statement after nothing that may leave (`catch (e) { next(e) }`,
+    /// `return next(e)`; not `catch (e) { if (gone(e)) return; next(e) }`): the
+    /// error goes on to the framework's error handling, and no `return` is
+    /// recorded for it (TypeScript, the listed reading only), where nothing before
+    /// it answered (a clause that answered keeps its `respond:<status>`) and every
+    /// statement before it is a log line, a report or a plain declaration. Where
+    /// another statement comes first (`sendError(res, e); next(e)`), which may have
+    /// answered, it is `unread` instead: what the clause answers is not read.
     pub does: Vec<String>,
 }
 
@@ -1144,8 +1172,10 @@ pub struct Symbol {
     /// from a constructor call (`self.repo = RuleRepository()`), as
     /// `attribute=<canonical class>` (`db=pkg:sqlalchemy.ext.asyncio#AsyncSession`).
     /// A method called through the attribute of an instance (`repository.db.commit`)
-    /// is that class's. A builtin's is not recorded. Sorted; recorded by Python only;
-    /// omitted when empty.
+    /// is that class's. A builtin's is not recorded. Sorted; omitted when empty.
+    /// Recorded by Python, and by TypeScript in the listed reading only (the class a
+    /// property is declared with: `public prisma!: PrismaClient`, a constructor
+    /// parameter property `private readonly users: UsersService`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub attr_types: Vec<String>,
     /// The repository's callees (of [`Symbol::calls`] and [`Symbol::receiver_calls`])
@@ -1226,7 +1256,8 @@ pub struct Symbol {
     /// The capped practice fields of this symbol that lost entries to their cap, by
     /// JSON name (`body_checks`, `responses`, `responses.keys` for a response's own
     /// keys, `log_calls`, `catches`, `headers`, `inputs`, `handles_errors`,
-    /// `scoped_queries`, `raise_checks`): what such
+    /// `scoped_queries`, `raise_checks`, and `order` in the listed reading only,
+    /// [`RepoFacts::listed`]): what such
     /// a field holds is not all there is, so a reader answers unknown, never none,
     /// from it. [`FileFacts::normalize`] adds each field it cuts; a lowering that caps
     /// a field itself adds its name. Sorted; omitted when empty.
@@ -1404,7 +1435,7 @@ pub struct Member {
     pub throws: Vec<String>,
     /// Keys passed to calls in the method's own body ([`Symbol::args`], for this
     /// method alone): the filter keys of its queries. Sorted; omitted when empty.
-    /// Recorded by Python only.
+    /// Recorded by Python and TypeScript.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<String>,
     /// The method's own scoped queries ([`Symbol::scoped_queries`], for this method
@@ -1503,6 +1534,17 @@ pub mod controls {
     /// parameters that carry none (`({ ctx }) => ...`). A handler with neither fact
     /// may or may not read input.
     pub const NO_INPUT: &str = "no_input";
+    /// A Python handler whose every request input arrives through a parameter the
+    /// framework binds and parses by its declared type before the body runs (a
+    /// FastAPI parameter annotated `uuid.UUID`, `EmailStr` or a model; a Django or
+    /// Flask URL converter such as `<uuid:pk>`), and whose body reads no other
+    /// input: a value the type does not take is answered with an error, not served.
+    /// In the listed reading only (the practice map's validation concern).
+    pub const INPUT_TYPED: &str = "input_typed";
+    /// A FastAPI route decorator given `response_model=None`: the return annotation
+    /// is no response model. In the listed reading only (the practice map's API
+    /// concern).
+    pub const NO_RESPONSE_MODEL: &str = "no_response_model";
     /// The body turns a caller away as not signed in or not allowed, before it hands
     /// control on: it throws, raises or returns an error or response that says so
     /// (`code: "UNAUTHORIZED"`, `status.HTTP_401_UNAUTHORIZED`, `"Unauthorized: login
@@ -1529,6 +1571,12 @@ pub mod controls {
     /// (`rows.all()`, `d.get("k")`, `rows.map((r) => r.id)`) is not one. Mining never
     /// proposes it.
     pub const UNREAD_CALL: &str = "unread_call";
+    /// Beside [`UNREAD_CALL`]: every such call of the body writes the response
+    /// (`res.json(rows)`, `res.status(404).send(msg)`, `reply.send(x)`) on a
+    /// parameter that holds it. The value goes to the framework, which sends it,
+    /// so nothing the body leaves undone hides there. TypeScript lowering 87, the
+    /// listed reading only; mining never proposes it.
+    pub const UNREAD_RESPONDS: &str = "unread_responds";
     /// What starts the control of a body that calls a method on a member of a
     /// parameter whose declared type gives that member a built-in value's type: an
     /// object type literal declaring it a string, a number, a boolean or an array
@@ -1614,6 +1662,18 @@ pub mod controls {
     /// itself, the framework takes the response. Held in the listed reading only
     /// ([`crate::facts::Listed`]); TypeScript lowering 64. Mining never reads it.
     pub const RETURNS_REJECTION: &str = "returns_rejection:";
+    /// What starts the control of an error class of the repository that answers a
+    /// refusal by its own definition, with the status: `refusal_status:403` of
+    /// `class Forbidden extends HttpError { constructor(m) { super(403, m) } }`,
+    /// of `this.statusCode = 401` in its constructor, or of a `status = 403`
+    /// property, where nothing in it says another status. Read from what the
+    /// class is, never from what it is called ([`rejection_class_name`] is the
+    /// by-name fallback where no definition is read). A throw of one in a branch
+    /// that turns the caller away is a [`crate::facts::BodyCheck`] of that status.
+    /// A class whose status is set by a base of another module carries none.
+    /// Recorded by TypeScript, on classes, in the listed reading only
+    /// ([`crate::facts::Listed`]); mining never reads it.
+    pub const REFUSAL_STATUS: &str = "refusal_status:";
     /// What starts the control of a body that returns what a call handed back when
     /// there is something, for every request: `const denied = await
     /// requireSession(req); if (denied) return denied;` (the test also written
@@ -1788,6 +1848,27 @@ pub mod controls {
     /// what the request sent. TypeScript lowering 76 (listed reading).
     pub const SINK_FED_MADE: &str = "sink_fed_made:";
     pub const PASSES_MADE: &str = "passes_made:";
+    /// [`SINK_FED`] by position: `sink_fed_at:<kind>\t<position>`, the position
+    /// among the function's parameters that the operation's operand (the value it
+    /// judges: the first argument that is no number, the key written) is read off:
+    /// `#0` for the first, `*` where which one is not read, `-` where the operand
+    /// is given nothing of a parameter though another argument is. A kind with no
+    /// such control is read as [`SINK_FED`] says. TypeScript lowering (listed
+    /// reading). Mining never proposes it.
+    pub const SINK_FED_AT: &str = "sink_fed_at:";
+    /// [`PASSES_PARAM`] by argument: `passes_at:<callee>\t<argument>\t<position>`,
+    /// canonical: the call hands the callee, at the argument's position (`#1`; `*`
+    /// at or after a spread), a value read off the parameter at the position
+    /// (`#0`, `*`). With [`SINK_FED_AT`] a reader follows what an entry point was
+    /// sent through the parameter that carries it: a parameter the caller does
+    /// not pass (one with a default) carries nothing. A callee with no such
+    /// control is read as [`PASSES_PARAM`] says. TypeScript lowering (listed
+    /// reading). Mining never proposes it.
+    pub const PASSES_AT: &str = "passes_at:";
+    /// [`PASSES_MADE`] by argument: `passes_made_at:<callee>\t<argument>`, the
+    /// positions of the arguments read off a parameter of the function the body
+    /// hands back. TypeScript lowering (listed reading). Mining never proposes it.
+    pub const PASSES_MADE_AT: &str = "passes_made_at:";
     /// What starts the control that says what held where a wrapper hands a request
     /// on: one control for each call, in a function defined in another, of what the
     /// outer function was given (`return view_func(request, *args, **kwargs)` in a
@@ -2050,8 +2131,9 @@ pub mod controls {
     pub const REFUSES_ABSENT: &str = "refuses_absent:";
     /// What starts the control that says where the value a scoped query filters by
     /// comes from ([`crate::ScopedQuery`]): `filter_value:<callee>\t<key>\t<side>`,
-    /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62). Mining
-    /// never proposes it.
+    /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62), and by
+    /// TypeScript in the listed reading (lowering 76, side `caller`). Mining never
+    /// proposes it.
     pub const FILTER_VALUE: &str = "filter_value:";
     /// What starts the control that says what a call of the body is given, for
     /// each call of the repository's own code, also one given nothing:
@@ -2122,6 +2204,55 @@ pub mod controls {
     /// returns is sent back is for the reader to say (an entry point's is).
     /// TypeScript lowering 84; mining never proposes it.
     pub const RETURNS_WHOLE: &str = "returns_whole:";
+    /// A function some `return` of whose own body hands back a value that is no
+    /// function written there (`return {}`, `return data(...)`, `=> ({ ok: true })`).
+    /// Recorded where the file may hold a route of a file-convention router.
+    /// TypeScript lowering, the listed reading only; mining never proposes it.
+    pub const RETURNS_VALUE: &str = "returns_value";
+    /// An entry point's handler that its framework calls by the export the route
+    /// file is listed by, and whose answer is what that export hands back: a React
+    /// Router or Remix `loader` / `action`, a SvelteKit endpoint or `load`, a Nitro
+    /// route's default export. Said by how the route is registered (by the file and
+    /// its export: no call hands it a response to write to), never by a name.
+    /// TypeScript linking, the listed reading only; mining never proposes it.
+    pub const ANSWERS_BY_RETURN: &str = "answers_by_return";
+    /// What starts the control of a body that leaves, for every request that
+    /// reaches it, where a header the request sent differs from a value read from
+    /// the environment (`if (request.headers.get("Authorization") !== "Bearer " +
+    /// process.env.TOKEN) return redirect(...)`, or through a `const` bound to the
+    /// comparison): `refuses_secret:<header>`. The caller is one that holds a
+    /// shared secret, which identifies no user. TypeScript lowering, the listed
+    /// reading only; mining never proposes it.
+    pub const REFUSES_SECRET: &str = "refuses_secret:";
+    /// A function whose one parameter is taken apart into keys, of which those
+    /// that carry request input (`input`, `body`, ...) are bound to names nothing
+    /// reads and the others carry none (`async ({ ctx, input }) => handler({ ctx
+    /// })`), with no input read anywhere else in its body: it takes no input,
+    /// although [`READS_INPUT`] says the key was named. TypeScript lowering, the
+    /// listed reading only; mining never proposes it.
+    pub const INPUT_UNREAD: &str = "input_unread";
+    /// What starts the control of a body that hands what the request sent to a
+    /// call that is not a built-in's: `input_handed:<callee>`, canonical. Whether
+    /// the callee checks it is for a reader to say. TypeScript lowering, the
+    /// listed reading only; mining never proposes it.
+    pub const INPUT_HANDED: &str = "input_handed:";
+    /// What starts the control of a body that hands a call what the request sent
+    /// and, in another argument (or another property of an object written in
+    /// place, or what a function written in place hands back), a value read off a
+    /// binding: `parses_input:<callee>\t<binding>`, both canonical
+    /// (`parseWithZod(formData, { schema: LoginSchema })` records the package's
+    /// function and `LoginSchema`). Whether the binding is a schema, and so
+    /// whether the call checks the request against it, is for the reader to say
+    /// from what the binding is built with; no name of the callee is asked.
+    /// TypeScript lowering, the listed reading only; mining never proposes it.
+    pub const PARSES_INPUT: &str = "parses_input:";
+    /// What starts the control of a handler a parameter of which is bound to
+    /// request input by a parameter decorator that is also handed a pipe
+    /// (`@Param("id", ParseIntPipe) id: number`, `@Body(new ValidationPipe())`):
+    /// `pipes_input:<pipe>`, canonical. The framework runs the pipe on the value
+    /// before the handler. TypeScript lowering, the listed reading only; mining
+    /// never proposes it.
+    pub const PIPES_INPUT: &str = "pipes_input:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):
@@ -2299,6 +2430,13 @@ pub mod controls {
     /// `NotAuthenticated`): what a reader of [`crate::facts::Symbol::throws`] takes
     /// as a refusal of the caller, asked where the class is raised
     /// ([`REJECTS_SOME`]).
+    ///
+    /// By name: a fallback only. What an error is, is said by its own definition,
+    /// the status it sets or passes to its base ([`REFUSAL_STATUS`], read by the
+    /// TypeScript lowering). This word list decides only where no such definition
+    /// is read, which today is Python's `guard_paths` for a class raised with no
+    /// status argument. It is not to be extended, and nothing new is to be built
+    /// on it.
     pub fn rejection_class_name(name: &str) -> bool {
         let lower = name_words(name);
         let has = |list: &[&str]| lower.iter().any(|w| list.contains(&w.as_str()));
@@ -2575,6 +2713,17 @@ pub struct RepoFacts {
     /// output, and in a single-file scan.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub generated_clients: Vec<String>,
+    /// Files of the listed reading only ([`RepoFacts::listed`]): the scripts of
+    /// single-file components (`.vue`, `.svelte`, `.astro`), which the last measured
+    /// build did not read. Mining reads `files` alone, so its input is the same with
+    /// them or without; `drift security` and the practice map read them with the
+    /// rest. Sorted by path; omitted when empty (TypeScript lowering 87).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_files: Vec<FileFacts>,
+    /// The files of the listed reading that were skipped, and why
+    /// ([`RepoFacts::listed_files`]). Sorted; omitted when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_skipped: Vec<Skipped>,
 }
 
 /// The keys one file declares, for co-change rules.
@@ -2623,7 +2772,56 @@ pub struct LintConfig {
     /// way a layer edge goes). Sorted; not serialised when empty.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scoped: Vec<ScopedLintRules>,
+    /// Restrictions the configuration declares, each where it is written, for the
+    /// declared proposals of the practice map (`drift_mine::declared`) only: mining
+    /// never reads them, so what is newly read here (an ESLint flat config's block
+    /// scoped by `files`, a legacy `.eslintrc.js`'s `overrides`, the Python linters'
+    /// banned modules and import contracts) leaves mining as it was measured. Sorted;
+    /// not serialised when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub declared: Vec<DeclaredLint>,
 }
+
+/// One restriction a linter configuration declares ([`LintConfig::declared`]), as
+/// written and where.
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct DeclaredLint {
+    /// The folder it covers, repo-relative (`""` for the repository root): the
+    /// literal part of a `files` glob, or the folder of the configuration.
+    pub dir: String,
+    /// What it restricts, in the linter's own terms: [`DECLARED_IMPORTS`] (module
+    /// specifiers as JavaScript imports them, a relative one read from `dir`),
+    /// [`DECLARED_MODULES`] (Python modules, dotted), [`DECLARED_RELATIVE`] (Python
+    /// relative imports).
+    pub rule: String,
+    /// `warn` or `error` (a setting of `off` is no restriction and is not kept).
+    pub level: String,
+    /// 1-based line of the setting in the configuration.
+    pub line: u32,
+    /// Python only: the modules (dotted) the restriction is for, where it names them
+    /// (an import-linter contract's source modules); empty: every file of `dir`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<String>,
+    /// The strings of the setting's options (the modules it forbids, messages and
+    /// option keys among them), sorted.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<String>,
+    /// What makes the setting mean more or less than "the files of `dir` (or of
+    /// `sources`) do not import these" (`ignores`: some of the files are left out;
+    /// `indirect`: indirect imports are forbidden too; `overridden`: a later setting
+    /// changes it for part of `dir`; `unread_after`: a later part of the configuration
+    /// was not read and may change it), sorted. Empty: it means exactly that.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub limits: Vec<String>,
+}
+
+/// [`DeclaredLint::rule`] of a JavaScript import restriction (`no-restricted-imports`).
+pub const DECLARED_IMPORTS: &str = "no-restricted-imports";
+/// [`DeclaredLint::rule`] of a restriction of Python modules (ruff and flake8
+/// `banned-api` / `banned-modules`, import-linter contracts).
+pub const DECLARED_MODULES: &str = "banned-modules";
+/// [`DeclaredLint::rule`] of a ban on Python relative imports (`ban-relative-imports`).
+pub const DECLARED_RELATIVE: &str = "ban-relative-imports";
 
 /// Lint settings an `overrides` entry applies to some directories only.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -2728,15 +2926,34 @@ pub enum SkipReason {
     /// such as `{| |}` or `opaque type`, TypeScript-only nodes, a strip that would
     /// change the program): no facts.
     FlowSyntax,
+    /// A component (`.vue`, `.svelte`, `.astro`) whose script blocks cannot be
+    /// delimited with certainty (a block that never ends, two blocks of one kind,
+    /// blocks in different languages or in one Drift does not read, markup nested
+    /// out of order before a script tag): no facts. In the listed reading only
+    /// ([`RepoFacts::listed_skipped`]).
+    ComponentScript,
 }
 
 impl RepoFacts {
     /// The facts with every listing of entry points ([`Listed`]): what `drift
     /// security` and the practice map read. The facts themselves when no file has a
     /// second reading.
+    ///
+    /// It also says where a symbol's [`Symbol::order`] may have been cut short: a
+    /// list as long as its cap ([`caps::ORDER`]) is marked `order` in
+    /// [`Symbol::truncated`], so a reader answers unknown from it, never "not called".
+    /// Only this reading: mining's copy of the facts is left byte for byte.
     pub fn listed(&self) -> std::borrow::Cow<'_, RepoFacts> {
-        let listed = |files: &[FileFacts]| files.iter().any(|f| f.listed.is_some());
-        if !listed(&self.files) && !listed(&self.context_files) {
+        let listed = |files: &[FileFacts]| {
+            files
+                .iter()
+                .any(|f| f.listed.is_some() || f.symbols.iter().any(order_may_be_cut))
+        };
+        if !listed(&self.files)
+            && !listed(&self.context_files)
+            && self.listed_files.is_empty()
+            && self.listed_skipped.is_empty()
+        {
             return std::borrow::Cow::Borrowed(self);
         }
         std::borrow::Cow::Owned(self.clone().into_listed())
@@ -2744,8 +2961,20 @@ impl RepoFacts {
 
     /// [`RepoFacts::listed`], in place: no copy of the facts is made.
     pub fn into_listed(mut self) -> RepoFacts {
+        // The files only this reading holds join the rest ([`RepoFacts::listed_files`]).
+        if !self.listed_files.is_empty() {
+            self.files.append(&mut self.listed_files);
+            self.files.sort_by(|a, b| a.path.cmp(&b.path));
+        }
+        if !self.listed_skipped.is_empty() {
+            self.skipped.append(&mut self.listed_skipped);
+            self.skipped.sort();
+        }
         for f in self.files.iter_mut().chain(&mut self.context_files) {
             f.take_listed();
+            for s in f.symbols.iter_mut().filter(|s| order_may_be_cut(s)) {
+                add_truncated(&mut s.truncated, vec!["order"]);
+            }
         }
         self
     }
@@ -2795,6 +3024,7 @@ impl FileFacts {
     pub fn hold(&mut self, full: FileFacts) {
         // What is not listed is said of every listing made, not of the measured ones.
         self.unlisted_routes.clone_from(&full.unlisted_routes);
+        self.unlisted_reasons.clone_from(&full.unlisted_reasons);
         if self.entry_points == full.entry_points
             && self.mounts == full.mounts
             && self.symbols == full.symbols
@@ -3134,6 +3364,12 @@ fn sort_cap<T: Ord>(v: &mut Vec<T>, cap: usize) -> bool {
     cut
 }
 
+/// Whether a symbol's [`Symbol::order`] reached its cap ([`caps::ORDER`]): the
+/// lowerings stop adding callees there without saying so, so more may have followed.
+fn order_may_be_cut(s: &Symbol) -> bool {
+    s.order.len() >= caps::ORDER
+}
+
 /// Add the names of the fields a cap cut to `truncated`, sorted and de-duplicated
 /// (names already there stay: a second `normalize` cuts nothing).
 fn add_truncated(truncated: &mut Vec<String>, cut: Vec<&str>) {
@@ -3239,6 +3475,16 @@ impl RepoFacts {
                 sc.rules.sort();
             }
             c.scoped.sort();
+            for d in &mut c.declared {
+                d.sources.sort();
+                d.sources.dedup();
+                d.options.sort();
+                d.options.dedup();
+                d.limits.sort();
+                d.limits.dedup();
+            }
+            c.declared.sort();
+            c.declared.dedup();
         }
         self.lint.sort();
         for f in &mut self.context_files {
@@ -3253,5 +3499,10 @@ impl RepoFacts {
         self.key_files.dedup_by(|a, b| a.path == b.path);
         self.integration_files.sort();
         self.integration_files.dedup();
+        for f in &mut self.listed_files {
+            f.normalize();
+        }
+        self.listed_files.sort_by(|a, b| a.path.cmp(&b.path));
+        self.listed_skipped.sort();
     }
 }

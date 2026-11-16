@@ -36,8 +36,8 @@ use anyhow::{Context, bail};
 use drift_mine::check::{CheckReport, Scope, Violation};
 use drift_mine::policy::{CONVENTIONS_FILE, ConventionsFile, LOCK_FILE, Lock};
 use drift_mine::report::{
-    GithubSummary, github_annotations, github_summary, github_unchecked_annotations,
-    github_unsure_annotations,
+    Basis, GithubSummary, github_annotations_with, github_summary, github_unchecked_annotations,
+    github_unsure_annotations, trust_summary, trust_text,
 };
 
 /// What a diff did to one file that still exists.
@@ -76,6 +76,11 @@ pub struct DiffScope {
     /// The merge base's files not parsed for lack of stack, sorted.
     base_unchecked: Vec<String>,
     pub deleted: usize,
+    /// The merge base's facts and deployment boundary once [`DiffScope::check_base`]
+    /// scanned them: [`DiffScope::base_inventory`] reads them instead of checking the
+    /// merge base out and parsing it a second time. The facts carry the key files the
+    /// check attached, which the security inventory never reads.
+    base_scan: std::cell::OnceCell<(drift_core::RepoFacts, drift_mine::security::Boundaries)>,
 }
 
 impl DiffScope {
@@ -291,6 +296,8 @@ impl DiffScope {
                 .collect(),
             stale_practices: report.stale_practices.clone(),
             practices_not_checked: report.practices_not_checked.clone(),
+            standing: report.standing.clone(),
+            moved: report.moved.clone(),
         }
     }
 
@@ -326,6 +333,8 @@ impl DiffScope {
             None,
             None,
         );
+        // Read while the checkout is there, for [`DiffScope::base_inventory`].
+        let boundaries = drift_mine::security::Boundaries::load(&base_root);
         drop(tree);
         let unchecked = drift_mine::unchecked::Unchecked::of(&facts);
         self.base_unchecked = unchecked.files.iter().cloned().collect();
@@ -342,6 +351,7 @@ impl DiffScope {
                 .map(|v| (v.id, format!("{}#{}", v.path, v.symbol)))
                 .collect(),
         );
+        let _ = self.base_scan.set((facts, boundaries));
         Ok(())
     }
 
@@ -466,10 +476,23 @@ impl DiffScope {
         self.renamed_from.get(path).map_or(path, String::as_str)
     }
 
+    /// The renamed files: new path -> old path.
+    pub fn renamed(&self) -> &BTreeMap<String, String> {
+        &self.renamed_from
+    }
+
     /// The security inventory of the merge base, scanned in a temporary checkout with
     /// its own fact cache ([`BaseTree`]); its compose files and `.drift/config.yaml`
     /// are read there, so a boundary the change moved is seen moving.
     pub fn base_inventory(&self, root: &Path) -> anyhow::Result<drift_mine::security::Inventory> {
+        // Scanned already by the check of the merge base: the same commit, read the same
+        // way, so the same facts and boundary.
+        if let Some((facts, boundaries)) = self.base_scan.get() {
+            return Ok(drift_mine::security::inventory_with(
+                facts,
+                boundaries.clone(),
+            ));
+        }
         let prefix = git(root, &["rev-parse", "--show-prefix"])?.required("git rev-parse")?;
         let prefix = String::from_utf8_lossy(&prefix).trim_end().to_string();
         let tree = BaseTree::create(root, &self.merge_base)?;
@@ -488,6 +511,53 @@ impl DiffScope {
     pub fn changed(&self) -> usize {
         self.files.len() - self.added()
     }
+
+    /// Runs `read` on the merge base, checked out into a temporary directory with
+    /// its own fact cache ([`BaseTree`]) and scanned: its root there and its facts.
+    /// For what is read of the merge base beyond its inventory (the security
+    /// baseline's findings read the practice map, the CI workflows and the manifests
+    /// there). The checkout is removed when `read` returns.
+    pub fn with_base<R>(
+        &self,
+        root: &Path,
+        read: impl FnOnce(&Path, &drift_core::RepoFacts) -> R,
+    ) -> anyhow::Result<R> {
+        let prefix = git(root, &["rev-parse", "--show-prefix"])?.required("git rev-parse")?;
+        let prefix = String::from_utf8_lossy(&prefix).trim_end().to_string();
+        let tree = BaseTree::create(root, &self.merge_base)?;
+        let base_root = tree.path.join(&prefix);
+        let opts = crate::scan::ScanOptions {
+            cache_dir: Some(tree.cache.clone()),
+            threads: 0,
+        };
+        let (facts, _) = crate::scan::scan(&base_root, &opts)
+            .with_context(|| format!("scanning the merge base {}", short(&self.merge_base)))?;
+        let out = read(&base_root, &facts);
+        drop(tree);
+        Ok(out)
+    }
+}
+
+/// The text of `rel` (relative to `root`) at commit `rev`; `None` where git cannot
+/// show it (no git, no such file there).
+pub fn file_at(root: &Path, rev: &str, rel: &str) -> Option<String> {
+    let out = git(root, &["show", &format!("{rev}:./{rel}")]).ok()?;
+    out.ok.then(|| out.text())
+}
+
+/// The last commit that changed `rel` (relative to `root`), or why there is none: no
+/// git, or the file is in no commit.
+pub fn last_commit_of(root: &Path, rel: &str) -> Result<String, String> {
+    let out = git(root, &["log", "-1", "--format=%H", "--", rel])
+        .map_err(|_| "git could not be run".to_string())?;
+    let commit = out.text().trim().to_string();
+    if !out.ok {
+        return Err("git could not read the repository's history".to_string());
+    }
+    if commit.is_empty() {
+        return Err(format!("{rel} is in no commit"));
+    }
+    Ok(commit)
 }
 
 /// The entry points of the merge base: file, symbol, method, route
@@ -527,7 +597,9 @@ fn short(sha: &str) -> &str {
 }
 
 /// `--format github`: annotations on stdout, a summary line, and the job summary
-/// appended to `GITHUB_STEP_SUMMARY` when it is set.
+/// appended to `GITHUB_STEP_SUMMARY` when it is set. `drift check` calls
+/// [`github_output_with`]; this is that without the basis.
+#[allow(dead_code)]
 pub fn github_output(
     report: &CheckReport,
     scope: Option<&DiffScope>,
@@ -537,10 +609,52 @@ pub fn github_output(
     departures: &[drift_mine::practices::Departure],
     added: &[drift_mine::practices::AddedEntry],
 ) -> anyhow::Result<()> {
+    github_output_with(
+        report,
+        scope,
+        prefix,
+        outside,
+        strict,
+        departures,
+        added,
+        &Basis::default(),
+    )
+}
+
+/// `drift check`'s text after its list of new violations: what
+/// each rule that reported one rests on ([`drift_mine::report::trust_text`]), read from
+/// `facts` (those `report` was checked on), `policy` and `report`. Printed only when
+/// there is a new violation of a convention of `policy`; the lines before it are
+/// unchanged, and it changes no verdict and no exit code.
+pub fn print_trust(facts: &drift_core::RepoFacts, policy: &ConventionsFile, report: &CheckReport) {
+    let new: Vec<&Violation> = report.new_violations().collect();
+    if new.is_empty() {
+        return;
+    }
+    let basis = Basis::new(facts, policy, report);
+    print!("{}", trust_text(&new, &basis));
+}
+
+/// [`github_output`], each annotation and the job summary also saying what each rule
+/// rests on ([`Basis`]: read from the check of the policy's root, before its paths were
+/// given `prefix`). The first lines of each annotation, the summary line and the
+/// summary's own sections are as [`github_output`] writes them; this changes no verdict
+/// and no exit code.
+#[allow(clippy::too_many_arguments)]
+pub fn github_output_with(
+    report: &CheckReport,
+    scope: Option<&DiffScope>,
+    prefix: &str,
+    outside: usize,
+    strict: bool,
+    departures: &[drift_mine::practices::Departure],
+    added: &[drift_mine::practices::AddedEntry],
+    basis: &Basis,
+) -> anyhow::Result<()> {
     let new: Vec<_> = report.new_violations().collect();
     let suppressed: Vec<_> = report.suppressed().collect();
     let mut stdout = std::io::stdout().lock();
-    stdout.write_all(github_annotations(&new).as_bytes())?;
+    stdout.write_all(github_annotations_with(&new, basis, prefix).as_bytes())?;
     stdout.write_all(github_unchecked_annotations(&report.unchecked, false).as_bytes())?;
     let base_unchecked: Vec<String> = scope
         .map_or(&[][..], |s| s.base_unchecked())
@@ -618,6 +732,11 @@ pub fn github_output(
             })?;
         f.write_all(md.as_bytes())?;
         f.write_all(b"\n")?;
+        let rests_on = trust_summary(&new, basis, prefix);
+        if !rests_on.is_empty() {
+            f.write_all(rests_on.as_bytes())?;
+            f.write_all(b"\n")?;
+        }
         let practices = [
             drift_mine::practices::added_summary(added),
             drift_mine::practices::departures_summary(departures),
@@ -647,6 +766,7 @@ fn parse(base: &str, merge_base: &str, status: &[u8], patch: &[u8]) -> DiffScope
         base_uncertain: BTreeSet::new(),
         base_unchecked: Vec::new(),
         deleted: 0,
+        base_scan: std::cell::OnceCell::new(),
     };
     let mut fields = status
         .split(|b| *b == 0)

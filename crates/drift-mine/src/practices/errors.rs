@@ -19,7 +19,9 @@
 //!   fact, not a gap.
 //!
 //! Unknown [STRICT]: an in-repo wrapper with no definition (it may catch), an
-//! unresolved wrapper. There is no `none`: an error always goes somewhere.
+//! unresolved wrapper, a catch that hands what it caught to the framework after a
+//! statement not read (it may have answered), a Python view whose bases are not all
+//! read. There is no `none`: an error always goes somewhere.
 
 use std::collections::BTreeSet;
 
@@ -33,6 +35,11 @@ use super::{Assignment, Concern, Cx, UnitRef, UnknownReason, Use, VariantSource}
 
 pub struct Errors;
 
+/// What a catch clause does ([`drift_core::CatchFact::does`]) where it hands what it
+/// caught to the framework's continuation after a statement Drift does not read
+/// (TypeScript, the listed reading only).
+const CATCH_UNREAD: &str = "unread";
+
 /// The base classes a handler of which covers every framework error of its package.
 const BASE_ERRORS: &[&str] = &["HTTPException", "HttpException", "APIException"];
 
@@ -43,6 +50,12 @@ impl Concern for Errors {
 
     fn unit(&self) -> &'static str {
         "entry_point"
+    }
+
+    /// `bubble:framework_default` is the absence of any handling, recorded as a way: a
+    /// new route that handles nothing does it without trying.
+    fn passive(&self, uses: &[Use]) -> bool {
+        !uses.is_empty() && uses.iter().all(|u| u.mechanism == "bubble")
     }
 
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
@@ -65,6 +78,14 @@ impl Concern for Errors {
             return unknown(UnknownReason::NotFollowed, &m);
         }
         let mut uses: Vec<Use> = Vec::new();
+        // Python: the override of the framework's method on the view's own class or
+        // an in-repo base that answers what that method raised (S15c). A base not
+        // read decides only a view nothing else here is read for: a way its own
+        // body or wrappers are read to use stays known, as before S15c.
+        let base = base_handler(cx, sfile, s);
+        if let Ok(Some(h)) = &base {
+            uses.push(use_of("base_handler", h));
+        }
         for w in &s.wraps {
             if !matches!(w.kind, WrapKind::Call | WrapKind::Decorator) {
                 continue;
@@ -84,11 +105,23 @@ impl Concern for Errors {
                 Some(_)
                     if crate::security::authenticates(ctx, r)
                         || super::authn::class_guard(cx, r) => {}
+                // Python: nor is a dependency's catch whose every answer turns the
+                // caller away, where the sign-in reading says the dependency may
+                // (S15c): `get_current_user` mapping a bad token to 403 refuses the
+                // caller; it maps none of the route's errors.
+                Some(d) if refuses_in_catch(ctx, r, d) => {}
                 Some(d) if responds_in_catch(d) => uses.push(use_of("mapped_by_wrapper", r)),
                 Some(_) => {}
             }
         }
         for c in bodies.iter().flat_map(|b| &b.catches) {
+            // TypeScript, the listed reading: a clause that hands what it caught to
+            // the framework's continuation after a statement Drift does not read
+            // (`catch (e) { sendError(res, e); next(e) }`) may have answered the
+            // request itself: neither the framework's handling nor the handler's.
+            if c.does.iter().any(|d| d == CATCH_UNREAD) {
+                return unknown(UnknownReason::Unclassified, "catch");
+            }
             if c.does.iter().any(|d| d.starts_with("respond:")) {
                 let builder = bodies
                     .iter()
@@ -136,6 +169,13 @@ impl Concern for Errors {
             } else if let Some(base) = ctx.ancestors(t).iter().find(|a| framework_error(a)) {
                 uses.push(use_of("throw", base));
             }
+        }
+        // An in-repo base not read may hold the override: "framework default" (or
+        // an app's catch-all) is not proven ([`base_handler`]).
+        if uses.is_empty()
+            && let Err(a) = base
+        {
+            return a;
         }
         if uses.is_empty() {
             match handlers.iter().find(|(_, h)| h.iter().any(|x| x == "*")) {
@@ -236,6 +276,195 @@ fn responds_in_catch(d: &Symbol) -> bool {
     d.catches
         .iter()
         .any(|c| c.does.iter().any(|x| x.starts_with("respond:")))
+}
+
+/// [Python] The wrapper `r` (defined as `d`) answers in its catches only by
+/// turning the caller away (every `respond:` of its catches is a 401 or a 403, and
+/// there is one), and the sign-in reading says it may turn callers away
+/// ([`crate::security::may_authenticate`]: a refusal in an `except` handler, or a
+/// body that rejects). That catch is a refusal of the caller, as a guard's is: the
+/// FastAPI template's `get_current_user` mapping a token that does not decode to
+/// 403. It is not how the route's errors become responses. Read from the statuses
+/// and the sign-in reading, never from the wrapper's name; a wrapper that also
+/// answers some other status in a catch still maps errors (S15c).
+fn refuses_in_catch(ctx: &crate::context::RepoContext, r: &str, d: &Symbol) -> bool {
+    let python = crate::mine::norm_ref(r)
+        .split_once('#')
+        .is_some_and(|(m, _)| m.ends_with(".py"));
+    if !python {
+        return false;
+    }
+    let mut statuses = d
+        .catches
+        .iter()
+        .flat_map(|c| &c.does)
+        .filter_map(|x| x.strip_prefix("respond:"))
+        .peekable();
+    statuses.peek().is_some()
+        && statuses.all(|s| matches!(s, "401" | "403"))
+        && crate::security::may_authenticate(ctx, r)
+}
+
+/// The methods a framework's view class runs around every request's handler, so
+/// that an override of one that answers in its own `except` handler answers what
+/// any handler of the view raised, with the packages whose view classes run each:
+/// Django's `View` (and DRF's `APIView`, built on it) runs the handler inside
+/// `dispatch`; DRF's `APIView.dispatch` hands whatever the handler raised to
+/// `handle_exception`; Flask's `View` runs it inside `dispatch_request`. How the
+/// frameworks run, as `authz::RUNS_EVERY_REQUEST` is; a method on no line here
+/// runs for a request only where the handler's own method is it.
+const AROUND_EVERY_HANDLER: &[(&str, &[&str])] = &[
+    ("dispatch", &["pkg:django#", "pkg:rest_framework#"]),
+    ("dispatch_request", &["pkg:flask#"]),
+    ("handle_exception", &["pkg:rest_framework#"]),
+];
+
+/// [Python] The method of a class of the repository that runs for the entry and
+/// overrides its base's (its body calls `super().<name>(...)`), answering in its own
+/// `except` handler with a response ([`drift_core::CATCH_RESPONDS`]): plane's
+/// `BaseAPIView.handle_exception`, which turns what DRF's own handling raised
+/// (`IntegrityError`, `ObjectDoesNotExist`) into a 400 or a 404. What the base's
+/// method raised for the view is answered there: that is how the view's errors
+/// become responses. Canonical (`app/views/base.py#BaseAPIView.handle_exception`).
+///
+/// Only a method that runs for the entry counts: the entry's own method (`get` of
+/// `ItemView.get`, found on a base where the view's own hands on to it), or one the
+/// framework runs around every handler of the class ([`AROUND_EVERY_HANDLER`], where
+/// the class is built on that framework's view). `Base.create` answering an
+/// `IntegrityError` says nothing of `ItemView.get`: `create` never runs on a GET.
+/// Which class's method runs is looked up as Python does, in the class's method
+/// resolution order (C3, [`crate::security::class_order`]): `class V(MixinA, Base)`
+/// runs `MixinA.handle_exception`, and `Base`'s only where that one hands on to it.
+///
+/// Unknown where that order cannot be worked out, where a base of the repository
+/// is not read (no definition, a module not parsed, written as nothing a reference
+/// stands for, not resolved), where a class binds the name to what is not a `def`,
+/// or where a package's class before the override may define the method in its
+/// place: what runs is not read. A package's base is the framework's and is not
+/// read. Read from what the bodies do and the order Python looks them up in, never
+/// from what a class is called (S15c).
+fn base_handler<'a>(
+    cx: &Cx<'a>,
+    sfile: &'a FileFacts,
+    s: &'a Symbol,
+) -> Result<Option<String>, Assignment> {
+    use crate::security::Mro;
+    if sfile.lang != "py" {
+        return Ok(None);
+    }
+    let ctx = cx.context();
+    let (class_name, own) = match s.kind {
+        drift_core::SymbolKind::Class => (s.name.as_str(), None),
+        _ => match s.name.rsplit_once('.') {
+            Some((c, m)) => (c, Some(m)),
+            None => return Ok(None),
+        },
+    };
+    let Some(class) = sfile
+        .symbols
+        .iter()
+        .find(|x| x.kind == drift_core::SymbolKind::Class && x.name == class_name)
+    else {
+        return Ok(None);
+    };
+    let id = format!("{}#{class_name}", sfile.path);
+    let Some(order) = crate::security::class_order(ctx, &id, class) else {
+        return Err(unknown(UnknownReason::NotFollowed, &id));
+    };
+    // A base the facts do not define may hold the override.
+    let unknown_base = format!("global#{}", drift_core::UNKNOWN_BASE_NAME);
+    for c in &order {
+        let Mro::Package(b) = c else { continue };
+        if b.starts_with("unresolved:") {
+            return Err(unknown(UnknownReason::Unresolved, b));
+        }
+        if *b == unknown_base {
+            return Err(unknown(UnknownReason::NotFollowed, b));
+        }
+        if external(b) {
+            continue;
+        }
+        if in_skipped(cx, b) {
+            return Err(unknown(UnknownReason::Unparsed, b));
+        }
+        return Err(unknown(UnknownReason::NotFollowed, b));
+    }
+    let framework = |prefixes: &[&str]| {
+        order.iter().any(|x| {
+            matches!(x, Mro::Package(p) if prefixes.iter().any(|f| p.starts_with(f)))
+        })
+    };
+    let around = AROUND_EVERY_HANDLER
+        .iter()
+        .filter(|(n, by)| Some(*n) != own && framework(by))
+        .map(|(n, _)| *n);
+    for name in own.into_iter().chain(around) {
+        if let Some(h) = override_answering(&order, name, own == Some(name))? {
+            return Ok(Some(h));
+        }
+    }
+    Ok(None)
+}
+
+/// The body calls its base's method of its own name (`super().<name>(...)`).
+fn calls_base(m: &drift_core::Member) -> bool {
+    let global = format!("global#super().{}", m.name);
+    let local = format!("local:super().{}", m.name);
+    m.calls.contains(&global) || m.receiver_calls.contains(&local)
+}
+
+/// Looks `name` up in `order` as Python runs it ([`base_handler`]): the first class
+/// of the repository that defines it runs, and the next one only where that one
+/// calls its base's. The first that hands on inside an `except` handler that
+/// answers, `<class>.<name>`; none where one that runs does not hand on before
+/// one does. `own`: `name` is the entry's own method, whose definition on the bound
+/// class (the first in the order) is the handler's body, read as that, not as an
+/// override.
+fn override_answering(
+    order: &[crate::security::Mro<'_>],
+    name: &str,
+    own: bool,
+) -> Result<Option<String>, Assignment> {
+    use crate::security::Mro;
+    // A package's class before the method that may define it in its place.
+    let mut shadow: Option<&str> = None;
+    for (at, c) in order.iter().enumerate() {
+        match c {
+            Mro::Package(p) => {
+                if shadow.is_none() && crate::security::package_may_define(p, name) {
+                    shadow = Some(p.as_str());
+                }
+            }
+            Mro::Repo(cid, d) => {
+                // `declares` holds every name the body binds, a `def` too: only a
+                // name bound with no method of it (`dispatch = guard(...)`) is
+                // unread, as `security::lookup` reads it.
+                let Some(m) = d.members.iter().find(|m| m.name == name) else {
+                    if d.declares
+                        .iter()
+                        .any(|x| x.split_once('=').map_or(x.as_str(), |(n, _)| n) == name)
+                    {
+                        return Err(unknown(UnknownReason::NotFollowed, &format!("{cid}.{name}")));
+                    }
+                    continue;
+                };
+                let body = own && at == 0;
+                if !body
+                    && calls_base(m)
+                    && m.unread.iter().any(|u| u == drift_core::CATCH_RESPONDS)
+                {
+                    if let Some(p) = shadow {
+                        return Err(unknown(UnknownReason::NotFollowed, p));
+                    }
+                    return Ok(Some(format!("{cid}.{name}")));
+                }
+                if !calls_base(m) {
+                    return Ok(None);
+                }
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// What the handler throws: `throws`, and the classes of responses it throws or aborts

@@ -1,9 +1,21 @@
 // Parsing the files Drift writes: `.drift/conventions.yaml` and `drift.lock`.
 import { parse } from "yaml";
-import type { Convention, ConventionsFile, Mode, PolicyDifferentKind, PolicyException, Status } from "@/shared/contract/drift";
+import type { Convention, ConventionsFile, FromMap, Mode, PolicyDifferentKind, PolicyException, Status } from "@/shared/contract/drift";
 
 const STATUSES: Status[] = ["accepted", "proposed", "rejected"];
 const MODES: Mode[] = ["advise", "block"];
+const FROM_MAP: readonly FromMap[] = ["practice", "layering", "manifest"];
+
+/** Which of Drift's maps a convention was proposed from (`from_map`), or null: a mined one, or a value this Studio does not know. */
+export function fromMapOf(v: unknown): FromMap | null {
+  return typeof v === "string" && (FROM_MAP as readonly string[]).includes(v) ? (v as FromMap) : null;
+}
+
+/** `{ from_map }` when Drift wrote one of its maps, else nothing. */
+function fromMapField(v: unknown): { from_map?: FromMap } {
+  const m = fromMapOf(v);
+  return m ? { from_map: m } : {};
+}
 
 export class PolicyError extends Error {}
 
@@ -39,6 +51,8 @@ export function parseConventions(text: string): ConventionsFile {
       ...(Array.isArray(c.different_kind) ? { different_kind: parseDifferentKind(c.different_kind) } : {}),
       // A practice a person promoted from the practice map: the variant id it came from (`P-…`).
       ...(typeof c.promoted_from_practice === "string" && /^P-[0-9a-f]{6}$/.test(c.promoted_from_practice) ? { promoted_from_practice: c.promoted_from_practice } : {}),
+      // Proposed from Drift's map of the code, not mined (newer drift): absent on everything the miner proposed.
+      ...fromMapField(c.from_map),
     });
   }
   const fk = (d.file_kinds ?? {}) as Record<string, unknown>;
@@ -85,7 +99,10 @@ export interface LockEntry {
   key: string;
 }
 
-/** Parse `drift.lock`: `<id> <path#symbol>` per line, `#` comments. */
+/**
+ * Parse `drift.lock`: `<id> <path#symbol>` per line, `#` comments. A member's fingerprint
+ * line, `#~ <id> <fingerprint> <path#symbol>`, is a comment and is skipped with them.
+ */
 export function parseLock(text: string): LockEntry[] {
   const out: LockEntry[] = [];
   for (const line of text.split("\n")) {
@@ -93,7 +110,11 @@ export function parseLock(text: string): LockEntry[] {
     if (!t || t.startsWith("#")) continue;
     const i = t.indexOf(" ");
     if (i < 0) continue;
-    out.push({ id: t.slice(0, i), key: t.slice(i + 1).trim() });
+    const key = t.slice(i + 1).trim();
+    // `<id> ~<fingerprint> <path#symbol>`, the form a fingerprint line was first written
+    // in: the second key of a member line, not another entry.
+    if (/^~[0-9a-f]+ /.test(key)) continue;
+    out.push({ id: t.slice(0, i), key });
   }
   return out;
 }

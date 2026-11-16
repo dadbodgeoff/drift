@@ -1,0 +1,262 @@
+{
+ "violations": [
+  {
+   "id": "D-0f9742",
+   "path": "packages/core/src/legacy.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/core/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "60/61",
+   "example": "packages/core/src/c0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false,
+   "import": {
+    "module": "packages/app/index.ts",
+    "line": 0
+   }
+  },
+  {
+   "id": "D-6ff644",
+   "path": "packages/jobs/src/nightly.ts",
+   "symbol": "(file)",
+   "line": 1,
+   "summary": "files in packages/jobs/** do not import from packages/app/** (declared dependencies, and lazy loads of peer or optional dependencies, excepted)",
+   "evidence": "120/121",
+   "example": "packages/jobs/src/job0.ts#(file)",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false,
+   "import": {
+    "module": "packages/app/index.ts",
+    "line": 0
+   }
+  },
+  {
+   "id": "D-b941d4",
+   "path": "app/api/health/route.ts",
+   "symbol": "GET",
+   "line": 1,
+   "summary": "HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "evidence": "20/21",
+   "example": "app/api/accounts/route.ts#GET",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": true,
+   "suppressed": false
+  },
+  {
+   "id": "D-b941d4",
+   "path": "app/api/payouts/route.ts",
+   "symbol": "GET",
+   "line": 4,
+   "summary": "HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "evidence": "20/21",
+   "example": "app/api/accounts/route.ts#GET",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": false,
+   "suppressed": false
+  },
+  {
+   "id": "D-b941d4",
+   "path": "app/api/refunds/route.ts",
+   "symbol": "GET",
+   "line": 3,
+   "summary": "HTTP handlers in app/** (route files) are wrapped in withSession()",
+   "evidence": "20/21",
+   "example": "app/api/accounts/route.ts#GET",
+   "mode": "advise",
+   "tier": "default",
+   "baselined": false,
+   "suppressed": false
+  }
+ ],
+ "fixed": [],
+ "standing": [
+  {
+   "id": "D-0f9742",
+   "whole": true,
+   "role": 61,
+   "members": 61,
+   "holders": 60,
+   "not_checked": 0,
+   "mode": "advise"
+  },
+  {
+   "id": "D-6ff644",
+   "whole": true,
+   "role": 7,
+   "members": 7,
+   "holders": 6,
+   "not_checked": 0,
+   "stale": "its role has 7 member(s) now, under the 8 a mined rule needs",
+   "mode": "advise"
+  },
+  {
+   "id": "D-b941d4",
+   "whole": true,
+   "role": 24,
+   "members": 24,
+   "holders": 20,
+   "not_checked": 1,
+   "not_checked_why": {
+    "it is wrapped in withTeam, which does not resolve to code Drift read": 1
+   },
+   "mode": "advise"
+  }
+ ],
+ "conventions": [
+  {
+   "id": "D-6ff644",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "avoids:import",
+   "members": 121,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  },
+  {
+   "id": "D-0f9742",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "avoids:import",
+   "members": 61,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  },
+  {
+   "id": "D-b941d4",
+   "status": "accepted",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "default",
+   "tier_reason": null,
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "wrapped_by:call",
+   "members": 21,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": true,
+    "reason": "default_tier",
+    "source": "default tier, accepted",
+    "text": "shown to agents (default tier)"
+   }
+  },
+  {
+   "id": "D-446122",
+   "status": "proposed",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "practice",
+   "members": 21,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   }
+  },
+  {
+   "id": "D-03d219",
+   "status": "proposed",
+   "mode": "advise",
+   "effective_mode": "advise",
+   "tier": "suggestion",
+   "tier_reason": "rule_kind",
+   "language": "ts",
+   "names_package": false,
+   "rule_kind": "practice",
+   "members": 21,
+   "blockable": true,
+   "agents": {
+    "shown_to_agents": false,
+    "reason": "candidate",
+    "source": "default tier (block candidate)",
+    "text": "not shown to agents (block candidate: reaches agents once you accept it)"
+   }
+  }
+ ],
+ "practices": {
+  "departures": [
+   {
+    "concern": "authn",
+    "unit": "entry_point",
+    "path": "app/api/health/route.ts",
+    "package": "",
+    "dir": "app/api",
+    "variant": "P-7f5143",
+    "label": "wrap withSession",
+    "held": 20,
+    "others": 23,
+    "example": {
+     "path": "app/api/accounts/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    "units": [
+     {
+      "line": 1,
+      "symbol": "GET",
+      "variant": "P-a94bf4",
+      "does": "opens probe"
+     }
+    ],
+    "promote": "drift practices promote P-7f5143 --in app/api"
+   },
+   {
+    "concern": "authn",
+    "unit": "entry_point",
+    "path": "app/api/refunds/route.ts",
+    "package": "",
+    "dir": "app/api",
+    "variant": "P-7f5143",
+    "label": "wrap withSession",
+    "held": 20,
+    "others": 23,
+    "example": {
+     "path": "app/api/accounts/route.ts",
+     "symbol": "GET",
+     "line": 4
+    },
+    "units": [
+     {
+      "line": 3,
+      "symbol": "GET",
+      "variant": "P-68fb99",
+      "does": "none: no guard found in what Drift read"
+     }
+    ],
+    "promote": "drift practices promote P-7f5143 --in app/api"
+   }
+  ]
+ }
+}

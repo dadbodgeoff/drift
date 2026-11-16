@@ -15,7 +15,13 @@ use oxc_resolver::{
 };
 
 use crate::lower::registries::{RawList, RawSlot};
+
+#[path = "graphql_link.rs"]
+mod graphql_link;
 use crate::lower::{RawBase, RawExportTarget, RawFile, RawOperand, RawRef};
+
+#[path = "serverhooks_link.rs"]
+mod serverhooks_link;
 
 const NODE_BUILTINS: &[&str] = &[
     "assert",
@@ -457,7 +463,7 @@ impl ModuleResolver {
         candidates
             .into_iter()
             .find(|c| c.is_file())
-            .and_then(|c| c.canonicalize().ok())
+            .and_then(|c| drift_core::fsutil::canonical(&c).ok())
             .and_then(|c| self.in_repo(&c))
     }
 
@@ -465,7 +471,16 @@ impl ModuleResolver {
         if path.components().any(|c| c.as_os_str() == "node_modules") {
             return None;
         }
-        rel_posix(&self.root, path)
+        rel_posix(&self.root, path).or_else(|| {
+            // Windows: the resolver gives `C:\…` and `\\server\share\…`, std's root
+            // may be `\\?\…`; both through one spelling before they are compared.
+            if cfg!(windows) {
+                let root = drift_core::fsutil::canonical(&self.root).ok()?;
+                rel_posix(&root, &drift_core::fsutil::canonical(path).ok()?)
+            } else {
+                None
+            }
+        })
     }
 
     /// For a workspace package whose `exports`/`main` targets are build output that
@@ -761,7 +776,22 @@ pub(crate) fn all_specs(f: &LoweredFile) -> BTreeSet<&str> {
     let mut out: BTreeSet<&str> = f.raw.imports.iter().map(|i| i.spec.as_str()).collect();
     out.extend(export_specs(f));
     out.extend(practice_specs(f));
+    out.extend(wrap_specs(f));
     out
+}
+
+/// Specifiers the wraps of the file's symbols name. An adapter can name a package's
+/// API that the file does not import: the authentication a hapi plugin's route asks
+/// for comes from the server the plugin is handed, not from an import.
+fn wrap_specs(f: &LoweredFile) -> impl Iterator<Item = &str> {
+    f.raw
+        .symbols
+        .iter()
+        .flat_map(|s| &s.wraps)
+        .filter_map(|(r, _)| match &r.base {
+            RawBase::Import { spec, .. } => Some(spec.as_str()),
+            _ => None,
+        })
 }
 
 /// Specifiers the practice facts name: modules mocked and route modules a test calls.
@@ -853,10 +883,22 @@ pub(crate) fn mount_specs(f: &LoweredFile) -> BTreeSet<&str> {
                 .filter_map(|g| g.guard.as_ref()),
         )
         .chain(&f.raw.node_listener_refs)
+        .chain(f.raw.trpc.routers.iter().flat_map(|r| {
+            r.entries.iter().filter_map(|e| match e {
+                crate::lower::trpc_paths::RawRouterEntry::Ref { target, .. } => Some(target),
+                _ => None,
+            })
+        }))
         .filter_map(|r| match &r.base {
             RawBase::Import { spec, .. } => Some(spec.as_str()),
             _ => None,
         })
+        .chain(f.raw.trpc.routers.iter().flat_map(|r| {
+            r.entries.iter().filter_map(|e| match e {
+                crate::lower::trpc_paths::RawRouterEntry::Lazy { spec, .. } => Some(spec.as_str()),
+                _ => None,
+            })
+        }))
         .collect()
 }
 
@@ -1008,14 +1050,28 @@ pub struct Linker<'r> {
     composed: BTreeMap<String, (Vec<String>, Vec<String>)>,
     /// tRPC instances and the procedure builders proven to come from one.
     trpc: TrpcOrigins,
+    /// The tRPC routers of the linked files and what mounts each: the dotted path
+    /// of each procedure, for the listed reading ([`crate::lower::trpc_paths`]).
+    trpc_paths: crate::lower::trpc_paths::TrpcTree,
+    /// The GraphQL resolver maps proven served ([`graphql_link`]).
+    graphql: graphql_link::GqlProofs,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
+    /// Package directory -> what its files say of the conventions the listed
+    /// reading reads ([`crate::nextjs::next_package`]).
+    next_listing: Mutex<BTreeMap<String, std::sync::Arc<crate::nextjs::NextPackage>>>,
     /// Package directory -> the file-convention router it is built with
     /// ([`crate::filerouters::framework_of`]).
     file_routers: Mutex<BTreeMap<String, Option<crate::filerouters::Framework>>>,
     /// The files that export a middleware of a file-convention route
     /// ([`crate::lower::RawFile::route_middleware`]).
     route_middleware: BTreeSet<String>,
+    /// The files that say what SvelteKit or Nitro runs before its routes, by path
+    /// ([`crate::lower::RawFile::server_hooks`]).
+    server_hooks: BTreeMap<String, crate::lower::serverhooks::RawServerHooks>,
+    /// SvelteKit's `+layout.server` files, by path, with whether each exports a
+    /// `load` ([`serverhooks_link`]).
+    layout_servers: BTreeMap<String, bool>,
     /// What [`Linker::origin`] answered, per module and name.
     origins: OriginMemo,
     /// The middleware applied to the routes of each Nest application beside them
@@ -1376,12 +1432,33 @@ impl<'r> Linker<'r> {
                 .collect(),
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
+            trpc_paths: Default::default(),
+            graphql: graphql_link::GqlProofs::default(),
             next_packages: Mutex::new(BTreeMap::new()),
+            next_listing: Mutex::new(BTreeMap::new()),
             file_routers: Mutex::new(BTreeMap::new()),
             route_middleware: files
                 .iter()
                 .filter(|f| f.raw.route_middleware)
                 .map(|f| f.rel_path.clone())
+                .collect(),
+            server_hooks: files
+                .iter()
+                .filter(|f| !f.raw.server_hooks.kind.is_empty())
+                .map(|f| (f.rel_path.clone(), f.raw.server_hooks.clone()))
+                .collect(),
+            layout_servers: files
+                .iter()
+                .filter(|f| {
+                    f.rel_path
+                        .rsplit('/')
+                        .next()
+                        .is_some_and(|n| n.starts_with("+layout.server."))
+                })
+                .map(|f| {
+                    let load = f.raw.exports.iter().any(|e| e.name == "load");
+                    (f.rel_path.clone(), load)
+                })
                 .collect(),
             origins: OriginMemo::default(),
             nest: Vec::new(),
@@ -1429,6 +1506,8 @@ impl<'r> Linker<'r> {
         linker.mount_parents = linker.mounts(files);
         linker.handed = linker.handed_calls(files);
         linker.trpc = linker.trpc_origins(files);
+        linker.trpc_paths = linker.trpc_tree(files);
+        linker.graphql = linker.graphql_proofs(files);
         let composed = files
             .iter()
             .flat_map(|f| {
@@ -1573,7 +1652,11 @@ impl<'r> Linker<'r> {
             .iter()
             .flat_map(|f| {
                 f.raw.symbols.iter().filter_map(move |s| {
+                    // An error class answering 401 or 403 by its own definition is
+                    // kept where a check throws it, as a builder's call is
+                    // ([`crate::lower::RawSymbol::refusal_status`]).
                     s.refusal_builder
+                        .or(s.refusal_status)
                         .map(|o| (format!("{}#{}", f.rel_path, s.name), o))
                 })
             })
@@ -1976,6 +2059,29 @@ impl<'r> Linker<'r> {
             }
         }
         origins
+    }
+
+    /// The tRPC routers of `files` and what mounts each. A lazy router
+    /// (`lazy(() => import("./x"))`) is the one export of the module it loads.
+    fn trpc_tree(&self, files: &[LoweredFile]) -> crate::lower::trpc_paths::TrpcTree {
+        let mut memo = crate::PackageMemo::new();
+        crate::lower::trpc_paths::TrpcTree::of(
+            files,
+            |rel, r| self.canon(rel, r),
+            |rel, spec| {
+                let module = self.specs.get(rel)?.get(spec)?;
+                let exports = self.modules.get(module)?;
+                match (
+                    exports.named.keys().next(),
+                    exports.named.len(),
+                    exports.all.is_empty(),
+                ) {
+                    (Some(name), 1, true) => Some(self.origin(module, name)),
+                    _ => None,
+                }
+            },
+            |f| crate::package_of(&self.resolver.root, &f.abs_path, &mut memo),
+        )
     }
 
     /// The modules a proof of the builders of `rel`'s tRPC procedure candidates
@@ -2863,6 +2969,17 @@ impl<'r> Linker<'r> {
             .or_insert_with(|| crate::nextjs::package_uses_next(&self.resolver.root, package))
     }
 
+    /// [`crate::nextjs::next_package`] of the package at `package`, read once per
+    /// package.
+    fn next_listing(&self, package: &str) -> std::sync::Arc<crate::nextjs::NextPackage> {
+        let mut memo = self.next_listing.lock().unwrap_or_else(|e| e.into_inner());
+        memo.entry(package.to_string())
+            .or_insert_with(|| {
+                std::sync::Arc::new(crate::nextjs::next_package(&self.resolver.root, package))
+            })
+            .clone()
+    }
+
     /// The file-convention router the package at `package` is built with, read once
     /// per package.
     fn file_router(&self, package: &str) -> Option<crate::filerouters::Framework> {
@@ -3176,12 +3293,15 @@ impl<'r> Linker<'r> {
             .filter(|c| c.replaces)
             .map(|c| c.symbol.name.as_str())
             .collect();
+        // The GraphQL operations of the file's maps proven served.
+        let graphql = self.graphql_listing(f);
         let raw_symbols: Vec<&crate::lower::RawSymbol> = f
             .raw
             .symbols
             .iter()
             .filter(|s| !replaced.contains(s.name.as_str()))
             .chain(proven.iter().map(|c| &c.symbol))
+            .chain(graphql.symbols.iter())
             .collect();
         // A function proven to return a procedure builder derives from what its one
         // `return` is built from, as a `const` builder does. A name recorded twice
@@ -3203,6 +3323,7 @@ impl<'r> Linker<'r> {
             .entry_points
             .iter()
             .chain(proven.iter().map(|c| &c.entry))
+            .chain(graphql.entries.iter())
             .collect();
         let mut imports: Vec<Import> = f
             .raw
@@ -3275,7 +3396,13 @@ impl<'r> Linker<'r> {
 
         let route_symbols: BTreeSet<&str> = raw_entry_points
             .iter()
-            .filter(|e| matches!(e.adapter.as_str(), "express" | "hono" | "fastify"))
+            // Koa's routers are listed only where the listed reading is made.
+            .filter(|e| {
+                matches!(
+                    e.adapter.as_str(),
+                    "express" | "hono" | "fastify" | "koa" | "elysia" | "hapi" | "restify" | "h3"
+                )
+            })
             .map(|e| e.symbol.as_str())
             .collect();
         // Each route with the chains it is served through. What every chain gives it
@@ -3640,6 +3767,7 @@ impl<'r> Linker<'r> {
                 .collect(),
             truncated: vec![],
             unlisted_routes: f.raw.unlisted_routes.clone(),
+            unlisted_reasons: vec![],
             discovers,
             outgoing: f.raw.outgoing.clone(),
             test_requests: f
@@ -3683,6 +3811,7 @@ impl<'r> Linker<'r> {
             apps: vec![],
             listed: None,
         };
+        graphql.hold(&mut facts);
         // The calls whose shape is recorded: a symbol's own, and for a route those
         // of every way it is served ([`drift_core::Listed::guard_calls`]).
         let guard_calls: Vec<drift_core::SymbolCalls> = raw_symbols
@@ -3731,7 +3860,28 @@ impl<'r> Linker<'r> {
                 }
             })
             .collect();
-        facts.entry_points = crate::nextjs::entry_points(&facts, self.uses_next(&facts.package));
+        let next = self.uses_next(&facts.package);
+        facts.entry_points = crate::nextjs::entry_points(&facts, next);
+        // The Next.js entry points the last measured build did not list (an inline
+        // server action, `proxy.ts`, `getServerSideProps`, an extension of
+        // `pageExtensions`): in the listed reading only.
+        let listed_next: Vec<drift_core::EntryPoint> = if next || !f.raw.inline_actions.is_empty() {
+            let pkg = if next {
+                self.next_listing(&facts.package)
+            } else {
+                std::sync::Arc::default()
+            };
+            crate::nextjs::listed_entry_points(&facts, next, &pkg, &f.raw.inline_actions)
+                .into_iter()
+                .filter(|e| !facts.entry_points.contains(e))
+                .collect()
+        } else {
+            Vec::new()
+        };
+        // The routes of a file-convention router below: the framework answers a
+        // request with what the handler returns, so a handler that hands back a
+        // value answers by it ([`drift_core::controls::ANSWERS_BY_RETURN`]).
+        let mut by_return: BTreeSet<String> = BTreeSet::new();
         // A route of a file-convention router other than Next.js: listed since the
         // measured build, with what runs before it (a parent route, a server hook)
         // unread.
@@ -3767,17 +3917,29 @@ impl<'r> Linker<'r> {
                 [(h, c)] if !c.opaque && !route_middleware => Some((*h, c)),
                 _ => None,
             };
+            // An Astro endpoint runs after the package's middleware only: its
+            // `onRequest`, read as any middleware is. SvelteKit's and Nitro's own
+            // hooks are read below ([`serverhooks_link`]); a server of the package's
+            // own is not.
+            let astro = framework == crate::filerouters::Framework::Astro;
             let unread_before = through.is_none()
-                && (framework != crate::filerouters::Framework::ReactRouter
-                    || self.routers.iter().any(|r| within(r))
-                    || route_middleware);
+                && (self.routers.iter().any(|r| within(r)) || (route_middleware && !astro));
+            let astro_hooks: Vec<String> = match astro {
+                true => self
+                    .route_middleware
+                    .iter()
+                    .filter(|f| within(f))
+                    .map(|f| format!("{f}#onRequest"))
+                    .collect(),
+                false => Vec::new(),
+            };
             for e in crate::filerouters::entry_points(&facts, framework) {
                 if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
                     continue;
                 }
                 let route = e.route.clone().unwrap_or_default();
                 let mut wraps = Vec::new();
-                let mut app_middleware = Vec::new();
+                let mut app_middleware = astro_hooks.clone();
                 if let Some((h, c)) = through {
                     wraps.extend(c.middleware.iter().map(|w| Wrap {
                         wrapper: w.clone(),
@@ -3797,6 +3959,7 @@ impl<'r> Linker<'r> {
                         }
                     }
                 }
+                app_middleware.extend(self.server_hooks_before(f, framework, &e.symbol, &route));
                 facts.mounts.push(drift_core::MountFacts {
                     symbol: e.symbol.clone(),
                     route,
@@ -3805,9 +3968,11 @@ impl<'r> Linker<'r> {
                     elsewhere: false,
                     app_middleware,
                 });
+                by_return.insert(e.symbol.clone());
                 facts.entry_points.push(e);
             }
         }
+        facts.entry_points.extend(listed_next.iter().cloned());
         // Route paths from adapters are file-local: one entry point for each way the
         // route's router is mounted, under that mount's prefix.
         for e in &raw_entry_points {
@@ -3875,6 +4040,7 @@ impl<'r> Linker<'r> {
                     || !s.fed_sinks.is_empty()
                     || !s.param_passes.is_empty()
                     || !s.refuses_without.is_empty()
+                    || !s.listed_refs.is_empty()
                     || !s.made_fed_sinks.is_empty()
                     || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
@@ -3965,6 +4131,21 @@ impl<'r> Linker<'r> {
                                 self.canon(rel, class)
                             )
                         }))
+                        // A route of a file-convention router whose handler
+                        // hands back a value: the framework sends it.
+                        .chain(
+                            (by_return.contains(&s.name)
+                                && s.listed_controls
+                                    .iter()
+                                    .any(|c| c == drift_core::controls::RETURNS_VALUE))
+                            .then(|| drift_core::controls::ANSWERS_BY_RETURN.to_string()),
+                        )
+                        // ([`crate::lower::RawSymbol::listed_refs`]).
+                        .chain(s.listed_refs.iter().map(|(prefix, refs)| {
+                            let refs: Vec<String> =
+                                refs.iter().map(|r| self.canon(rel, r)).collect();
+                            format!("{prefix}{}", refs.join("\t"))
+                        }))
                         // Where the value a query filters by comes from: the
                         // caller's own ([`crate::lower::RawSymbol::caller_keys`]).
                         .chain(s.caller_keys.iter().map(|(callee, key)| {
@@ -4009,6 +4190,34 @@ impl<'r> Linker<'r> {
                                 .map(|callee| self.canon(rel, callee))
                                 .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
                                 .map(|c| format!("{}{c}", drift_core::controls::PASSES_MADE)),
+                        )
+                        // The same by position ([`drift_core::controls::SINK_FED_AT`],
+                        // [`drift_core::controls::PASSES_AT`],
+                        // [`drift_core::controls::PASSES_MADE_AT`]).
+                        .chain(s.fed_sinks_at.iter().map(|(k, at)| {
+                            format!("{}{k}\t{at}", drift_core::controls::SINK_FED_AT)
+                        }))
+                        .chain(
+                            s.param_passes_at
+                                .iter()
+                                .map(|(callee, arg, at)| (self.canon(rel, callee), arg, at))
+                                .filter(|(c, _, _)| {
+                                    !c.starts_with("global#") && !c.starts_with("pkg:")
+                                })
+                                .map(|(c, arg, at)| {
+                                    format!("{}{c}\t{arg}\t{at}", drift_core::controls::PASSES_AT)
+                                }),
+                        )
+                        .chain(
+                            s.made_passes_at
+                                .iter()
+                                .map(|(callee, arg)| (self.canon(rel, callee), arg))
+                                .filter(|(c, _)| {
+                                    !c.starts_with("global#") && !c.starts_with("pkg:")
+                                })
+                                .map(|(c, arg)| {
+                                    format!("{}{c}\t{arg}", drift_core::controls::PASSES_MADE_AT)
+                                }),
                         )
                         .chain(metadata)
                         .chain(uses)
@@ -4135,7 +4344,18 @@ impl<'r> Linker<'r> {
                 (s.name.as_str(), s.line, types)
             })
             .collect();
+        // Each tRPC procedure at the dotted paths it is served at: the listed reading
+        // only, as the measured build listed it by its key ([`TrpcTree::listed`]).
+        let trpc_routes = self.trpc_paths.listed(rel, &facts.entry_points, |symbol| {
+            facts
+                .symbols
+                .iter()
+                .find(|s| s.name == symbol)
+                .map(|s| s.line)
+        });
         if !in_place.is_empty()
+            || !listed_next.is_empty()
+            || trpc_routes.is_some()
             || !attrs.is_empty()
             || !listed_controls.is_empty()
             || !flows.is_empty()
@@ -4145,13 +4365,17 @@ impl<'r> Linker<'r> {
             || !listed_calls.is_empty()
             || !built.is_empty()
             || facts.symbols.iter().any(|s| {
-                self.named_giver(&s.controls).is_some()
+                crate::tenant::scopes(s)
+                    || self.named_giver(&s.controls).is_some()
                     || s.members
                         .iter()
                         .any(|m| self.named_giver(&m.unread).is_some())
             })
         {
             let mut measured = facts.clone();
+            if let Some(routes) = trpc_routes {
+                facts.entry_points = routes;
+            }
             for (name, line, types) in attrs {
                 for s in facts
                     .symbols
@@ -4243,6 +4467,11 @@ impl<'r> Linker<'r> {
                     self.by_name_only(&mut m.unread);
                 }
             }
+            // The queries filtered under a tenant's key, with where the value comes
+            // from, as Python writes them ([`crate::tenant`]).
+            for s in facts.symbols.iter_mut() {
+                crate::tenant::fill(s);
+            }
             for (name, line, args) in measured_args {
                 for s in facts
                     .symbols
@@ -4266,6 +4495,7 @@ impl<'r> Linker<'r> {
             measured
                 .mounts
                 .retain(|m| !in_place.contains(m.symbol.as_str()));
+            measured.entry_points.retain(|e| !listed_next.contains(e));
             measured.hold(facts);
             measured.hold_guard_calls(guard_calls);
             measured.hold_rewrites(f.raw.rewrites.clone());

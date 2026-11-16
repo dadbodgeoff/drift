@@ -1,0 +1,36 @@
+/* ---------- Upgrade (drift upgrade) ---------- */
+.ug {
+  max-width: 1180px;
+}
+.ug-head {
+  border-bottom: 1px solid var(--color-border);
+}
+.ug-todo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ug-todo__head {
+  gap: 8px;
+  align-items: baseline;
+}
+.ug-cmd,
+.ug-dialog .st-cmd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ug-files td,
+.ug-files th {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.ug-files tr.is-absent th,
+.ug-files tr.is-absent td {
+  color: var(--color-text-muted);
+}
+.ug-vlist + .ug-vlist {
+  margin-top: 10px;
+}
+.ug-vlist li {
+  overflow-wrap: anywhere;
+}

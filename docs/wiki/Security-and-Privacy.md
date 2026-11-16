@@ -39,7 +39,13 @@ Environment variables the binary reads include `DRIFT_CACHE_DIR`, `DRIFT_EXPERIM
 | a temporary directory | pull-request mode's merge-base copy, removed afterwards |
 | `DRIFT_CACHE_DIR` | where the cache goes instead, when set |
 
-Drift never writes through a symbolic link that leaves the repository, and an issue draft (`drift findings --issue --write`) is never written through a symbolic link inside the repository, nor into `.drift/` or `drift.lock`; a gap report writes only inside its own fixture: such a link at `.drift/conventions.yaml`, `drift.lock` or an export target is refused with exit 2. The Claude Code hooks deny agent edits to `.drift/` and `drift.lock` (best effort for shell commands). The complete list by command is on [Files Drift Writes](Files-Drift-Writes).
+Drift never writes through a symbolic link that leaves the repository, and an issue draft (`drift findings --issue --write`) is never written through a symbolic link inside the repository, nor into `.drift/` or `drift.lock`; a gap report writes only inside its own fixture: such a link at `.drift/conventions.yaml`, `drift.lock`, `.drift/security.lock` (`drift security --write-baseline` included) or an export target is refused with exit 2, and so is a link there to a file that does not exist (it is left as it is, never replaced by a regular file).
+
+Drift reads its own files by the same rule. A `.drift/security.lock`, `drift.lock`, `.drift/conventions.yaml` or `.drift/config.yaml` that is a symbolic link leading outside the repository, or a link to nothing, is refused: `drift check` and `drift security --ratchet` exit 2 with a message that names the path and says why, instead of comparing against a file the change does not hold and reviewers never see, or reading a dangling baseline as no baseline. A link that stays inside the repository is followed as before. On Windows the same checks run, but only the unix behaviour is tested.
+
+Every command Drift prints for a person or an agent to run (in `drift check`, `drift review`, the hooks, MCP, `drift setup`, `drift practices`) passes each word taken from the repository (a convention id, a path, a member) through one quoting rule: bare when it holds only characters no shell reads specially, else in single quotes. A committed id such as `x; rm -rf ~` is printed as one quoted word and pasting the command runs nothing else.
+
+The Claude Code hooks deny agent edits to `.drift/` and `drift.lock` (best effort for shell commands). The complete list by command is on [Files Drift Writes](Files-Drift-Writes).
 
 ## Network access
 
@@ -52,7 +58,7 @@ Three checks, each of which you can repeat:
 What does touch the network is around Drift, not inside it:
 
 - **Installing it:** `npm install`, downloading a release archive, or `cargo install` fetching crates.
-- **The GitHub Action:** it resolves `drift-ref` with `git ls-remote`, builds with `cargo install --git`, fetches the base branch history, and uploads SARIF to GitHub code scanning. That is your CI talking to GitHub, by design.
+- **The GitHub Action:** it resolves the Drift to run with `git ls-remote`, downloads a released binary and its `SHA256SUMS` from the GitHub release (or builds from source with cargo), fetches the base branch history, uploads SARIF to GitHub code scanning, and, when asked, posts a pull request comment and a commit status or check run through the GitHub API. That is your CI talking to GitHub, by design.
 - **Your agent:** hooks and MCP tools hand text to it (below).
 
 `drift --version` and every other command make no update check.
@@ -67,11 +73,11 @@ What does touch the network is around Drift, not inside it:
 
 ## The Studio
 
-The Studio is an Electron desktop app over the same CLI. It is not packaged: you run it from a checkout (`npm ci`, then `npm run start -w drift-studio`).
+The Studio is an Electron desktop app over the same CLI. You run it from a checkout (`npm ci`, then `npm run start -w drift-studio`) or from an unsigned package that CI builds (see `apps/studio/README.md`, Packaging). A package carries its platform's `drift` binary and runs it unless Settings names another; it has no updater and no update feed, so it never checks for a new version. It is not code-signed or notarised yet, so macOS and Windows warn before opening it.
 
 - **Network:** its content security policy is `default-src 'self'; ... connect-src 'self'; frame-src 'none'; object-src 'none'`, so the renderer cannot load or connect to anything outside the app. Its settings page states: "Nothing is sent anywhere: no telemetry, no network access except what you ask for." (The development server allows local `ws:` and `http://localhost:*` connections, for development only.)
 - **Processes:** it runs the `drift` binary with `execFile`, never through a shell, and does not run `git` (it reads `.git` files directly for provenance).
-- **Files:** it reads the repository, `.drift/`, and Claude Code transcripts under `~/.claude/projects/`; it writes through `drift review` (so the same files as the CLI) and its own settings under the application's user-data directory.
+- **Files:** it reads the repository, `.drift/`, and Claude Code transcripts under `~/.claude/projects/`; it writes through `drift review` and, when you confirm it in the Security view, `drift security --write-baseline` (`.drift/security.lock`), so the same files as the CLI, and its own settings under the application's user-data directory.
 
 ## Permissions
 
@@ -99,7 +105,7 @@ The Studio is an Electron desktop app over the same CLI. It is not packaged: you
   - bans: wildcard version requirements are denied (wildcard path dependencies allowed), multiple versions of a crate warn;
   - sources: only the crates.io registry; unknown registries and unknown git sources are denied.
 - **Releases** happen only in CI, with no long-lived tokens: the tag, `Cargo.toml` and the plugin version must agree; five targets are built; archives, `SHA256SUMS` and SLSA build provenance are attached to the GitHub Release; npm publishing waits for a person's approval and uses trusted publishing. Verify a download with `sha256sum -c SHA256SUMS --ignore-missing` and `gh attestation verify drift-vX.Y.Z-<target>.tar.gz --repo dadbodgeoff/drift`. The binaries are not code-signed or notarised; the checksums and provenance are what you can verify. Release status: no release has been published yet; see [Getting Started](Getting-Started).
-- **The Action** pins the actions it uses to commit SHAs, and builds Drift from the commit `drift-ref` resolves to.
+- **The Action** pins the actions it uses to commit SHAs, runs the Drift of its own ref (or of the commit `drift-ref` resolves to), checks a downloaded release archive against the release's `SHA256SUMS` and its `drift --version` against the tag, and shows text from the repository in its pull request comment only as escaped code.
 - **Reporting a vulnerability:** privately, through the repository's Security tab (see [SECURITY.md](https://github.com/dadbodgeoff/drift/blob/main/SECURITY.md)); in scope are the CLI and libraries, hook output (including prompt injection through repository content), the Action and release artifacts.
 - **License:** Apache-2.0.
 

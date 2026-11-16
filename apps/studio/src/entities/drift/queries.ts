@@ -5,7 +5,8 @@ import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type RepoRef, useApi } from "@/shared/api";
 import { log } from "@/shared/lib/log";
-import { checkCensus, checkFacts, checkPractices } from "./schema";
+import { readCensusWhy, readPromoteList } from "@/shared/contract/read";
+import { checkCensus, checkFacts, checkFunnel, checkPractices } from "./schema";
 
 export const keys = {
   info: ["driftInfo"] as const,
@@ -15,8 +16,12 @@ export const keys = {
   check: (r: RepoRef, base?: string | null) => (base === undefined ? (["check", r.path] as const) : (["check", r.path, base] as const)),
   /** Without `base`, a prefix that also matches every diff-scoped security run of the repository. */
   security: (r: RepoRef, base?: string) => (base === undefined ? (["security", r.path] as const) : (["security", r.path, "diff", base] as const)),
+  /** Under `security`'s prefix, so a rescan or a baseline written refetches it with the inventory. */
+  securityTop: (r: RepoRef, n: number) => ["security", r.path, "top", n] as const,
   practices: (r: RepoRef) => ["practices", r.path] as const,
   map: (r: RepoRef) => ["map", r.path] as const,
+  funnel: (r: RepoRef) => ["funnel", r.path] as const,
+  promoteList: (r: RepoRef) => ["promoteList", r.path] as const,
   policy: (r: RepoRef) => ["policy", r.path] as const,
   questions: (r: RepoRef) => ["questions", r.path] as const,
   reviewLog: (r: RepoRef) => ["reviewLog", r.path] as const,
@@ -26,6 +31,15 @@ export const keys = {
   sessionState: (r: RepoRef, id: string) => ["sessionState", r.path, id] as const,
   studies: ["studies"] as const,
 };
+
+/**
+ * The queries a review decision (accept, reject, block, advise, exempt, answer) makes stale:
+ * the policy, check and history, and also the promote list and the funnel, which say what
+ * was declined or promoted and which are never refetched on their own (`staleTime: Infinity`).
+ */
+export function reviewDecisionKeys(r: RepoRef) {
+  return [keys.policy(r), keys.check(r), keys.history(r), keys.promoteList(r), keys.funnel(r)];
+}
 
 export function useDriftInfo() {
   const api = useApi();
@@ -134,6 +148,26 @@ export function useSecurityDiff(repo: RepoRef | null, base: string | null) {
   });
 }
 
+/** `drift security --top N --json` (0: all): the findings to look at first. Run only when `enabled` (the view's tab is open). */
+export function useSecurityTop(repo: RepoRef | null, n: number, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: repo ? keys.securityTop(repo, n) : ["security", "none", "top", n],
+    enabled: !!repo && enabled,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: ({ signal }) => timed("security --top", api.securityTop(repo!, n, { signal })),
+  });
+}
+
+/**
+ * What writing the security baseline makes stale: the policy files (the baseline is one), check (with a baseline it
+ * reports `security` and no `security_advice`), security (every run of it) and the history (the audit entry).
+ */
+export function baselineKeys(r: RepoRef) {
+  return [keys.policy(r), keys.check(r), keys.security(r), keys.history(r)];
+}
+
 /** `drift practices --json`: the practice map (facts, not rules). Run when the Practices view asks for it. */
 export function usePractices(repo: RepoRef | null) {
   const api = useApi();
@@ -159,6 +193,37 @@ export function useDriftMap(repo: RepoRef | null, enabled = true) {
     staleTime: Infinity,
     retry: false,
     queryFn: ({ signal }) => timed("map", api.map(repo!, { signal })),
+  });
+}
+
+/** `drift census --why --json`: what mining dropped, gate by gate (observation only). Run when the Funnel view asks for it. */
+export function useFunnel(repo: RepoRef | null) {
+  const api = useApi();
+  const info = useDriftInfo();
+  return useQuery({
+    queryKey: repo ? keys.funnel(repo) : ["funnel", "none"],
+    enabled: !!repo,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const r = await timed("funnel", api.funnel(repo!, { signal }));
+      return { ...r, data: checkFunnel(readCensusWhy(r.data), info.data?.version ?? null) };
+    },
+  });
+}
+
+/** `drift practices promote --list --json`: every practice that may be promoted now. Writes nothing; run only when `enabled`. */
+export function usePromoteList(repo: RepoRef | null, enabled = true) {
+  const api = useApi();
+  return useQuery({
+    queryKey: repo ? keys.promoteList(repo) : ["promoteList", "none"],
+    enabled: !!repo && enabled,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const r = await timed("promote list", api.promoteList(repo!, { signal }));
+      return { ...r, data: readPromoteList(r.data) };
+    },
   });
 }
 
@@ -197,6 +262,8 @@ export function useRescan(repo: RepoRef | null, refreshFacts: () => Promise<void
       qc.invalidateQueries({ queryKey: keys.security(repo) }),
       qc.invalidateQueries({ queryKey: keys.practices(repo) }),
       qc.invalidateQueries({ queryKey: keys.map(repo) }),
+      qc.invalidateQueries({ queryKey: keys.funnel(repo) }),
+      qc.invalidateQueries({ queryKey: keys.promoteList(repo) }),
       qc.invalidateQueries({ queryKey: keys.policy(repo) }),
     ]);
   }, [qc, repo, refreshFacts]);

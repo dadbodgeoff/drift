@@ -43,6 +43,19 @@ const EXCLUDED_DIRS: &[&str] = &[
 /// Extensions the TypeScript/JavaScript parser accepts.
 pub const SOURCE_EXTENSIONS: &[&str] = &["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"];
 
+/// Extensions of single-file components, whose script blocks the TypeScript parser
+/// reads (`drift_ts::sfc`) into the listed reading only
+/// ([`crate::RepoFacts::listed_files`]): the last measured build did not walk them.
+pub const COMPONENT_EXTENSIONS: &[&str] = &["vue", "svelte", "astro"];
+
+/// `rel` (or any path) names a single-file component ([`COMPONENT_EXTENSIONS`]).
+pub fn is_component_path(rel: &str) -> bool {
+    Path::new(rel)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| COMPONENT_EXTENSIONS.contains(&e))
+}
+
 /// Extensions the Python parser accepts (`.pyi` stubs are skipped as declarations).
 pub const PYTHON_EXTENSIONS: &[&str] = &["py", "pyi"];
 
@@ -357,7 +370,7 @@ fn unsafe_ignore_file(root: &Path, dir: &Path) -> Option<PathBuf> {
         let t = meta.file_type();
         let ok = if t.is_symlink() {
             // Dangling, or a link to a directory: reading fails at once, harmlessly.
-            match (fs::metadata(&p), p.canonicalize()) {
+            match (fs::metadata(&p), crate::fsutil::canonical(&p)) {
                 (Ok(m), Ok(real)) => real.starts_with(root) && (m.is_file() || m.is_dir()),
                 _ => true,
             }
@@ -488,6 +501,13 @@ pub struct Walked {
     pub config: Vec<Candidate>,
     /// Python files, for the Python parser (TypeScript analysis ignores them).
     pub python: PyWalked,
+    /// Single-file components ([`COMPONENT_EXTENSIONS`]) that pass the path-level
+    /// filters, sorted by path: the listed reading's files, kept apart from
+    /// `sources` so that what mining reads is walked as before. Their content is
+    /// checked by [`read_component`].
+    pub components: Vec<Candidate>,
+    /// Components skipped for path-level reasons (name, size).
+    pub components_skipped: Vec<Skipped>,
 }
 
 /// Walk `root` once: TypeScript/JavaScript source candidates for analysis, the
@@ -501,7 +521,8 @@ pub fn walk(
     threads: usize,
     is_config: &(dyn Fn(&str) -> bool + Sync),
 ) -> anyhow::Result<Walked> {
-    let root = root.canonicalize()?;
+    crate::work::note(crate::work::Work::Walk);
+    let root = crate::fsutil::canonical(root)?;
     check_root_ignore_files(&root)?;
     let generated = generated_attributes(&root);
     let filter_root = root.clone();
@@ -520,8 +541,8 @@ pub fn walk(
                 && (!dir || may_enter(&filter_root, e.path()))
         })
         .build_parallel();
-    // (candidate, TypeScript source, config, Python source, name not UTF-8)
-    type Found = (Candidate, bool, bool, bool, bool);
+    // (candidate, TypeScript source, config, Python source, name not UTF-8, component)
+    type Found = (Candidate, bool, bool, bool, bool, bool);
     let found: std::sync::Mutex<Vec<Found>> = std::sync::Mutex::new(Vec::new());
     walker.run(|| {
         let root = &root;
@@ -543,7 +564,8 @@ pub fn walk(
             let source = is_source(path, Lang::TypeScript);
             let config = is_config(&rel);
             let python = is_source(path, Lang::Python);
-            if !source && !config && !python {
+            let component = is_component_path(&rel);
+            if !source && !config && !python && !component {
                 return ignore::WalkState::Continue;
             }
             let Ok(meta) = entry.metadata() else {
@@ -558,7 +580,7 @@ pub fn walk(
             // files could share one (`?` for each bad byte).
             let bad_name = path.to_str().is_none();
             if let Ok(mut f) = found.lock() {
-                f.push((c, source, config, python, bad_name));
+                f.push((c, source, config, python, bad_name, component));
             }
             ignore::WalkState::Continue
         })
@@ -573,7 +595,7 @@ pub fn walk(
 
     let mut out = Walked::default();
     let mut envs = EnvDirs::default();
-    for (c, source, config, python, bad_name) in found {
+    for (c, source, config, python, bad_name, component) in found {
         if bad_name {
             let skip = Skipped {
                 path: c.rel_path,
@@ -583,6 +605,8 @@ pub fn walk(
                 out.python.skipped.push(skip);
             } else if source {
                 out.skipped.push(skip);
+            } else if component {
+                out.components_skipped.push(skip);
             }
             continue;
         }
@@ -593,7 +617,7 @@ pub fn walk(
         if python {
             walk_python(&root, &c, generated.as_ref(), &mut envs, &mut out.python);
         }
-        if !source {
+        if !source && !component {
             continue;
         }
         // Source analysis also skips these directories (the config walk does not).
@@ -617,16 +641,21 @@ pub fn walk(
         } else {
             None
         };
+        let (sources, skipped) = match component {
+            true => (&mut out.components, &mut out.components_skipped),
+            false => (&mut out.sources, &mut out.skipped),
+        };
         match reason {
-            Some(reason) => out.skipped.push(Skipped {
+            Some(reason) => skipped.push(Skipped {
                 path: c.rel_path,
                 reason,
             }),
-            None => out.sources.push(c),
+            None => sources.push(c),
         }
     }
     out.skipped.sort();
     out.python.skipped.sort();
+    out.components_skipped.sort();
     Ok(out)
 }
 
@@ -712,6 +741,7 @@ pub fn read_source(c: &Candidate) -> Option<Read> {
 /// Read a candidate of `lang` and apply that language's content filters, in the
 /// order [`ingest_lang`] applies them. `None` when it cannot be read.
 pub fn read_source_lang(c: &Candidate, lang: Lang) -> Option<Read> {
+    crate::work::note(crate::work::Work::SourceRead);
     let bytes = fs::read(&c.abs_path).ok()?;
     let hash = hash_bytes(&bytes);
     let text = match String::from_utf8(bytes) {
@@ -746,6 +776,28 @@ pub fn read_source_lang(c: &Candidate, lang: Lang) -> Option<Read> {
     })
 }
 
+/// Read a single-file component candidate ([`Walked::components`]): the checks of
+/// the whole file (UTF-8, a generated header). The other content gates apply to the
+/// script it holds, read by the TypeScript parser. `None` when it cannot be read.
+pub fn read_component(c: &Candidate) -> Option<Read> {
+    let bytes = fs::read(&c.abs_path).ok()?;
+    let hash = hash_bytes(&bytes);
+    let reason = match String::from_utf8(bytes) {
+        Err(_) => Err(SkipReason::NotUtf8),
+        Ok(text) if has_generated_marker(&text) => Err(SkipReason::Generated),
+        Ok(text) => Ok(text),
+    };
+    Some(match reason {
+        Err(reason) => Read::Skipped { hash, reason },
+        Ok(text) => Read::Source(SourceFile {
+            rel_path: c.rel_path.clone(),
+            abs_path: c.abs_path.clone(),
+            text,
+            hash,
+        }),
+    })
+}
+
 /// Walk `root` and return the TypeScript/JavaScript files to analyse plus the ones
 /// skipped and why.
 ///
@@ -756,7 +808,7 @@ pub fn ingest(root: &Path) -> anyhow::Result<IngestResult> {
 
 /// Walk `root` and return `lang`'s files to analyse plus the ones skipped and why.
 pub fn ingest_lang(root: &Path, lang: Lang) -> anyhow::Result<IngestResult> {
-    let root = root.canonicalize()?;
+    let root = crate::fsutil::canonical(root)?;
     check_root_ignore_files(&root)?;
     let generated = generated_attributes(&root);
     let mut out = IngestResult::default();
@@ -1104,6 +1156,7 @@ mod tests {
     }
 
     /// `f` on another thread: `None` when it has not finished within `secs` (a hang).
+    #[cfg(unix)]
     fn within<T: Send + 'static>(secs: u64, f: impl FnOnce() -> T + Send + 'static) -> Option<T> {
         let (tx, rx) = std::sync::mpsc::channel();
         std::thread::spawn(move || {

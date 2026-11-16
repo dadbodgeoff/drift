@@ -25,6 +25,11 @@ pub struct Logging;
 /// Files that must import an in-repo logger binding for it to be the repo's logger.
 pub const REPO_LOGGER_FILES: usize = 3;
 
+// No way of logging is passive ([`Concern::passive`], the default): logging to the
+// language's own output would be, but the classifier records no fact of the use that
+// says so (its mechanisms are the style and whether the logger is the repo's own), and
+// deciding from the instrument's name would be a list of names.
+
 impl Concern for Logging {
     fn id(&self) -> &'static str {
         super::LOGGING

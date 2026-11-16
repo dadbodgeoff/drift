@@ -103,7 +103,7 @@ Roles of fewer than 15 members never block, even with `--force`, and `drift chec
 
 Drift proposes a suggestion at all only when it has at most one outlier and its rule family is admitted for its language (the round-10 "show policy"): with any one development repository left out, the family's suggestion-tier accept on the other development repositories is at least 60% of at least 5 labelled cards. Call order is never proposed, in either language, and neither are TypeScript rendered-component and call rules or Python package and repository facts. The table is committed data, `crates/drift-mine/data/show-policy.json` ([PLAN-R10 §4](https://github.com/dadbodgeoff/drift/blob/main/eval/study/PLAN-R10.md)), frozen in the binary. A withheld card is not proposed: `census` (`--all` included), `init`, `review`, `check`, the hooks and the Studio never list it, and a proposal of it that an older Drift wrote to `.drift/conventions.yaml` is dropped when the file is read. A convention a person accepted, rejected or chose to show to agents is kept and checked whatever its family. The default tier is not affected. This is separate from what agents are shown, which has its own, higher bar (see [Using Drift with Agents](Using-Drift-with-Agents)). `drift review --hidden` lists the cards mining found and withheld, with the reason, and lets a person promote one with `--answer ID=same|different|not-a-convention` (written as accepted by them, with `promoted_from_hidden: true`).
 
-The listing shows every default-tier proposal and the 5 best suggestions, ranked by the higher lower bound, then fewer outliers, then the higher lift, then id. The rest wait behind a "Showing 5 of N suggestions; M more" line: `--all` lists every suggestion, `--suggestions N` the best N, and `suggestion_cap: <N|all>` at the top of `.drift/conventions.yaml` changes the default. This is presentation only: nothing is deleted, no id or tier changes, and the cap changes nothing for `drift check`, hooks, MCP or exports (what agents are shown is the family admission's). `census --json` keeps every proposal, in this order (`rank`), with `shown_by_default` and the cap in effect (`suggestion_cap`).
+The listing shows every default-tier proposal and the 5 best suggestions. (Mining's own caps come earlier: at most 5 rules per role, a quarter of `--max` layering rules, and `--max` in all. When they cut a default-tier rule, `drift census` says so, and `drift census --why` lists it.) Suggestions are ranked by the higher lower bound, then fewer outliers, then the higher lift, then id. The rest wait behind a "Showing 5 of N suggestions; M more" line: `--all` lists every suggestion, `--suggestions N` the best N, and `suggestion_cap: <N|all>` at the top of `.drift/conventions.yaml` changes the default. This is presentation only: nothing is deleted, no id or tier changes, and the cap changes nothing for `drift check`, hooks, MCP or exports (what agents are shown is the family admission's). `census --json` keeps every proposal, in this order (`rank`), with `shown_by_default` and the cap in effect (`suggestion_cap`).
 
 ### Python
 
@@ -125,7 +125,7 @@ Only `off` (or `false`) turns them off, and `on` (or `true`) says the default. A
 drift review
 ```
 
-Interactive review shows the mined proposals, the default tier first, then the 5 best suggestions (`drift review --all` for every one), and after them the practices that may be promoted ([below](#practices-that-may-be-promoted)).
+Interactive review shows the mined proposals, the default tier first, then the 5 best suggestions (`drift review --all` for every one), then the proposals from the map ([below](#proposals-from-the-map)), and after them the practices that may be promoted ([below](#practices-that-may-be-promoted)).
 
 | Key | Meaning |
 | --- | --- |
@@ -160,6 +160,20 @@ drift review --show-to-agents D-04385a
 
 Each card's `agents:` line says whether agents are shown it. Each run ends with the counts, for example `4 accepted (2 block), 10 proposed, 1 rejected`, and how many accepted conventions agents are not shown, when there are any; interactive review ends by saying how many accepted conventions block. `--advise` is the way back from block mode and keeps the convention accepted. `--block` on a suggestion is refused unless you add `--force`. `drift review --list` prints the cards interactive review would ask about, and `drift review --show D-37416b` prints one card of any status, with its outliers (the first 5; `--all-outliers` for all). To change your mind later, use the flags above or edit `status` and `mode` in `.drift/conventions.yaml`. Re-running `drift init` keeps every decision and id and adds new proposals.
 
+### Proposals from the map
+
+Besides what it mines, `drift init` proposes rules that Drift's maps show: a practice that most units of a place follow (from the [practice map](Practices-Map)), and a layer whose files never import another layer that depends on it (from the structure map; checked on imports by path that load code, not on type-only imports or imports by package name). These did not go through the miner's measured gates, and every surface says so: `drift init` lists them apart under `From the map (not mined: these did not go through the miner's measured gates; each advises only once you accept it)`, the card in review says `(from the map, not mined: it did not go through the miner's measured gates)`, `.drift/conventions.yaml` marks each with `from_map:`, and once accepted, `drift check` gives its source as `proposed by Drift from the practice map (not mined), accepted by a person` (or the structure map).
+
+A third source is the repository's own linter configuration: a rule the team already wrote down, labelled `declared in <file>:<line>`. Drift reads the import restrictions that name a folder and a layer: `overrides` entries of JSON ESLint, oxlint and Biome configurations, ESLint flat-config blocks (`eslint.config.js|mjs|cjs|ts`) and legacy `.eslintrc.js` `overrides` scoped by a literal `files` glob such as `core/**`, ruff's `flake8-tidy-imports.banned-api` (when `TID251` is selected), flake8-tidy-imports' `banned-modules` in `setup.cfg`, `tox.ini` or `.flake8`, and import-linter `forbidden` contracts in `pyproject.toml`, `.importlinter` or `setup.cfg`. A restriction Drift can check exactly with its layering rule (the files of one folder do not import one layer of this repository) is proposed; a setting of `off` is no rule, and `warn` and `error` both propose advise only. The linter still reports a break when it runs; once accepted, Drift also tells an agent the rule before it writes the import. Anything else is listed with why and never proposed: a package outside the repository, a ban on relative imports, an import-linter `layers` or `independence` contract or a `forbidden` one without `allow_indirect_imports = true` (import-linter also forbids a chain of imports, which Drift's rule does not check), a block handed to a function Drift does not know or followed by a part of the configuration it did not read (an imported file, a plugin's preset), and one that leaves files out or that a later block changes for part of the folder. `.eslintrc.yml` and restrictions of syntax, globals or properties are not read.
+
+A fourth kind comes from the packages' own manifests: `Code in <package> imports only the packages <package>/package.json declares (any of its dependency sections; Node built-ins and its own code excepted; tests not checked)` (`from_map: manifest`, rule `imports_declared`). It is proposed once for each workspace package whose `package.json` Drift read and whose production files import a package (at least 8 such files), never mined and never built from a list of names. What counts, decided from what Drift reads: a package is declared when any of `dependencies`, `devDependencies`, `peerDependencies` or `optionalDependencies` names it (a `workspace:` or `catalog:` range counts, and so does a devDependency for a production file, since Drift cannot tell what ships); Node built-ins (`fs`, `node:fs`) and the package's own name hold; a subpath (`zod/v4`) is the package (`zod`); a type-only import also holds when `@types/<name>` is declared; an import that a `paths` alias or a relative path lands in the same package, or in the root package, holds, and one that lands in another named workspace package needs that name declared. Not checked, never reported: an import Drift could not resolve, a package that no `package.json` in the repository declares (a bundler alias Drift does not read, or a package installed only as another's dependency), a file whose own `package.json` Drift could not read, and test files. Python is not proposed: Drift's facts do not tie a Python import to the distribution that provides it, and `drift census --from-map` says so. The proposal counts today's imports that break it and names where each package is declared instead (`today: 3 import(s) of 2 package(s) apps/web/package.json does not declare, in 2 file(s): lodash (2; declared in package.json), ...`); accepting it records those files in `drift.lock`. Accepted, `drift check` names the import, the manifest that should declare it, where it is declared instead and the fix as text: ``imports `lodash/fp`: not declared in apps/web/package.json (declared in package.json at the root); fix: add lodash to apps/web/package.json``. It is a suggestion; blocking needs `drift review --block <id> --force`. Writing one makes `.drift/conventions.yaml` version 4 ([Versioning and Upgrades](Versioning-and-Upgrades)).
+
+Each line says how many units Drift could read there follow it, how many differ, and how many it could not read. A unit Drift could not read is not checked and is never reported as a violation. Where a mined rule says the same, the line names it (`the same rule read two ways: ...`); accepting both reports one departure twice.
+
+Until a person accepts one, a proposal from the map is checked by nothing, is not baselined in `drift.lock`, and is shown to no agent. Interactive review asks about them apart, after the mined proposals: `y` accepts it in advise mode, `n` declines it (not asked again), `s` skips, `q` quits. Accepting a practice from the map writes it as `drift practices promote` would, with the units that differ today recorded in `drift.lock`; one that no longer qualifies as the code stands is left as proposed. The flags work too (`drift review --accept <id>`); a Python practice cannot be set to block. `drift init --no-from-map` writes none, and `drift census --from-map` lists them, with what qualified but was not proposed and why.
+
+Drift Studio shows the same list read-only, under Review, Proposals from the map: each proposal with its counts in the words `drift census --from-map` uses, where it stands in `.drift/conventions.yaml`, and what qualified but was not proposed, with Drift's reason. The proposals are decided in the Conventions view.
+
 ### Practices that may be promoted
 
 After the proposals, interactive `drift review` offers the practices from the practice map that may be promoted now (the same list as `drift practices promote --list`), one at a time. Each shows the preview `drift practices promote --dry-run` prints: how many units of the place follow, the ones that differ and would be recorded in `drift.lock`, what could not be read, and the command.
@@ -173,6 +187,8 @@ After the proposals, interactive `drift review` offers the practices from the pr
 | `q` | quit |
 
 A practice promoted here is the same as one promoted with `drift practices promote`: an accepted convention, shown to agents, with today's exceptions in `drift.lock`.
+
+A unit follows a promoted practice when the practice map reads it doing one of the accepted ways. For sign-in, permissions, validation and responses, doing more than the accepted way still follows it (a route signed in with the accepted guard that also checks something else); for the other concerns, the whole of what the unit does must be an accepted way. For sign-in and permissions, background jobs are not counted: they take no request. See [How the rule is checked](Practices-Map#how-the-rule-is-checked).
 
 ### What to look at on a card
 
@@ -192,7 +208,22 @@ drift review --unexempt D-37416b --member app/api/health/route.ts#GET
 
 It is stored in `.drift/conventions.yaml` under the convention's `exceptions`, by `path#symbol`, so it survives the member moving within its file. `drift check`, the hooks and CI then list it as exempt (`marked fine by a reviewer: ...`) instead of as a violation. Only a current outlier can be marked.
 
-For a single line of code, put `// drift-ignore D-37416b: <reason>` (`#` in Python) directly above the declaration. A reason is required and suppressions are counted in the output so reviewers see them.
+Where a reviewer's exception was recorded for a member that is in `drift.lock` with a fingerprint (below), the exception follows that member when it moves to another file or is renamed, as if the reviewer had named its new place. `.drift/conventions.yaml` keeps the member the reviewer named. An exception for a member the lock has no fingerprint for (one marked fine after it was baselined, or a lock written before fingerprints) does not follow it.
+
+### `drift-ignore` comments
+
+For a single declaration, put `// drift-ignore D-37416b: <reason>` (`#` in Python) directly above it. The id is `D-` and six hex digits, and a reason is required: a comment without one suppresses nothing. Suppressions are counted in the output so reviewers see them.
+
+Some violations are about a whole file, not a declaration: a file's exports or directives, a layering import, a model. These take the comment in the file's header, among the comments before its first line of code (blank lines, a `#!` line, directives such as `"use client";` and a one-line docstring may come before it). The comment may be written with `//`, `#`, `--` or `/* */`.
+
+| The violation is about | Where the comment goes |
+| --- | --- |
+| a declaration | above the declaration |
+| a model | directly above the model, or at the top of its file |
+| a layering import | at the end of the import's line, in the comment lines directly above it, or at the top of the file |
+| anything else about a file | at the top of the file |
+
+A file that holds no comments (`package.json`) cannot carry one. The agent is then told: `if intentional: no drift-ignore comment can go in this file; say so to a person, who can mark it fine (`drift review`)`. Wiring advice and promoted practices take the comment on the declaration only.
 
 ### "Are these the same kind of thing?"
 
@@ -227,13 +258,55 @@ drift review --answer D-37416b=different --set-apart lib/seed.ts,test/fixtures/a
 | GitHub Action | nothing | code scanning warning | code scanning error, **job fails** |
 | pre-commit `drift-check` | nothing | nothing | **commit fails** |
 
-Only a person puts a convention in block mode. In the beta only a default-tier convention that a person set to block can block, unless a person forced a suggestion with `--force`. Wiring rules (experimental) never block.
+Only a person puts a convention in block mode. Every new kind of rule starts as advice: an accepted convention advises unless a person sets it to block, and that holds for promoted practices and for proposals from the map. In the beta only a default-tier convention that a person set to block can block, unless a person forced a suggestion with `--force`. Wiring rules (experimental) never block.
+
+A convention set to block still advises when one of these holds, and `drift check` says why on a line of its own (`drift: [<id>] was block, now advise because ...`):
+
+- `its role had N members when it was mined, under the 15 needed to block`;
+- `it was promoted below the share of its place a practice needs to block`;
+- `experimental wiring rules only advise`;
+- `it is stale: ...` (below).
+
+Where an agent is shown a list of violations, it is capped at 5 and the ones that block come first, so a capped list never hides one that blocks behind advice. The rest are counted, by mode: `+N more (B that block, A advice): run `drift check` to see all`. The GitHub job summary lists at most 10, those that block first.
+
+## What `drift check` could not tell
+
+A mined rule is checked by reading each member. For some rules, what decides the rule may be in code Drift did not read. Then the member is **not checked**: Drift does not report it, and does not call it fixed. This applies to accepted conventions only; `drift init`'s baseline and the review cards read members as mining does.
+
+| Rule | A member is not checked when |
+| --- | --- |
+| wrapped by | `it is wrapped in <w>, which does not resolve to code Drift read`; `it is wrapped in <w>, which is built in a file Drift did not read`; `it is wrapped in <w>, which <f>() builds: what it does is in that factory, which Drift does not follow for this rule` |
+| passes a key | `its call of <c>() unpacks a value into its arguments, so it may pass any key` |
+| calls, calls before | `it hands a value to a call Drift did not record (a method of a local or of an untyped parameter), which may be the call the rule asks for` |
+| renders | `it renders <r>, which does not resolve to code Drift read` |
+
+For a wrapped-by, calls or calls-before rule whose target signs the caller in or checks permissions, an entry point the practice map marks `unknown` for that concern is not checked either: `the practice map cannot tell how it handles sign-in` (or `permissions`). The other rule kinds read every member.
+
+`drift check` prints one line per rule with members not checked, with at most three reasons:
+
+```text
+drift: [<id>] <n> of <members> member(s) not checked: Drift could not read what decides the rule for them, and never reports what it cannot read (<holders> follow it)
+  why  <reason> (<n>)
+```
+
+The `drift.lock` line of a member not checked stays. With `--format json`, `standing` lists every accepted mined rule with its counts and all the reasons ([Output and JSON Reference](Output-and-JSON-Reference#drift-check---format-json)). None of this changes the exit code.
+
+**Stale mined rules.** On a check of the whole repository, an accepted mined rule is stale when its evidence no longer holds:
+
+- `its role has N member(s) now, under the 8 a mined rule needs`;
+- `H of the T members Drift can tell follow it now, under the 75% a mined rule needs`.
+
+A stale rule advises until a person looks: `drift: [<id>] mined rule is stale: <why>, so it advises until a person looks: `drift review --advise <id>` keeps it as advice, `drift review --reject <id>` drops it`. A check of named files does not decide staleness. A promoted practice has its own staleness ([Stale: the way is gone](Practices-Map#stale-the-way-is-gone)).
 
 ## `drift.lock`
 
-`drift.lock` lists the legacy violations Drift found when you ran `init`, or when a person promoted a practice: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every proposal, while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
+`drift.lock` lists the legacy violations Drift found when you ran `init`, or when a person promoted a practice: the outliers that already existed, one `<convention id> <path#symbol>` per line, sorted. Below each, a comment line `#~ <convention id> <fingerprint> <path#symbol>` records a fingerprint of the member's code ([Files Drift Writes](Files-Drift-Writes#driftlock)). Legacy code never fails a check; only new violations do. To shrink the lock, fix the code. Drift only ever removes lines; people add them, which is what makes `drift.lock merge=union` in `.gitattributes` safe for parallel branches. The lock covers every mined proposal (a proposal from the map is baselined only once a person accepts it), while `drift check` counts the legacy violations of accepted conventions only, so its legacy count is smaller until you accept them all.
 
-Moving a file keeps its legacy violations quiet in pull-request mode, while a plain `drift check` reports them because they no longer match their `drift.lock` key. See [Drift in CI](Drift-in-CI).
+**Moved code.** When a legacy member moves to another file with its name and code unchanged, its fingerprint still matches. On a check of the whole repository, a violation whose own `path#symbol` is not in the lock is baselined when its fingerprint and name match a fingerprint line of the same convention whose member is gone from the code, and only when that is one gone member for one new violation: a copy of baselined code next to the original is new, and so is a new violation beside a deleted one that reads the same. A check of one file never concludes a move. A lock written before fingerprints works as before: a moved member no longer matches its key, so a plain `drift check` reports it, while pull-request mode keeps it quiet. See [Drift in CI](Drift-in-CI).
+
+**Re-running `drift init`.** Only a convention new to the policy has its violations baselined. An existing one is never baselined again, even once all its old violations are fixed: a violation added since is reported, not recorded. Existing lock lines gain their fingerprint line.
+
+**What a person accepted.** The first time `drift init` meets a convention accepted, it keeps the evidence as it stood beside the convention, under `accepted_evidence` (`role_size`, `holders`, `total`, `lower_bound`). `drift init` rewrites `evidence` on every run, so this is how a reader tells that the role a block was accepted on has since shrunk. In `.drift/conventions.yaml` accepted conventions come first, then proposed, then rejected; decided conventions are ordered by id, so a run that only refreshes evidence moves no line of what people decided, and proposals stay strongest first.
 
 ## Outliers and set-apart files, in short
 
@@ -245,7 +318,8 @@ Moving a file keeps its legacy violations quiet in pull-request mode, while a pl
 | Marked fine (`exceptions`) | an outlier a reviewer approved with a reason | `.drift/conventions.yaml` | listed as exempt, with the reason |
 | Set apart (`different_kind`) | files whose members are a different kind of thing | `.drift/conventions.yaml` | exempt by path, code `different_kind` |
 | Exempt by mining (`exempt` in `census --json`) | members a rule is not about: the rule's own target, an opt-out through a decorator of the wrapped package, and similar | computed | never reported by `check` or the hooks |
-| `drift-ignore` | a comment above a declaration | source | suppresses one violation, with a reason |
+| Not checked (mined rule) | a member of an accepted mined rule whose rule Drift could not read for it | computed each run | counted by `drift check` (`standing`), never reported, never fails; its lock line stays |
+| `drift-ignore` | a comment above a declaration, or at the top of a file | source | suppresses one violation, with a reason |
 
 ## Monorepos
 

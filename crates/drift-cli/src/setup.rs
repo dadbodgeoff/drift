@@ -141,6 +141,10 @@ pub enum Kind {
     Deployment,
     /// The Terraform target group that sends requests to a code directory.
     Terraform,
+    /// Which application a platform's file deploys, where the file does not say.
+    Platform,
+    /// The Kubernetes workload that runs a code directory.
+    Kubernetes,
     /// A helper Drift found a check in.
     Check,
     /// Something `drift investigate` lists: an instrument Drift did not read, a check it
@@ -315,6 +319,15 @@ pub struct Question {
 }
 
 impl Question {
+    /// The compose file a deployment question is about (`None` for any other kind):
+    /// what the guided flow names in its own question (`crate::guided`).
+    pub(crate) fn deployment_file(&self) -> Option<&str> {
+        match &self.subject {
+            Subject::Deployment { file, .. } => Some(file.as_str()),
+            _ => None,
+        }
+    }
+
     /// The config its counts start from (the check questions start from the file as
     /// it is).
     fn base_or_text(&self, text: &str) -> String {
@@ -352,6 +365,17 @@ enum Write {
         group: String,
         code: String,
     },
+    /// `security.platforms`: what a platform's file deploys runs this code.
+    Platform {
+        file: String,
+        code: String,
+    },
+    /// `security.kubernetes`: the workload (`[namespace/]Kind/name`) runs `code`.
+    Runs {
+        workload: String,
+        container: Option<String>,
+        code: String,
+    },
     Practice {
         concern: String,
         symbol: String,
@@ -370,6 +394,8 @@ impl Write {
             Write::Internal(_) => vec!["security", "internal"],
             Write::Public(_) => vec!["security", "public"],
             Write::Tie { .. } => vec!["security", "terraform"],
+            Write::Platform { .. } => vec!["security", "platforms"],
+            Write::Runs { .. } => vec!["security", "kubernetes"],
             Write::Practice { concern, .. } => vec!["practices", concern.as_str()],
         }
     }
@@ -386,6 +412,21 @@ impl Write {
             } => format!(
                 "- {{target: {}, code: {}}}",
                 quoted(&format!("{module}#aws_lb_target_group.{group}")),
+                quoted(code)
+            ),
+            Write::Platform { file, code } => {
+                format!("- {{file: {}, code: {}}}", quoted(file), quoted(code))
+            }
+            Write::Runs {
+                workload,
+                container,
+                code,
+            } => format!(
+                "- {{workload: {}, {}code: {}}}",
+                quoted(workload),
+                container
+                    .as_ref()
+                    .map_or(String::new(), |c| format!("container: {}, ", quoted(c))),
                 quoted(code)
             ),
             Write::Practice { symbol, label, .. } => {
@@ -405,6 +446,18 @@ impl Write {
                 "target": format!("{module}#aws_lb_target_group.{group}"),
                 "code": code,
             })),
+            Write::Platform { file, code } => Entry::Item(json!({
+                "file": file,
+                "code": code,
+            })),
+            Write::Runs {
+                workload,
+                container,
+                code,
+            } => Entry::Item(match container {
+                Some(c) => json!({"workload": workload, "container": c, "code": code}),
+                None => json!({"workload": workload, "code": code}),
+            }),
             Write::Practice { symbol, label, .. } => Entry::Pair(symbol.clone(), json!(label)),
         }
     }
@@ -426,6 +479,26 @@ impl Write {
                 .push(drift_mine::policy::TerraformTie {
                     module: module.clone(),
                     group: Some(group.clone()),
+                    code: code.clone(),
+                }),
+            Write::Platform { file, code } => {
+                cfg.security
+                    .platforms
+                    .push(drift_mine::policy::PlatformTie {
+                        file: file.clone(),
+                        code: code.clone(),
+                    })
+            }
+            Write::Runs {
+                workload,
+                container,
+                code,
+            } => cfg
+                .security
+                .kubernetes
+                .push(drift_mine::policy::KubernetesTie {
+                    workload: workload.clone(),
+                    container: container.clone(),
                     code: code.clone(),
                 }),
             Write::Practice {
@@ -469,6 +542,24 @@ fn config_text(cfg: &DriftConfig) -> String {
         j(json!(sec.public)),
         j(json!(ties))
     );
+    if !sec.platforms.is_empty() {
+        out = out.replace(
+            "  not_deployed:\n",
+            &format!(
+                "  platforms: {}\n  not_deployed:\n",
+                j(json!(sec.platforms))
+            ),
+        );
+    }
+    if !sec.kubernetes.is_empty() {
+        out = out.replace(
+            "  not_deployed:\n",
+            &format!(
+                "  kubernetes: {}\n  not_deployed:\n",
+                j(json!(sec.kubernetes))
+            ),
+        );
+    }
     for p in &sec.not_deployed {
         if sec.on_agents_word.contains(p) {
             out.push_str(&format!(
@@ -728,6 +819,14 @@ fn ours<'a>(
                     .get("code")
                     .and_then(Value::as_str)
                     .is_some_and(|c| id_of("terraform", c) == id),
+                (["security", "platforms"], Entry::Item(v)) => v
+                    .get("file")
+                    .and_then(Value::as_str)
+                    .is_some_and(|f| id_of("platform", f) == id),
+                (["security", "kubernetes"], Entry::Item(v)) => v
+                    .get("code")
+                    .and_then(Value::as_str)
+                    .is_some_and(|c| id_of("kubernetes", c) == id),
                 (["security", "internal"], Entry::Item(Value::String(d))) => {
                     all_inside && inside.contains(d)
                 }
@@ -796,8 +895,8 @@ fn row_key(e: &drift_mine::security::EntryRow) -> RowKey {
     )
 }
 
-/// An exposure in words.
-fn reach(e: Exposure) -> &'static str {
+/// An exposure in words (the guided flow says the same, `crate::guided`).
+pub(crate) fn reach(e: Exposure) -> &'static str {
     match e {
         Exposure::Public => "reachable from the internet",
         Exposure::Unknown => "unknown",
@@ -982,6 +1081,8 @@ impl<'a> Setup<'a> {
         let mut out = Vec::new();
         out.extend(self.deployments(&records, &ids));
         out.extend(self.terraform(&records));
+        out.extend(self.platforms(&records));
+        out.extend(self.kubernetes(&records));
         out.extend(self.checks(&records));
         let (proposed, rejected) = (proposals(&self.text), rejections(&self.text));
         for q in &mut out {
@@ -1513,6 +1614,255 @@ impl<'a> Setup<'a> {
         out
     }
 
+    /// Which application a platform's file deploys, where it deploys a directory whose
+    /// entry points are all in packages below it and does not say which
+    /// ([`drift_mine::security::platforms::Unit::candidates`]): one question per file
+    /// (or per service of it), one choice per application. An answer writes
+    /// `security.platforms`, and is a proposal from an agent: the file may say the
+    /// code is reached only from inside.
+    fn platforms(&self, records: &BTreeMap<String, Record>) -> Vec<Question> {
+        // The boundary with every answer but the ties: a question stays listed once
+        // answered, and what it would move is counted from there.
+        let tied: Vec<&str> = records
+            .iter()
+            .filter(|(_, r)| r.answer.starts_with("tie-") || r.answer == "none")
+            .map(|(id, _)| id.as_str())
+            .collect();
+        let base = without(&self.text, &tied);
+        let inv = self.inventory(&base);
+        let mut out = Vec::new();
+        for u in inv
+            .boundaries
+            .platforms
+            .iter()
+            .filter(|u| !u.candidates.is_empty())
+        {
+            let target = u.target();
+            let id = id_of("platform", &target);
+            let here = without(&self.text, &[&id]);
+            let held = inv
+                .entry_points
+                .iter()
+                .filter(|e| {
+                    e.exposure == Exposure::Unknown
+                        && !e.local
+                        && u.candidates.iter().any(|c| under(&e.path, c))
+                })
+                .count();
+            let apps: Vec<&str> = u.candidates.iter().map(|c| shown(c)).collect();
+            let mut text = vec![format!(
+                "{held} route{} of {} read{} as unknown: {}, and {}.",
+                if held == 1 { "" } else { "s" },
+                names(&apps),
+                if held == 1 { "s" } else { "" },
+                u.says,
+                u.untied
+                    .as_deref()
+                    .unwrap_or("the file does not say which application it deploys")
+            )];
+            text.push(format!(
+                "Drift will take your word for which application `{target}` deploys, and will read the file for how that application is reached."
+            ));
+            let mut choices: Vec<Choice> = u
+                .candidates
+                .iter()
+                .enumerate()
+                .map(|(k, dir)| {
+                    let write = Write::Platform {
+                        file: target.clone(),
+                        code: dir.clone(),
+                    };
+                    Choice {
+                        answer: format!("tie-{}", k + 1),
+                        label: format!("It deploys `{dir}`"),
+                        effect: String::new(),
+                        writes: Some(write.line()),
+                        writes_under: Some(write.path().join(".")),
+                        moves: 0,
+                        needs_person: true,
+                        write: vec![write],
+                        uncounted: true,
+                    }
+                })
+                .collect();
+            choices.push(plain_choice(
+                "none",
+                "It deploys none of these",
+                "Nothing changes: Drift notes your answer and the routes stay unknown.",
+            ));
+            choices.push(skip_choice());
+            let mut evidence: Vec<&str> = vec![target.as_str(), u.says.as_str()];
+            evidence.extend(u.candidates.iter().map(String::as_str));
+            out.push(Question {
+                command: format!("drift setup --answer {id}=<answer>"),
+                id,
+                kind: Kind::Platform,
+                status: Status::Open,
+                answered: None,
+                answered_by: None,
+                proposal: None,
+                rejected: None,
+                text,
+                note: None,
+                question: format!("Which application does `{target}` deploy?"),
+                choices,
+                default: SKIP,
+                evidence: digest(&evidence),
+                how_to_decide: evidence::how_to_decide(Kind::Platform, false),
+                context: None,
+                subject: Subject::Platform {
+                    file: u.file.clone(),
+                    dirs: u.candidates.clone(),
+                },
+                weight: held,
+                asked: format!("which application `{target}` deploys"),
+                base: here,
+            });
+        }
+        out.sort_by(|a, b| b.weight.cmp(&a.weight).then(a.id.cmp(&b.id)));
+        out
+    }
+
+    /// Which workload of the Kubernetes manifests runs a code directory whose routes
+    /// read as unknown, where Drift cannot tie one itself: the image the workload
+    /// runs is not one the repository is seen to build. One question for each such
+    /// directory, the workloads that look like it first.
+    fn kubernetes(&self, records: &BTreeMap<String, Record>) -> Vec<Question> {
+        let ours: Vec<&str> = records
+            .iter()
+            .filter(|(_, r)| r.answer.starts_with("runs-") || r.answer == "not-here-k8s")
+            .map(|(id, _)| id.as_str())
+            .collect();
+        let base = without(&self.text, &ours);
+        let inv = self.inventory(&base);
+        let workloads = inv.boundaries.untied_workloads().to_vec();
+        if workloads.is_empty() {
+            return Vec::new();
+        }
+        let mut dirs: BTreeMap<String, usize> = BTreeMap::new();
+        for e in inv.entry_points.iter().filter(|e| {
+            e.exposure == Exposure::Unknown && !e.local && !inv.boundaries.kubernetes_runs(&e.path)
+        }) {
+            *dirs.entry(code_dir(&inv, &e.path, &e.package)).or_default() += 1;
+        }
+        let mut out = Vec::new();
+        for (dir, held) in &dirs {
+            let svc = shown(dir);
+            let id = id_of("kubernetes", dir);
+            let here = without(&self.text, &[&id]);
+            let routes: Vec<String> = inv
+                .entry_points
+                .iter()
+                .filter(|e| under(&e.path, dir))
+                .filter_map(|e| e.route.clone())
+                .collect();
+            // The workloads whose name is like the directory's first, then those
+            // reached from outside; one choice for each container.
+            let name_of = |w: &drift_mine::security::Workload| {
+                core(w.object.rsplit('/').next().unwrap_or_default())
+            };
+            let mut ranked: Vec<&drift_mine::security::Workload> = workloads.iter().collect();
+            ranked.sort_by_key(|w| (name_of(w) != core(svc), !w.reached, w.object.clone()));
+            let like = ranked.first().filter(|w| name_of(w) == core(svc)).copied();
+            let mut text = vec![format!(
+                "{held} route{} of {svc} read{} as unknown: the repository's Kubernetes manifests run workloads whose images Drift does not see the repository build, and one of them may run {svc}.",
+                if *held == 1 { "" } else { "s" },
+                if *held == 1 { "s" } else { "" },
+            )];
+            if let Some(w) = like {
+                text.push(format!(
+                    "Workload `{}` ({}) looks like the one that runs {svc}: its name is like it.",
+                    w.object, w.at
+                ));
+            }
+            text.push(format!(
+                "Drift will take your word that the workload runs {svc}, and will read what reaches it from outside to tell which routes are internet-facing and which are internal."
+            ));
+            let mut choices = Vec::new();
+            for w in &ranked {
+                let containers: Vec<Option<&String>> = match w.containers.as_slice() {
+                    [_] | [] => vec![None],
+                    many => many.iter().map(Some).collect(),
+                };
+                for c in containers {
+                    let write = Write::Runs {
+                        workload: w.object.clone(),
+                        container: c.cloned(),
+                        code: dir.clone(),
+                    };
+                    let k = choices.len();
+                    choices.push(Choice {
+                        answer: format!("runs-{}", k + 1),
+                        label: match c {
+                            Some(c) => format!("`{}`, container `{c}` ({})", w.object, w.images.join(", ")),
+                            None => format!("`{}` ({})", w.object, w.images.join(", ")),
+                        },
+                        effect: if k == 0 {
+                            String::new()
+                        } else {
+                            "Drift reads what reaches this workload for this code and says what moved."
+                                .to_string()
+                        },
+                        writes: Some(write.line()),
+                        writes_under: Some(write.path().join(".")),
+                        moves: 0,
+                        needs_person: true,
+                        write: vec![write],
+                        uncounted: k == 0,
+                    });
+                }
+            }
+            choices.push(plain_choice(
+                "not-here-k8s",
+                "None of these workloads runs it",
+                "Nothing changes: Drift notes your answer and the routes stay unknown.",
+            ));
+            choices.push(skip_choice());
+            let listed: Vec<String> = ranked
+                .iter()
+                .map(|w| {
+                    format!(
+                        "{} {} {}",
+                        w.object,
+                        w.images.join(","),
+                        w.containers.join(",")
+                    )
+                })
+                .collect();
+            let evidence: Vec<&str> = std::iter::once(dir.as_str())
+                .chain(listed.iter().map(String::as_str))
+                .collect();
+            out.push(Question {
+                command: format!("drift setup --answer {id}=<answer>"),
+                id,
+                kind: Kind::Kubernetes,
+                status: Status::Open,
+                answered: None,
+                answered_by: None,
+                proposal: None,
+                rejected: None,
+                text,
+                note: None,
+                question: format!("Which workload runs {svc}?"),
+                choices,
+                default: SKIP,
+                evidence: digest(&evidence),
+                how_to_decide: evidence::how_to_decide(Kind::Kubernetes, false),
+                context: None,
+                subject: Subject::Workload {
+                    dir: dir.clone(),
+                    workloads: ranked.iter().map(|w| (*w).clone()).collect(),
+                    routes,
+                },
+                weight: *held,
+                asked: format!("which Kubernetes workload runs {svc}"),
+                base: here,
+            });
+        }
+        out.sort_by(|a, b| b.weight.cmp(&a.weight).then(a.id.cmp(&b.id)));
+        out
+    }
+
     fn checks(&self, records: &BTreeMap<String, Record>) -> Vec<Question> {
         let ours: Vec<&str> = records
             .iter()
@@ -1748,10 +2098,18 @@ impl<'a> Setup<'a> {
         let records = records(&self.text);
         let ids: Vec<&str> = records.keys().map(String::as_str).collect();
         let mut open: Vec<String> = Vec::new();
-        for kind in [Kind::Deployment, Kind::Terraform, Kind::Check] {
+        for kind in [
+            Kind::Deployment,
+            Kind::Terraform,
+            Kind::Platform,
+            Kind::Kubernetes,
+            Kind::Check,
+        ] {
             let qs = match kind {
                 Kind::Deployment => self.deployments(&records, &ids),
                 Kind::Terraform => self.terraform(&records),
+                Kind::Platform => self.platforms(&records),
+                Kind::Kubernetes => self.kubernetes(&records),
                 Kind::Check => self.checks(&records),
                 Kind::Investigate => Vec::new(),
             };
@@ -2012,7 +2370,8 @@ impl<'a> Setup<'a> {
         .map_err(unsafe_edit)?;
         self.save(text)?;
         Ok(format!(
-            "proposed, waiting for a person: nothing changes until a person confirms it (`drift setup --review`, or `drift setup --confirm {id}`). If confirmed: {}",
+            "proposed, waiting for a person: nothing changes until a person confirms it (`drift setup --review`, or `drift setup --confirm {}`). If confirmed: {}",
+            drift_mine::report::shell_word(id),
             choice.effect
         ))
     }
@@ -2025,12 +2384,17 @@ impl<'a> Setup<'a> {
             bail!("{id} has no answer from an agent waiting in {CONFIG_FILE}");
         };
         let q = self.question(id).with_context(|| {
-            format!("the question is no longer asked; `drift setup --reject {id}` takes the proposal out")
+            format!(
+                "the question is no longer asked; `drift setup --reject {}` takes the proposal out",
+                drift_mine::report::shell_word(id)
+            )
         })?;
         if p.seen != q.evidence {
             bail!(
-                "what {id} rests on changed since the agent proposed `{}`: answer it yourself (`drift setup --answer {id}=<answer>`) or `drift setup --reject {id}`",
-                p.answer
+                "what {id} rests on changed since the agent proposed `{}`: answer it yourself (`drift setup --answer {}=<answer>`) or `drift setup --reject {}`",
+                p.answer,
+                drift_mine::report::shell_word(id),
+                drift_mine::report::shell_word(id)
             );
         }
         let Some(choice) = q.choices.iter().find(|c| c.answer == p.answer) else {
@@ -2142,8 +2506,9 @@ impl<'a> Setup<'a> {
                 .sum();
         if inside > 0 {
             bail!(
-                "taking out {id} would make {inside} route{} reachable only from inside: a person does that (`drift setup --forget {id}` in a terminal)",
-                if inside == 1 { "" } else { "s" }
+                "taking out {id} would make {inside} route{} reachable only from inside: a person does that (`drift setup --forget {}` in a terminal)",
+                if inside == 1 { "" } else { "s" },
+                drift_mine::report::shell_word(id)
             );
         }
         self.save(text)
@@ -2921,6 +3286,58 @@ Every answer is something Drift cannot prove, and you can be wrong in the same w
    Several at once, in one run (each answer otherwise reads the whole repository again): `drift setup --answers answers.json`, a list of `{"id": "S-1a2b", "answer": "tests-only", "reason": "...", "evidence": ["path/to/file:12"]}`.
 4. When you are done, tell the person how many of your answers wait for them (`waiting` in `drift setup --json`; `drift setup --list` shows them first), and that `drift setup --review` shows each with your reason so they can confirm or reject it.
 "#;
+
+// ---------- what the guided flow records ----------
+
+/// The answer recorded for a person's "no" to a question of the guided flow
+/// (`crate::guided`) that writes nothing of its own when declined: the security baseline
+/// and each agent integration. A "no" to a proposal is recorded in the conventions file
+/// (rejected), and one to a compose file by its deployment question ("it deploys").
+pub const DECLINED: &str = "declined";
+
+/// The id under `setup:` of a person's "no" to the guided flow's question `key`
+/// (`baseline`, `agents-md`, `claude-settings`): `drift setup --forget <id>` takes it
+/// out, so the question is asked again.
+pub fn declined_id(key: &str) -> String {
+    id_of("guided", key)
+}
+
+impl Setup<'_> {
+    /// Whether a person said no to the guided flow's question `key` ([`declined_id`]).
+    pub fn declined(&self, key: &str) -> bool {
+        records(&self.text)
+            .get(&declined_id(key))
+            .is_some_and(|r| r.answer == DECLINED)
+    }
+
+    /// Record a person's "no" to the guided flow's question `key`, `asked` saying what
+    /// was asked ("whether to write the security baseline"): one line under `setup:`
+    /// with a comment above it, as every answer is written, so a later run does not ask
+    /// it again. Nothing else is written. Returns the id.
+    pub fn record_declined(&mut self, key: &str, asked: &str) -> anyhow::Result<String> {
+        self.refresh()?;
+        let id = declined_id(key);
+        if self.declined(key) {
+            return Ok(id);
+        }
+        let fields: Vec<(&str, Value)> = vec![("answer", json!(DECLINED)), ("seen", json!(key))];
+        let comment = format!(
+            "# drift setup {id} ({}), asked {}: no",
+            today(),
+            oneline(asked)
+        );
+        let text = yaml::insert(
+            &self.text,
+            &["setup"],
+            &comment,
+            &format!("{id}: {}", flow(&fields)),
+            &Entry::Pair(id.clone(), flow_value(&fields)),
+        )
+        .map_err(|e| anyhow::anyhow!("{CONFIG_FILE} cannot be edited safely ({e:#})"))?;
+        self.save(text)?;
+        Ok(id)
+    }
+}
 
 /// How many questions only a person can answer are open, for `drift init`.
 pub fn open_questions(root: &Path, facts: &RepoFacts) -> usize {

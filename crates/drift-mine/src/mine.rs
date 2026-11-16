@@ -7,6 +7,13 @@
 //! - the 95% Wilson lower bound of `holders / members` is at least [`MIN_LOWER_BOUND`];
 //! - lift (share in the role over share in the whole repo) is at least [`MIN_LIFT`].
 //!
+//! So [`MIN_ROLE_SIZE`] is the smallest role mined, not the smallest that can yield a
+//! plain rule: with at least one outlier, the lower bound first reaches 0.75 at 18 of 19,
+//! so a plain rule needs a role of 19 or more (a layering rule, at
+//! `AVOID_IMPORT_MIN_LOWER_BOUND` 0.9, about 53). Smaller roles still yield the drafts of
+//! the generators with tests of their own (variant sets, naming, carried universals).
+//! What each gate drops can be listed (`drift census --why`, [`crate::funnel`]).
+//!
 //! Alternative wrappers that fill the same slot (`withWorkspace` or `withSession`)
 //! are counted together as one variant-set convention. Candidates are ranked by a
 //! deterministic score and capped. All arithmetic that affects ordering is exact
@@ -23,6 +30,8 @@ use crate::roles::{FileKinds, RoleSelector, Unit, View, units};
 use crate::security;
 use crate::vocab::{grant, refuse};
 
+/// The smallest role mined. Not the smallest role a plain rule can be proposed for: the
+/// outlier rule and [`MIN_LOWER_BOUND`] make that 19 (see the module doc).
 pub const MIN_ROLE_SIZE: usize = 8;
 /// Conventions in smaller roles may advise but not block.
 pub const MIN_BLOCK_ROLE_SIZE: usize = 15;
@@ -30,6 +39,9 @@ pub const MIN_LOWER_BOUND: f64 = 0.75;
 pub const MIN_LIFT: f64 = 1.5;
 /// Higher bar for calls into external packages and built-ins.
 pub const MIN_LIFT_EXTERNAL_CALL: f64 = 3.0;
+/// Drafts kept per role, by score. Unlike the per-repository caps ([`cap_shown`]) it also
+/// counts drafts whose cards the show policy hides, and like them it runs before
+/// [`narrow`] and [`merge_siblings`] (PLAN-R14 WS-H(a), (b); not changed: mining is frozen).
 pub const MAX_PER_ROLE: usize = 5;
 pub const DEFAULT_MAX_PER_REPO: usize = 15;
 /// A deeper role's convention is kept over its parent's only if its bound is this much higher.
@@ -102,6 +114,45 @@ const NON_CONVENTION_CONTROLS: &[&str] = &[
     // (`practices::authz`).
     drift_core::controls::RETURNS_EARLY_FOR_OWN,
 ];
+/// Control facts added for the listed reading only (the practice map, the security
+/// inventory, promoted practices) since the study pre-registered what mining reads.
+/// The linkers keep them out of the measured copy that mining reads; this list is a
+/// second line of defence, so that a linker that fails to strip one (a skipped
+/// relink) still cannot turn it into a mined convention.
+///
+/// Why it cannot change what is mined where the measured filter works: no control
+/// with one of these values, or starting with one of the prefixes in
+/// [`LISTED_ONLY_CONTROL_PREFIXES`], existed when the study's binary was built (none of
+/// the strings occurs in it), and the measured copy holds none of them. So the filter
+/// only removes what should already be absent.
+const LISTED_ONLY_CONTROLS: &[&str] = &[
+    drift_core::controls::INPUT_TYPED,
+    drift_core::controls::NO_RESPONSE_MODEL,
+    drift_core::controls::RETURNS_VALUE,
+    drift_core::controls::ANSWERS_BY_RETURN,
+    drift_core::controls::INPUT_UNREAD,
+    drift_core::controls::UNREAD_RESPONDS,
+    // A `Member::unread` value; listed here in case one is ever written as a control.
+    drift_core::CATCH_RESPONDS,
+];
+/// The prefix forms of [`LISTED_ONLY_CONTROLS`] (`refusal_status:403`,
+/// `parses_input:<callee>\t<binding>`, ...). The three `*_at:` prefixes of the same kind
+/// are left out in [`features`] next to the others of their stream.
+const LISTED_ONLY_CONTROL_PREFIXES: &[&str] = &[
+    drift_core::controls::REFUSAL_STATUS,
+    drift_core::controls::PARSES_INPUT,
+    drift_core::controls::PIPES_INPUT,
+    drift_core::controls::REFUSES_SECRET,
+    drift_core::controls::INPUT_HANDED,
+];
+
+/// Whether a control is one of the listed reading's only ([`LISTED_ONLY_CONTROLS`]).
+fn listed_only_control(c: &str) -> bool {
+    LISTED_ONLY_CONTROLS.contains(&c)
+        || LISTED_ONLY_CONTROL_PREFIXES
+            .iter()
+            .any(|p| c.starts_with(*p))
+}
 /// Rules in one role whose holder sets overlap this much are reported once.
 const NEAR_DUPLICATE: f64 = 0.9;
 
@@ -190,7 +241,43 @@ pub enum Rule {
     Practice {
         concern: String,
         any_of: Vec<String>,
+        /// Mechanisms accepted whole: a unit follows when one of its uses is of one of
+        /// these mechanisms, whichever instrument it names (the mechanism of a use is
+        /// what the classifier names it by, [`crate::practices::mechanism_of`]: `wrap`,
+        /// `permission`, `dependency`, ...). For a place whose rule is "a membership
+        /// check, by any of our permission classes", which no list of ways can keep up
+        /// with. Never a list of names: the vocabulary is the classifier's own. Absent
+        /// when empty, so a practice promoted by its ways is written as before.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        any_mechanism: Vec<String>,
+        /// Any way the classifier says enforces the concern follows (authentication:
+        /// a use that turns a caller away; authorization: a check it proved), named or
+        /// not in `any_of`: "every entry point here signs the caller in, however". A
+        /// unit with nothing found, or one that only identifies the caller, breaks it;
+        /// a unit the classifier cannot tell is never a violation. Absent when false.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        any_enforcing: bool,
+        /// The one file the practice holds in (repo-relative), when its place is a
+        /// file rather than its role's directory
+        /// ([`crate::practices::promote::Place::file`]). Absent for a directory, so a
+        /// practice of a directory is written as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        in_file: Option<String>,
+        /// The literal route prefix the practice holds under, in its role's package
+        /// (`/api/workspaces/[*]`, [`crate::practices::promote::Place::route`]). Absent
+        /// for a directory, so a practice of a directory is written as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        under_route: Option<String>,
     },
+    /// Every import of the file is of a package its own `package.json` declares (any
+    /// section), a Node built-in, or code of its own package: no phantom dependency that
+    /// resolves only because another workspace package or the root installs it. Never
+    /// mined: proposed from the map ([`crate::from_map::manifest`]) for one workspace
+    /// package, its role that package's files. What counts as declared, and what Drift
+    /// cannot check, is [`crate::imports_declared`]'s to say; a policy holding it is
+    /// written as format [`crate::policy::POLICY_VERSION_RULES`], which an older Drift
+    /// refuses instead of failing to parse.
+    ImportsDeclared,
 }
 
 impl Rule {
@@ -555,9 +642,13 @@ fn layer_signals<'a>(
         })
 }
 
-/// The first module a file imports that breaks a layering rule (`avoids:import`), for
-/// the advice that names the import to change; `None` for any other rule or unit.
+/// The first module a file imports that breaks a layering rule (`avoids:import`) or
+/// imports an undeclared package ([`Rule::ImportsDeclared`]), for the advice that names
+/// the import to change; `None` for any other rule or unit.
 pub fn offending_import(rule: &Rule, view: &View, ctx: &RepoContext) -> Option<String> {
+    if *rule == Rule::ImportsDeclared {
+        return crate::imports_declared::first_break(view, ctx.imports_declared()).map(|(m, _)| m);
+    }
     let (Rule::Avoids { signal }, View::File(f)) = (rule, view) else {
         return None;
     };
@@ -890,6 +981,61 @@ fn derivation_open(f: &FileFacts, s: &Symbol, ctx: &RepoContext) -> bool {
             .iter()
             .filter(|w| w.kind == WrapKind::Call)
             .any(|w| derived_forms(&w.wrapper, ctx).open)
+}
+
+/// What `drift check` can say of one member of an accepted convention's role
+/// ([`Rule::tell_in`]). Mining never asks it: it reads [`Rule::holds_in`], whose
+/// answer is two-valued and unchanged, so what is mined stays as it was measured.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Told {
+    /// It holds, or the rule is not about it.
+    Holds,
+    /// It breaks the rule, and what decides that was read.
+    Breaks,
+    /// It does not hold as the facts read it, but the fact that decides it is one
+    /// Drift did not read: plain words saying which. Never a violation.
+    CannotTell(String),
+}
+
+/// Why a member's wrappers of `kind` cannot tell a wrapper rule ([`Rule::unread_in`]):
+/// a wrapper that does not resolve to code Drift read (of any kind: an unresolved
+/// base or decorator may be the rule's), or, for a call wrapper, one whose chain of
+/// bindings ends in a file the facts lack, or that is (or is built on) a value a
+/// factory call returns ([`drift_core::Symbol::made_by`]): what it does is in the
+/// factory, which a wrapper rule does not follow.
+fn unread_wrapper(s: &Symbol, kind: WrapKind, ctx: &RepoContext) -> Option<String> {
+    for w in s.wraps.iter().filter(|w| w.kind == kind) {
+        if w.wrapper.starts_with("unresolved:") {
+            return Some(format!(
+                "it is wrapped in {}, which does not resolve to code Drift read",
+                short(&w.wrapper)
+            ));
+        }
+        if kind != WrapKind::Call {
+            continue;
+        }
+        let derived = derived_forms(&w.wrapper, ctx);
+        if derived.open {
+            return Some(format!(
+                "it is wrapped in {}, which is built in a file Drift did not read",
+                short(&w.wrapper)
+            ));
+        }
+        let bindings = std::iter::once(norm_ref(&w.wrapper).into_owned())
+            .chain(derived.forms.into_iter().map(|(f, _)| f));
+        for b in bindings {
+            if let Some(def) = ctx.definition(&b)
+                && !def.made_by.is_empty()
+            {
+                return Some(format!(
+                    "it is wrapped in {}, which {}() builds: what it does is in that factory, which Drift does not follow for this rule",
+                    short(&w.wrapper),
+                    short(&def.made_by)
+                ));
+            }
+        }
+    }
+    None
 }
 
 /// The symbol calls `callee`, is wrapped by it (a decorator or wrapper call), or
@@ -2179,6 +2325,7 @@ impl Rule {
             | Rule::RegisteredIn { .. }
             | Rule::MirrorsKeys { .. }
             | Rule::ImportsFrom { .. }
+            | Rule::ImportsDeclared
             | Rule::Practice { .. } => return false,
         };
         let callee = matches!(
@@ -2914,6 +3061,9 @@ impl Rule {
             (Rule::ImportsFrom { instead_of, .. }, View::Symbol(_, symbol)) => {
                 !references(symbol).any(|r| instead_of.iter().any(|a| same_ref(&r, a)))
             }
+            (Rule::ImportsDeclared, View::File(f)) => {
+                crate::imports_declared::holds(f, ctx.imports_declared())
+            }
             (_, View::Symbol(file, own)) => {
                 // A plain alias of a function does what the function does ([`features`]).
                 let (file, symbol) = ctx.alias_target(file, own).unwrap_or((file, own));
@@ -2952,6 +3102,86 @@ impl Rule {
                 }
             }
             _ => true,
+        }
+    }
+
+    /// [`Rule::holds_in`] as `drift check` reads an accepted convention: a member that
+    /// does not hold it breaks it only when the fact that decides it was read
+    /// ([`Rule::unread_in`]); otherwise Drift cannot tell, and says so. A unit Drift
+    /// could not read to the end is never a violation. Mining never calls this.
+    pub fn tell_in(&self, role: Option<&RoleSelector>, view: &View, ctx: &RepoContext) -> Told {
+        // A file's imports are three-valued one by one: a known break is a break, an
+        // import Drift could not judge leaves an otherwise clean file not checked.
+        if *self == Rule::ImportsDeclared && self.applies_in(role, view, ctx) {
+            return crate::imports_declared::tell(view, ctx.imports_declared());
+        }
+        if self.holds_in(role, view, ctx) {
+            return Told::Holds;
+        }
+        match self.unread_in(view, ctx) {
+            Some(why) => Told::CannotTell(why),
+            None => Told::Breaks,
+        }
+    }
+
+    /// Of a member that does not hold the rule as the facts read it, what the facts did
+    /// not read that decides it, in plain words; `None` when what decides it was read.
+    /// Per rule kind, only where the deciding fact can be opaque:
+    ///
+    /// - a wrapper rule: a wrapper of the rule's kind that does not resolve, or a call
+    ///   wrapper built where the facts do not follow ([`unread_wrapper`]);
+    /// - passing a key: a call of the callee that unpacks a value into its arguments
+    ///   ([`drift_core::SPLAT_KEY`]: it may pass any key);
+    /// - calling a function, or calling one before another: a body that hands a value
+    ///   to a call the facts do not record ([`drift_core::controls::UNREAD_CALL`]): the
+    ///   call the rule asks for may be that one;
+    /// - rendering a component: a rendered component that does not resolve.
+    ///
+    /// Every other kind decides from facts that are read whole (a file's directives,
+    /// imports and test file; a model's fields; a manifest; a name): `None`.
+    fn unread_in(&self, view: &View, ctx: &RepoContext) -> Option<String> {
+        let View::Symbol(file, own) = view else {
+            return None;
+        };
+        // A plain alias of a function does what the function does, as `satisfied` reads it.
+        let (_, symbol) = ctx.alias_target(file, own).unwrap_or((file, own));
+        match self {
+            Rule::WrappedBy { kind, .. } => unread_wrapper(symbol, *kind, ctx),
+            Rule::PassesKey { callee, .. } => symbol
+                .args
+                .iter()
+                .any(|a| {
+                    a.rsplit_once('@').is_some_and(|(c, rest)| {
+                        same_ref(c, callee)
+                            && rest
+                                .split_once(':')
+                                .is_some_and(|(_, k)| k == drift_core::SPLAT_KEY)
+                    })
+                })
+                .then(|| {
+                    format!(
+                        "its call of {}() unpacks a value into its arguments, so it may pass any key",
+                        short(callee)
+                    )
+                }),
+            Rule::Calls { .. } | Rule::Before { .. } => symbol
+                .controls
+                .iter()
+                .any(|c| c == drift_core::controls::UNREAD_CALL)
+                .then(|| {
+                    "it hands a value to a call Drift did not record (a method of a local or of an untyped parameter), which may be the call the rule asks for".to_string()
+                }),
+            Rule::Renders { .. } => symbol
+                .renders
+                .iter()
+                .find(|r| r.starts_with("unresolved:"))
+                .map(|r| {
+                    format!(
+                        "it renders {}, which does not resolve to code Drift read",
+                        short(r)
+                    )
+                }),
+            _ => None,
         }
     }
 
@@ -3081,8 +3311,13 @@ impl Rule {
             }
             // The words a person reads are the convention's summary, written from the
             // map's labels when it is promoted; this is the rule as the file holds it.
-            Rule::Practice { concern, any_of } => {
+            Rule::Practice {
+                concern, any_of, ..
+            } => {
                 format!("do {concern} one of these ways: {}", any_of.join(" or "))
+            }
+            Rule::ImportsDeclared => {
+                "import only the packages their package.json declares".to_string()
             }
         }
     }
@@ -3125,6 +3360,7 @@ impl Rule {
             Rule::Named { .. } => 6,
             Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } => 2,
             Rule::Practice { .. } => 0,
+            Rule::ImportsDeclared => 2,
         }
     }
 
@@ -3154,7 +3390,10 @@ impl Rule {
             Rule::ImportsFrom { source, .. } => source,
             Rule::HasTest | Rule::ModelHas { .. } | Rule::PackageHas { .. } => return 0.6,
             Rule::Named { .. } => return 0.5,
-            Rule::RegisteredIn { .. } | Rule::MirrorsKeys { .. } | Rule::Practice { .. } => {
+            Rule::RegisteredIn { .. }
+            | Rule::MirrorsKeys { .. }
+            | Rule::Practice { .. }
+            | Rule::ImportsDeclared => {
                 return 1.0;
             }
         };
@@ -3317,6 +3556,10 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::SINK_FED_MADE)
                     && !c.starts_with(drift_core::controls::PASSES_PARAM)
                     && !c.starts_with(drift_core::controls::PASSES_MADE)
+                    && !c.starts_with(drift_core::controls::SINK_FED_AT)
+                    && !c.starts_with(drift_core::controls::PASSES_AT)
+                    && !c.starts_with(drift_core::controls::PASSES_MADE_AT)
+                    && !listed_only_control(c)
                     && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
                     && !c.starts_with(drift_core::controls::REFUSES_WITHOUT)
                     && c != drift_core::controls::RETURNS_CREDENTIAL
@@ -4022,6 +4265,15 @@ fn mine_families(
     for c in &mined.candidates {
         crate::funnel::card(c, "proposed");
     }
+    // S21 (off by default, [`crate::gate_candidates`]): the proposals only a gate
+    // candidate made, counted under its name.
+    if crate::gate_candidates::any() {
+        for c in &mined.candidates {
+            if let Some(g) = crate::gate_candidates::marked(&c.id) {
+                crate::funnel::card(c, g.stage());
+            }
+        }
+    }
     mined
 }
 
@@ -4283,6 +4535,9 @@ fn mine_units_traced<'a>(
     // because they sit together (saleor's 20 email tasks in two `tasks.py` files).
     // The yield funnel (study only, [`crate::funnel`]): off, nothing is counted.
     let count = !unsplit_pass && crate::funnel::on();
+    // The per-candidate record (`census --why`, [`crate::funnel::record`]): off, nothing
+    // is recorded. Like the counts, it only reads what the gates decided.
+    let rec = !unsplit_pass && crate::funnel::recording();
     if count {
         for (r, members) in &roles {
             let lang = units_lang(members, &units);
@@ -4370,6 +4625,21 @@ fn mine_units_traced<'a>(
                     if count {
                         crate::funnel::rule(role, rule, lang, "indirect_base");
                     }
+                    if rec && crate::funnel::wants("indirect_base") {
+                        record_rule(
+                            role,
+                            rule,
+                            holders.len(),
+                            members,
+                            &units,
+                            "indirect_base",
+                            (
+                                Some(direct as f64),
+                                None,
+                                format!("{direct} of {} holders extend it directly", holders.len()),
+                            ),
+                        );
+                    }
                     continue;
                 }
                 if python_units(members, &units)
@@ -4378,12 +4648,42 @@ fn mine_units_traced<'a>(
                     if count {
                         crate::funnel::rule(role, rule, lang, "refines_base");
                     }
+                    if rec && crate::funnel::wants("refines_base") {
+                        record_rule(
+                            role,
+                            rule,
+                            holders.len(),
+                            members,
+                            &units,
+                            "refines_base",
+                            (
+                                None,
+                                None,
+                                "the outliers extend the general team base it refines".to_string(),
+                            ),
+                        );
+                    }
                     continue;
                 }
             }
             if optional_key(rule, holders, &units) {
                 if count {
                     crate::funnel::rule(role, rule, lang, "optional_key");
+                }
+                if rec && crate::funnel::wants("optional_key") {
+                    record_rule(
+                        role,
+                        rule,
+                        holders.len(),
+                        members,
+                        &units,
+                        "optional_key",
+                        (
+                            None,
+                            None,
+                            "most holders also call the callee without the key".to_string(),
+                        ),
+                    );
                 }
                 continue;
             }
@@ -4411,7 +4711,7 @@ fn mine_units_traced<'a>(
                 )
             }) {
                 drafts.push(d);
-            } else if count {
+            } else if count || rec {
                 let stage = rejected_at(
                     rule,
                     holders.len(),
@@ -4419,7 +4719,20 @@ fn mine_units_traced<'a>(
                     global[&(role.kind, *rule)],
                     kind_totals[&role.kind],
                 );
-                crate::funnel::rule(role, rule, lang, stage);
+                if count {
+                    crate::funnel::rule(role, rule, lang, stage);
+                }
+                if rec && crate::funnel::wants(stage) {
+                    let why = rejected_why(
+                        rule,
+                        stage,
+                        holders.len(),
+                        n,
+                        global[&(role.kind, *rule)],
+                        kind_totals[&role.kind],
+                    );
+                    record_rule(role, rule, holders.len(), members, &units, stage, why);
+                }
             }
         }
         drafts.extend(variant_set(
@@ -4484,6 +4797,28 @@ fn mine_units_traced<'a>(
         if count && let Some(stage) = why {
             crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, &units), stage);
         }
+        if rec && let Some(stage) = why {
+            record_draft(
+                d,
+                &units,
+                stage,
+                (
+                    Some(d.lb),
+                    None,
+                    // A layering rule's lift is no measurement: the dependency
+                    // direction is its evidence, and `lift` holds the threshold
+                    // (`AVOID_MIN_CONTRAST`). Said as such, never as a measured value.
+                    if matches!(&d.rule, Rule::Avoids { signal } if signal.starts_with("import:")) {
+                        format!(
+                            "lower bound {:.2} (a layering rule: no lift is measured)",
+                            d.lb
+                        )
+                    } else {
+                        format!("lower bound {:.2}, lift {:.2}", d.lb, d.lift)
+                    },
+                ),
+            );
+        }
         why.is_none()
     });
     supersede_parts(&mut drafts);
@@ -4493,12 +4828,83 @@ fn mine_units_traced<'a>(
     }
 
     let before = count.then(|| tally(&drafts, &units));
+    // For the record: every draft by id before `dedupe`, and those it did not keep after.
+    let deduped = (rec && crate::funnel::wants("duplicate")).then(|| {
+        let mut by_id: BTreeMap<String, Vec<crate::funnel::Dropped>> = BTreeMap::new();
+        for d in &drafts {
+            by_id
+                .entry(convention_id(&d.role, &d.rule))
+                .or_default()
+                .push(dropped_draft(
+                    d,
+                    &units,
+                    "duplicate",
+                    (
+                        Some(d.lb),
+                        None,
+                        format!(
+                            "lower bound {:.2}; a stronger rule of its role (or a nested role) says the same",
+                            d.lb
+                        ),
+                    ),
+                ));
+        }
+        by_id
+    });
     let mut drafts = dedupe(drafts, &units);
     if let Some(b) = before {
         dropped(&b, &drafts, &units, "duplicate");
     }
+    if let Some(mut by_id) = deduped {
+        for d in &drafts {
+            // The kept draft's own row (two drafts can share an id), else any one.
+            if let Some(rows) = by_id.get_mut(&convention_id(&d.role, &d.rule)) {
+                match rows.iter().rposition(|r| {
+                    r.value == Some(d.lb) && r.holders == d.holders.len() && r.members == d.n
+                }) {
+                    Some(i) => {
+                        rows.remove(i);
+                    }
+                    None => {
+                        rows.pop();
+                    }
+                }
+            }
+        }
+        for row in by_id.into_values().flatten() {
+            crate::funnel::note(row);
+        }
+    }
     for d in &mut drafts {
         d.origin = convention_id(&d.role, &d.rule);
+    }
+    // S21 gate candidate `cap-after-narrow` (study use, off by default:
+    // [`crate::gate_candidates`]): the caps run after narrowing and merging, on the cards
+    // ([`caps_after_narrow`]). Off, the function goes on from the next line as it was.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::CapAfterNarrow) {
+        return caps_after_narrow(
+            drafts,
+            Tail {
+                repo,
+                opts,
+                units: &units,
+                ctx: &ctx,
+                keep,
+                hidden,
+                unsplit_pass,
+                count,
+                rec,
+            },
+            Mined {
+                candidates: Vec::new(),
+                kinds,
+                units: total_units,
+                roles_considered,
+                withheld: Vec::new(),
+                roles_by_package,
+                hidden_by_package: BTreeMap::new(),
+            },
+        );
     }
 
     // Cap per role, then per repo, by score (ties broken by id for determinism). An
@@ -4520,7 +4926,17 @@ fn mine_units_traced<'a>(
                 .then_with(|| a.rule.cmp(&b.rule))
         });
         let before = count.then(|| tally(&ds, &units));
-        truncate_keeping(&mut ds, MAX_PER_ROLE);
+        // S21 gate candidate `cap-show-aware` (study use, off by default:
+        // [`crate::gate_candidates`]): the per-role cap counts only drafts the show policy
+        // shows (WS-H(a)). Off, the `else` branch is the cap as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::CapShowAware) {
+            truncate_shown(&mut ds, MAX_PER_ROLE, hidden, &units, rec, true);
+        } else {
+            if rec {
+                record_truncated(&ds, &units, MAX_PER_ROLE, "cap_role");
+            }
+            truncate_keeping(&mut ds, MAX_PER_ROLE);
+        }
         if let Some(b) = before {
             dropped(&b, &ds, &units, "cap_role");
         }
@@ -4550,7 +4966,24 @@ fn mine_units_traced<'a>(
         if place {
             // Show before the caps ([`cap_shown`]) applies to place roles only; kind roles
             // (opt-in) keep cap-before-show below: the combination is unmeasured.
-            let drops = cap_shown(&mut kept, opts.max_per_repo, hidden);
+            // S21 gate candidate `avoid-cap-own` (study use, off by default:
+            // [`crate::gate_candidates`]): the layering share cuts no default-tier rule.
+            // Off, the `else` branch is the cap as it was.
+            let drops =
+                if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::AvoidCapOwn) {
+                    cap_shown_own(&mut kept, opts.max_per_repo, hidden, &units, true)
+                } else {
+                    cap_shown(&mut kept, opts.max_per_repo, hidden)
+                };
+            if rec {
+                for (d, cap) in &drops {
+                    let (gate, limit) = match cap {
+                        CapDrop::Avoid => ("cap_avoid", max_avoid),
+                        CapDrop::Repo => ("cap_repo", opts.max_per_repo),
+                    };
+                    record_draft(d, &units, gate, capped_why(gate, limit, opts.max_per_repo));
+                }
+            }
             if count {
                 let (avoid, repo): (Vec<_>, Vec<_>) =
                     drops.into_iter().partition(|(_, c)| *c == CapDrop::Avoid);
@@ -4569,7 +5002,22 @@ fn mine_units_traced<'a>(
         kept.retain(|d| {
             if matches!(d.rule, Rule::Avoids { .. }) {
                 avoids += 1;
-                avoids <= max_avoid || d.accepted
+                let stays = avoids <= max_avoid || d.accepted;
+                // S21 gate candidate `avoid-cap-own` (off by default): nor in kind roles.
+                // Off, `stays` is what the line above made it.
+                let stays = stays
+                    || (crate::gate_candidates::on(
+                        crate::gate_candidates::GateCandidate::AvoidCapOwn,
+                    ) && own_tier_saved(d, &units, true));
+                if rec && !stays {
+                    record_draft(
+                        d,
+                        &units,
+                        "cap_avoid",
+                        capped_why("cap_avoid", max_avoid, opts.max_per_repo),
+                    );
+                }
+                stays
             } else {
                 true
             }
@@ -4578,6 +5026,9 @@ fn mine_units_traced<'a>(
             dropped(&b, &kept, &units, "cap_avoid");
         }
         let before = count.then(|| tally(&kept, &units));
+        if rec {
+            record_truncated(&kept, &units, opts.max_per_repo, "cap_repo");
+        }
         truncate_keeping(&mut kept, opts.max_per_repo);
         if let Some(b) = before {
             dropped(&b, &kept, &units, "cap_repo");
@@ -4610,8 +5061,25 @@ fn mine_units_traced<'a>(
         if count && let Some(stage) = stage {
             crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, &units), stage);
         }
+        if rec && let Some(stage) = stage {
+            let detail = if stage == "compiler" {
+                "the compiler already checks it".to_string()
+            } else {
+                format!(
+                    "{} of {} once the members it is not about are set aside",
+                    d.holders.len(),
+                    d.n
+                )
+            };
+            record_draft(d, &units, stage, (Some(d.lb), None, detail));
+        }
         stage.is_none()
     });
+    // S21 gate candidate `narrow-recheck` (off by default): count what its re-check
+    // dropped (they are `narrowed_out` above too).
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::NarrowRecheck) {
+        count_rechecked(count);
+    }
     // A rule whose holders all sit in one subtree of the role, with its outliers in
     // folders of their own elsewhere, is a convention of that subtree (F10).
     let mut taken: BTreeSet<(RoleSelector, Rule)> = kept
@@ -4681,6 +5149,11 @@ fn mine_units_traced<'a>(
             (c.id.clone(), o)
         })
         .collect();
+    // S21 (off by default, [`crate::gate_candidates`]): a card made from a draft only a
+    // gate candidate made carries its mark.
+    if crate::gate_candidates::any() {
+        crate::gate_candidates::carry(&origins);
+    }
     (
         Mined {
             candidates,
@@ -4707,6 +5180,11 @@ const UNCAPPED: usize = usize::MAX / 4;
 /// A hidden draft itself is kept exactly when the caps without `hidden` keep it: the
 /// show policy drops its card afterwards, and what it shares with its role's other
 /// drafts first ([`share_role_exemptions`], [`merge_siblings`]) is as before.
+///
+/// The default tier is not exempt from either cap: a default-tier layering rule past the
+/// layering share is dropped like a suggestion, although the `--suggestions` cap, applied
+/// later, lists the default tier in full. `census` says when this happened
+/// ([`crate::funnel::cap_note`]); the caps themselves are frozen mining.
 ///
 /// Returns the drafts it dropped, each with the cap that dropped it (for the funnel).
 fn cap_shown(
@@ -4802,6 +5280,163 @@ fn dropped(before: &Tally, after: &[Draft], units: &[Unit], stage: &str) {
     for (key, n) in before {
         let left = after.get(key).copied().unwrap_or(0);
         crate::funnel::add(&key.0, key.1, key.2, stage, n.saturating_sub(left));
+    }
+}
+
+/// What a gate compared, for the per-candidate record ([`crate::funnel::Dropped`]): the
+/// candidate's value, the gate's threshold, and the two in words.
+type Why = (Option<f64>, Option<f64>, String);
+
+/// The language the tier reads for a set of members: Python when any member is, as
+/// [`default_tier_draft`] reads it.
+fn tier_lang(members: &[usize], units: &[Unit]) -> drift_core::ingest::Lang {
+    if members
+        .iter()
+        .any(|&m| crate::tier::language_of(&units[m].path()) == drift_core::ingest::Lang::Python)
+    {
+        drift_core::ingest::Lang::Python
+    } else {
+        drift_core::ingest::Lang::TypeScript
+    }
+}
+
+/// Record a candidate rule of `role` that a gate of the population test dropped before
+/// it was drafted (`census --why`; nothing unless [`crate::funnel::wants`] the gate).
+#[allow(clippy::too_many_arguments)]
+fn record_rule(
+    role: &RoleSelector,
+    rule: &Rule,
+    holders: usize,
+    members: &[usize],
+    units: &[Unit],
+    gate: &'static str,
+    (value, threshold, detail): Why,
+) {
+    if !crate::funnel::wants(gate) {
+        return;
+    }
+    let n = members.len();
+    let default_tier =
+        crate::tier::tier_of(rule, n, tier_lang(members, units)) == crate::tier::Tier::Default;
+    crate::funnel::note(
+        crate::funnel::Dropped::new(
+            gate,
+            role,
+            rule,
+            (holders, n),
+            units_lang(members, units),
+            default_tier,
+        )
+        .measured(value, threshold, detail),
+    );
+}
+
+/// A draft a gate dropped, as the record holds it.
+fn dropped_draft(
+    d: &Draft,
+    units: &[Unit],
+    gate: &'static str,
+    why: Why,
+) -> crate::funnel::Dropped {
+    let (value, threshold, detail) = why;
+    crate::funnel::Dropped::new(
+        gate,
+        &d.role,
+        &d.rule,
+        (d.holders.len(), d.n),
+        units_lang(&d.members, units),
+        default_tier_draft(d, units),
+    )
+    .measured(value, threshold, detail)
+}
+
+/// Record a draft a gate dropped (`census --why`; nothing unless
+/// [`crate::funnel::wants`] the gate).
+fn record_draft(d: &Draft, units: &[Unit], gate: &'static str, why: Why) {
+    if crate::funnel::wants(gate) {
+        crate::funnel::note(dropped_draft(d, units, gate, why));
+    }
+}
+
+/// Record the drafts [`truncate_keeping`] will drop from `ds` at `cap`: those past the
+/// first `cap` that no person accepted.
+fn record_truncated(ds: &[Draft], units: &[Unit], cap: usize, gate: &'static str) {
+    if !crate::funnel::wants(gate) {
+        return;
+    }
+    for (i, d) in ds.iter().enumerate() {
+        if i >= cap && !d.accepted {
+            let detail = if gate == "cap_role" {
+                format!("ranked {} of its role's drafts, the cap is {cap}", i + 1)
+            } else {
+                format!(
+                    "ranked {} of the repository's drafts, the cap is {cap}",
+                    i + 1
+                )
+            };
+            record_draft(
+                d,
+                units,
+                gate,
+                (Some((i + 1) as f64), Some(cap as f64), detail),
+            );
+        }
+    }
+}
+
+/// What a per-repository cap of [`cap_shown`] compared, in words.
+fn capped_why(gate: &str, limit: usize, max: usize) -> Why {
+    let detail = if gate == "cap_avoid" {
+        format!("past the {limit} best-scored layering rules (a quarter of --max {max})")
+    } else {
+        format!("past the {limit} best-scored drafts the show policy shows (--max)")
+    };
+    (None, Some(limit as f64), detail)
+}
+
+/// What the gate of [`rejected_at`] compared, for the record: the share of a universal
+/// rule, the lower bound under [`MIN_LOWER_BOUND`], or the lift under the rule's bar.
+fn rejected_why(
+    rule: &Rule,
+    stage: &str,
+    holders: usize,
+    n: usize,
+    global_count: usize,
+    total_units: usize,
+) -> Why {
+    match stage {
+        "wilson" => {
+            let lb = wilson_lower_bound(holders, n);
+            (
+                Some(lb),
+                Some(MIN_LOWER_BOUND),
+                format!("lower bound {lb:.2} under {MIN_LOWER_BOUND:.2}"),
+            )
+        }
+        "lift" => {
+            let p_global = global_count as f64 / total_units.max(1) as f64;
+            let lift = if p_global > 0.0 {
+                (holders as f64 / n as f64) / p_global
+            } else {
+                0.0
+            };
+            let bar = rule.min_lift();
+            (
+                Some(lift),
+                Some(bar),
+                format!("lift {lift:.2} under {bar:.1}"),
+            )
+        }
+        _ if holders >= n => (
+            Some(1.0),
+            None,
+            format!("holds for all {holders} of {n}: no outlier"),
+        ),
+        _ => (
+            Some(holders as f64 / n.max(1) as f64),
+            None,
+            format!("holds for {holders} of {n}"),
+        ),
     }
 }
 
@@ -5047,7 +5682,9 @@ fn join_siblings(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
 /// are set aside like the members a rule is not about, with their reason. Returns false
 /// when no member holds the rule any more, or when every member holds it once inherited
 /// declarations count: then it is universal in the role, documentation rather than a
-/// check.
+/// check. The lower bound is recounted but not checked again: a draft whose recounted
+/// bound is below [`MIN_LOWER_BOUND`] stays proposed with it (PLAN-R14 WS-H(c)). It runs
+/// after the caps, so a draft it drops frees no slot for another.
 fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
     let role_n = d.members.len();
     let mut population = Vec::with_capacity(role_n);
@@ -5094,6 +5731,14 @@ fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
     d.derived.retain(|(m, ..)| applies.contains(m));
     d.n = population.len();
     d.lb = wilson_lower_bound(d.holders.len(), d.n);
+    // S21 gate candidate `narrow-recheck` (study use, off by default:
+    // [`crate::gate_candidates`]): the recounted bound is checked again (WS-H(c)). Off,
+    // the function goes on from the next line as it was.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::NarrowRecheck)
+        && rechecked_out(d, units)
+    {
+        return false;
+    }
     d.members = population;
     if d.n != role_n {
         d.role_n = Some(role_n);
@@ -5265,6 +5910,7 @@ fn narrowable_targets(rule: &Rule) -> Option<Vec<&str>> {
         | Rule::RegisteredIn { .. }
         | Rule::MirrorsKeys { .. }
         | Rule::ImportsFrom { .. }
+        | Rule::ImportsDeclared
         | Rule::Practice { .. } => return None,
     })
 }
@@ -5531,6 +6177,11 @@ fn draft_over(
         .collect();
     let k = holders.len();
     if k >= n {
+        // S21 gate candidate `universal` (study use, off by default:
+        // [`crate::gate_candidates`]). Off, the line after it is the gate as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::Universal) {
+            return universal_over(role, rule, holders, population, contrast, split);
+        }
         return None;
     }
     let lb = wilson_lower_bound(k, n);
@@ -7019,6 +7670,32 @@ fn consider(
     split: Vec<(String, usize)>,
 ) -> Option<Draft> {
     if holders.len() >= members.len() {
+        // S21 gate candidates `universal` and `small-roles` (study use, off by default:
+        // [`crate::gate_candidates`]). Off, the line after them is the gate as it was.
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::Universal) {
+            return universal_draft(
+                role,
+                rule,
+                holders,
+                members,
+                global_count,
+                total_units,
+                units,
+                split,
+            );
+        }
+        if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::SmallRoles) {
+            return small_role_draft(
+                role,
+                &rule,
+                &holders,
+                members,
+                (global_count, total_units),
+                units,
+                &split,
+                true,
+            );
+        }
         return None; // universal in the role: documentation, not a check
     }
     draft_of(
@@ -7046,6 +7723,23 @@ fn draft_of(
     units: &[Unit],
     split: Vec<(String, usize)>,
 ) -> Option<Draft> {
+    // S21 gate candidate `small-roles` (study use, off by default:
+    // [`crate::gate_candidates`]): only a rule the lower bound below drops. Off, the
+    // function is what it was from the next line on.
+    if crate::gate_candidates::on(crate::gate_candidates::GateCandidate::SmallRoles)
+        && let Some(d) = small_role_draft(
+            role,
+            &rule,
+            &holders,
+            members,
+            (global_count, total_units),
+            units,
+            &split,
+            false,
+        )
+    {
+        return Some(d);
+    }
     let n = members.len();
     let k = holders.len();
     let lb = wilson_lower_bound(k, n);
@@ -7945,6 +8639,791 @@ fn finish(d: &Draft, all: &[Draft], units: &[Unit], ctx: &RepoContext) -> Candid
     }
 }
 
+// ---------------------------------------------------------------------------------------
+// S21: candidate changes to mining's gates, each behind a switch that is off
+// ([`crate::gate_candidates`], `drift census --gate-candidate <name>`, study use). Nothing
+// below runs while no switch is on: each is reached only from an
+// `if crate::gate_candidates::on(..)` at the gate it changes, whose other branch is the
+// gate as it was.
+// ---------------------------------------------------------------------------------------
+
+use crate::gate_candidates::GateCandidate;
+
+/// The largest role `small-roles` admits: with one outlier the lower bound first reaches
+/// [`MIN_LOWER_BOUND`] at 18 of 19, so a role of 19 or more needs no candidate.
+const SMALL_ROLE_MAX: usize = 18;
+/// `small-roles`: the share of the role that must hold the rule (audit 7 G2(b): 90%).
+const SMALL_ROLE_SHARE_PERCENT: usize = 90;
+/// `small-roles`: the files the holders must span (audit 7 G2(b): 3).
+const SMALL_ROLE_MIN_FILES: usize = 3;
+
+/// `universal` ([`consider`]): the draft of a rule every member of the role holds, on the
+/// evidence and lift [`draft_of`] requires of any rule. Marked `universal` when it clears
+/// the shipped lower bound; below it, only `small-roles` can draft it (and marks it).
+#[allow(clippy::too_many_arguments)]
+fn universal_draft(
+    role: &RoleSelector,
+    rule: Rule,
+    holders: BTreeSet<usize>,
+    members: &[usize],
+    global_count: usize,
+    total_units: usize,
+    units: &[Unit],
+    split: Vec<(String, usize)>,
+) -> Option<Draft> {
+    let d = draft_of(
+        role,
+        rule,
+        holders,
+        members,
+        global_count,
+        total_units,
+        units,
+        split,
+    )?;
+    if d.lb >= MIN_LOWER_BOUND {
+        crate::gate_candidates::mark(&convention_id(&d.role, &d.rule), GateCandidate::Universal);
+    }
+    Some(d)
+}
+
+/// `universal` ([`draft_over`]): the draft of an order, preference or import rule every
+/// member of the population holds, with the lower bound [`draft_over`] requires.
+fn universal_over(
+    role: &RoleSelector,
+    rule: Rule,
+    holders: BTreeSet<usize>,
+    population: Vec<usize>,
+    contrast: f64,
+    split: Vec<(String, usize)>,
+) -> Option<Draft> {
+    let n = population.len();
+    let lb = wilson_lower_bound(holders.len(), n);
+    if lb < MIN_LOWER_BOUND {
+        return None;
+    }
+    let score = lb * size_weight(n) * contrast.min(5.0) * rule.specificity();
+    crate::gate_candidates::mark(&convention_id(role, &rule), GateCandidate::Universal);
+    Some(Draft {
+        role: role.clone(),
+        rule,
+        holders,
+        n,
+        lb,
+        lift: contrast,
+        split,
+        score,
+        members: population,
+        exempt: vec![],
+        inherited: vec![],
+        derived: vec![],
+        role_n: None,
+        base: None,
+        accepted: false,
+        origin: String::new(),
+    })
+}
+
+/// `small-roles`: the alternative audit 7 G2(b) proposes, exactly. In a role of
+/// [`MIN_ROLE_SIZE`] to [`SMALL_ROLE_MAX`] members, a rule held by at least
+/// [`SMALL_ROLE_SHARE_PERCENT`]% of them (every one included) whose target the repository
+/// defines ([`crate::funnel::target_of`]), with lift of at least [`MIN_LIFT`] and holders
+/// in at least [`SMALL_ROLE_MIN_FILES`] files, is drafted with its own lower bound; its
+/// card advises only ([`crate::gate_candidates::advise_only`]). Only where a shipped gate
+/// drops the rule: the outlier rule (`universal`, called from [`consider`]) or the lower
+/// bound (otherwise, from [`draft_of`]); `None` for a rule those gates let through, so
+/// what mining drafts without the switch is drafted exactly as before.
+#[allow(clippy::too_many_arguments)]
+fn small_role_draft(
+    role: &RoleSelector,
+    rule: &Rule,
+    holders: &BTreeSet<usize>,
+    members: &[usize],
+    (global_count, total_units): (usize, usize),
+    units: &[Unit],
+    split: &[(String, usize)],
+    universal: bool,
+) -> Option<Draft> {
+    let n = members.len();
+    let k = holders.len();
+    if !(MIN_ROLE_SIZE..=SMALL_ROLE_MAX).contains(&n) || k * 100 < n * SMALL_ROLE_SHARE_PERCENT {
+        return None;
+    }
+    let lb = wilson_lower_bound(k, n);
+    if !universal && lb >= MIN_LOWER_BOUND {
+        return None;
+    }
+    if crate::funnel::target_of(rule) != "repository" {
+        return None;
+    }
+    let files: BTreeSet<String> = holders.iter().map(|&m| units[m].path()).collect();
+    if files.len() < SMALL_ROLE_MIN_FILES {
+        return None;
+    }
+    let p_role = k as f64 / n as f64;
+    let p_global = global_count as f64 / total_units.max(1) as f64;
+    let lift = if p_global > 0.0 {
+        p_role / p_global
+    } else {
+        0.0
+    };
+    if lift < MIN_LIFT {
+        return None;
+    }
+    // Scored as [`draft_of`] scores any rule.
+    let entry = units[members[0]].entry != "-";
+    let risk = if entry
+        && matches!(
+            rule,
+            Rule::WrappedBy {
+                kind: WrapKind::Call | WrapKind::Decorator,
+                ..
+            }
+        ) {
+        1.5
+    } else {
+        1.0
+    };
+    let score = lb * size_weight(n) * lift.min(5.0) * rule.specificity() * risk;
+    crate::gate_candidates::mark(&convention_id(role, rule), GateCandidate::SmallRoles);
+    Some(Draft {
+        role: role.clone(),
+        rule: rule.clone(),
+        holders: holders.clone(),
+        n,
+        lb,
+        lift,
+        split: split.to_vec(),
+        score,
+        members: members.to_vec(),
+        exempt: vec![],
+        inherited: vec![],
+        derived: vec![],
+        role_n: None,
+        base: Some(p_global),
+        accepted: false,
+        origin: String::new(),
+    })
+}
+
+/// `narrow-recheck` ([`narrow`]): the recounted bound is under [`MIN_LOWER_BOUND`] and no
+/// person accepted the draft, so it is dropped (noted for the funnel, [`count_rechecked`]).
+/// A `small-roles` draft is exempt: it was drafted under the bound on purpose.
+///
+/// Every exemption `narrow` gives sets aside a member that does not hold the rule (a
+/// shared part, a framework root file, a factory, a documented exception... each tests
+/// that first), and the holders it adds (inherited, derived) only raise the share, so the
+/// recount can lower the bound only where a holder is set aside; on the code as it stands
+/// that is rare, which is why `narrowed_out` measured 0 (audit 7 section 2.2).
+fn rechecked_out(d: &Draft, units: &[Unit]) -> bool {
+    if d.lb >= MIN_LOWER_BOUND
+        || d.accepted
+        || crate::gate_candidates::marked(&d.origin) == Some(GateCandidate::SmallRoles)
+    {
+        return false;
+    }
+    crate::gate_candidates::note_rechecked(
+        crate::funnel::family(&d.rule),
+        crate::funnel::keying(&d.role),
+        units_lang(&d.members, units),
+    );
+    true
+}
+
+/// Count, in the pass that ran `narrow`, the drafts `narrow-recheck` dropped there.
+fn count_rechecked(count: bool) {
+    let rows = crate::gate_candidates::take_rechecked();
+    if count {
+        for (family, keying, lang) in rows {
+            crate::funnel::add(
+                &family,
+                keying,
+                lang,
+                GateCandidate::NarrowRecheck.stage(),
+                1,
+            );
+        }
+    }
+}
+
+/// `cap-show-aware`: [`truncate_keeping`] at `cap`, counting only the drafts whose card
+/// the show policy shows (origin not in `hidden`), as [`cap_shown`] does per repository.
+/// A hidden draft is kept exactly when the cap without `hidden` keeps it. With `mark`,
+/// a draft kept only because of that is marked `cap-show-aware`; with `rec`, the drafts
+/// dropped are recorded at `cap_role`.
+fn truncate_shown(
+    ds: &mut Vec<Draft>,
+    cap: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+    rec: bool,
+    mark: bool,
+) {
+    let (mut all, mut shown) = (0usize, 0usize);
+    // (kept by the shipped cap, kept here, rank counted here)
+    let verdicts: Vec<(bool, bool, usize)> = ds
+        .iter()
+        .map(|d| {
+            all += 1;
+            let before = all <= cap || d.accepted;
+            if hidden.is_some_and(|h| h.contains(&d.origin)) {
+                (before, before, all)
+            } else {
+                shown += 1;
+                (before, shown <= cap || d.accepted, shown)
+            }
+        })
+        .collect();
+    let mut v = verdicts.into_iter();
+    ds.retain(|d| {
+        let (before, keeps, rank) = v.next().unwrap_or((true, true, 0));
+        if rec && !keeps {
+            record_draft(
+                d,
+                units,
+                "cap_role",
+                (
+                    Some(rank as f64),
+                    Some(cap as f64),
+                    format!(
+                        "ranked {rank} of its role's drafts the show policy shows, the cap is {cap}"
+                    ),
+                ),
+            );
+        }
+        if mark && keeps && !before {
+            crate::gate_candidates::mark(&d.origin, GateCandidate::CapShowAware);
+        }
+        keeps
+    });
+}
+
+/// `avoid-cap-own`: a draft the layering share does not cut, being in the default tier
+/// ([`default_tier_draft`]) and not made advise-only by another candidate.
+fn own_tier(d: &Draft, units: &[Unit]) -> bool {
+    default_tier_draft(d, units) && !crate::gate_candidates::advise_only(&d.origin)
+}
+
+/// [`own_tier`], marking the draft `avoid-cap-own` (with `mark`) when it is: called only
+/// where the layering share would cut it.
+fn own_tier_saved(d: &Draft, units: &[Unit], mark: bool) -> bool {
+    let own = own_tier(d, units);
+    if own && mark {
+        crate::gate_candidates::mark(&d.origin, GateCandidate::AvoidCapOwn);
+    }
+    own
+}
+
+/// `avoid-cap-own`: [`cap_shown`], except that the layering share does not cut a
+/// default-tier draft ([`own_tier`]), which still takes a per-repository slot. With
+/// `mark`, a draft kept only because of that is marked `avoid-cap-own`.
+fn cap_shown_own(
+    kept: &mut Vec<Draft>,
+    max: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+    mark: bool,
+) -> Vec<(Draft, CapDrop)> {
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    let protected: Vec<bool> = kept.iter().map(|d| own_tier(d, units)).collect();
+    // Per draft: (verdict, kept past the layering share only because it is protected).
+    type Verdict = Option<(Result<(), CapDrop>, bool)>;
+    let caps = |counted: &dyn Fn(&Draft) -> bool| -> Vec<Verdict> {
+        let (mut avoids, mut n) = (0usize, 0usize);
+        kept.iter()
+            .zip(&protected)
+            .map(|(d, &own)| {
+                if !counted(d) {
+                    return None;
+                }
+                let mut saved = false;
+                if matches!(d.rule, Rule::Avoids { .. }) {
+                    avoids += 1;
+                    if avoids > max_avoid && !d.accepted {
+                        if !own {
+                            return Some((Err(CapDrop::Avoid), false));
+                        }
+                        saved = true;
+                    }
+                }
+                n += 1;
+                Some(if n <= max || d.accepted {
+                    (Ok(()), saved)
+                } else {
+                    (Err(CapDrop::Repo), false)
+                })
+            })
+            .collect()
+    };
+    let all = caps(&|_| true);
+    let verdicts: Vec<(Result<(), CapDrop>, bool)> = match hidden {
+        None => all
+            .iter()
+            .map(|k| k.unwrap_or((Err(CapDrop::Repo), false)))
+            .collect(),
+        Some(h) => {
+            let shown = caps(&|d| !h.contains(&d.origin));
+            all.iter()
+                .zip(&shown)
+                .map(|(a, s)| s.unwrap_or(a.unwrap_or((Err(CapDrop::Repo), false))))
+                .collect()
+        }
+    };
+    let mut out = Vec::with_capacity(kept.len());
+    let mut drops = Vec::new();
+    for (d, (v, saved)) in std::mem::take(kept).into_iter().zip(verdicts) {
+        match v {
+            Ok(()) => {
+                if saved && mark {
+                    crate::gate_candidates::mark(&d.origin, GateCandidate::AvoidCapOwn);
+                }
+                out.push(d)
+            }
+            Err(cap) => drops.push((d, cap)),
+        }
+    }
+    *kept = out;
+    drops
+}
+
+/// What [`caps_after_narrow`] reads of the pass it finishes.
+struct Tail<'t, 'u, 'c> {
+    repo: &'t RepoFacts,
+    opts: &'t MineOptions,
+    units: &'t [Unit<'u>],
+    ctx: &'t RepoContext<'c>,
+    keep: &'t Keep,
+    hidden: Option<&'t BTreeSet<String>>,
+    unsplit_pass: bool,
+    count: bool,
+    rec: bool,
+}
+
+/// A copy of a draft ([`Draft`] is not `Clone`; [`caps_after_narrow`] needs the caps'
+/// verdict in the shipped order beside its own).
+fn copy_draft(d: &Draft) -> Draft {
+    Draft {
+        role: d.role.clone(),
+        rule: d.rule.clone(),
+        holders: d.holders.clone(),
+        n: d.n,
+        lb: d.lb,
+        lift: d.lift,
+        split: d.split.clone(),
+        score: d.score,
+        members: d.members.clone(),
+        exempt: d.exempt.clone(),
+        inherited: d.inherited.clone(),
+        derived: d.derived.clone(),
+        role_n: d.role_n,
+        base: d.base,
+        accepted: d.accepted,
+        origin: d.origin.clone(),
+    }
+}
+
+/// The origins of the drafts the caps keep where they run in the shipped order (before
+/// [`narrow`] and [`merge_siblings`]), the other candidates on: what
+/// [`caps_after_narrow`] compares with to mark what only its order keeps. Records and
+/// marks nothing.
+fn caps_as_before(
+    drafts: Vec<Draft>,
+    max: usize,
+    hidden: Option<&BTreeSet<String>>,
+    units: &[Unit],
+) -> BTreeSet<String> {
+    let mut by_role: BTreeMap<RoleSelector, Vec<Draft>> = BTreeMap::new();
+    for d in drafts {
+        by_role.entry(d.role.clone()).or_default().push(d);
+    }
+    let mut kept: Vec<Draft> = Vec::new();
+    for (_, mut ds) in by_role {
+        ds.sort_by(|a, b| {
+            workspace_draft(a)
+                .cmp(&workspace_draft(b))
+                .then(b.score.total_cmp(&a.score))
+                .then_with(|| a.rule.cmp(&b.rule))
+        });
+        if crate::gate_candidates::on(GateCandidate::CapShowAware) {
+            truncate_shown(&mut ds, MAX_PER_ROLE, hidden, units, false, false);
+        } else {
+            truncate_keeping(&mut ds, MAX_PER_ROLE);
+        }
+        kept.extend(ds);
+    }
+    kept.sort_by(|a, b| {
+        workspace_draft(a)
+            .cmp(&workspace_draft(b))
+            .then(b.score.total_cmp(&a.score))
+            .then_with(|| convention_id(&a.role, &a.rule).cmp(&convention_id(&b.role, &b.rule)))
+    });
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    let own = crate::gate_candidates::on(GateCandidate::AvoidCapOwn);
+    let (kind_kept, place_kept): (Vec<Draft>, Vec<Draft>) = kept
+        .into_iter()
+        .partition(|d| d.role.shape.is_some() && !crate::shapes::is_test_role(&d.role));
+    let mut out = BTreeSet::new();
+    for (place, mut kept) in [(true, place_kept), (false, kind_kept)] {
+        if place {
+            if own {
+                cap_shown_own(&mut kept, max, hidden, units, false);
+            } else {
+                cap_shown(&mut kept, max, hidden);
+            }
+        } else {
+            let mut avoids = 0;
+            kept.retain(|d| {
+                if matches!(d.rule, Rule::Avoids { .. }) {
+                    avoids += 1;
+                    avoids <= max_avoid || d.accepted || (own && own_tier(d, units))
+                } else {
+                    true
+                }
+            });
+            truncate_keeping(&mut kept, max);
+        }
+        out.extend(kept.iter().map(|d| d.origin.clone()));
+    }
+    out
+}
+
+/// `cap-after-narrow`: the rest of [`mine_units_traced`] from the caps on, with the caps
+/// last. Narrowing and the compiler check run on every draft, then subtrees, the shared
+/// role exemptions and the merge of sibling roles, exactly as they do after the caps;
+/// then the caps ([`cap_cards`]) run on the cards, so a draft narrowed away holds no
+/// slot and a merged card takes one. A card only this order keeps is marked
+/// `cap-after-narrow`. `mined` is the pass's result with no candidates yet.
+fn caps_after_narrow(
+    mut drafts: Vec<Draft>,
+    t: Tail<'_, '_, '_>,
+    mut mined: Mined,
+) -> (Mined, BTreeMap<String, Vec<String>>) {
+    let (units, ctx) = (t.units, t.ctx);
+    let before = caps_as_before(
+        drafts.iter().map(copy_draft).collect(),
+        t.opts.max_per_repo,
+        t.hidden,
+        units,
+    );
+    let workspace: BTreeSet<String> = drafts
+        .iter()
+        .filter(|d| workspace_draft(d))
+        .map(|d| d.origin.clone())
+        .collect();
+    drafts.sort_by(|a, b| {
+        b.score
+            .total_cmp(&a.score)
+            .then_with(|| convention_id(&a.role, &a.rule).cmp(&convention_id(&b.role, &b.rule)))
+    });
+    // As in [`mine_units_traced`] after the caps.
+    drafts.retain_mut(|d| {
+        let stage = if !(d.accepted || join_siblings(d, units, ctx)) || !narrow(d, units, ctx) {
+            Some("narrowed_out")
+        } else if compiler_enforced(d, t.repo) {
+            Some("compiler")
+        } else {
+            None
+        };
+        if t.count
+            && let Some(stage) = stage
+        {
+            crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, units), stage);
+        }
+        if t.rec
+            && let Some(stage) = stage
+        {
+            let detail = if stage == "compiler" {
+                "the compiler already checks it".to_string()
+            } else {
+                format!(
+                    "{} of {} once the members it is not about are set aside",
+                    d.holders.len(),
+                    d.n
+                )
+            };
+            record_draft(d, units, stage, (Some(d.lb), None, detail));
+        }
+        stage.is_none()
+    });
+    if crate::gate_candidates::on(GateCandidate::NarrowRecheck) {
+        count_rechecked(t.count);
+    }
+    let mut taken: BTreeSet<(RoleSelector, Rule)> = drafts
+        .iter()
+        .map(|d| (d.role.clone(), d.rule.clone()))
+        .collect();
+    for d in &mut drafts {
+        if d.accepted || !d.role.also.is_empty() {
+            continue;
+        }
+        if let Some(role) = subtree(d, units, ctx, &taken) {
+            taken.insert((role, d.rule.clone()));
+        }
+    }
+    share_role_exemptions(&mut drafts, units, ctx);
+    let candidates: Vec<Candidate> = if t.unsplit_pass {
+        drafts
+            .iter()
+            .map(|d| finish(d, &drafts, units, ctx))
+            .collect()
+    } else {
+        merge_siblings(&drafts, units, ctx, t.keep)
+    };
+    let card_key = |c: &Candidate| {
+        (
+            crate::funnel::family(&c.rule),
+            crate::funnel::keying(&c.role),
+            crate::tier::language_code(c.language()),
+        )
+    };
+    if t.count {
+        let mut out: Tally = BTreeMap::new();
+        for c in &candidates {
+            *out.entry(card_key(c)).or_default() += 1;
+        }
+        for (key, n) in tally(&drafts, units) {
+            let left = out.get(&key).copied().unwrap_or(0);
+            crate::funnel::add(&key.0, key.1, key.2, "merged", n.saturating_sub(left));
+        }
+    }
+    let by_shape: BTreeMap<(&RoleSelector, &Rule), &str> = drafts
+        .iter()
+        .map(|d| ((&d.role, &d.rule), d.origin.as_str()))
+        .collect();
+    let origins: BTreeMap<String, Vec<String>> = candidates
+        .iter()
+        .map(|c| {
+            let parts = if c.role.also.is_empty() {
+                vec![c.role.clone()]
+            } else {
+                c.role.parts()
+            };
+            let o = parts
+                .iter()
+                .filter_map(|p| by_shape.get(&(p, &c.rule)).map(|o| o.to_string()))
+                .collect();
+            (c.id.clone(), o)
+        })
+        .collect();
+    // The other candidates' marks first: an advise-only card is no default-tier card at
+    // the caps.
+    crate::gate_candidates::carry(&origins);
+    let kept = cap_cards(candidates, &origins, &workspace, &t);
+    if t.count {
+        let mut out: Tally = BTreeMap::new();
+        for c in &kept {
+            *out.entry(card_key(c)).or_default() += 1;
+        }
+        for ((family, keying, lang), n) in out {
+            crate::funnel::add(&family, keying, lang, "mined", n);
+        }
+    }
+    // Not in the uncapped pass that only learns what the show policy hides.
+    if t.opts.max_per_repo != UNCAPPED {
+        for c in &kept {
+            let os = origins.get(&c.id).map(Vec::as_slice).unwrap_or(&[]);
+            if os.iter().any(|o| !before.contains(o)) {
+                crate::gate_candidates::mark(&c.id, GateCandidate::CapAfterNarrow);
+            }
+        }
+    }
+    mined.candidates = kept;
+    (mined, origins)
+}
+
+/// The caps of [`mine_units_traced`], on cards ([`caps_after_narrow`]): per role
+/// ([`MAX_PER_ROLE`], counting only shown cards with `cap-show-aware`), then the
+/// layering share and `--max` per repository, counting only the cards the show policy
+/// shows (a card is hidden when every draft it was made from is in `hidden`), with
+/// kind roles capped on their own, as [`cap_shown`] and the kind-role branch do. A card a
+/// person accepted is kept past every cap. With `avoid-cap-own`, the layering share
+/// cuts no default-tier card. Returns the cards kept, in the order given.
+fn cap_cards(
+    cards: Vec<Candidate>,
+    origins: &BTreeMap<String, Vec<String>>,
+    workspace: &BTreeSet<String>,
+    t: &Tail<'_, '_, '_>,
+) -> Vec<Candidate> {
+    let max = t.opts.max_per_repo;
+    let max_avoid = ((max as f64 * AVOID_MAX_SHARE).ceil() as usize).max(1);
+    // Per card: made from a workspace-only draft; hidden by the show policy.
+    let empty: Vec<String> = Vec::new();
+    let of = |i: usize| origins.get(&cards[i].id).unwrap_or(&empty);
+    let ws_of: Vec<bool> = (0..cards.len())
+        .map(|i| of(i).iter().any(|o| workspace.contains(o)))
+        .collect();
+    let hidden_of: Vec<bool> = (0..cards.len())
+        .map(|i| {
+            t.hidden.is_some_and(|h| {
+                let os = of(i);
+                !os.is_empty() && os.iter().all(|o| h.contains(o))
+            })
+        })
+        .collect();
+    let accepted = |c: &Candidate| t.keep.accepted_card(c);
+    let own = crate::gate_candidates::on(GateCandidate::AvoidCapOwn);
+    let protected = |c: &Candidate| own && c.tier() == crate::tier::Tier::Default;
+    let mut alive = vec![true; cards.len()];
+    // (card, gate, rank or limit, detail)
+    let mut dropped: Vec<(usize, &'static str, Why)> = Vec::new();
+    let mut marks: Vec<(usize, GateCandidate)> = Vec::new();
+
+    // Per role.
+    let show_aware = crate::gate_candidates::on(GateCandidate::CapShowAware);
+    let mut by_role: BTreeMap<&RoleSelector, Vec<usize>> = BTreeMap::new();
+    for (i, c) in cards.iter().enumerate() {
+        by_role.entry(&c.role).or_default().push(i);
+    }
+    for (_, mut ix) in by_role {
+        ix.sort_by(|&a, &b| {
+            ws_of[a]
+                .cmp(&ws_of[b])
+                .then(cards[b].score.total_cmp(&cards[a].score))
+                .then_with(|| cards[a].rule.cmp(&cards[b].rule))
+        });
+        let (mut all, mut shown) = (0usize, 0usize);
+        for i in ix {
+            let c = &cards[i];
+            all += 1;
+            let before = all <= MAX_PER_ROLE;
+            let (keeps, rank) = if show_aware && !hidden_of[i] {
+                shown += 1;
+                (shown <= MAX_PER_ROLE, shown)
+            } else {
+                (before, all)
+            };
+            if !(keeps || accepted(c)) {
+                alive[i] = false;
+                dropped.push((
+                    i,
+                    "cap_role",
+                    (
+                        Some(rank as f64),
+                        Some(MAX_PER_ROLE as f64),
+                        format!("ranked {rank} of its role's cards, the cap is {MAX_PER_ROLE}"),
+                    ),
+                ));
+            } else if keeps && !before && !accepted(c) {
+                marks.push((i, GateCandidate::CapShowAware));
+            }
+        }
+    }
+
+    // Per repository, by score.
+    let mut order: Vec<usize> = (0..cards.len()).filter(|&i| alive[i]).collect();
+    order.sort_by(|&a, &b| {
+        ws_of[a]
+            .cmp(&ws_of[b])
+            .then(cards[b].score.total_cmp(&cards[a].score))
+            .then_with(|| cards[a].id.cmp(&cards[b].id))
+    });
+    let (kind, place): (Vec<usize>, Vec<usize>) = order.into_iter().partition(|&i| {
+        cards[i].role.shape.is_some() && !crate::shapes::is_test_role(&cards[i].role)
+    });
+    // Place roles: show before the caps, as [`cap_shown`].
+    type Verdicts = BTreeMap<usize, (Result<(), &'static str>, bool)>;
+    let verdicts = |counted: &dyn Fn(usize) -> bool| -> Verdicts {
+        let (mut avoids, mut n) = (0usize, 0usize);
+        let mut v = BTreeMap::new();
+        for &i in &place {
+            let c = &cards[i];
+            if !counted(i) {
+                continue;
+            }
+            let mut saved = false;
+            if matches!(c.rule, Rule::Avoids { .. }) {
+                avoids += 1;
+                if avoids > max_avoid && !accepted(c) {
+                    if !protected(c) {
+                        v.insert(i, (Err("cap_avoid"), false));
+                        continue;
+                    }
+                    saved = true;
+                }
+            }
+            n += 1;
+            v.insert(
+                i,
+                if n <= max || accepted(c) {
+                    (Ok(()), saved)
+                } else {
+                    (Err("cap_repo"), false)
+                },
+            );
+        }
+        v
+    };
+    let all_v = verdicts(&|_| true);
+    let shown_v = t.hidden.map(|_| verdicts(&|i| !hidden_of[i]));
+    for &i in &place {
+        let fallback = all_v.get(&i).copied().unwrap_or((Err("cap_repo"), false));
+        let (v, saved) = match &shown_v {
+            None => fallback,
+            Some(s) => s.get(&i).copied().unwrap_or(fallback),
+        };
+        match v {
+            Ok(()) if saved => marks.push((i, GateCandidate::AvoidCapOwn)),
+            Ok(()) => {}
+            Err(gate) => {
+                alive[i] = false;
+                let limit = if gate == "cap_avoid" { max_avoid } else { max };
+                dropped.push((i, gate, capped_why(gate, limit, max)));
+            }
+        }
+    }
+    // Kind roles: on their own, the layering share, then `--max`.
+    let (mut avoids, mut n) = (0usize, 0usize);
+    for &i in &kind {
+        let c = &cards[i];
+        if matches!(c.rule, Rule::Avoids { .. }) {
+            avoids += 1;
+            if avoids > max_avoid && !accepted(c) {
+                if !protected(c) {
+                    alive[i] = false;
+                    dropped.push((i, "cap_avoid", capped_why("cap_avoid", max_avoid, max)));
+                    continue;
+                }
+                marks.push((i, GateCandidate::AvoidCapOwn));
+            }
+        }
+        n += 1;
+        if n > max && !accepted(c) {
+            alive[i] = false;
+            dropped.push((i, "cap_repo", capped_why("cap_repo", max, max)));
+        }
+    }
+
+    for (i, gate, (value, threshold, detail)) in dropped {
+        let c = &cards[i];
+        if t.count {
+            crate::funnel::card(c, gate);
+        }
+        if t.rec && crate::funnel::wants(gate) {
+            crate::funnel::note(
+                crate::funnel::Dropped::new(
+                    gate,
+                    &c.role,
+                    &c.rule,
+                    (c.evidence.holders, c.evidence.total),
+                    crate::tier::language_code(c.language()),
+                    c.tier() == crate::tier::Tier::Default,
+                )
+                .measured(value, threshold, detail),
+            );
+        }
+    }
+    for (i, g) in marks {
+        if alive[i] && max != UNCAPPED {
+            crate::gate_candidates::mark(&cards[i].id, g);
+        }
+    }
+    cards
+        .into_iter()
+        .zip(alive)
+        .filter_map(|(c, a)| a.then_some(c))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -8439,6 +9918,47 @@ mod tests {
                 any_of: vec!["app/auth.py#require_scope".into()],
             }]
         );
+    }
+
+    /// Pins the second line of defence ([`LISTED_ONLY_CONTROLS`]): a unit that carries a
+    /// control of the listed reading only, as a measured copy that a linker failed to
+    /// strip would, yields no `Rule::Control` for it. Before the list, each of these
+    /// became a feature. A control of no such kind still does.
+    #[test]
+    fn listed_only_controls_are_not_features() {
+        use drift_core::controls as c;
+        let listed: Vec<String> = vec![
+            c::INPUT_TYPED.to_string(),
+            c::NO_RESPONSE_MODEL.to_string(),
+            c::RETURNS_VALUE.to_string(),
+            c::ANSWERS_BY_RETURN.to_string(),
+            c::INPUT_UNREAD.to_string(),
+            c::UNREAD_RESPONDS.to_string(),
+            drift_core::CATCH_RESPONDS.to_string(),
+            format!("{}403", c::REFUSAL_STATUS),
+            format!("{}pkg:zod#parse\tsrc/schema.ts#Login", c::PARSES_INPUT),
+            format!("{}pkg:@nestjs/common#ParseIntPipe", c::PIPES_INPUT),
+            format!("{}authorization", c::REFUSES_SECRET),
+            format!("{}src/svc.ts#save", c::INPUT_HANDED),
+        ];
+        let file = FileFacts::default();
+        let mut controls = listed.clone();
+        controls.push("team_control".into());
+        let s = drift_core::Symbol {
+            controls,
+            ..Default::default()
+        };
+        let values: Vec<String> = features(&View::Symbol(&file, &s), &RepoContext::default())
+            .into_iter()
+            .filter_map(|r| match r {
+                Rule::Control { value } => Some(value),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(values, ["team_control".to_string()]);
+        for v in &listed {
+            assert!(listed_only_control(v), "{v}");
+        }
     }
 
     #[test]
