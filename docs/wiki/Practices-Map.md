@@ -230,7 +230,14 @@ So a unit Drift cannot read never becomes a violation, and "nothing found" is to
 
 **Doing more than the accepted way.** For sign-in (`authn`), permissions (`authz`), validation and responses (`api`), what a unit does adds up: a route that signs the caller in with the accepted guard and also checks something else still signs them in. There a unit follows when its uses include every use of an accepted way. For the other concerns (configuration, logging, data access, errors, testing) the extra use is itself the departure (a config value read in place beside the config module), so a unit follows only when what it does, as a whole, is an accepted way. `drift practices --json --units` lists each unit's separate `uses`.
 
-**A whole mechanism, or any way that enforces.** The `practice` rule in `.drift/conventions.yaml` can hold two more fields beside `any_of`. `any_mechanism` lists mechanisms accepted whole, by the classifier's own names (`wrap`, `permission`, `dependency`, ...): for sign-in, permissions, validation and responses a unit follows when one of its uses is of such a mechanism, whatever instrument it names; for the other concerns, every one of its uses must be. A mechanism that cannot enforce (one that opens a route, one that only identifies the caller) is never offered whole. `any_enforcing: true` accepts any way the classifier says enforces the concern: for sign-in, a use that turns a caller away; for permissions, a check Drift proved. A unit with nothing found, or one that only identifies the caller, breaks it. Only sign-in and permissions have this notion. Both fields are absent unless set, and a unit Drift cannot tell is never a violation under them either. `drift practices promote` has no option that writes them in this build.
+**A whole mechanism, or any way that enforces.** The `practice` rule in `.drift/conventions.yaml` can hold two more fields beside `any_of`. `any_mechanism` lists mechanisms accepted whole, by the classifier's own names (`wrap`, `permission`, `dependency`, ...): for sign-in, permissions, validation and responses a unit follows when one of its uses is of such a mechanism, whatever instrument it names; for the other concerns, every one of its uses must be. A mechanism that cannot enforce (one that opens a route, one that only identifies the caller) is never offered whole. `any_enforcing: true` accepts any way the classifier says enforces the concern: for sign-in, a use that turns a caller away; for permissions, a check Drift proved. A unit with nothing found, or one that only identifies the caller, breaks it. Only sign-in and permissions have this notion. Both fields are absent unless set, and a unit Drift cannot tell is never a violation under them either. `drift practices promote --concern <id> --mechanism <name>` writes `any_mechanism`, and `drift practices promote --concern <id> --any-enforcing` writes `any_enforcing`; the variant id is then optional:
+
+```bash
+drift practices promote --concern authz --mechanism membership_guard --in app/api
+drift practices promote --concern authn --any-enforcing --in app/api
+```
+
+A mechanism's name is the part before the `:` of a unit's uses in `drift practices --units --json`. A way that opens a route on purpose is never an enforcing way. A file holding either field is written as `version: 3`, which a Drift that reads up to version 2 refuses ([Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
 
 **Background jobs.** For sign-in and permissions, an entry point of kind `job` takes no request, so a promoted practice does not count, check or report it. The preview says how many were left out: `  N background jobs take no request and are not counted.` A way is what the map read, stored by its key (the file and symbol that define it), so a second helper that does the same job is a second way: add it with `--with`. A helper you declared in `.drift/config.yaml` under `practices:` is a known way like any other.
 
@@ -275,6 +282,13 @@ If you leave out `--in`, Drift promotes the variant in its broadest place that q
 ### Places
 
 A place is a package, or one directory of a package. A unit is in the place when its file is in that directory or below it. `--in` takes a path from the repository root (`app/api`, `apps/web/app/api`, `.` for the root package); the longest package that holds the path is the package, and the rest is the directory.
+
+Two narrower places can be named too:
+
+- **One file.** A path that is the file of a unit is that one file (`in_file` in `.drift/conventions.yaml`): "every route in this router signs the caller in this way".
+- **A route prefix.** A package, `:` and a literal route prefix (`apps/api:/api/v2`, `.:/api/workspaces/<slug>` for the root package; `under_route` in the policy) is the routes of that package under the prefix, each parameter matching any parameter and written `[*]`. A unit is in it only when Drift read its route to the end as a literal; one whose route Drift did not read so is never in it and is counted as not read wherever it could be under the prefix (the preview says how many, and `candidate.unread_routes` in `--json`).
+
+Output names a route place `<package>:<prefix>`, and a command Drift prints puts a file or route place in single quotes when it holds a character a shell reads. A file holding a file or route place is written as `version: 3` (see above). Two places overlap when one holds the other: a directory and a file in it, the same file, one route prefix and a longer one, or a route place and its whole package.
 
 ### More than one accepted way: `--with`
 
@@ -347,6 +361,8 @@ A place whose units are Python advises only, as every Python convention does (de
 
 - **`drift review`** offers each practice that qualifies, after the mined proposals: `y` promote (advise), `b` promote in block mode, `n` no, `s` skip, `q` quit. See [Conventions and Review](Conventions-and-Review#practices-that-may-be-promoted).
 - **The Studio** has the same step in its Practices view, with the same preview.
+- **`drift init`** proposes the strongest practices that qualify, as proposals from the map: written `proposed`, in advise mode, labelled as coming from the map, not baselined and shown to no agent until a person accepts one in `drift review`. Accepting one writes it as `drift practices promote` would. See [Proposals from the map](Conventions-and-Review#proposals-from-the-map).
+- **`drift check`** ends a practice departure with the promote command for its place, where the command would take it as the code stands (`; to make it the rule for new code there: `drift practices promote <id> --in <place>``). Agents are not given it.
 
 ### Undoing it
 

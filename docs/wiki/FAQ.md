@@ -45,16 +45,19 @@ Read it as "nothing found in what Drift read": a finding to check, not a fact. T
 **Can I trust a convention it proposes?**
 Not without review. Look at the outliers, accept only what you would defend in code review, and expect to reject some. Do not accept in bulk. See [Conventions and Review](Conventions-and-Review).
 
+**What is a proposal "from the map"?**
+A rule `drift init` proposes from the practice map or the structure map instead of by mining: a practice most units of a place follow, or a layer that never imports another. It did not go through the miner's measured gates, and Drift says so wherever it shows one. Like every proposal, nothing checks it and no agent is shown it until a person accepts it, and an accepted one advises until a person sets it to block. A unit Drift could not read is counted as not checked, never as a violation. `drift init --no-from-map` leaves them out. See [Conventions and Review](Conventions-and-Review#proposals-from-the-map).
+
 ## Using it
 
 **Why did `drift init` propose nothing?**
 A convention needs a role of roughly 20 or more similar symbols where one pattern dominates. Small or uniform repositories often get none; Drift says so and names the largest role it saw. The practice map and the security inventory still work. See [Troubleshooting](Troubleshooting).
 
 **What should I commit?**
-`.drift/conventions.yaml`, `drift.lock`, and `.drift/config.yaml` if it exists; add `drift.lock merge=union` to `.gitattributes`. Do not commit `.drift/cache/` or `.drift/review-log/` (each ignores itself), or `.drift/verify-cache.json` if you use the experimental verifier (it does not ignore itself; add it to `.gitignore`). See [Getting Started](Getting-Started) and [Team Rollout](Team-Rollout).
+`.drift/conventions.yaml`, `drift.lock`, and `.drift/config.yaml` if it exists; add `drift.lock merge=union` to `.gitattributes`. Do not commit `.drift/cache/`, `.drift/review-log/`, `.drift/findings/`, `.drift/gap-reports/` or `.drift/feedback/` (each ignores itself), or `.drift/verify-cache.json` if you use the experimental verifier (it does not ignore itself; add it to `.gitignore`). See [Getting Started](Getting-Started) and [Team Rollout](Team-Rollout).
 
 **Will it block my commits or my CI?**
-Only for conventions a person set to block. After `drift init` every proposal is inactive; accepting puts a convention in advise mode; blocking is a separate, deliberate step. `drift check --strict` also fails on advise-mode violations. See [Drift in CI](Drift-in-CI).
+Only for conventions a person set to block. After `drift init` every proposal is inactive, including those from the map; accepting puts a convention in advise mode; blocking is a separate, deliberate step. `drift check --strict` also fails on advise-mode violations. See [Drift in CI](Drift-in-CI).
 
 **How do I suppress one violation?**
 Put `// drift-ignore <id>: <reason>` (`#` in Python) directly above the declaration, with a reason. For a legitimate exception to a rule everywhere, mark the member fine with `drift review --exempt`. See [Conventions and Review](Conventions-and-Review).
@@ -72,7 +75,7 @@ No. It checks what your code already does, and it reports security facts for a p
 A lint rule is something you write and the tool enforces. A convention is something Drift found your code already does, which you may accept; it advises by default and blocks only if you say so. If your linter already enforces the equivalent, Drift does not propose it.
 
 **Can I make the practice map's answer a rule?**
-Yes, one practice in one place: `drift practices promote <P-id> --in <place>` writes an accepted convention, and `drift check` then reports new code there that does it another way or not at all. Code that already differs is recorded in `drift.lock`, and a unit Drift cannot read is never reported. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
+Yes, one practice in one place (a package, a directory, a file, or the routes under a prefix): `drift practices promote <P-id> --in <place>` writes an accepted convention, in advise mode, and `drift check` then reports new code there that does it another way or not at all. Code that already differs is recorded in `drift.lock`, and a unit Drift cannot read is never reported. See [Practices Map](Practices-Map#promoting-a-practice-to-a-convention).
 
 **How do I turn blocking off again?**
 `drift review --advise <id>` returns an accepted convention to advise mode. `drift review --reject <id>` rejects it.
@@ -107,6 +110,9 @@ Re-run `drift init` (it keeps decisions and adds new proposals) and `drift setup
 
 **Where is the Studio?**
 A desktop app in `apps/studio`, run from a checkout (`npm ci`, then `npm run start -w drift-studio`). It is not packaged yet. It runs the `drift` binary and sends nothing anywhere. See [Security and Privacy](Security-and-Privacy).
+
+**How do I tell the maintainers which reports were right?**
+In the beta, `drift feedback mark <id> <path#symbol> --true` (or `--wrong`) records your verdict on your machine, and `drift feedback export` writes a file of counts you can read in full before you choose to send it. Drift sends nothing. See [Beta Feedback](Beta-Feedback).
 
 **How do I report a bug or a vulnerability?**
 A bug: through the repository's issues. A vulnerability: privately, through the Security tab ("Report a vulnerability"), not a public issue.

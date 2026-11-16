@@ -112,7 +112,9 @@ Read it top to bottom:
 
 - **`What the code does`** is read from the code and is there whether or not Drift proposes anything: each kind of entry point, how many of them sign a caller in and how, check permissions, handle errors and answer. Each line adds up to its total: `nothing found` is what Drift read to the end and found no guard in, `could not tell` is what it could not read. These are what the code does, and nothing checks them until a person promotes one (step 7 below). See [Practices Map](Practices-Map).
 - **`Worth a look first`** is at most five things from that map, the costliest first: a signed-in caller reaching what is not theirs, entry points with no sign-in, input nothing validates, two ways of doing one thing side by side.
-- **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the two sections above are the first result.
+- **`From the security inventory (what Drift read; not conventions, and nothing here is checked)`** comes before `Conventions` where the inventory has a finding to rank: the first few findings of `drift security --top`, each with what Drift read and what it did not. A guard Drift could not read is never ranked. Nothing here is a convention or fails a check.
+- **`Conventions`** is what Drift proposes to check from now on. On many repositories this is short or empty, and the sections above are the first result.
+- **`From the map (not mined: ...)`** comes after `Conventions` where the practice map or the structure map shows a rule that qualifies: proposals that did not go through the miner's measured gates, each labelled as coming from the map, with how many units Drift could read follow it and how many it could not read. A unit Drift could not read is never reported. Like every proposal, nothing from the map is checked, baselined or shown to an agent until you accept it in `drift review`, and an accepted one advises. `drift init --no-from-map` leaves them out. See [Proposals from the map](Conventions-and-Review#proposals-from-the-map).
 - **`Security baseline`** appears where the repository has no `.drift/security.lock` and the security inventory finds something: `Security baseline: none yet. It would hold N findings (n kind, ...), accepted as they are; new ones are reported by `drift check`. `drift security --write-baseline` writes it (.drift/security.lock); nothing was written.` `Next` then has the line `drift security --write-baseline   accept the N security findings as they are; `drift check` then reports new ones`. Writing it is your decision; once it is committed, `drift check` fails on a new finding of a kind it sets to fail ([Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen)).
 - **`Next`** lists only the commands that have something to do in this repository.
 
@@ -125,7 +127,7 @@ Read the card like this:
 - **`tier: default`** is the stronger of the two tiers. Default-tier proposals are *block candidates*: they are listed first, and they reach no agent until you accept them. See [Conventions and Review](Conventions-and-Review).
 - **Outliers** are the members that do not follow the rule today. They are baselined in `drift.lock`, so they never fail a check; only new violations do.
 
-Everything starts as a proposal. A proposal is not checked at all.
+Everything starts as a proposal. A proposal is not checked at all. An accepted one advises until a person sets it to block.
 
 If Drift proposes nothing, it says why and names the largest role it saw:
 

@@ -25,7 +25,7 @@ Not equally sure everywhere, and the documentation says so wherever it matters. 
 | You are | Start here, in this order |
 | --- | --- |
 | An engineer trying it on a repository | [Getting Started](Getting-Started), then [Conventions and Review](Conventions-and-Review), then [Troubleshooting](Troubleshooting) if something looks off |
-| A lead rolling it out to a team | [Team Rollout](Team-Rollout), [Drift in CI](Drift-in-CI), [Accuracy and Limits](Accuracy-and-Limits) |
+| A lead rolling it out to a team | [Team Rollout](Team-Rollout), [Drift in CI](Drift-in-CI), [Accuracy and Limits](Accuracy-and-Limits), [Beta Feedback](Beta-Feedback) |
 | Security or platform, approving it | [Security and Privacy](Security-and-Privacy), [Accuracy and Limits](Accuracy-and-Limits), [Files Drift Writes](Files-Drift-Writes) |
 | Integrating it with coding agents | [Using Drift with Agents](Using-Drift-with-Agents), [Setup Questions](Setup-Questions), [MCP Reference](MCP-Reference), [Hooks Reference](Hooks-Reference) |
 | Someone who wants to understand the answers | [How Drift Works](How-Drift-Works), [Practices Map](Practices-Map), [Security Inventory](Security-Inventory), [Glossary](Glossary) |
@@ -35,7 +35,7 @@ Not equally sure everywhere, and the documentation says so wherever it matters. 
 - **Start:** [Getting Started](Getting-Started).
 - **Concepts:** [How Drift Works](How-Drift-Works), [Conventions and Review](Conventions-and-Review), [Practices Map](Practices-Map), [Security Inventory](Security-Inventory).
 - **How-to:** [Setup Questions](Setup-Questions), [Using Drift with Agents](Using-Drift-with-Agents), [Drift in CI](Drift-in-CI).
-- **Operating Drift:** [Team Rollout](Team-Rollout), [Security and Privacy](Security-and-Privacy), [Troubleshooting](Troubleshooting).
+- **Operating Drift:** [Team Rollout](Team-Rollout), [Security and Privacy](Security-and-Privacy), [Troubleshooting](Troubleshooting), [Beta Feedback](Beta-Feedback).
 - **Reference:** [Command Reference](Command-Reference), [Configuration Reference](Configuration-Reference), [Output and JSON Reference](Output-and-JSON-Reference), [MCP Reference](MCP-Reference), [Hooks Reference](Hooks-Reference), [Files Drift Writes](Files-Drift-Writes), [Languages and Frameworks](Languages-and-Frameworks), [Glossary](Glossary), [Versioning and Upgrades](Versioning-and-Upgrades).
 - **About:** [Accuracy and Limits](Accuracy-and-Limits), [FAQ](FAQ).
 
