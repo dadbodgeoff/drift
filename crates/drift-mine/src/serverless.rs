@@ -179,6 +179,7 @@ pub fn add_unlisted(inv: &mut crate::security::Inventory, root: &Path, repo: &Re
                 path: u.path,
                 line: u.line,
                 symbol: u.what,
+                reason: drift_core::UnlistedReason::DeploymentNotRead,
             }),
     );
     inv.unlisted.sort();

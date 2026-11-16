@@ -46,6 +46,11 @@ pub enum UnlistedReason {
     /// A function that reads a request and answers it, that no listed entry point
     /// reaches (found by `drift security`, not by a reader).
     HandlerNotReached,
+    /// What a deployment file names as a function (a Serverless Framework, SAM or
+    /// platform configuration) is not settled: its handler, its event or a value
+    /// they depend on is one Drift does not read, or the file does not parse. The
+    /// place is in the deployment file, with what it says.
+    DeploymentNotRead,
 }
 
 impl UnlistedReason {
@@ -61,6 +66,7 @@ impl UnlistedReason {
             Self::NotMounted => "not mounted",
             Self::TableNotRead => "table not read",
             Self::HandlerNotReached => "handler not reached",
+            Self::DeploymentNotRead => "deployment not read",
         }
     }
 }

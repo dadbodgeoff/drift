@@ -1596,7 +1596,7 @@ export interface Inventory {
   skipped?: { path: string; reason: string }[];
   /**
    * Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty).
-   * `reason` (security.rs `Unlisted.reason`, drift-core `UnlistedReason`) says why: `receiver_not_read`, `handler_not_read`, `not_found`, `package_handler`, `target_not_read`, `path_not_read`, `not_mounted`, `table_not_read`, or `handler_not_reached` (with `symbol`). Absent from an older drift.
+   * `reason` (security.rs `Unlisted.reason`, drift-core `UnlistedReason`) says why: `receiver_not_read`, `handler_not_read`, `not_found`, `package_handler`, `target_not_read`, `path_not_read`, `not_mounted`, `table_not_read`, `handler_not_reached` (with `symbol`), or `deployment_not_read` (with `symbol`: what a deployment file says). Absent from an older drift.
    */
   unlisted?: { path: string; line: number; symbol?: string; reason?: string }[];
   /** What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none (newer drift; absent when empty). */

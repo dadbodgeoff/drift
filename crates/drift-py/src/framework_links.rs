@@ -653,6 +653,7 @@ impl Linker<'_> {
                     behind: RawBehind::default(),
                     shapes: vec![],
                     since_guards: vec![],
+                    line: crate::raw::Site::default(),
                 };
                 self.registration_at(fi, &g, &node, (module, name, ti, sym), extra);
             }
@@ -704,6 +705,7 @@ impl Linker<'_> {
                 behind: RawBehind::default(),
                 shapes: vec![],
                 since_guards: since_guards.clone(),
+                line: crate::raw::Site::default(),
             };
             self.registration_at(ti, &g, node, (module, symbol, ti, sym), extra);
         }

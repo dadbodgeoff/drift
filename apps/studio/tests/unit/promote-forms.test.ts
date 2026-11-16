@@ -208,11 +208,14 @@ describe("what Drift answers, as the contract types it", () => {
       same_way: [],
       replaces: [{ id: "", summary: "", narrowed: [] }],
       preview: "",
+      probation: { on_probation: false, why: null, written: false, count: null },
     };
-    expect(jsonKeys(rs, 'let out = json!({\n            "written"')).toEqual(Object.keys(result).sort());
+    // `probation` is written after the object is made, and only with the experimental `probation` and `--block`.
+    expect(jsonKeys(rs, 'let out = json!({\n            "written"')).toEqual(Object.keys(result).filter((k) => k !== "probation").sort());
+    expect(jsonKeys(rs, 'out["probation"] = json!({')).toEqual(Object.keys(result.probation).sort());
     expect(jsonKeys(rs.slice(rs.indexOf("fn json(&self) -> Value")), "fn json(&self) -> Value")).toEqual(Object.keys(result.replaces[0]!).sort());
     expect(jsonKeys(rs, 'json!({ "id": self.id').length).toBe(3);
-    expect(jsonKeys(rs.slice(rs.indexOf("fn list_of(")), 'let out = json!({\n            "candidates"')).toEqual(["candidates", "declined", "passive", "promoted"]);
+    expect(jsonKeys(rs.slice(rs.indexOf("fn list_of(")), 'let mut out = json!({\n            "candidates"')).toEqual(["candidates", "declined", "passive", "promoted"]);
     expect(jsonKeys(rs.slice(rs.indexOf("fn list_of(")), "let entry = |r: &RankedCandidate|")).toEqual(["candidate", "command", "departures", "place"]);
     // The command line's own refusal codes (`usage(json, "<code>", ...)`) and the block gate's.
     const usage = [...new Set([...rs.matchAll(/(?:usage\(\s*args\.json,|return Err\(\()\s*"(\w+)"/g)].map((m) => m[1]))].sort();
