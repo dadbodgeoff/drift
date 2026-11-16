@@ -2778,7 +2778,9 @@ const REVIEW_DECISIONS: &[&str] = &[
     "set-log",
 ];
 /// `drift setup` options only a person may give (`--by` is judged by its value).
-const SETUP_DECISIONS: &[&str] = &["confirm", "reject", "forget", "review"];
+const SETUP_DECISIONS: &[&str] = &[
+    "confirm", "reject", "forget", "review", "yes-to", "no-to", "guided",
+];
 /// The variables a person sets to let `--by person` write without a terminal
 /// ([`crate::setup::PERSON_ENV`]) and without typing the id
 /// ([`crate::setup::PERSON_NONINTERACTIVE_ENV`]): an agent setting either changes policy.

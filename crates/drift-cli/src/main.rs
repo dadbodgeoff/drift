@@ -6,6 +6,7 @@ mod derived;
 mod export;
 mod findings;
 mod from_map_cli;
+mod guided;
 mod history;
 mod lookup;
 mod mcp;
@@ -15,7 +16,6 @@ mod project;
 mod promote;
 mod review_log;
 mod scan;
-mod guided;
 mod setup;
 mod wiring;
 mod workspace;
@@ -3323,6 +3323,14 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 };
                 if how != guided::How::Dry {
                     for_person("the guided setup")?;
+                    // An agent's run asks nothing and writes nothing, `--by person` or not.
+                    if setup::agent_env() {
+                        bail!(
+                            "the guided setup is for a person, and this run is an agent's ({} is set or {}=1): it asks nothing and writes nothing here. Nothing was changed.",
+                            setup::CLAUDE_CODE_ENV,
+                            setup::AGENT_ENV
+                        );
+                    }
                 }
                 let script = guided::Script::new(yes_to, no_to)?;
                 let stdin = std::io::stdin();
