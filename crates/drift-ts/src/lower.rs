@@ -943,6 +943,11 @@ pub struct RawFile {
     /// of those routes: the pattern and what runs.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub handed_calls: Vec<(RawMount, Vec<(String, RawRef)>)>,
+    /// GraphQL resolver maps, what serves them, and the guards a rule map gives
+    /// their fields ([`graphql::RawGraphql`]): linking lists the root fields of the
+    /// maps proven served. The listed reading only.
+    #[serde(default, skip_serializing_if = "graphql::RawGraphql::is_empty")]
+    pub graphql: graphql::RawGraphql,
 }
 
 /// Middleware applied to the routes of a Nest application beside them: one
@@ -1104,6 +1109,8 @@ pub struct RawRegisters {
 
 #[path = "caller.rs"]
 mod caller;
+#[path = "graphql.rs"]
+pub(crate) mod graphql;
 #[path = "input.rs"]
 pub(crate) mod input;
 #[path = "nest.rs"]
@@ -2860,6 +2867,7 @@ impl<'s> Lowerer<'s> {
         self.lower_node_listeners(program);
         self.lower_rpc_and_jobs_anywhere(program);
         self.lower_trpc_routers(program);
+        self.lower_graphql(program);
         let mut tests = TestFinder {
             l: self,
             tests: self.test_file,
@@ -3783,6 +3791,7 @@ impl<'s> Lowerer<'s> {
         self.lower_nest_controller(name, class);
         self.lower_nest_configure(name, class);
         self.lower_nest_entries(class);
+        self.lower_type_graphql(class);
         self.this_types.borrow_mut().clear();
         self.this_plain.borrow_mut().clear();
         self.this_request.borrow_mut().clear();

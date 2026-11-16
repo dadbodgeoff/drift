@@ -15,6 +15,9 @@ use oxc_resolver::{
 };
 
 use crate::lower::registries::{RawList, RawSlot};
+
+#[path = "graphql_link.rs"]
+mod graphql_link;
 use crate::lower::{RawBase, RawExportTarget, RawFile, RawOperand, RawRef};
 
 const NODE_BUILTINS: &[&str] = &[
@@ -1032,6 +1035,8 @@ pub struct Linker<'r> {
     /// The tRPC routers of the linked files and what mounts each: the dotted path
     /// of each procedure, for the listed reading ([`crate::lower::trpc_paths`]).
     trpc_paths: crate::lower::trpc_paths::TrpcTree,
+    /// The GraphQL resolver maps proven served ([`graphql_link`]).
+    graphql: graphql_link::GqlProofs,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
     /// Package directory -> what its files say of the conventions the listed
@@ -1404,6 +1409,7 @@ impl<'r> Linker<'r> {
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
             trpc_paths: Default::default(),
+            graphql: graphql_link::GqlProofs::default(),
             next_packages: Mutex::new(BTreeMap::new()),
             next_listing: Mutex::new(BTreeMap::new()),
             file_routers: Mutex::new(BTreeMap::new()),
@@ -1459,6 +1465,7 @@ impl<'r> Linker<'r> {
         linker.handed = linker.handed_calls(files);
         linker.trpc = linker.trpc_origins(files);
         linker.trpc_paths = linker.trpc_tree(files);
+        linker.graphql = linker.graphql_proofs(files);
         let composed = files
             .iter()
             .flat_map(|f| {
@@ -3244,12 +3251,15 @@ impl<'r> Linker<'r> {
             .filter(|c| c.replaces)
             .map(|c| c.symbol.name.as_str())
             .collect();
+        // The GraphQL operations of the file's maps proven served.
+        let graphql = self.graphql_listing(f);
         let raw_symbols: Vec<&crate::lower::RawSymbol> = f
             .raw
             .symbols
             .iter()
             .filter(|s| !replaced.contains(s.name.as_str()))
             .chain(proven.iter().map(|c| &c.symbol))
+            .chain(graphql.symbols.iter())
             .collect();
         // A function proven to return a procedure builder derives from what its one
         // `return` is built from, as a `const` builder does. A name recorded twice
@@ -3271,6 +3281,7 @@ impl<'r> Linker<'r> {
             .entry_points
             .iter()
             .chain(proven.iter().map(|c| &c.entry))
+            .chain(graphql.entries.iter())
             .collect();
         let mut imports: Vec<Import> = f
             .raw
@@ -3752,6 +3763,7 @@ impl<'r> Linker<'r> {
             apps: vec![],
             listed: None,
         };
+        graphql.hold(&mut facts);
         // The calls whose shape is recorded: a symbol's own, and for a route those
         // of every way it is served ([`drift_core::Listed::guard_calls`]).
         let guard_calls: Vec<drift_core::SymbolCalls> = raw_symbols
