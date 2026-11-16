@@ -48,8 +48,6 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  # The packager, pinned; installed beside the workspace so package-lock.json is unchanged.
-  ELECTRON_BUILDER_VERSION: "26.17.0"
 
 jobs:
   linux:
@@ -72,10 +70,11 @@ jobs:
       # package's checksums.json.
       - run: node node_modules/electron/install.js
       - run: npm run build -w drift-studio
-      - run: npm install --prefix "$RUNNER_TEMP/eb" --no-save --no-audit --no-fund --ignore-scripts "electron-builder@$ELECTRON_BUILDER_VERSION"
+      # The packager and its whole dependency tree, as apps/studio/packager/package-lock.json pins them.
+      - run: npm ci --prefix apps/studio/packager --ignore-scripts --no-audit --no-fund
       - name: Package (AppImage, deb)
         env:
-          ELECTRON_BUILDER: ${{ runner.temp }}/eb/node_modules/electron-builder/cli.js
+          ELECTRON_BUILDER: ${{ github.workspace }}/apps/studio/packager/node_modules/electron-builder/cli.js
           STUDIO_RELEASE: ${{ inputs.sign && '1' || '' }}
         run: node apps/studio/scripts/package.mjs --linux --drift target/release/drift
       - run: command -v xvfb-run || (sudo apt-get update && sudo apt-get install -y xvfb)
@@ -138,7 +137,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: node node_modules/electron/install.js
       - run: npm run build -w drift-studio
-      - run: npm install --prefix "$RUNNER_TEMP/eb" --no-save --no-audit --no-fund --ignore-scripts "electron-builder@$ELECTRON_BUILDER_VERSION"
+      # The packager and its whole dependency tree, as apps/studio/packager/package-lock.json pins them.
+      - run: npm ci --prefix apps/studio/packager --ignore-scripts --no-audit --no-fund
       - name: Notarisation key file
         if: inputs.sign && matrix.platform == 'mac'
         env:
@@ -146,7 +146,7 @@ jobs:
         run: printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
       - name: Package
         env:
-          ELECTRON_BUILDER: ${{ runner.temp }}/eb/node_modules/electron-builder/cli.js
+          ELECTRON_BUILDER: ${{ github.workspace }}/apps/studio/packager/node_modules/electron-builder/cli.js
           STUDIO_RELEASE: ${{ inputs.sign && '1' || '' }}
           # Secrets only when a caller asks for signing; absent, the build is unsigned.
           CSC_LINK: ${{ inputs.sign && matrix.platform == 'mac' && secrets.MAC_CSC_LINK || '' }}

@@ -1,0 +1,9 @@
+{
+  "name": "drift-studio-packager",
+  "private": true,
+  "description": "The packager Drift Studio is built with, pinned with its whole dependency tree. Kept outside the JavaScript workspace so the app's own lockfile and overrides do not apply to it; installed only by the packaging job (npm ci --ignore-scripts here).",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electron-builder": "26.17.0"
+  }
+}

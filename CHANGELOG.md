@@ -42,7 +42,8 @@ main branch.
   ([apps/studio/README.md](apps/studio/README.md#packaging)). CI builds the Linux
   package on Studio pull requests (`.github/workflows/studio-package.yml`) and runs
   a live end-to-end test of the Electron app against a real `drift`
-  (`apps/studio/tests/e2e/live.mjs`). No auto-update.
+  (`apps/studio/tests/e2e/live.mjs`). The packager and its dependency tree are pinned
+  by their own lockfile (`apps/studio/packager/`). No auto-update.
 - **Drift Studio: proposals from the map, upgrade and feedback.** Three new views. Proposals from the map is a read-only view of `census --from-map --json`, linked to Conventions. Upgrade reads `upgrade --json` and can run `upgrade --apply [--security-baseline] --json` after you confirm, only for the work Drift lists as its own. Feedback lists `.drift/feedback/marks.json`. Check gains Mark true and Mark wrong on a violation (`feedback mark`). Nothing is sent, and the export stays a command you run. Setup questions still have no screen.
 - **More Next.js entry points in `drift security` and the practice map** (the
   listed reading; mining is unchanged): inline server actions (a function whose

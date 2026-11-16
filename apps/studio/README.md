@@ -52,10 +52,12 @@ product name Drift Studio, `asar` on, Electron fuses set (no `ELECTRON_RUN_AS_NO
 no `NODE_OPTIONS`, the app only from its asar), no file associations or protocols,
 and no publish target, so there is no update feed and no `app-update.yml`. The
 window's sandbox, context isolation and CSP are those of `electron/main.ts`,
-unchanged. electron-builder is not yet a devDependency (adding it changes
-`package-lock.json`): CI installs the pinned version beside the workspace and
-passes it as `ELECTRON_BUILDER=<its cli.js>`; locally, install it the same way
-(`npm install --prefix /tmp/eb --no-save electron-builder@26.17.0`).
+unchanged. electron-builder is pinned, with its whole dependency tree, in
+`packager/` (its own `package.json` and `package-lock.json`, outside the
+JavaScript workspace so the app's lockfile and overrides do not apply to it). CI
+installs it with `npm ci --prefix apps/studio/packager --ignore-scripts`
+and passes it as `ELECTRON_BUILDER=<its cli.js>`; locally, do the same
+(`ELECTRON_BUILDER=apps/studio/packager/node_modules/electron-builder/cli.js`).
 
 **The drift binary is bundled.** Each package carries its platform's `drift` as
 an extra resource (`<resources>/bin/drift`, `drift.exe` on Windows), and the
@@ -102,8 +104,7 @@ as a dependency with a `publish` entry in `scripts/package-config.ts`. Until the
 a new version is a new download.
 
 Other owner items: an app icon (`packaging/icon.icns`, `icon.ico`, `icons/*.png`;
-today the packager uses Electron's default), and adding `electron-builder` as a
-devDependency with its lockfile entries.
+today the packager uses Electron's default).
 
 ## Test
 
