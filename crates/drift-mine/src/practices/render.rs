@@ -1530,6 +1530,10 @@ mod first_run_tests {
                 "parsed into a typed model by rest_framework",
             ),
             (
+                "typed param fastapi",
+                "parameters parsed by their declared types by fastapi",
+            ),
+            (
                 "schema repo_schema",
                 "checked against a schema of the repository",
             ),

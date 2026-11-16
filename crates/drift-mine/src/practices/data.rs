@@ -348,9 +348,12 @@ mod tests {
             key(&of(&all, "packages/prisma/index.ts", "prisma")),
             "repository:@prisma/client"
         );
+        // The binding that builds both says both: its own body constructs the generated
+        // client and the driver pool it hands that client. Its users (above) are read
+        // as the client alone.
         assert_eq!(
             key(&of(&all, "packages/prisma/index.ts", "baseClient")),
-            "repository:@prisma/client"
+            "repository:@prisma/client+repository:pg"
         );
         // Without the generated directory the client is only the driver it is handed.
         let facts = RepoFacts {
