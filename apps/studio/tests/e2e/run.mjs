@@ -1546,7 +1546,11 @@ await test("practices: the recipe first, then the findings, then every concern b
   await page.click(".pr-concern:has-text('Authentication')");
   await page.selectOption("select[aria-label='Package']", "pkg:apps/api");
   await page.waitForFunction(() => document.querySelector(".pr-variants .pr-meter")?.getAttribute("aria-label")?.includes("of 49"));
-  expect((await page.locator(".pr-compare").count()) === 0 && (await page.locator(".pr-group").count()) === 0 && (await page.locator(".pr-variants .pr-variant").count()) === 2, "apps/api's variants only");
+  // The meter and the lists re-render one after the other: wait for the lists to settle before counting.
+  const narrowed = () => ({ compare: document.querySelectorAll(".pr-compare").length, groups: document.querySelectorAll(".pr-group").length, variants: document.querySelectorAll(".pr-variants .pr-variant").length });
+  await page.waitForFunction(() => document.querySelectorAll(".pr-compare").length === 0 && document.querySelectorAll(".pr-group").length === 0 && document.querySelectorAll(".pr-variants .pr-variant").length === 2, null, { timeout: 5000 }).catch(() => {});
+  const seen = await page.evaluate(narrowed);
+  expect(seen.compare === 0 && seen.groups === 0 && seen.variants === 2, `apps/api's variants only: ${JSON.stringify(seen)}`);
   await page.click("[role=tab]:has-text('Recipe')");
   await page.waitForSelector(".pr-recipe");
   expect((await page.locator(".pr-recipe").count()) === 1 && (await page.textContent(".pr-recipe")).includes("http entry points in apps/api"), "apps/api's recipe");
