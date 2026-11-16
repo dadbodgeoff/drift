@@ -190,6 +190,20 @@ enum Command {
         /// proposes was not measured, and nothing is written.
         #[arg(long, conflicts_with = "coverage")]
         listed: bool,
+        /// List what each gate of mining dropped instead of the proposals: how many per
+        /// gate, then the candidates (role, rule, holders of members, the gate's threshold
+        /// and the candidate's value, whether the target is the repository's or a
+        /// dependency's), strongest first. `--why GATE` (`universal`, `wilson`, `lift`,
+        /// `cap_avoid`, ...): only that gate. With --json, every dropped candidate.
+        /// Observation only: what is proposed is exactly what `census` proposes.
+        #[arg(
+            long,
+            value_name = "GATE",
+            num_args = 0..=1,
+            default_missing_value = "",
+            conflicts_with = "coverage"
+        )]
+        why: Option<String>,
         #[command(flatten)]
         cap: CapArgs,
     },
@@ -670,6 +684,8 @@ const CENSUS_HELP: &str = "Examples:
   drift census --all              every suggestion (--suggestions N: the N best)
   drift census --tier default     only those a person may set to block
   drift census --all-outliers     every outlier, not the first three
+  drift census --why              what each gate of mining dropped, and why
+  drift census --why wilson       only the rules below the lower bound
   drift census --json > census.json";
 
 const SETUP_HELP: &str = "Examples:
@@ -2431,6 +2447,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             kind_roles,
             coverage,
             listed,
+            why,
             cap,
         } => {
             let tests = drift_mine::policy::test_roles(root, *test_roles);
@@ -2456,6 +2473,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             let cap = cap.resolve(policy_cap(root));
             let python = drift_mine::policy::python_proposals(root, *python_proposals);
+            if let Some(gate) = why {
+                return census_why(cli, root, gate, *max, shapes, python, *listed, *json);
+            }
             if *json {
                 // No side effects: the fact cache is used only where the caller points it.
                 let opts = ScanOptions {
@@ -2530,7 +2550,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     entries(&facts)
                 );
             }
+            // Only the caps are recorded (`drift_mine::funnel`), to say when they cut a
+            // default-tier rule; recording changes nothing mining proposes.
+            drift_mine::funnel::record(Some(drift_mine::funnel::CAP_GATES));
             let (mut mined, accepted) = census_mine(root, &facts, *max, shapes);
+            let cut = drift_mine::funnel::take_dropped();
             let wired = wiring::extend(root, &mut facts, &mut mined)?;
             let python_before = workspace::python_by_package(&mined);
             let withheld = withhold_python(python, &mut mined, &accepted);
@@ -2570,6 +2594,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             print_tiered(&shown, *all_outliers);
             if filter.keeps(Tier::Suggestion)
                 && let Some(n) = capped_note(&placed, "census")
+            {
+                println!("{n}\n");
+            }
+            // Mining's caps can drop a default-tier rule (the `--suggestions` cap never
+            // does): say so, only when they did.
+            if filter.keeps(Tier::Default)
+                && let Some(n) = drift_mine::funnel::cap_note(&cut, *max)
             {
                 println!("{n}\n");
             }
@@ -4650,6 +4681,60 @@ fn census_mine(
     };
     drop_decided(&mut mined, policy.as_ref());
     (mined, accepted)
+}
+
+/// `drift census --why [GATE]`: mine as `census` does, with every gate's dropped
+/// candidates recorded (`drift_mine::funnel`), and print the funnel instead of the
+/// proposals: how many reached each stage, how many each gate dropped, then the dropped
+/// candidates by gate, strongest first (with --json, all of them). Only `gate`'s when it
+/// names one (`""`: every gate). Observation only: mining is what it is without the record.
+#[allow(clippy::too_many_arguments)]
+fn census_why(
+    cli: &Cli,
+    root: &Path,
+    gate: &str,
+    max: usize,
+    shapes: (bool, bool),
+    python: drift_mine::policy::PythonProposals,
+    listed: bool,
+    json: bool,
+) -> anyhow::Result<ExitCode> {
+    let only = (!gate.is_empty()).then_some(gate);
+    if let Some(g) = only
+        && drift_mine::funnel::gate(g).is_none()
+    {
+        let names: Vec<&str> = drift_mine::funnel::GATES.iter().map(|g| g.name).collect();
+        bail!("no gate is named `{g}`; the gates are: {}", names.join(", "));
+    }
+    let mut facts = load_facts(cli, 0)?;
+    if listed {
+        facts = facts.into_listed();
+    }
+    drift_mine::funnel::start_counting();
+    drift_mine::funnel::record(None);
+    let (mut mined, accepted) = census_mine(root, &facts, max, shapes);
+    let mut rows = drift_mine::funnel::take_dropped();
+    let _ = withhold_python(python, &mut mined, &accepted);
+    let counts = drift_mine::funnel::finish();
+    // The show policy's and Python's withheld cards, with their reason as the gate.
+    rows.extend(
+        mined
+            .withheld
+            .iter()
+            .map(|w| drift_mine::funnel::dropped_card(&w.candidate, w.reason)),
+    );
+    drift_mine::funnel::sort(&mut rows);
+    if json {
+        let v = drift_mine::funnel::why_json(counts.as_ref(), &rows, only);
+        println!("{}", serde_json::to_string_pretty(&v)?);
+    } else {
+        let per_gate = if only.is_some() { 50 } else { 10 };
+        print!(
+            "{}",
+            drift_mine::funnel::why_text(counts.as_ref(), &rows, only, per_gate)
+        );
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 /// Decision D13-py: with Python proposals off, remove every Python proposal (wiring ones

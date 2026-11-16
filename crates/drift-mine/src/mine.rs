@@ -7,6 +7,13 @@
 //! - the 95% Wilson lower bound of `holders / members` is at least [`MIN_LOWER_BOUND`];
 //! - lift (share in the role over share in the whole repo) is at least [`MIN_LIFT`].
 //!
+//! So [`MIN_ROLE_SIZE`] is the smallest role mined, not the smallest that can yield a
+//! plain rule: with at least one outlier, the lower bound first reaches 0.75 at 18 of 19,
+//! so a plain rule needs a role of 19 or more (a layering rule, at
+//! `AVOID_IMPORT_MIN_LOWER_BOUND` 0.9, about 53). Smaller roles still yield the drafts of
+//! the generators with tests of their own (variant sets, naming, carried universals).
+//! What each gate drops can be listed (`drift census --why`, [`crate::funnel`]).
+//!
 //! Alternative wrappers that fill the same slot (`withWorkspace` or `withSession`)
 //! are counted together as one variant-set convention. Candidates are ranked by a
 //! deterministic score and capped. All arithmetic that affects ordering is exact
@@ -23,6 +30,8 @@ use crate::roles::{FileKinds, RoleSelector, Unit, View, units};
 use crate::security;
 use crate::vocab::{grant, refuse};
 
+/// The smallest role mined. Not the smallest role a plain rule can be proposed for: the
+/// outlier rule and [`MIN_LOWER_BOUND`] make that 19 (see the module doc).
 pub const MIN_ROLE_SIZE: usize = 8;
 /// Conventions in smaller roles may advise but not block.
 pub const MIN_BLOCK_ROLE_SIZE: usize = 15;
@@ -30,6 +39,9 @@ pub const MIN_LOWER_BOUND: f64 = 0.75;
 pub const MIN_LIFT: f64 = 1.5;
 /// Higher bar for calls into external packages and built-ins.
 pub const MIN_LIFT_EXTERNAL_CALL: f64 = 3.0;
+/// Drafts kept per role, by score. Unlike the per-repository caps ([`cap_shown`]) it also
+/// counts drafts whose cards the show policy hides, and like them it runs before
+/// [`narrow`] and [`merge_siblings`] (PLAN-R14 WS-H(a), (b); not changed: mining is frozen).
 pub const MAX_PER_ROLE: usize = 5;
 pub const DEFAULT_MAX_PER_REPO: usize = 15;
 /// A deeper role's convention is kept over its parent's only if its bound is this much higher.
@@ -4301,6 +4313,9 @@ fn mine_units_traced<'a>(
     // because they sit together (saleor's 20 email tasks in two `tasks.py` files).
     // The yield funnel (study only, [`crate::funnel`]): off, nothing is counted.
     let count = !unsplit_pass && crate::funnel::on();
+    // The per-candidate record (`census --why`, [`crate::funnel::record`]): off, nothing
+    // is recorded. Like the counts, it only reads what the gates decided.
+    let rec = !unsplit_pass && crate::funnel::recording();
     if count {
         for (r, members) in &roles {
             let lang = units_lang(members, &units);
@@ -4388,6 +4403,21 @@ fn mine_units_traced<'a>(
                     if count {
                         crate::funnel::rule(role, rule, lang, "indirect_base");
                     }
+                    if rec && crate::funnel::wants("indirect_base") {
+                        record_rule(
+                            role,
+                            rule,
+                            holders.len(),
+                            members,
+                            &units,
+                            "indirect_base",
+                            (
+                                Some(direct as f64),
+                                None,
+                                format!("{direct} of {} holders extend it directly", holders.len()),
+                            ),
+                        );
+                    }
                     continue;
                 }
                 if python_units(members, &units)
@@ -4396,12 +4426,42 @@ fn mine_units_traced<'a>(
                     if count {
                         crate::funnel::rule(role, rule, lang, "refines_base");
                     }
+                    if rec && crate::funnel::wants("refines_base") {
+                        record_rule(
+                            role,
+                            rule,
+                            holders.len(),
+                            members,
+                            &units,
+                            "refines_base",
+                            (
+                                None,
+                                None,
+                                "the outliers extend the general team base it refines".to_string(),
+                            ),
+                        );
+                    }
                     continue;
                 }
             }
             if optional_key(rule, holders, &units) {
                 if count {
                     crate::funnel::rule(role, rule, lang, "optional_key");
+                }
+                if rec && crate::funnel::wants("optional_key") {
+                    record_rule(
+                        role,
+                        rule,
+                        holders.len(),
+                        members,
+                        &units,
+                        "optional_key",
+                        (
+                            None,
+                            None,
+                            "most holders also call the callee without the key".to_string(),
+                        ),
+                    );
                 }
                 continue;
             }
@@ -4429,7 +4489,7 @@ fn mine_units_traced<'a>(
                 )
             }) {
                 drafts.push(d);
-            } else if count {
+            } else if count || rec {
                 let stage = rejected_at(
                     rule,
                     holders.len(),
@@ -4437,7 +4497,20 @@ fn mine_units_traced<'a>(
                     global[&(role.kind, *rule)],
                     kind_totals[&role.kind],
                 );
-                crate::funnel::rule(role, rule, lang, stage);
+                if count {
+                    crate::funnel::rule(role, rule, lang, stage);
+                }
+                if rec && crate::funnel::wants(stage) {
+                    let why = rejected_why(
+                        rule,
+                        stage,
+                        holders.len(),
+                        n,
+                        global[&(role.kind, *rule)],
+                        kind_totals[&role.kind],
+                    );
+                    record_rule(role, rule, holders.len(), members, &units, stage, why);
+                }
             }
         }
         drafts.extend(variant_set(
@@ -4502,6 +4575,18 @@ fn mine_units_traced<'a>(
         if count && let Some(stage) = why {
             crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, &units), stage);
         }
+        if rec && let Some(stage) = why {
+            record_draft(
+                d,
+                &units,
+                stage,
+                (
+                    Some(d.lb),
+                    None,
+                    format!("lower bound {:.2}, lift {:.2}", d.lb, d.lift),
+                ),
+            );
+        }
         why.is_none()
     });
     supersede_parts(&mut drafts);
@@ -4511,9 +4596,42 @@ fn mine_units_traced<'a>(
     }
 
     let before = count.then(|| tally(&drafts, &units));
+    // For the record: every draft by id before `dedupe`, and those it did not keep after.
+    let deduped = (rec && crate::funnel::wants("duplicate")).then(|| {
+        let mut by_id: BTreeMap<String, Vec<crate::funnel::Dropped>> = BTreeMap::new();
+        for d in &drafts {
+            by_id
+                .entry(convention_id(&d.role, &d.rule))
+                .or_default()
+                .push(dropped_draft(
+                    d,
+                    &units,
+                    "duplicate",
+                    (
+                        Some(d.lb),
+                        None,
+                        format!(
+                            "lower bound {:.2}; a stronger rule of its role (or a nested role) says the same",
+                            d.lb
+                        ),
+                    ),
+                ));
+        }
+        by_id
+    });
     let mut drafts = dedupe(drafts, &units);
     if let Some(b) = before {
         dropped(&b, &drafts, &units, "duplicate");
+    }
+    if let Some(mut by_id) = deduped {
+        for d in &drafts {
+            if let Some(rows) = by_id.get_mut(&convention_id(&d.role, &d.rule)) {
+                rows.pop();
+            }
+        }
+        for row in by_id.into_values().flatten() {
+            crate::funnel::note(row);
+        }
     }
     for d in &mut drafts {
         d.origin = convention_id(&d.role, &d.rule);
@@ -4538,6 +4656,9 @@ fn mine_units_traced<'a>(
                 .then_with(|| a.rule.cmp(&b.rule))
         });
         let before = count.then(|| tally(&ds, &units));
+        if rec {
+            record_truncated(&ds, &units, MAX_PER_ROLE, "cap_role");
+        }
         truncate_keeping(&mut ds, MAX_PER_ROLE);
         if let Some(b) = before {
             dropped(&b, &ds, &units, "cap_role");
@@ -4569,6 +4690,15 @@ fn mine_units_traced<'a>(
             // Show before the caps ([`cap_shown`]) applies to place roles only; kind roles
             // (opt-in) keep cap-before-show below: the combination is unmeasured.
             let drops = cap_shown(&mut kept, opts.max_per_repo, hidden);
+            if rec {
+                for (d, cap) in &drops {
+                    let (gate, limit) = match cap {
+                        CapDrop::Avoid => ("cap_avoid", max_avoid),
+                        CapDrop::Repo => ("cap_repo", opts.max_per_repo),
+                    };
+                    record_draft(d, &units, gate, capped_why(gate, limit, opts.max_per_repo));
+                }
+            }
             if count {
                 let (avoid, repo): (Vec<_>, Vec<_>) =
                     drops.into_iter().partition(|(_, c)| *c == CapDrop::Avoid);
@@ -4587,7 +4717,16 @@ fn mine_units_traced<'a>(
         kept.retain(|d| {
             if matches!(d.rule, Rule::Avoids { .. }) {
                 avoids += 1;
-                avoids <= max_avoid || d.accepted
+                let stays = avoids <= max_avoid || d.accepted;
+                if rec && !stays {
+                    record_draft(
+                        d,
+                        &units,
+                        "cap_avoid",
+                        capped_why("cap_avoid", max_avoid, opts.max_per_repo),
+                    );
+                }
+                stays
             } else {
                 true
             }
@@ -4596,6 +4735,9 @@ fn mine_units_traced<'a>(
             dropped(&b, &kept, &units, "cap_avoid");
         }
         let before = count.then(|| tally(&kept, &units));
+        if rec {
+            record_truncated(&kept, &units, opts.max_per_repo, "cap_repo");
+        }
         truncate_keeping(&mut kept, opts.max_per_repo);
         if let Some(b) = before {
             dropped(&b, &kept, &units, "cap_repo");
@@ -4627,6 +4769,18 @@ fn mine_units_traced<'a>(
         };
         if count && let Some(stage) = stage {
             crate::funnel::rule(&d.role, &d.rule, units_lang(&d.members, &units), stage);
+        }
+        if rec && let Some(stage) = stage {
+            let detail = if stage == "compiler" {
+                "the compiler already checks it".to_string()
+            } else {
+                format!(
+                    "{} of {} once the members it is not about are set aside",
+                    d.holders.len(),
+                    d.n
+                )
+            };
+            record_draft(d, &units, stage, (Some(d.lb), None, detail));
         }
         stage.is_none()
     });
@@ -4726,6 +4880,11 @@ const UNCAPPED: usize = usize::MAX / 4;
 /// show policy drops its card afterwards, and what it shares with its role's other
 /// drafts first ([`share_role_exemptions`], [`merge_siblings`]) is as before.
 ///
+/// The default tier is not exempt from either cap: a default-tier layering rule past the
+/// layering share is dropped like a suggestion, although the `--suggestions` cap, applied
+/// later, lists the default tier in full. `census` says when this happened
+/// ([`crate::funnel::cap_note`]); the caps themselves are frozen mining.
+///
 /// Returns the drafts it dropped, each with the cap that dropped it (for the funnel).
 fn cap_shown(
     kept: &mut Vec<Draft>,
@@ -4820,6 +4979,155 @@ fn dropped(before: &Tally, after: &[Draft], units: &[Unit], stage: &str) {
     for (key, n) in before {
         let left = after.get(key).copied().unwrap_or(0);
         crate::funnel::add(&key.0, key.1, key.2, stage, n.saturating_sub(left));
+    }
+}
+
+/// What a gate compared, for the per-candidate record ([`crate::funnel::Dropped`]): the
+/// candidate's value, the gate's threshold, and the two in words.
+type Why = (Option<f64>, Option<f64>, String);
+
+/// The language the tier reads for a set of members: Python when any member is, as
+/// [`default_tier_draft`] reads it.
+fn tier_lang(members: &[usize], units: &[Unit]) -> drift_core::ingest::Lang {
+    if members
+        .iter()
+        .any(|&m| crate::tier::language_of(&units[m].path()) == drift_core::ingest::Lang::Python)
+    {
+        drift_core::ingest::Lang::Python
+    } else {
+        drift_core::ingest::Lang::TypeScript
+    }
+}
+
+/// Record a candidate rule of `role` that a gate of the population test dropped before
+/// it was drafted (`census --why`; nothing unless [`crate::funnel::wants`] the gate).
+#[allow(clippy::too_many_arguments)]
+fn record_rule(
+    role: &RoleSelector,
+    rule: &Rule,
+    holders: usize,
+    members: &[usize],
+    units: &[Unit],
+    gate: &'static str,
+    (value, threshold, detail): Why,
+) {
+    if !crate::funnel::wants(gate) {
+        return;
+    }
+    let n = members.len();
+    let default_tier =
+        crate::tier::tier_of(rule, n, tier_lang(members, units)) == crate::tier::Tier::Default;
+    crate::funnel::note(
+        crate::funnel::Dropped::new(
+            gate,
+            role,
+            rule,
+            (holders, n),
+            units_lang(members, units),
+            default_tier,
+        )
+        .measured(value, threshold, detail),
+    );
+}
+
+/// A draft a gate dropped, as the record holds it.
+fn dropped_draft(d: &Draft, units: &[Unit], gate: &'static str, why: Why) -> crate::funnel::Dropped {
+    let (value, threshold, detail) = why;
+    crate::funnel::Dropped::new(
+        gate,
+        &d.role,
+        &d.rule,
+        (d.holders.len(), d.n),
+        units_lang(&d.members, units),
+        default_tier_draft(d, units),
+    )
+    .measured(value, threshold, detail)
+}
+
+/// Record a draft a gate dropped (`census --why`; nothing unless
+/// [`crate::funnel::wants`] the gate).
+fn record_draft(d: &Draft, units: &[Unit], gate: &'static str, why: Why) {
+    if crate::funnel::wants(gate) {
+        crate::funnel::note(dropped_draft(d, units, gate, why));
+    }
+}
+
+/// Record the drafts [`truncate_keeping`] will drop from `ds` at `cap`: those past the
+/// first `cap` that no person accepted.
+fn record_truncated(ds: &[Draft], units: &[Unit], cap: usize, gate: &'static str) {
+    if !crate::funnel::wants(gate) {
+        return;
+    }
+    for (i, d) in ds.iter().enumerate() {
+        if i >= cap && !d.accepted {
+            let detail = if gate == "cap_role" {
+                format!("ranked {} of its role's drafts, the cap is {cap}", i + 1)
+            } else {
+                format!("ranked {} of the repository's drafts, the cap is {cap}", i + 1)
+            };
+            record_draft(
+                d,
+                units,
+                gate,
+                (Some((i + 1) as f64), Some(cap as f64), detail),
+            );
+        }
+    }
+}
+
+/// What a per-repository cap of [`cap_shown`] compared, in words.
+fn capped_why(gate: &str, limit: usize, max: usize) -> Why {
+    let detail = if gate == "cap_avoid" {
+        format!("past the {limit} best-scored layering rules (a quarter of --max {max})")
+    } else {
+        format!("past the {limit} best-scored drafts the show policy shows (--max)")
+    };
+    (None, Some(limit as f64), detail)
+}
+
+/// What the gate of [`rejected_at`] compared, for the record: the share of a universal
+/// rule, the lower bound under [`MIN_LOWER_BOUND`], or the lift under the rule's bar.
+fn rejected_why(
+    rule: &Rule,
+    stage: &str,
+    holders: usize,
+    n: usize,
+    global_count: usize,
+    total_units: usize,
+) -> Why {
+    match stage {
+        "wilson" => {
+            let lb = wilson_lower_bound(holders, n);
+            (
+                Some(lb),
+                Some(MIN_LOWER_BOUND),
+                format!("lower bound {lb:.2} under {MIN_LOWER_BOUND:.2}"),
+            )
+        }
+        "lift" => {
+            let p_global = global_count as f64 / total_units.max(1) as f64;
+            let lift = if p_global > 0.0 {
+                (holders as f64 / n as f64) / p_global
+            } else {
+                0.0
+            };
+            let bar = rule.min_lift();
+            (
+                Some(lift),
+                Some(bar),
+                format!("lift {lift:.2} under {bar:.1}"),
+            )
+        }
+        _ if holders >= n => (
+            Some(1.0),
+            None,
+            format!("holds for all {holders} of {n}: no outlier"),
+        ),
+        _ => (
+            Some(holders as f64 / n.max(1) as f64),
+            None,
+            format!("holds for {holders} of {n}"),
+        ),
     }
 }
 
@@ -5065,7 +5373,9 @@ fn join_siblings(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
 /// are set aside like the members a rule is not about, with their reason. Returns false
 /// when no member holds the rule any more, or when every member holds it once inherited
 /// declarations count: then it is universal in the role, documentation rather than a
-/// check.
+/// check. The lower bound is recounted but not checked again: a draft whose recounted
+/// bound is below [`MIN_LOWER_BOUND`] stays proposed with it (PLAN-R14 WS-H(c)). It runs
+/// after the caps, so a draft it drops frees no slot for another.
 fn narrow(d: &mut Draft, units: &[Unit], ctx: &RepoContext) -> bool {
     let role_n = d.members.len();
     let mut population = Vec::with_capacity(role_n);
