@@ -1573,7 +1573,11 @@ impl<'r> Linker<'r> {
             .iter()
             .flat_map(|f| {
                 f.raw.symbols.iter().filter_map(move |s| {
+                    // An error class answering 401 or 403 by its own definition is
+                    // kept where a check throws it, as a builder's call is
+                    // ([`crate::lower::RawSymbol::refusal_status`]).
                     s.refusal_builder
+                        .or(s.refusal_status)
                         .map(|o| (format!("{}#{}", f.rel_path, s.name), o))
                 })
             })

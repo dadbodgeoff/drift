@@ -671,7 +671,11 @@ pub struct CatchFact {
     pub catches: Vec<String>,
     /// What the clause does, sorted: `rethrow`, `throw:<canonical>`, `log`,
     /// `respond:<status>`, `report:<canonical>` (Sentry and the like), `return`,
-    /// `swallow` (none of the others).
+    /// `swallow` (none of the others). `rethrow` is also a clause that hands what
+    /// it caught to the continuation the framework gave the function, by position
+    /// (`catch (e) { next(e) }`, `return next(e)`): the error goes on to the
+    /// framework's error handling, and no `return` is recorded for it (TypeScript
+    /// lowering 85, the listed reading only).
     pub does: Vec<String>,
 }
 
@@ -1614,6 +1618,18 @@ pub mod controls {
     /// itself, the framework takes the response. Held in the listed reading only
     /// ([`crate::facts::Listed`]); TypeScript lowering 64. Mining never reads it.
     pub const RETURNS_REJECTION: &str = "returns_rejection:";
+    /// What starts the control of an error class of the repository that answers a
+    /// refusal by its own definition, with the status: `refusal_status:403` of
+    /// `class Forbidden extends HttpError { constructor(m) { super(403, m) } }`,
+    /// of `this.statusCode = 401` in its constructor, or of a `status = 403`
+    /// property, where nothing in it says another status. Read from what the
+    /// class is, never from what it is called ([`rejection_class_name`] is the
+    /// by-name fallback where no definition is read). A throw of one in a branch
+    /// that turns the caller away is a [`crate::facts::BodyCheck`] of that status.
+    /// A class whose status is set by a base of another module carries none.
+    /// Recorded by TypeScript (lowering 85), on classes, in the listed reading only
+    /// ([`crate::facts::Listed`]); mining never reads it.
+    pub const REFUSAL_STATUS: &str = "refusal_status:";
     /// What starts the control of a body that returns what a call handed back when
     /// there is something, for every request: `const denied = await
     /// requireSession(req); if (denied) return denied;` (the test also written
@@ -2299,6 +2315,13 @@ pub mod controls {
     /// `NotAuthenticated`): what a reader of [`crate::facts::Symbol::throws`] takes
     /// as a refusal of the caller, asked where the class is raised
     /// ([`REJECTS_SOME`]).
+    ///
+    /// By name: a fallback only. What an error is, is said by its own definition,
+    /// the status it sets or passes to its base ([`REFUSAL_STATUS`], read by the
+    /// TypeScript lowering). This word list decides only where no such definition
+    /// is read, which today is Python's `guard_paths` for a class raised with no
+    /// status argument. It is not to be extended, and nothing new is to be built
+    /// on it.
     pub fn rejection_class_name(name: &str) -> bool {
         let lower = name_words(name);
         let has = |list: &[&str]| lower.iter().any(|w| list.contains(&w.as_str()));
