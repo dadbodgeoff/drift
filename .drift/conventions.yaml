@@ -1,0 +1,39 @@
+# Drift conventions: mined from this codebase, approved by people.
+# status: proposed | accepted | rejected    mode: advise | block
+# Edit status/mode by hand or with `drift review`. Agents must not edit this file.
+version: 2
+engine: drift 0.1.0-dev
+file_kinds:
+  literal_stems:
+  - census-diff
+  - model
+  - run
+  - stage
+  suffixes:
+  - config
+  - test
+packages:
+- ""
+- apps/studio
+- packages/ui
+conventions:
+- id: D-42b88d
+  status: proposed
+  mode: advise
+  summary: "apps/studio: functions in src/features/** declare their return type"
+  role:
+    package: apps/studio
+    dir: src/features
+    file: "*"
+    entry: '-'
+    kind: function
+  rule:
+    type: control
+    value: typed_return
+  evidence:
+    holders: 72
+    total: 73
+    lower_bound: 0.926
+    lift: 2.887
+  example: apps/studio/src/features/conventions/ConventionsView.tsx#conventionMarkdown
+  selector_version: 3

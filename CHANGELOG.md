@@ -164,6 +164,15 @@ main branch.
   `drift://security` and the template `drift://card/{path}`, and the prompts
   `drift_before_edit`, `drift_review_change` and `drift_first_setup`. A client
   that asked for `resources/list` before got `-32601`; it now gets the list.
+- **Drift checks its own repository:** `.drift/conventions.yaml` and
+  `drift.lock` are committed as `drift init` wrote them, with every proposal
+  undecided and no security baseline; a root `.ignore` leaves fixtures, the
+  planted security test code and held-out evaluation data out of the scan. CI
+  runs `drift check --diff-base <base commit>` on every pull request (the whole
+  repository on other events) with the binary the `oracle` job builds, and a new
+  `harness` job runs the Python harness tests (`eval/scoreboard`,
+  `eval/benchmark`) and `scripts/snapshot-test.sh`. For contributors; nothing
+  changes in the `drift` binary.
 
 ### Changed: the files Drift writes
 

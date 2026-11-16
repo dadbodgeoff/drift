@@ -1,0 +1,3 @@
+# drift.lock: legacy violations that never block. Fix code to remove lines.
+D-42b88d apps/studio/src/features/conventions/ConventionsView.tsx#command
+#~ D-42b88d 177d372e7eec8917 apps/studio/src/features/conventions/ConventionsView.tsx#command
