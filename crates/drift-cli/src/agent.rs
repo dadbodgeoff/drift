@@ -507,7 +507,7 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
     // policy and the file's own facts. A policy that cannot be read, or one whose agent
     // verdicts would need the repository scanned, says nothing here.
     if event == "PreToolUse"
-        && let Some(rel) = existing_file_rel(input, &root, &state_path)
+        && let Some((rel, state)) = existing_file_rel(input, &root, &state_path)
     {
         let Ok(Some(policy)) = drift_mine::policy::ConventionsFile::load(&root) else {
             return Ok(None);
@@ -515,9 +515,9 @@ fn handle_event(event: &str, input: &Value) -> anyhow::Result<Option<Value>> {
         if policy.agents.verify == drift_mine::policy::Switch::On {
             return Ok(None);
         }
-        return Ok(Project::open_for_agents(&root)
+        return Ok(Project::open_for_agents_with(&root, Some(policy))
             .ok()
-            .and_then(|p| existing_file_rules(&p, &rel, &state_path)));
+            .and_then(|p| existing_file_rules(&p, &rel, &state_path, &state)));
     }
     // Before an edit of a file that exists, only the deny for Drift's own files has
     // anything to say: no policy, lock or verify state is read for it.
@@ -1252,8 +1252,13 @@ fn broken_here(
 /// The file an edit is about to change, when the hook may say its rules
 /// ([`existing_file_rules`]): it exists, Drift reads its kind, it is not Drift's own,
 /// and the session recorded its baseline (what the file breaks already is known). Read
-/// without the policy.
-fn existing_file_rel(input: &Value, root: &Path, state_path: &Path) -> Option<String> {
+/// without the policy. With it, the session state read to know that: what tells, before
+/// any scan, that every rule for the file was given already.
+fn existing_file_rel(
+    input: &Value,
+    root: &Path,
+    state_path: &Path,
+) -> Option<(String, SessionState)> {
     let path = tool_path(input)?;
     let root = root.canonicalize().ok()?;
     let rel = crate::project::rel_in(&root, &path)?;
@@ -1263,8 +1268,8 @@ fn existing_file_rel(input: &Value, root: &Path, state_path: &Path) -> Option<St
     if !root.join(&rel).is_file() || !crate::scan::read_by_drift(&rel) {
         return None;
     }
-    load_state(state_path).filter(|s| s.has_baseline)?;
-    Some(rel)
+    let state = load_state(state_path).filter(|s| s.has_baseline)?;
+    Some((rel, state))
 }
 
 /// Before an edit of the existing file `rel`: the accepted rules for it that the
@@ -1272,8 +1277,21 @@ fn existing_file_rel(input: &Value, root: &Path, state_path: &Path) -> Option<St
 /// caps ([`pick_primed`]), each once a session. A rule the file breaks already is said
 /// so. Read from the policy and the file's own facts (the one-file scan, its cache): the
 /// repository is never scanned here, and without those facts nothing is said.
-fn existing_file_rules(p: &Project, rel: &str, state_path: &Path) -> Option<Value> {
+fn existing_file_rules(
+    p: &Project,
+    rel: &str,
+    state_path: &Path,
+    read: &SessionState,
+) -> Option<Value> {
     p.accepted().next()?;
+    // Every rule that could be said for this file was given already (`read`, the state
+    // [`existing_file_rel`] read): the rules below are some of these, less the given
+    // ones, so nothing would be said. Known from the policy and the state alone, before
+    // the file is scanned.
+    if p.accepted_in_scope_given(rel, &read.primed) {
+        trace::took("skipped:rules_given");
+        return None;
+    }
     let opts = crate::scan::ScanOptions {
         cache_dir: crate::project::cache_dir(&p.root, false),
         threads: 0,
@@ -1713,12 +1731,14 @@ fn security_keys(
 /// it shows something to look up (an entry point, or a risky operation, client leak or
 /// import of another package not yet known), so an edit of any other file costs no more
 /// than that one-file scan. When `own`'s scan was of the whole repository already (its
-/// flag), those are the facts read: the repository is not scanned twice.
+/// flag), those are the facts read: the repository is not scanned twice, and the
+/// practice map built of them is left in `map` for the conventions' check.
 fn edit_facts<'f>(
     p: &Project,
     rel: &str,
     state_path: &Path,
     own: &dyn Fn() -> Option<(&'f drift_core::RepoFacts, bool)>,
+    map: &std::cell::OnceCell<drift_mine::practices::PracticesReport>,
 ) -> Option<String> {
     if drift_mine::roles::is_test_path(rel) {
         return None;
@@ -1787,10 +1807,16 @@ fn edit_facts<'f>(
             // edit left every fact as an earlier hook found it.
             let kept = practices.then(|| derived(p, facts)).flatten();
             let departures = practices.then(|| {
-                drift_mine::practices::departures(
-                    &crate::practices::report_units_kept_of(&p.root, facts, &listed, kept.as_ref()),
-                    Some(rel),
-                )
+                let build = || {
+                    crate::practices::report_units_kept_of(&p.root, facts, &listed, kept.as_ref())
+                };
+                // Of the facts the conventions' check reads (`own`'s, of the repository):
+                // left in `map` for it ([`Project::check_keeping`]).
+                if whole {
+                    drift_mine::practices::departures(map.get_or_init(build), Some(rel))
+                } else {
+                    drift_mine::practices::departures(&build(), Some(rel))
+                }
             });
             (kept, departures)
         },
@@ -2047,9 +2073,16 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
             }
         })
     };
-    let practices = edit_facts(p, &rel, state_path, &|| {
-        scan().as_ref().ok().map(|(facts, whole)| (facts, *whole))
-    });
+    // The practice map `edit_facts` builds of the repository's facts, read again by the
+    // conventions' check of the same facts below.
+    let map = std::cell::OnceCell::new();
+    let practices = edit_facts(
+        p,
+        &rel,
+        state_path,
+        &|| scan().as_ref().ok().map(|(facts, whole)| (facts, *whole)),
+        &map,
+    );
     let areas = area_facts(&rel, state_path, &|| {
         scan().as_ref().ok().map(|(facts, whole)| (facts, *whole))
     });
@@ -2076,7 +2109,7 @@ fn post_tool_use(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         .expect("scanned above")?;
     let facts = std::mem::ManuallyDrop::new(facts);
     let only: BTreeSet<String> = [rel.clone()].into();
-    let report = p.check(&facts, Some(&only));
+    let report = p.check_keeping(&facts, Some(&only), &map);
     let shown_rel = sanitize(&rel, 160);
     // Not parsed: say so, to the agent and the person. Silence would read as clean.
     if report.unchecked.contains(&rel) {
@@ -2220,16 +2253,21 @@ fn told_since_last_stop(state: &SessionState) -> bool {
 ///
 /// Said at the Stop that follows the telling, when something told since the Stop
 /// before still stands; it then counts everything told in the conversation that still
-/// stands. `facts` is the scan the conventions' Stop made, when it made one.
+/// stands. `facts` is the scan the conventions' Stop made, when it made one, and `map`
+/// the practice map its check built of those facts ([`Project::check_keeping`]), when
+/// it built one.
 fn still_standing(
     p: &Project,
     state_path: &Path,
     facts: Option<drift_core::RepoFacts>,
+    map: Option<&drift_mine::practices::PracticesReport>,
 ) -> Option<String> {
     use drift_mine::introduced as intro;
     if !told_since_last_stop(&load_state(state_path)?) {
         return None;
     }
+    // A map is of the facts given, never of a scan made here.
+    let built = map.filter(|_| facts.is_some());
     // Left for the exit to free (see [`edit_facts`]).
     let facts = std::mem::ManuallyDrop::new(match facts {
         Some(f) => f,
@@ -2241,12 +2279,23 @@ fn still_standing(
     let (mut total, mut fresh) = (0, false);
     // What the code has now, each read only when something of its kind was told: the
     // inventory beside the practice map, neither reading what the other finds.
-    let kept = derived(p, &facts);
+    // Digested only when something reads it: the map built already is not read back.
+    let kept = (!state.security_advised.is_empty() || built.is_none())
+        .then(|| derived(p, &facts))
+        .flatten();
     let (security_now, practices_now) = crate::card::beside(
         || (!state.security_advised.is_empty()).then(|| security_keys(p, &facts, kept.as_ref())),
         || {
             (!state.practice_advised.is_empty()).then(|| {
-                drift_mine::practices::departures(&practice_report(p, &facts, kept.as_ref()), None)
+                let owned;
+                let report = match built {
+                    Some(m) => m,
+                    None => {
+                        owned = practice_report(p, &facts, kept.as_ref());
+                        &owned
+                    }
+                };
+                drift_mine::practices::departures(report, None)
                     .iter()
                     .flat_map(|d| d.keys())
                     .collect::<BTreeSet<String>>()
@@ -2350,13 +2399,16 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
     }
     // The facts, when it scans: left for the exit to free (see [`edit_facts`]).
     let mut scanned = std::mem::ManuallyDrop::new(None);
-    let out = stop_conventions(p, input, state_path, &mut scanned)?;
+    // The practice map the conventions' check built of those facts, if it built one:
+    // what still stands is read from the same map (see [`Project::check_keeping`]).
+    let map = std::cell::OnceCell::new();
+    let out = stop_conventions(p, input, state_path, &mut scanned, &map)?;
     // A blocked turn goes on: what stands is said when it ends.
     if !told || out.as_ref().is_some_and(|o| o.get("decision").is_some()) {
         return Ok(out);
     }
     let scanned = std::mem::ManuallyDrop::into_inner(scanned);
-    let Some(line) = still_standing(p, state_path, scanned) else {
+    let Some(line) = still_standing(p, state_path, scanned, map.get()) else {
         return Ok(out);
     };
     let mut out = out.unwrap_or_else(|| json!({}));
@@ -2368,12 +2420,14 @@ fn stop(p: &Project, input: &Value, state_path: &Path) -> anyhow::Result<Option<
     Ok(Some(out))
 }
 
-/// The conventions' part of Stop. `scanned` receives the facts when it scans.
+/// The conventions' part of Stop. `scanned` receives the facts when it scans, and `map`
+/// the practice map of those facts when its check builds one.
 fn stop_conventions(
     p: &Project,
     input: &Value,
     state_path: &Path,
     scanned: &mut Option<drift_core::RepoFacts>,
+    map: &std::cell::OnceCell<drift_mine::practices::PracticesReport>,
 ) -> anyhow::Result<Option<Value>> {
     // Wiring rules (experimental) need the whole repository, so they are judged here,
     // at the end of a turn, and only for the files that turn edited: a turn without
@@ -2420,7 +2474,7 @@ fn stop_conventions(
     let facts: &drift_core::RepoFacts = scanned.insert(p.scan(false)?);
     // Without blocking rules only the edited files matter.
     let only = (!has_block).then(|| edited.clone());
-    let report = p.check(facts, only.as_ref());
+    let report = p.check_keeping(facts, only.as_ref(), map);
     let mut state = load_state(state_path).unwrap_or_default();
     state.edited.clear();
     if state.has_baseline {

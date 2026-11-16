@@ -712,7 +712,15 @@ pub fn check_gated(
     // concluded only where Drift read both ends: with the whole repository's facts (a
     // one-file check holds no other file's units, so every member elsewhere would look
     // gone), and a member in a file Drift could not read to the end is still there.
-    let moved_ok = whole && lock.has_fingerprints();
+    // And only where a move can be concluded at all: [`Lock::baseline_moved`] moves no
+    // lock line but onto a violation not baselined that has a fingerprint, so without
+    // one it changes nothing, and the key of every unit is not formatted for it.
+    let moved_ok = whole
+        && lock.has_fingerprints()
+        && report.violations.iter().any(|v| {
+            !v.baselined
+                && fingerprints.contains_key(&(v.id.clone(), format!("{}#{}", v.path, v.symbol)))
+        });
     let moved: BTreeMap<(String, String), String> = if moved_ok {
         let unread: BTreeSet<&str> = repo
             .files

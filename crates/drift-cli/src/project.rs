@@ -340,6 +340,16 @@ impl Project {
                 "{CONVENTIONS_FILE} could not be read, so no convention is shown to agents until it is fixed (`drift review --list` says why)"
             )
         })?;
+        Self::open_for_agents_with(root, policy)
+    }
+
+    /// [`Project::open_for_agents`] from a policy the caller already loaded with
+    /// [`ConventionsFile::load`] (a hook that read it to decide whether to open the
+    /// project at all): the file is not parsed a second time.
+    pub fn open_for_agents_with(
+        root: &Path,
+        policy: Option<ConventionsFile>,
+    ) -> anyhow::Result<Self> {
         let mut p = Self::with_policy(root, policy)?;
         let statuses = drift_mine::verify::statuses(&p.root, &p.policy, || p.scan(false).ok());
         let shown =
@@ -410,8 +420,23 @@ impl Project {
     /// included ([`crate::practices::check_with_practices`]). The practice map they are
     /// read from is kept beside the fact cache ([`crate::derived`]): the hook or tool
     /// that asks for it next for the same facts reads it back.
+    // The hooks call [`Project::check_keeping`] now; kept for the callers that build no
+    // map of their own beside it.
+    #[allow(dead_code)]
     pub fn check(&self, facts: &RepoFacts, only: Option<&BTreeSet<String>>) -> CheckReport {
-        let map = std::cell::OnceCell::new();
+        self.check_keeping(facts, only, &std::cell::OnceCell::new())
+    }
+
+    /// [`Project::check`] that leaves the practice map it built in `map` (or takes the one
+    /// already there: it must be the map [`Project::check`] builds of these same `facts`,
+    /// with units listed), so that a later reader of the map in the same process does not
+    /// digest the facts and read it back again.
+    pub fn check_keeping(
+        &self,
+        facts: &RepoFacts,
+        only: Option<&BTreeSet<String>>,
+        map: &std::cell::OnceCell<drift_mine::practices::PracticesReport>,
+    ) -> CheckReport {
         self.check_with_map(facts, only, || {
             map.get_or_init(|| {
                 let kept = crate::derived::Derived::of(cache_dir(&self.root, false), facts);
@@ -505,6 +530,17 @@ impl Project {
         c.role.kind == SymbolKind::Package
             || c.role.kind == SymbolKind::Model
             || c.role.parts().iter().any(|p| p.package == pkg)
+    }
+
+    /// Whether every accepted convention in scope for the file at `rel` (of its package,
+    /// `in_scope`) is in `given`. Every convention
+    /// [`Project::conventions_for_path`] returns with `only_accepted` is one of those,
+    /// whatever the file declares, so when this is true none of them is left to say and
+    /// the file's facts need not be read to know it.
+    pub fn accepted_in_scope_given(&self, rel: &str, given: &BTreeSet<String>) -> bool {
+        self.accepted()
+            .filter(|c| self.in_scope(c, rel))
+            .all(|c| given.contains(&c.id))
     }
 
     /// Repo-relative POSIX path for an absolute or relative path, if inside the root.

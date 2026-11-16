@@ -692,6 +692,8 @@ pub fn for_census(
 
 /// What `drift init` writes and prints from the map: the proposals for `policy` as it
 /// stands (written into it), or none with `off` (`--no-from-map`). The caller saves.
+// `drift init` calls [`for_init_with`] now, to share the map; kept for other callers.
+#[allow(dead_code)]
 pub fn for_init(
     root: &Path,
     repo: &RepoFacts,
@@ -699,12 +701,28 @@ pub fn for_init(
     python_on: bool,
     off: bool,
 ) -> Collected {
+    let map = std::cell::OnceCell::new();
+    for_init_with(repo, policy, python_on, off, || {
+        map.get_or_init(|| crate::practices::report_units_kept(root, repo, None))
+    })
+}
+
+/// [`for_init`] for a caller that reads the same practice map for something else too:
+/// `map` gives [`crate::practices::report_units_kept`] of `repo` (no kept results), and
+/// is asked only when the proposals are made.
+pub fn for_init_with<'m>(
+    repo: &RepoFacts,
+    policy: &mut ConventionsFile,
+    python_on: bool,
+    off: bool,
+    map: impl FnOnce() -> &'m PracticesReport,
+) -> Collected {
     let c = if off {
         Collected::default()
     } else {
-        let report = crate::practices::report_units_kept(root, repo, None);
+        let report = map();
         let known = known(Some(&*policy), &[]);
-        collect(repo, &report, &policy.file_kinds, &known, Some(&*policy), python_on)
+        collect(repo, report, &policy.file_kinds, &known, Some(&*policy), python_on)
     };
     write(policy, &c);
     c

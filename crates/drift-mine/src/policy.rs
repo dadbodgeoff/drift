@@ -1198,16 +1198,23 @@ impl ConventionsFile {
         // The version first, read alone: a newer Drift's file can hold a rule type or a
         // shape this one cannot parse, and the person needs to hear "upgrade", not a
         // parse error. Where even the version cannot be read, the full parse says why.
-        if let Ok(v) = serde_saphyr::from_str::<VersionOnly>(&text)
-            && v.version > POLICY_VERSION
-        {
-            return Err(anyhow::Error::new(NewerPolicy {
-                path: p.display().to_string(),
-                version: v.version,
-            }));
-        }
-        let f: Self =
-            serde_saphyr::from_str(&text).with_context(|| format!("parsing {}", p.display()))?;
+        // Read alone only when the full parse fails: a file that parses has the same
+        // `version` field, which the check below reads, so the answer is the same with
+        // one parse instead of two.
+        let f: Self = match serde_saphyr::from_str(&text) {
+            Ok(f) => f,
+            Err(e) => {
+                if let Ok(v) = serde_saphyr::from_str::<VersionOnly>(&text)
+                    && v.version > POLICY_VERSION
+                {
+                    return Err(anyhow::Error::new(NewerPolicy {
+                        path: p.display().to_string(),
+                        version: v.version,
+                    }));
+                }
+                return Err(e).with_context(|| format!("parsing {}", p.display()));
+            }
+        };
         if f.version > POLICY_VERSION {
             return Err(anyhow::Error::new(NewerPolicy {
                 path: p.display().to_string(),
