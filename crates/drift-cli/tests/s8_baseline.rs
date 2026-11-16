@@ -94,8 +94,8 @@ fn a_moved_file_keeps_its_baseline() {
     let text = lock(r);
     assert!(
         text.lines()
-            .any(|l| l.starts_with(&format!("{id} ~")) && l.ends_with(" app/api/r39/route.ts#GET")),
-        "the first init writes the fingerprint line:\n{text}"
+            .any(|l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r39/route.ts#GET")),
+        "the first init writes the fingerprint line, as a comment (F2):\n{text}"
     );
     assert_eq!(run(r, &["check"]).0, Some(0));
     std::fs::create_dir_all(r.join("app/api/moved")).unwrap();
@@ -120,8 +120,9 @@ fn a_moved_file_keeps_its_baseline() {
         !fixed.iter().any(|f| f.contains("app/api/r39/")),
         "{fixed:?}"
     );
-    // A copy of the same handler is new: one line covers one violation. (Which of two
-    // identical handlers is the copy cannot be told; one of them is new.)
+    // A copy of the same handler is new. Which of two identical handlers is the one
+    // that moved cannot be told, so neither is taken for it (F2: before, the first was
+    // baselined and the other reported).
     write(r, "app/api/copy/route.ts", UNGUARDED);
     let (code, out) = run(r, &["check"]);
     assert_eq!(code, Some(1), "{out}");
@@ -138,7 +139,7 @@ fn a_moved_file_keeps_its_baseline() {
         .map(|v| v["baselined"].as_bool().unwrap())
         .collect();
     assert_eq!(baselined.len(), 2, "{json}");
-    assert_eq!(baselined.iter().filter(|b| **b).count(), 1, "{json}");
+    assert_eq!(baselined.iter().filter(|b| **b).count(), 0, "{json}");
 }
 
 /// Pins: once every line of a rule's old debt is fixed and pruned, the next `drift init`
@@ -176,18 +177,18 @@ fn an_old_lock_gains_fingerprints_at_the_next_init() {
     let r = dir.path();
     let old: String = lock(r)
         .lines()
-        .filter(|l| !l.contains(" ~"))
+        .filter(|l| !l.starts_with("#~"))
         .map(|l| format!("{l}\n"))
         .collect();
     std::fs::write(r.join("drift.lock"), &old).unwrap();
     assert_eq!(run(r, &["check"]).0, Some(0), "an old lock works unchanged");
-    let members = |t: &str| t.lines().filter(|l| l.starts_with(&id) && !l.contains(" ~")).count();
+    let members = |t: &str| t.lines().filter(|l| l.starts_with(&format!("{id} "))).count();
     drift(r, &["init"]);
     let text = lock(r);
     assert_eq!(members(&text), members(&old), "{text}");
     assert!(
         text.lines()
-            .any(|l| l.starts_with(&format!("{id} ~")) && l.ends_with(" app/api/r38/route.ts#GET")),
+            .any(|l| l.starts_with(&format!("#~ {id} ")) && l.ends_with(" app/api/r38/route.ts#GET")),
         "{text}"
     );
     std::fs::create_dir_all(r.join("app/api/elsewhere")).unwrap();

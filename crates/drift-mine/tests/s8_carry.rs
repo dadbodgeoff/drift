@@ -1,9 +1,9 @@
 //! Stream S8, audit 6 G5 and G6: what a person decided stays theirs across `drift init`.
 //!
 //! - A mined wrapper rule that gains an alternative comes back under a new id (ids hash
-//!   role and rule and are not changed). Before, the accepted card was left behind and
-//!   the new one came in as a proposal: the decision, its exceptions and its lock lines
-//!   were orphaned. Now `merge` carries them to the new id.
+//!   role and rule and are not changed). The accepted card stays as it was decided and
+//!   the new one comes in as a proposal (nobody accepted the added alternative: review
+//!   R2, fixed in F2), with the old card's exceptions and a copy of its lock lines.
 //! - `merge` kept refreshing the evidence of accepted conventions with nothing kept of
 //!   what the person accepted; now that evidence is kept beside it.
 //! - `merge` re-sorted the whole file by lower bound, a value every run changes; decided
@@ -64,8 +64,10 @@ fn cand(id: &str, rule: Rule, holders: usize, lb: f64) -> Candidate {
 const AUTH: &str = "lib/auth.ts#withAuth";
 const ADMIN: &str = "lib/auth.ts#withAdmin";
 
+/// Pins (F2): the wider rule is a proposal and the accepted one stays in force (before
+/// F2: the wider rule took over the acceptance, the block mode and the agents choice).
 #[test]
-fn a_decision_follows_its_rule_when_the_rule_gains_an_alternative() {
+fn a_rule_that_gains_an_alternative_is_a_proposal_beside_the_accepted_one() {
     let mut first = ConventionsFile::merge(
         None,
         "e1",
@@ -89,19 +91,25 @@ fn a_decision_follows_its_rule_when_the_rule_gains_an_alternative() {
         .iter()
         .map(|c| (c.id.as_str(), c.status, c.mode))
         .collect();
-    assert_eq!(ids, [("D-bbbbbb", Status::Accepted, Mode::Block)]);
-    let c = &again.conventions[0];
+    assert_eq!(
+        ids,
+        [
+            ("D-aaaaaa", Status::Accepted, Mode::Block),
+            ("D-bbbbbb", Status::Proposed, Mode::Advise),
+        ]
+    );
+    let old = &again.conventions[0];
+    assert_eq!(old.rule, wrapped(&[AUTH]));
+    let c = &again.conventions[1];
     assert_eq!(c.rule, wrapped(&[AUTH, ADMIN]));
+    assert_eq!(c.agents, None);
+    assert!(c.accepted_evidence.is_none());
     assert_eq!(
         c.exception("app/health/route.ts#GET").map(|e| e.reason.as_str()),
         Some("public health check")
     );
-    // What the person accepted (17 of 20) stays beside the refreshed evidence.
-    let accepted = c.accepted_evidence.as_ref().expect("kept");
-    assert_eq!((accepted.holders, accepted.total, accepted.role_size), (17, 20, 20));
-    assert_eq!(c.evidence.holders, 19);
 
-    // The lock lines move with it, fingerprint lines included.
+    // The lock lines are copied to it, fingerprint lines included; the old id keeps its own.
     let mut lock = Lock::default();
     lock.entries
         .insert(("D-aaaaaa".into(), "app/x/route.ts#GET".into()));
@@ -112,12 +120,16 @@ fn a_decision_follows_its_rule_when_the_rule_gains_an_alternative() {
     lock.entries
         .insert(("D-cccccc".into(), "app/y/route.ts#GET".into()));
     for (from, to) in &carried {
-        lock.rename(from, to);
+        lock.copy_lines(from, to);
     }
     assert!(lock.contains("D-bbbbbb", "app/x/route.ts#GET"));
-    assert!(!lock.entries.iter().any(|(id, _)| id == "D-aaaaaa"));
+    assert!(lock.contains(
+        "D-bbbbbb",
+        &Lock::fingerprint_key("0123456789abcdef", "app/x/route.ts#GET")
+    ));
+    assert!(lock.contains("D-aaaaaa", "app/x/route.ts#GET"));
     assert!(lock.contains("D-cccccc", "app/y/route.ts#GET"));
-    assert_eq!(lock.members(), 2);
+    assert_eq!(lock.members(), 3);
 }
 
 #[test]
@@ -134,7 +146,9 @@ fn only_an_added_alternative_carries_a_decision() {
             any_of: vec![AUTH.into(), ADMIN.into()],
         }
     ));
-    // A proposal, or an accepted card mining still proposes, carries nothing.
+    // A proposal carries its lock lines only (F2, review R2 amnesty (a): before, the new
+    // id was new to the policy and baselined with everything written since); an
+    // accepted card mining still proposes carries nothing.
     let first = ConventionsFile::merge(
         None,
         "e1",
@@ -147,8 +161,9 @@ fn only_an_added_alternative_carries_a_decision() {
         FileKinds::default(),
         &[cand("D-bbbbbb", wrapped(&[AUTH, ADMIN]), 19, 0.8)],
     );
-    assert!(carried.is_empty());
+    assert_eq!(carried, [("D-aaaaaa".to_string(), "D-bbbbbb".to_string())]);
     assert_eq!(again.conventions.len(), 2);
+    assert!(again.conventions.iter().all(|c| c.status == Status::Proposed));
     let mut accepted = first;
     accepted.get_mut("D-aaaaaa").unwrap().status = Status::Accepted;
     let (_, carried) = ConventionsFile::merge_carrying(

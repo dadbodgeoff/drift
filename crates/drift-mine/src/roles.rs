@@ -325,13 +325,16 @@ impl Unit<'_> {
     /// arguments, how many string literals), with references into its own file written
     /// without the file's path. The facts hold no text of the body, so this is the
     /// normalised body Drift has; the name and line are left out. A file is its
-    /// exported names, its directives and `about`; a model its source and fields; a
-    /// package its name and scripts. 16 hex digits of a BLAKE3 hash.
+    /// exported names, the names of the symbols it declares, the packages it imports
+    /// (`pkg:…`: a module in the repository is named by its path, which a move
+    /// changes), its directives and `about`; a model its source and fields; a package
+    /// its name and scripts. 16 hex digits of a BLAKE3 hash.
     ///
-    /// Two units collide only when Drift read the same of both: identical handlers, or
-    /// two files that export the same names and import the same forbidden module.
-    /// Matching takes care of that ([`crate::policy::Lock::baseline_moved`]): a line is
-    /// used only when its own member is gone, and for one violation.
+    /// Two units collide when Drift read the same of both: identical handlers, or two
+    /// files (`page.tsx` beside `page.tsx`) that declare and import the same. So a
+    /// fingerprint alone never says a unit moved: [`crate::policy::Lock::baseline_moved`]
+    /// also asks for the same name, the old member known to be gone, and one gone
+    /// member for one new violation.
     pub fn fingerprint(&self, about: Option<&str>) -> String {
         let mut parts: Vec<String> = Vec::new();
         match self.view {
@@ -372,6 +375,23 @@ impl Unit<'_> {
                 names.dedup();
                 for n in names {
                     parts.push(format!("export {n}"));
+                }
+                let mut declared: Vec<&str> = f.symbols.iter().map(|s| s.name.as_str()).collect();
+                declared.sort_unstable();
+                declared.dedup();
+                for n in declared {
+                    parts.push(format!("declares {n}"));
+                }
+                let mut packages: Vec<&str> = f
+                    .imports
+                    .iter()
+                    .map(|i| i.module.as_str())
+                    .filter(|m| m.starts_with("pkg:"))
+                    .collect();
+                packages.sort_unstable();
+                packages.dedup();
+                for m in packages {
+                    parts.push(format!("import {m}"));
                 }
                 for d in &f.directives {
                     parts.push(format!("directive {d}"));

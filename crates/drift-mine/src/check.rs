@@ -708,20 +708,37 @@ pub fn check_gated(
         &mut report,
     );
     // Old debt that moved keeps its lock line, and a reviewer's exception follows it
-    // ([`Lock::baseline_moved`], [`crate::policy::carry_moved_exceptions`]).
-    let present: BTreeSet<String> = if lock.has_fingerprints() {
-        all.iter().map(|u| u.key()).collect()
+    // ([`Lock::baseline_moved`], [`crate::policy::carry_moved_exceptions`]). A move is
+    // concluded only where Drift read both ends: with the whole repository's facts (a
+    // one-file check holds no other file's units, so every member elsewhere would look
+    // gone), and a member in a file Drift could not read to the end is still there.
+    let moved_ok = whole && lock.has_fingerprints();
+    let moved: BTreeMap<(String, String), String> = if moved_ok {
+        let unread: BTreeSet<&str> = repo
+            .files
+            .iter()
+            .filter(|f| !f.parse_ok)
+            .map(|f| f.path.as_str())
+            .collect();
+        let present: BTreeSet<String> = all
+            .iter()
+            .map(|u| u.key())
+            .chain(
+                lock.entries
+                    .iter()
+                    .map(|(_, k)| Lock::member_of(k))
+                    .filter(|m| {
+                        let p = m.split_once('#').map_or(*m, |(p, _)| p);
+                        unchecked.uncertain(p) || unread.contains(p)
+                    })
+                    .map(str::to_string),
+            )
+            .collect();
+        lock.baseline_moved(&mut report.violations, &fingerprints, &present)
     } else {
-        BTreeSet::new()
+        BTreeMap::new()
     };
-    let moved = lock.baseline_moved(&mut report.violations, &fingerprints, &present);
-    let carried = crate::policy::carry_moved_exceptions(
-        &conventions,
-        lock,
-        &report.violations,
-        &fingerprints,
-        &present,
-    );
+    let carried = crate::policy::carry_moved_exceptions(&conventions, &moved);
     let excepting: Vec<&Convention> = conventions
         .iter()
         .copied()
@@ -729,6 +746,13 @@ pub fn check_gated(
         .chain(carried.iter())
         .collect();
     let reviewed = apply_exceptions(&excepting, &mut report);
+    // A member a reviewer marked fine, here or where it was before it moved, is not
+    // about the rule's share ([`Standing::count`] knows only the exceptions as written).
+    for (id, key) in &reviewed {
+        if let Some(s) = tally.get_mut(id.as_str()) {
+            s.breaking.remove(key);
+        }
+    }
     if gate {
         neighbour_gate(
             repo,
@@ -753,7 +777,7 @@ pub fn check_gated(
             .chain(reviewed)
             .chain(set_apart)
             .chain(untold)
-            .chain(moved)
+            .chain(moved.into_iter().map(|((id, _), member)| (id, member)))
             .collect();
         // A promoted practice's entries are the practice map's to call fixed.
         let in_scope: BTreeSet<&str> = conventions
@@ -761,10 +785,14 @@ pub fn check_gated(
             .filter(|c| !c.rule.is_practice())
             .map(|c| c.id.as_str())
             .collect();
-        // A fingerprint line is fixed with its member line, and listed once with it.
+        // A fingerprint line is fixed with its member line, and listed once with it; one
+        // whose member line a person removed baselines nothing and is not listed.
         report.fixed = lock
             .entries
             .iter()
+            .filter(|(id, key)| {
+                Lock::split_fingerprint(key).is_none_or(|(_, m)| lock.contains(id, m))
+            })
             .map(|(id, key)| (id, Lock::member_of(key)))
             .filter(|(id, key)| {
                 in_scope.contains(id.as_str())

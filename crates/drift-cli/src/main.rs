@@ -2914,10 +2914,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 &from_map_cli::left_out_of_lock(&policy),
             );
             if had {
-                // A decision that moved to a new id (its rule gained an alternative) takes
-                // its legacy violations with it.
+                // A new card whose rule is an old one's with an alternative added has the
+                // old one's legacy violations; the old card keeps its decision and lines.
                 for (from, to) in &carried {
-                    lock.rename(from, to);
+                    lock.copy_lines(from, to);
+                    eprintln!(
+                        "drift: {to} proposes the rule of {from} with more ways to follow it. {from} stays as it was decided; decide {to} with `drift review` (its legacy violations are those of {from})."
+                    );
                 }
                 // Only a convention new to the policy gets its current violations
                 // baselined; existing entries are kept. A convention the policy had is
@@ -2928,6 +2931,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                     .iter()
                     .map(String::as_str)
                     .chain(carried.iter().map(|(_, to)| to.as_str()))
+                    // A convention the lock already has lines for was baselined before
+                    // (one the policy dropped, as wiring rules are while wiring is off):
+                    // coming back, it is not baselined again.
+                    .chain(lock.entries.iter().map(|(id, _)| id.as_str()))
                     .collect();
                 let add: Vec<_> = fresh
                     .entries

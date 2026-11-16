@@ -45,6 +45,8 @@ describe("policy and census", () => {
     expect(lock.length).toBeGreaterThan(0);
     expect(lock[0].id).toMatch(/^D-[0-9a-f]{6}$/);
     expect(parseLock("# c\n\nD-aaaaaa a.ts#X\n")).toEqual([{ id: "D-aaaaaa", key: "a.ts#X" }]);
+    // A fingerprint line is no second entry, in the form written now and the first one.
+    expect(parseLock("D-aaaaaa a.ts#X\n#~ D-aaaaaa 0123456789abcdef a.ts#X\nD-aaaaaa ~0123456789abcdef a.ts#X\n")).toEqual([{ id: "D-aaaaaa", key: "a.ts#X" }]);
   });
 
   it("classifies rules into the study's families", () => {

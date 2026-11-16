@@ -248,15 +248,15 @@ Edit `status` and `mode` by hand or with `drift review`; agents must not (the ho
 
 ## `drift.lock`
 
-Baselined violations: legacy violations that never fail `drift check`. One line each, sorted: `<convention id> <path#symbol>`, and beside it a fingerprint line `<convention id> ~<16 hex digits> <path#symbol>` that lets the entry follow the member when it moves or is renamed (see [Files Drift Writes](Files-Drift-Writes#driftlock)). Blank lines and lines starting with `#` are ignored.
+Baselined violations: legacy violations that never fail `drift check`. One line each, sorted: `<convention id> <path#symbol>`, and below it a fingerprint line `#~ <convention id> <16 hex digits> <path#symbol>` that lets the entry follow the member when it moves (see [Files Drift Writes](Files-Drift-Writes#driftlock)). Blank lines and other lines starting with `#` are ignored.
 
 ```text
 # drift.lock: legacy violations that never block. Fix code to remove lines.
 D-e0a68b app/api/events/route.ts#GET
-D-e0a68b ~<16 hex digits> app/api/events/route.ts#GET
+#~ D-e0a68b <16 hex digits> app/api/events/route.ts#GET
 ```
 
-`drift init` baselines the current violations on the first run and, on later runs, only the current violations of conventions new to the policy. An existing convention is never baselined again. Existing entries are kept and gain a fingerprint line; when a decision moves to a new id (the rule gained an alternative), its lines move with it. `drift practices promote` adds one line per unit that differs from the promoted practice today. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
+`drift init` baselines the current violations on the first run and, on later runs, only the current violations of conventions new to the policy. An existing convention is never baselined again. Existing entries are kept and gain a fingerprint line; when a rule gains an alternative and comes back as a proposal under a new id, the old id's lines are copied to it. A convention the lock already has lines for is not baselined again when it comes back to the policy. `drift practices promote` adds one line per unit that differs from the promoted practice today. People add lines; fixing the code removes them. Because each line stands alone and the file is sorted, adding `drift.lock merge=union` to `.gitattributes` lets parallel branches merge it without conflicts:
 
 ```bash
 echo "drift.lock merge=union" >> .gitattributes
