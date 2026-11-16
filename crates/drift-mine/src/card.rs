@@ -322,7 +322,118 @@ pub fn card(
     regularities: &[Regularity],
     root: Option<&Path>,
 ) -> String {
-    render(&build(repo, inv, rel, conventions, regularities), root)
+    let text = render(&build(repo, inv, rel, conventions, regularities), root);
+    match root.and_then(|r| violations_here(repo, r, rel, conventions)) {
+        Some(section) => with_section(text, &section),
+        None => text,
+    }
+}
+
+/// The heading of the card's new violations, each with what its rule rests on.
+pub const VIOLATIONS_HEAD: &str =
+    "Violations here (new: not in drift.lock, no drift-ignore), and what each rule rests on:";
+
+/// The new violations in `rel` of the accepted conventions the card lists
+/// (`listed`), each with what its rule rests on ([`crate::report::Trust`]), as a card
+/// section; `None` when there are none, or the repository at `root` has no policy.
+/// The policy and the lock are read from `root`, and the file checked as `drift check
+/// <rel>` checks it, against the facts the card was made from. A promoted practice is
+/// checked against the practice map, which the card does not read, and wiring advice
+/// against files the card does not attach: neither is listed here (`drift check` lists
+/// them).
+fn violations_here(
+    repo: &RepoFacts,
+    root: &Path,
+    rel: &str,
+    listed: &[ConventionLine],
+) -> Option<String> {
+    if !listed.iter().any(|l| l.status == "accepted") {
+        return None;
+    }
+    let policy = crate::policy::ConventionsFile::load(root).ok().flatten()?;
+    let lock = crate::policy::Lock::load(root).unwrap_or_default();
+    let only: BTreeSet<String> = BTreeSet::from([rel.to_string()]);
+    let mut report = crate::check::check(
+        repo,
+        &policy,
+        &lock,
+        crate::check::Scope::Accepted,
+        Some(&only),
+    );
+    crate::check::locate_imports(&mut report, root);
+    let new: Vec<&crate::check::Violation> = report
+        .new_violations()
+        .filter(|v| v.wire.is_none() && listed.iter().any(|l| l.id == v.id))
+        .collect();
+    if new.is_empty() {
+        return None;
+    }
+    let basis = crate::report::Basis::new(repo, &policy, &report);
+    let section = trust_card(&new, &basis);
+    (!section.is_empty()).then_some(section)
+}
+
+/// [`VIOLATIONS_HEAD`] and, for at most [`CAP`] violations, what each rule rests on in
+/// the labels every other surface uses; the rest counted.
+fn trust_card(new: &[&crate::check::Violation], basis: &crate::report::Basis) -> String {
+    let mut out = format!("{VIOLATIONS_HEAD}\n");
+    let mut shown = 0;
+    for v in new {
+        if shown == CAP {
+            break;
+        }
+        let Some(t) = basis.trust(v, "") else {
+            continue;
+        };
+        shown += 1;
+        out.push_str(&format!(
+            "  [{}] {} ({})\n    source: {}\n",
+            t.id,
+            t.rule,
+            if t.blocks { "blocks" } else { "advises" },
+            t.origin
+        ));
+        if let Some(e) = &t.evidence {
+            out.push_str(&format!("    evidence: {e}\n"));
+        }
+        for c in &t.changed {
+            out.push_str(&format!("    changed: {c}\n"));
+        }
+        if let Some(n) = &t.not_checked {
+            out.push_str(&format!("    not checked: {n}\n"));
+        }
+        out.push_str(&format!("    here: {}: {}\n", t.at, t.instead));
+        if !t.held.is_empty() {
+            out.push_str(&format!("    holds near it: {}\n", t.held.join(", ")));
+        }
+        if let Some(copy) = &t.copy {
+            out.push_str(&format!("    copy: {copy}\n"));
+        }
+        if t.blocks {
+            if let Some((comment, place)) = &t.comment {
+                out.push_str(&format!("    exception: add `{comment}` {place}\n"));
+            }
+            if let Some(cmd) = &t.mark_fine {
+                out.push_str(&format!("    exception: a person runs `{cmd}`\n"));
+            }
+        }
+        let wrong: Vec<String> = t
+            .wrong_rule
+            .iter()
+            .map(|(cmd, what)| format!("`{cmd}` {what}"))
+            .collect();
+        out.push_str(&format!("    wrong rule: a person runs {}\n", wrong.join("; ")));
+    }
+    if shown == 0 {
+        return String::new();
+    }
+    if new.len() > shown {
+        out.push_str(&format!(
+            "  and {} more: `drift check` lists them\n",
+            new.len() - shown
+        ));
+    }
+    out
 }
 
 /// The facts of the card for `rel`. `conventions` are those covering it, in the order
