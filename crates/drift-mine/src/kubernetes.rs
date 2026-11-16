@@ -1,9 +1,10 @@
 //! What the repository's Kubernetes manifests open, by what each says itself.
 //!
-//! Drift does not read Kubernetes as a deployment of the repository's code: which
-//! image is built from which directory is not in the manifests, so a route's
-//! exposure stays unknown while they are there ([`crate::security`]). What the
-//! manifests say of the cluster itself is read, object by object:
+//! These are findings of the manifests alone. Which route of the repository's code a
+//! path from outside reaches is decided in `security::cluster`, which reads the
+//! same documents ([`parse_file`]) and ties a workload to code by an image the
+//! repository builds or by a person's word. What the manifests say of the cluster
+//! itself is read here, object by object:
 //!
 //! - **A path from outside the cluster** (`ingress`): each rule of an `Ingress`, a
 //!   Gateway API route (`backendRefs`) or an OpenShift `Route`, with the Service it
@@ -121,18 +122,18 @@ fn sniff(path: &Path) -> bool {
 }
 
 /// One object of a manifest.
-struct Object<'a> {
-    path: &'a str,
-    line: u32,
-    kind: String,
-    name: String,
-    namespace: String,
-    doc: Value,
+pub(crate) struct Object<'a> {
+    pub(crate) path: &'a str,
+    pub(crate) line: u32,
+    pub(crate) kind: String,
+    pub(crate) name: String,
+    pub(crate) namespace: String,
+    pub(crate) doc: Value,
 }
 
 impl Object<'_> {
     /// `Kind/name`, with the namespace where the object names one.
-    fn label(&self) -> String {
+    pub(crate) fn label(&self) -> String {
         match self.namespace.as_str() {
             "" => format!("{}/{}", self.kind, self.name),
             ns => format!("{ns}/{}/{}", self.kind, self.name),
@@ -145,7 +146,7 @@ impl Object<'_> {
     }
 
     /// The pod template of the object: the labels its pods carry and their spec.
-    fn pods(&self) -> Option<(&Value, &Value)> {
+    pub(crate) fn pods(&self) -> Option<(&Value, &Value)> {
         let mut at = &self.doc;
         for _ in 0..TEMPLATE_DEPTH {
             let spec = at.get("spec")?;
@@ -158,13 +159,13 @@ impl Object<'_> {
         None
     }
 
-    fn spec(&self, key: &str) -> Option<&Value> {
+    pub(crate) fn spec(&self, key: &str) -> Option<&Value> {
         self.doc.get("spec").and_then(|s| s.get(key))
     }
 }
 
 /// The text of a scalar, as a manifest may write it (`80`, `"80"`, `true`).
-fn scalar(v: &Value) -> Option<String> {
+pub(crate) fn scalar(v: &Value) -> Option<String> {
     match v {
         Value::String(s) => Some(s.clone()),
         Value::Number(n) => Some(n.to_string()),
@@ -173,11 +174,11 @@ fn scalar(v: &Value) -> Option<String> {
     }
 }
 
-fn text<'a>(v: &'a Value, key: &str) -> &'a str {
+pub(crate) fn text<'a>(v: &'a Value, key: &str) -> &'a str {
     v.get(key).and_then(Value::as_str).unwrap_or_default()
 }
 
-fn list(v: Option<&Value>) -> impl Iterator<Item = &Value> {
+pub(crate) fn list(v: Option<&Value>) -> impl Iterator<Item = &Value> {
     v.and_then(Value::as_array).into_iter().flatten()
 }
 
@@ -256,6 +257,86 @@ fn objects<'a>(rel: &'a str, start: u32, doc: Value, body: &str, out: &mut Vec<O
         namespace: text(&meta, "namespace").to_string(),
         doc,
     });
+}
+
+/// The objects of one manifest, read for what it deploys
+/// ([`crate::security::Boundaries`]): an error, with why, when a document of it is
+/// not parsed, is not an object, or holds template markup outside a `ConfigMap` or a
+/// `Secret` (a Helm or other template is text until a tool renders it), since what
+/// the file deploys is then not known. Unlike [`read_files`], which passes such a
+/// document over: a finding needs only what is there, a verdict needs all of it.
+pub(crate) fn parse_file<'a>(rel: &'a str, text: &str) -> Result<Vec<Object<'a>>, String> {
+    let mut out = Vec::new();
+    let mut chunks: Vec<(u32, String)> = Vec::new();
+    if rel.ends_with(".json") {
+        chunks.push((1, text.to_string()));
+    } else {
+        let mut start = 1u32;
+        let mut body = String::new();
+        for (i, line) in text.lines().enumerate() {
+            if line == "---" || line.starts_with("--- ") {
+                chunks.push((start, std::mem::take(&mut body)));
+                start = i as u32 + 2;
+            } else {
+                body.push_str(line);
+                body.push('\n');
+            }
+        }
+        chunks.push((start, body));
+    }
+    for (start, body) in chunks {
+        let content = body.lines().any(|l| {
+            let t = l.trim();
+            !t.is_empty() && !t.starts_with('#')
+        });
+        if !content {
+            continue;
+        }
+        let parsed = if rel.ends_with(".json") {
+            serde_json::from_str::<Value>(&body).map_err(|e| e.to_string())
+        } else {
+            serde_saphyr::from_str::<Value>(&body).map_err(|e| e.to_string())
+        };
+        let v = parsed.map_err(|e| {
+            let e: String = e.chars().take(120).collect();
+            match body.contains("{{") {
+                true => format!(
+                    "the document at line {start} holds template markup (`{{{{`) and is not parsed ({e})"
+                ),
+                false => format!("the document at line {start} is not parsed ({e})"),
+            }
+        })?;
+        if v.is_null() {
+            continue;
+        }
+        let before = out.len();
+        objects(rel, start, v, &body, &mut out);
+        if out.len() == before {
+            return Err(format!(
+                "the document at line {start} is not a Kubernetes object (it names no kind and apiVersion)"
+            ));
+        }
+        if body.contains("{{")
+            && out[before..]
+                .iter()
+                .any(|o| !matches!(o.kind.as_str(), "ConfigMap" | "Secret"))
+        {
+            return Err(format!(
+                "the document at line {start} holds template markup (`{{{{`), which is text until a tool renders it"
+            ));
+        }
+        // An object with no name is a fragment (a patch, a piece another tool fills
+        // in), not what is applied. A Skaffold file is build configuration.
+        if let Some(o) = out[before..].iter().find(|o| {
+            o.name.is_empty() && !self::text(&o.doc, "apiVersion").starts_with("skaffold/")
+        }) {
+            return Err(format!(
+                "the {} at line {} has no `metadata.name`, so it is a fragment, not a whole manifest",
+                o.kind, o.line
+            ));
+        }
+    }
+    Ok(out)
 }
 
 /// The findings of a set of manifests (path, text), read together: what a Service
@@ -1090,5 +1171,43 @@ items:
                 ("svc.json", 1, "Service/j")
             ]
         );
+    }
+
+    /// A file read for a verdict is read whole or not at all: a template or a
+    /// document that does not parse fails it, with the line, where the findings
+    /// pass such a document over; a template inside a ConfigMap is its data.
+    #[test]
+    fn a_file_is_parsed_whole_for_a_verdict() {
+        let ok = parse_file(
+            "k8s/a.yaml",
+            "# leading comment\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: web\n  namespace: shop\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\ndata:\n  t: \"{{ .Values.x }}\"\n",
+        )
+        .unwrap();
+        let rows: Vec<(&str, &str, &str, u32)> = ok
+            .iter()
+            .map(|o| {
+                (
+                    o.kind.as_str(),
+                    o.name.as_str(),
+                    o.namespace.as_str(),
+                    o.line,
+                )
+            })
+            .collect();
+        assert_eq!(
+            rows,
+            vec![("Service", "web", "shop", 6), ("ConfigMap", "c", "", 12)]
+        );
+        let templated = parse_file(
+            "chart/d.yaml",
+            "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ .Release.Name }}\n",
+        )
+        .err()
+        .unwrap();
+        assert!(templated.contains("{{"), "{templated}");
+        let broken = parse_file("k8s/b.yaml", "kind: ConfigMap\ndata: [unclosed\n")
+            .err()
+            .unwrap();
+        assert!(broken.contains("line 1"), "{broken}");
     }
 }

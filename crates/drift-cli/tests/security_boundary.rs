@@ -2186,6 +2186,22 @@ fn every_description_of_a_deployment_counts_and_the_most_exposed_decides() {
         let e = claim(&inv);
         assert_eq!(e["exposure"], "unknown", "{e:#}");
         let boundary = e["boundary"].as_str().unwrap();
+        // Kubernetes is read: the Ingress sends to a Service the manifests do not
+        // hold, so what it reaches is not known. The rest are not read.
+        if kind == "Kubernetes" {
+            assert!(
+                boundary.contains("reachable only inside the compose network")
+                    && boundary.contains("Ingress api (k8s/ingress.yaml:1) routes / (Prefix)"),
+                "{boundary}"
+            );
+            write(
+                r,
+                ".drift/config.yaml",
+                &format!("security:\n  not_deployed:\n    - {left}\n"),
+            );
+            assert_eq!(claim(&inventory(r))["exposure"], "internal");
+            continue;
+        }
         // The compose finding is kept, and the files are named. For Terraform the
         // way out is a tie, which is said; never leaving it out.
         let hint = match kind {
@@ -2435,10 +2451,15 @@ fn every_description_drift_does_not_read_keeps_a_service_from_being_internal() {
             write(r, &path, text);
             let got = exposures(r);
             let (exposure, boundary) = &got[CLAIM];
+            // A Kubernetes manifest Drift reads (the Knative Service) keeps the route
+            // unknown by what it says, with its file and line; one it cannot read
+            // whole is named as not read.
+            let read = *kind == "Kubernetes" && boundary.contains(&format!("({path}:"));
             if exposure != "unknown"
-                || !boundary.ends_with(&format!(
-                    "; but {kind} ({path}) in the repository is not read and may route to it"
-                ))
+                || !(read
+                    || boundary.ends_with(&format!(
+                        "; but {kind} ({path}) in the repository is not read and may route to it"
+                    )))
             {
                 wrong.push(format!("{path} ({kind}): {exposure}: {boundary}"));
             }

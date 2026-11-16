@@ -375,6 +375,17 @@ main branch.
   outside the repository, a contract that forbids indirect imports too, a block
   built by code Drift does not read, one a later setting changes). Mining reads
   none of it.
+- **Exposure from Kubernetes manifests:** `drift security` reads an `Ingress`, a
+  Gateway API route, an OpenShift `Route` or a `LoadBalancer`/`NodePort` Service
+  through its Service's selector to a workload, and a route of the code that
+  workload runs is internet-facing, internal or unknown with the manifest file
+  and line in its reason. A route that read unknown only because manifests were
+  there may now read either way. A workload is tied to code by an image the
+  repository builds (compose `build` with `image`, a Skaffold artifact) or by
+  `security.kubernetes` in `.drift/config.yaml`, which `drift setup` asks for
+  (question kind `kubernetes`). Kustomize `resources` and `bases` are read; a
+  patch, a name prefix or an unread key makes what it touches unknown, and Helm
+  charts stay unread. The security baseline is unchanged.
 
 ### Changed: the files Drift writes
 

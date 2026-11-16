@@ -17,6 +17,9 @@ use crate::vocab::grant;
 use crate::vocab::refuse::names_access_control;
 
 pub mod platforms;
+/// The Kubernetes manifests, read as a deployment of the repository's code.
+mod cluster;
+pub use cluster::{PATH_ANNOTATIONS, Workload};
 
 /// Suffix of a guard that is a hook the whole app runs.
 pub const APP_HOOK: &str = " (app hook)";
@@ -666,6 +669,14 @@ pub struct Boundaries {
     /// Whose word each of them rests on ([`crate::policy::DriftConfig::declared_by`]).
     #[serde(skip)]
     declared_by: BTreeMap<String, String>,
+    /// The images the compose files build, by the name they give them: what a
+    /// Kubernetes workload that runs one runs ([`cluster`]).
+    #[serde(skip)]
+    built: Vec<cluster::Built>,
+    /// The Kubernetes manifests, read for the code each workload runs and what
+    /// reaches it from outside ([`cluster`]).
+    #[serde(skip)]
+    cluster: Option<cluster::Cluster>,
 }
 
 /// An application built from the repository (`client`, its code in `from`) that can
@@ -1207,6 +1218,10 @@ impl Boundaries {
             .as_ref()
             .map(|cfg| cfg.security.platforms.clone())
             .unwrap_or_default();
+        let workloads = config
+            .as_ref()
+            .map(|cfg| cfg.security.kubernetes.clone())
+            .unwrap_or_default();
         match config {
             Ok(cfg) => {
                 for (list, exposure, source) in [
@@ -1312,6 +1327,8 @@ impl Boundaries {
                 // Read apart: what it would have said is kept, to say so.
                 let mut apart = Self::default();
                 apart.read_compose_with(Some(root), &name, &text, &overrides);
+                // Which image it builds from which code is so whether it deploys or not.
+                b.built.append(&mut apart.built);
                 apart.rules.sort();
                 apart.warnings.clear();
                 b.warnings.push(format!(
@@ -1341,6 +1358,8 @@ impl Boundaries {
                 }
             }
         }
+        // The Kubernetes manifests: what is read whole is a description read.
+        cluster::load(&mut b, root, &mut found.unread, &left, &workloads);
         // What Drift recognises as a deployment description and does not read.
         let mut kinds: BTreeMap<String, Vec<String>> = BTreeMap::new();
         let mut left_kinds: BTreeMap<String, usize> = BTreeMap::new();
@@ -1844,6 +1863,15 @@ impl Boundaries {
                         "{who} is on the external network `{n}`, which containers outside {name} join"
                     ))
                 });
+            if let (Some(d), Some(image)) = (&dir, str_of(def.get("image"))) {
+                self.built.push(cluster::Built {
+                    image,
+                    dir: normal_dir(d),
+                    context: context.clone(),
+                    dockerfile: dockerfile.clone(),
+                    by: who.clone(),
+                });
+            }
             let start = match root {
                 Some(root) => started(
                     root,
@@ -2186,6 +2214,7 @@ impl Boundaries {
         // One run's worth of comparing routes with locations, and no more.
         gateway::refill();
         self.expose_routes(entries, adapters);
+        self.expose_cluster(entries, adapters);
         // What a compose file that is left out would have said, where that is more.
         for (file, apart) in &self.left_out {
             let mut rows: Vec<EntryRow> = entries.to_vec();
@@ -2454,16 +2483,40 @@ impl Boundaries {
     /// middleware file is there, since Drift reads none ([`NEXT_UNREAD`]).
     fn served(&self, b: &Behind, root: &Path, adapter: &str) -> Option<String> {
         let who = format!("compose service {} in {}", b.service, b.compose);
+        self.served_by(
+            &who,
+            &b.service,
+            &b.dir,
+            b.target.as_ref(),
+            b.next,
+            root,
+            adapter,
+        )
+    }
+
+    /// [`Boundaries::served`] of what `who` (`service`, whose code is in `dir`)
+    /// starts: the application object (`target`), or a Next.js application (`next`).
+    #[allow(clippy::too_many_arguments)]
+    fn served_by(
+        &self,
+        who: &str,
+        service: &str,
+        dir: &str,
+        target: Option<&(String, String)>,
+        next: bool,
+        root: &Path,
+        adapter: &str,
+    ) -> Option<String> {
         if adapter == "nextjs" {
-            if !b.next {
+            if !next {
                 return Some(format!(
                     "{who} does not start with `next start`: where its pages are served is not known"
                 ));
             }
             return NEXT_UNREAD.iter().find_map(|file| {
-                let rel = join_dir(&b.dir, file)?;
+                let rel = join_dir(dir, file)?;
                 root.join(&rel).is_file().then(|| {
-                    format!("{rel} is not read: it may set a base path, rewrites or a middleware that moves the routes of {}", b.service)
+                    format!("{rel} is not read: it may set a base path, rewrites or a middleware that moves the routes of {service}")
                 })
             });
         }
@@ -2471,7 +2524,7 @@ impl Boundaries {
             return None;
         }
         let apps = self.apps.as_ref()?;
-        let Some((file, attr)) = &b.target else {
+        let Some((file, attr)) = target else {
             return Some(format!(
                 "{who} does not start a Python application: where its routes are served is not known"
             ));
@@ -2481,7 +2534,7 @@ impl Boundaries {
                 "{who} starts on `{attr}` of {file}, which is not an application object Drift reads: where its routes are served is not known"
             ));
         };
-        let within = |path: &str| b.dir.is_empty() || path.starts_with(&format!("{}/", b.dir));
+        let within = |path: &str| dir.is_empty() || path.starts_with(&format!("{dir}/"));
         unknown
             .first()
             .map(|u| (u, unknown.len()))
@@ -2492,8 +2545,7 @@ impl Boundaries {
             })
             .map(|(first, n)| {
                 format!(
-                    "Drift does not know what {first} does to the paths of {}{}",
-                    b.service,
+                    "Drift does not know what {first} does to the paths of {service}{}",
                     match n {
                         1 => String::new(),
                         n => format!(" (and {} more it does not know)", n - 1),
@@ -2528,6 +2580,7 @@ impl Boundaries {
         for (_, apart) in &mut self.left_out {
             apart.set_relays(repo);
         }
+        self.cluster_relays(repo);
         let callers = std::mem::take(&mut self.callers);
         for c in &callers {
             let under = |path: &str| {
@@ -9622,6 +9675,12 @@ pub fn render_at(
                     (has("config"), ".drift/config.yaml"),
                     (has("compose"), "compose files"),
                     (entries.iter().any(|e| e.tied), "Terraform ties"),
+                    (
+                        entries
+                            .iter()
+                            .any(|e| inv.boundaries.kubernetes_runs(&e.path)),
+                        "Kubernetes manifests",
+                    ),
                 ]
                 .into_iter()
                 .filter(|(present, _)| *present)

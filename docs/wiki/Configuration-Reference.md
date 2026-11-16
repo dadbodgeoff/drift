@@ -69,6 +69,7 @@ Where entry points are reachable from, for `drift security`, `drift card`, the p
 | `security.public` | list of directories | `[]` | Entry points under these directories are reachable from the internet. Reported as internet-facing in text and `public` in JSON, with the setting as the source. |
 | `security.not_deployed` | list of files or directories | `[]` | Deployment descriptions that are in the repository and deploy nothing (a compose file for end-to-end tests, Terraform kept for reference). Drift leaves them out of the boundary, and says so. |
 | `security.terraform` | list of `{target, code}` | `[]` | A person's statement that a Terraform target group forwards to the code in `code`, and that requests from outside reach that code, in what this Terraform deploys, only through load-balancer rules that forward to that target. Drift then reads the listener rules of the repository's Terraform for the routes of `code`. |
+| `security.kubernetes` | list of `{workload, code}` (and `container`) | `[]` | A person's statement that a workload of the Kubernetes manifests runs the code in `code`, for a workload whose image the repository does not plainly build. Drift then reads the paths from outside that reach it for the routes of `code`. |
 
 Between `internal` and `public`, the longest matching directory wins.
 
@@ -81,6 +82,16 @@ Each `security.terraform` entry has exactly two keys:
 
 An entry with another key, a missing key, or a `#` that names something other than an `aws_lb_target_group` is a warning and that entry is ignored. An unknown key under `security` is a warning.
 
+Each `security.kubernetes` entry has `workload` and `code`, and may have `container`:
+
+| Key | Meaning |
+| --- | --- |
+| `workload` | `namespace/Kind/name` or `Kind/name` (`shop/Deployment/web`). Without a namespace, the workload of that kind and name in any namespace. |
+| `container` | The container's name. Needed where the pod has more than one: without it, that entry is ignored with a warning. |
+| `code` | The code directory, repo-relative. |
+
+An entry with another key or a missing key is a warning and that entry is ignored; so is one that names no workload of the manifests.
+
 ```yaml
 security:
   internal: [services/billing, jobs]
@@ -90,9 +101,11 @@ security:
     - infra/legacy
   terraform:
     - {target: "infra/prod#aws_lb_target_group.api", code: services/api}
+  kubernetes:
+    - {workload: shop/Deployment/web, code: apps/web}
 ```
 
-`drift setup` writes `not_deployed`, `terraform` and `internal` entries for you, each with a comment line above it saying which question it answers and when. See [Security Inventory](Security-Inventory) and [Setup Questions](Setup-Questions).
+`drift setup` writes `not_deployed`, `terraform`, `kubernetes` and `internal` entries for you, each with a comment line above it saying which question it answers and when. See [Security Inventory](Security-Inventory) and [Setup Questions](Setup-Questions).
 
 ### `packages`
 

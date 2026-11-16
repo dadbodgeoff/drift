@@ -121,6 +121,13 @@ pub enum Subject {
     },
     /// A platform's file and the applications it may deploy.
     Platform { file: String, dirs: Vec<String> },
+    /// A code directory and the workloads of the Kubernetes manifests tied to no
+    /// code, the likely first.
+    Workload {
+        dir: String,
+        workloads: Vec<drift_mine::security::Workload>,
+        routes: Vec<String>,
+    },
     /// Code directories no target group looks like.
     Reach {
         dirs: Vec<String>,
@@ -153,6 +160,9 @@ pub fn how_to_decide(kind: super::Kind, reach: bool) -> &'static str {
         }
         super::Kind::Platform => {
             "The answer is the application the platform builds and runs from this file: its build or start command in the platform's settings, the project's root directory there, or a deploy script that names it. A folder name or the framework alone is not enough. If the file deploys more than one of them, or you cannot tell, answer skip."
+        }
+        super::Kind::Kubernetes => {
+            "The workload runs this code when its image is the one built from this directory (a CI job or a script that builds and pushes it from here, a Dockerfile here that produces it) and the routes it answers are this code's. A name that looks alike is not enough. If two workloads could be it, or the image is built elsewhere, answer skip."
         }
         super::Kind::Investigate => super::investigate::HOW_TO_DECIDE,
         super::Kind::Check => {
@@ -606,6 +616,11 @@ pub fn context(r: &Reading<'_>, subject: &Subject) -> Context {
             groups,
             terraform,
         } => reach(r, dirs, groups, terraform, &mut ctx),
+        Subject::Workload {
+            dir,
+            workloads,
+            routes,
+        } => workload(r, dir, workloads, routes, &mut ctx),
         Subject::Check {
             instrument,
             kind,
@@ -879,6 +894,64 @@ fn tie(
     }
     for (g, _) in ranked.iter().take(3) {
         group_excerpts(r, g, ctx);
+    }
+    service_excerpts(r, &[dir.to_string()], ctx);
+    read_of(r.inv, &[dir.to_string()], ctx);
+}
+
+/// A code directory and the workloads that may run it: each with its images, whether
+/// something reaches it from outside, and its manifest.
+fn workload(
+    r: &Reading<'_>,
+    dir: &str,
+    workloads: &[drift_mine::security::Workload],
+    routes: &[String],
+    ctx: &mut Context,
+) {
+    let svc = super::shown(dir);
+    let mut listed: Vec<&str> = routes.iter().map(String::as_str).collect();
+    listed.sort();
+    listed.dedup();
+    ctx.fact(format!(
+        "The routes of {svc} ({}): {}",
+        listed.len(),
+        listed
+            .iter()
+            .take(MAX_ROUTES)
+            .copied()
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
+    for w in workloads {
+        ctx.fact(format!(
+            "Workload {} ({}) runs {}{}",
+            w.object,
+            w.at,
+            w.images.join(", "),
+            if w.reached {
+                "; something in the manifests reaches it from outside"
+            } else {
+                "; nothing in the manifests reaches it from outside"
+            }
+        ));
+    }
+    for w in workloads.iter().take(3) {
+        if let Some((file, i)) = at(&w.at) {
+            let lines = lines_of(r.root, file);
+            // Its document: from a little above its name to the next `---`.
+            let from = i.saturating_sub(3);
+            let to = (i..lines.len())
+                .find(|j| lines[*j].starts_with("---"))
+                .unwrap_or(lines.len())
+                .min(from + 40);
+            ctx.excerpt(excerpt_of(
+                &format!("workload `{}`", w.object),
+                file,
+                &lines,
+                from,
+                to,
+            ));
+        }
     }
     service_excerpts(r, &[dir.to_string()], ctx);
     read_of(r.inv, &[dir.to_string()], ctx);

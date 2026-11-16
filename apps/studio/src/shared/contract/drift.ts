@@ -2513,9 +2513,10 @@ export interface DriftSetupQuestion {
   id: string;
   /**
    * A compose file that may be a test stack; the Terraform target group of a service; which application a platform's
-   * file deploys (`platform`, newer drift); a helper to confirm as a check.
+   * file deploys (`platform`, newer drift); the Kubernetes workload that runs a service (`security.kubernetes`, newer
+   * drift); a helper to confirm as a check.
    */
-  kind: "deployment" | "terraform" | "platform" | "check";
+  kind: "deployment" | "terraform" | "platform" | "kubernetes" | "check";
   /**
    * `changed`: answered, and the evidence it rests on changed since, so it is asked again. `proposed`: an agent's
    * answer waits for a person (`proposal`). `rejected`: a person rejected an agent's answer on this same evidence (listed
