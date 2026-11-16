@@ -36,8 +36,8 @@ use anyhow::{Context, bail};
 use drift_mine::check::{CheckReport, Scope, Violation};
 use drift_mine::policy::{CONVENTIONS_FILE, ConventionsFile, LOCK_FILE, Lock};
 use drift_mine::report::{
-    GithubSummary, github_annotations, github_summary, github_unchecked_annotations,
-    github_unsure_annotations,
+    Basis, GithubSummary, github_annotations_with, github_summary, github_unchecked_annotations,
+    github_unsure_annotations, trust_summary, trust_text,
 };
 
 /// What a diff did to one file that still exists.
@@ -538,10 +538,52 @@ pub fn github_output(
     departures: &[drift_mine::practices::Departure],
     added: &[drift_mine::practices::AddedEntry],
 ) -> anyhow::Result<()> {
+    github_output_with(
+        report,
+        scope,
+        prefix,
+        outside,
+        strict,
+        departures,
+        added,
+        &Basis::default(),
+    )
+}
+
+/// `drift check`'s text after its list of new violations: what
+/// each rule that reported one rests on ([`drift_mine::report::trust_text`]), read from
+/// `facts` (those `report` was checked on), `policy` and `report`. Printed only when
+/// there is a new violation of a convention of `policy`; the lines before it are
+/// unchanged, and it changes no verdict and no exit code.
+pub fn print_trust(facts: &drift_core::RepoFacts, policy: &ConventionsFile, report: &CheckReport) {
+    let new: Vec<&Violation> = report.new_violations().collect();
+    if new.is_empty() {
+        return;
+    }
+    let basis = Basis::new(facts, policy, report);
+    print!("{}", trust_text(&new, &basis));
+}
+
+/// [`github_output`], each annotation and the job summary also saying what each rule
+/// rests on ([`Basis`]: read from the check of the policy's root, before its paths were
+/// given `prefix`). The first lines of each annotation, the summary line and the
+/// summary's own sections are as [`github_output`] writes them; this changes no verdict
+/// and no exit code.
+#[allow(clippy::too_many_arguments)]
+pub fn github_output_with(
+    report: &CheckReport,
+    scope: Option<&DiffScope>,
+    prefix: &str,
+    outside: usize,
+    strict: bool,
+    departures: &[drift_mine::practices::Departure],
+    added: &[drift_mine::practices::AddedEntry],
+    basis: &Basis,
+) -> anyhow::Result<()> {
     let new: Vec<_> = report.new_violations().collect();
     let suppressed: Vec<_> = report.suppressed().collect();
     let mut stdout = std::io::stdout().lock();
-    stdout.write_all(github_annotations(&new).as_bytes())?;
+    stdout.write_all(github_annotations_with(&new, basis, prefix).as_bytes())?;
     stdout.write_all(github_unchecked_annotations(&report.unchecked, false).as_bytes())?;
     let base_unchecked: Vec<String> = scope
         .map_or(&[][..], |s| s.base_unchecked())
@@ -619,6 +661,11 @@ pub fn github_output(
             })?;
         f.write_all(md.as_bytes())?;
         f.write_all(b"\n")?;
+        let rests_on = trust_summary(&new, basis, prefix);
+        if !rests_on.is_empty() {
+            f.write_all(rests_on.as_bytes())?;
+            f.write_all(b"\n")?;
+        }
         let practices = [
             drift_mine::practices::added_summary(added),
             drift_mine::practices::departures_summary(departures),
