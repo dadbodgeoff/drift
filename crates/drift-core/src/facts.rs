@@ -2143,6 +2143,23 @@ pub mod controls {
     /// returns is sent back is for the reader to say (an entry point's is).
     /// TypeScript lowering 84; mining never proposes it.
     pub const RETURNS_WHOLE: &str = "returns_whole:";
+    /// What starts the control of a body that hands a call what the request sent
+    /// and, in another argument (or another property of an object written in
+    /// place, or what a function written in place hands back), a value read off a
+    /// binding: `parses_input:<callee>\t<binding>`, both canonical
+    /// (`parseWithZod(formData, { schema: LoginSchema })` records the package's
+    /// function and `LoginSchema`). Whether the binding is a schema, and so
+    /// whether the call checks the request against it, is for the reader to say
+    /// from what the binding is built with; no name of the callee is asked.
+    /// TypeScript lowering, the listed reading only; mining never proposes it.
+    pub const PARSES_INPUT: &str = "parses_input:";
+    /// What starts the control of a handler a parameter of which is bound to
+    /// request input by a parameter decorator that is also handed a pipe
+    /// (`@Param("id", ParseIntPipe) id: number`, `@Body(new ValidationPipe())`):
+    /// `pipes_input:<pipe>`, canonical. The framework runs the pipe on the value
+    /// before the handler. TypeScript lowering, the listed reading only; mining
+    /// never proposes it.
+    pub const PIPES_INPUT: &str = "pipes_input:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):

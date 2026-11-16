@@ -237,6 +237,13 @@ pub struct RawSymbol {
     /// Schemas or types request input is validated into ([`drift_core::Symbol::inputs`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<RawRef>,
+    /// Controls of the listed reading only ([`drift_core::Listed`]) whose rest is
+    /// references, made canonical by linking and written tab-separated after the
+    /// prefix: [`drift_core::controls::PARSES_INPUT`] (the callee, then a binding it
+    /// is handed beside what the request sent), [`drift_core::controls::PIPES_INPUT`]
+    /// (the pipe).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_refs: Vec<(String, Vec<RawRef>)>,
     /// Error classes handled, `Text("*")` for any ([`drift_core::Symbol::handles_errors`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub handles_errors: Vec<RawOperand>,
@@ -5155,6 +5162,7 @@ impl RawSymbol {
             catches: vec![],
             headers: vec![],
             inputs: vec![],
+            listed_refs: vec![],
             handles_errors: vec![],
             env_calls: vec![],
             decorator_args: vec![],
@@ -5655,6 +5663,9 @@ struct Practice {
     catches: BTreeSet<RawCatch>,
     headers: BTreeSet<String>,
     inputs: BTreeSet<RawRef>,
+    /// Calls handed what the request sent and a binding beside it: the callee and
+    /// the binding ([`drift_core::controls::PARSES_INPUT`]).
+    parsed: BTreeSet<(RawRef, RawRef)>,
     handles: BTreeSet<RawOperand>,
     env_calls: BTreeSet<(RawRef, u32, String, bool)>,
     /// Span starts of calls already read as part of a response (`res.status(401)` in
@@ -6397,6 +6408,9 @@ impl<'l, 's> Collector<'l, 's> {
         sym.catches.extend(p.catches);
         sym.headers.extend(p.headers);
         sym.inputs.extend(p.inputs);
+        sym.listed_refs.extend(p.parsed.into_iter().map(|(callee, given)| {
+            (drift_core::controls::PARSES_INPUT.to_string(), vec![callee, given])
+        }));
         sym.handles_errors.extend(p.handles);
         sym.env_calls.extend(p.env_calls);
         sym.param_calls.extend(p.param_calls);
@@ -8526,6 +8540,10 @@ const HEADER_METHODS: &[&str] = &[
     "values",
     "getSetCookie",
 ];
+/// The most calls and bindings a body records as handed what the request sent
+/// ([`drift_core::controls::PARSES_INPUT`]).
+const MAX_PARSED: usize = 16;
+
 /// Validation methods whose receiver is the schema (`Schema.parse(body)`).
 const SCHEMA_METHODS: &[&str] = &[
     "parse",
@@ -9795,9 +9813,15 @@ impl Collector<'_, '_> {
             return None;
         }
         let (value, absent) = absence_asked(&it.test)?;
+        // Or the branch hands an error to the framework's continuation and leaves
+        // ([`Collector::refuses_by_continuation`]): the listed reading only.
+        let refuses = |s: &Statement| {
+            always_throws(s)
+                || (self.refuses_by_continuation(s) && !routes::unmeasured_listing())
+        };
         let otherwise = match (absent, &it.alternate) {
-            (true, _) if always_throws(&it.consequent) => false,
-            (false, Some(a)) if always_throws(a) => true,
+            (true, _) if refuses(&it.consequent) => false,
+            (false, Some(a)) if refuses(a) => true,
             _ => return None,
         };
         let taint = self.taint(value);
@@ -9806,6 +9830,44 @@ impl Collector<'_, '_> {
         }
         let by = taint.given_by();
         (!by.is_empty()).then(|| NoCaller::Given(by.to_vec()))
+    }
+
+    /// The branch hands an error to the continuation of the function it stands in
+    /// and leaves: `return next(err)`, or `next(new Error("..."))` followed by a
+    /// `return` in the same block. The continuation is the last parameter of an
+    /// Express or Koa signature, by its position ([`continuation_params`]), of the
+    /// function the branch is written in, not of one around it. A string handed on
+    /// (`next("route")`) skips to another route and refuses no one; nothing handed
+    /// on lets the request through. The framework answers for the error: no request
+    /// that takes the branch goes on in this body.
+    fn refuses_by_continuation(&self, s: &Statement) -> bool {
+        let own = |callee: &Expression| {
+            matches!(unwrap_expr(callee), Expression::Identifier(id)
+                if self.continuation_names.last().is_some_and(|f| f.iter().any(|n| n == id.name.as_str())))
+        };
+        let hands_error = |e: &Expression| {
+            matches!(peel(e), Expression::CallExpression(c)
+                if own(&c.callee)
+                    && c.arguments.first().and_then(|a| a.as_expression()).is_some_and(|a| {
+                        !matches!(
+                            unwrap_expr(a),
+                            Expression::StringLiteral(_) | Expression::TemplateLiteral(_)
+                        )
+                    }))
+        };
+        match s {
+            Statement::ReturnStatement(r) => r.argument.as_ref().is_some_and(hands_error),
+            Statement::BlockStatement(b) => match b.body.as_slice() {
+                [.., Statement::ExpressionStatement(e), Statement::ReturnStatement(r)]
+                    if r.argument.is_none() =>
+                {
+                    hands_error(&e.expression)
+                }
+                [.., last] => self.refuses_by_continuation(last),
+                [] => false,
+            },
+            _ => false,
+        }
     }
 
     /// `e` reads a credential the request carries, as it was sent: its `Cookie`
@@ -11170,6 +11232,77 @@ impl Collector<'_, '_> {
         }
     }
 
+    /// A call handed what the request sent and, beside it, a value read off a
+    /// binding (`parseWithZod(formData, { schema: Schema.superRefine(fn) })`,
+    /// `check(body, Schema)`, `{ schema: (intent) => Schema.transform(fn) }`): the
+    /// callee and each such binding ([`drift_core::controls::PARSES_INPUT`]), for
+    /// the listed reading. An object written in place is read property by property.
+    /// Whether a binding is a schema is read where it is defined, by the reader; no
+    /// name of the callee is asked.
+    fn note_parse(&mut self, it: &CallExpression) {
+        let Some(callee) = self
+            .l
+            .canon_callee(&it.callee)
+            .filter(|r| !matches!(r.base, RawBase::Global(_)))
+        else {
+            return;
+        };
+        let mut parts: Vec<&Expression> = Vec::new();
+        for a in it.arguments.iter().filter_map(|a| a.as_expression()) {
+            match peel(a) {
+                Expression::ObjectExpression(o) => {
+                    for p in &o.properties {
+                        if let ObjectPropertyKind::ObjectProperty(p) = p {
+                            parts.push(&p.value);
+                        }
+                    }
+                }
+                x => parts.push(x),
+            }
+        }
+        let given: Vec<bool> = parts.iter().map(|x| self.mentions_input(x, 0)).collect();
+        if !given.iter().any(|g| *g) {
+            return;
+        }
+        for (x, input) in parts.iter().zip(&given) {
+            if *input || self.p.parsed.len() >= MAX_PARSED {
+                continue;
+            }
+            if let Some(binding) = self.bound_root(x) {
+                self.p.parsed.insert((callee.clone(), binding));
+            }
+        }
+    }
+
+    /// The binding of the module (or an import) a value is read off: the root of a
+    /// chain of members and calls on it (`Schema.superRefine(fn)`, `z.object({})`),
+    /// also as what a function written in place with a concise body hands back
+    /// (`(intent) => Schema.transform(fn)`). None for a local, a global or anything
+    /// else.
+    fn bound_root(&self, e: &Expression) -> Option<RawRef> {
+        let mut cur = peel(e);
+        if let Expression::ArrowFunctionExpression(f) = cur {
+            cur = peel(f.get_expression()?);
+        }
+        for _ in 0..12 {
+            cur = match cur {
+                Expression::CallExpression(c) => peel(&c.callee),
+                Expression::StaticMemberExpression(m) => peel(&m.object),
+                Expression::Identifier(id) => {
+                    return match self.l.resolve_ident(id)? {
+                        RawBase::Global(_) => None,
+                        base => Some(RawRef {
+                            base,
+                            member: String::new(),
+                        }),
+                    };
+                }
+                _ => return None,
+            };
+        }
+        None
+    }
+
     /// The argument registers a handler: a function written in place, or a name bound
     /// at module level or imported (`app.onError(handleError)`). A value made on the
     /// spot or a local says the call reports an error to a callback instead
@@ -12440,6 +12573,7 @@ impl TestFinder<'_, '_> {
     /// `expect(response.status()).toBe(n)`, `expect(res).toHaveStatus(n)`, supertest's
     /// `.expect(401)`.
     fn assertion(&mut self, it: &CallExpression) {
+        self.assert_call(it);
         let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee) else {
             return;
         };
@@ -12476,6 +12610,96 @@ impl TestFinder<'_, '_> {
         };
         if ok {
             self.status(n);
+        }
+    }
+}
+
+impl TestFinder<'_, '_> {
+    /// `assert.equal(res.status, 401)`, `assert.strictEqual(401, res.statusCode)`: a
+    /// package's assertion (`node:assert`, `assert`, `chai`'s `assert`), by the
+    /// import it resolves to, handed a status read and a literal status in either
+    /// order. A negated assertion (`notEqual`) asserts no status.
+    fn assert_call(&mut self, it: &CallExpression) {
+        let Some(RawRef {
+            base: RawBase::Import { spec, .. },
+            ..
+        }) = self.l.canon_callee(&it.callee)
+        else {
+            return;
+        };
+        if spec.starts_with('.') || spec.starts_with('/') {
+            return;
+        }
+        if call_name(&it.callee).is_none_or(|n| n.starts_with("not")) {
+            return;
+        }
+        let status_of = |e: &Expression| match peel(e) {
+            Expression::StaticMemberExpression(s) => {
+                matches!(s.property.name.as_str(), "status" | "statusCode")
+            }
+            Expression::CallExpression(c) => {
+                call_name(&c.callee) == Some("status") && c.arguments.is_empty()
+            }
+            _ => false,
+        };
+        let args: Vec<&Expression> = it
+            .arguments
+            .iter()
+            .take(2)
+            .filter_map(|a| a.as_expression())
+            .collect();
+        let &[a, b] = args.as_slice() else {
+            return;
+        };
+        let n = match (literal_status(a), literal_status(b)) {
+            (None, Some(n)) if status_of(a) => n,
+            (Some(n), None) if status_of(b) => n,
+            _ => return,
+        };
+        self.status(n);
+    }
+
+    /// Cypress `cy.visit("/x")` (a page, `GET`), `cy.request("/x")`,
+    /// `cy.request("POST", "/x")`, `cy.request({ method, url })`: `cy` is the
+    /// runner's ambient global, as `fetch` is the platform's.
+    fn cypress(&mut self, it: &CallExpression, callee: Option<&RawRef>) {
+        let Some(RawRef {
+            base: RawBase::Global(g),
+            member,
+        }) = callee
+        else {
+            return;
+        };
+        if g != "cy" {
+            return;
+        }
+        let arg = |i: usize| it.arguments.get(i).and_then(|a| a.as_expression());
+        let literal = |e: Option<&Expression>| match e.map(unwrap_expr) {
+            Some(Expression::StringLiteral(l)) => Some(lit(l)),
+            _ => None,
+        };
+        match member.as_str() {
+            ".visit" => self.request("GET", arg(0).and_then(url_path), None, non_literal(arg(0))),
+            ".request" => match arg(0).map(unwrap_expr) {
+                Some(Expression::ObjectExpression(o)) => {
+                    let method = routes::object_prop(o, "method")
+                        .and_then(|m| literal(Some(m)))
+                        .unwrap_or_else(|| "GET".into());
+                    let raw = routes::object_prop(o, "url");
+                    self.request(&method, raw.and_then(url_path), None, non_literal(raw));
+                }
+                _ => match literal(arg(0))
+                    .filter(|m| HTTP_VERBS.contains(&m.to_ascii_uppercase().as_str()))
+                {
+                    Some(method) => {
+                        self.request(&method, arg(1).and_then(url_path), None, non_literal(arg(1)))
+                    }
+                    None => {
+                        self.request("GET", arg(0).and_then(url_path), None, non_literal(arg(0)))
+                    }
+                },
+            },
+            _ => {}
         }
     }
 }
@@ -12518,6 +12742,7 @@ impl<'a> Visit<'a> for TestFinder<'_, '_> {
         }
         if self.tests {
             self.assertion(it);
+            self.cypress(it, callee.as_ref());
             let verb = name.map(str::to_ascii_uppercase);
             let is_verb = verb.as_deref().is_some_and(|v| HTTP_VERBS.contains(&v));
             if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee) {
@@ -12997,6 +13222,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             self.p.headers.insert(h);
         }
         self.note_input(it);
+        self.note_parse(it);
         self.note_verifier(it);
         self.note_error_handler(it);
         self.note_env_call(it);

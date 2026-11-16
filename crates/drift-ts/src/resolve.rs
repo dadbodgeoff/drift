@@ -3875,6 +3875,7 @@ impl<'r> Linker<'r> {
                     || !s.fed_sinks.is_empty()
                     || !s.param_passes.is_empty()
                     || !s.refuses_without.is_empty()
+                    || !s.listed_refs.is_empty()
                     || !s.made_fed_sinks.is_empty()
                     || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
@@ -3964,6 +3965,12 @@ impl<'r> Linker<'r> {
                                 drift_core::controls::RETURNS_BUILT,
                                 self.canon(rel, class)
                             )
+                        }))
+                        // ([`crate::lower::RawSymbol::listed_refs`]).
+                        .chain(s.listed_refs.iter().map(|(prefix, refs)| {
+                            let refs: Vec<String> =
+                                refs.iter().map(|r| self.canon(rel, r)).collect();
+                            format!("{prefix}{}", refs.join("\t"))
                         }))
                         // Where the value a query filters by comes from: the
                         // caller's own ([`crate::lower::RawSymbol::caller_keys`]).
