@@ -299,6 +299,23 @@ impl Concern for Authn {
         "entry_point"
     }
 
+    /// A route that signs the caller in the accepted way and checks more besides (a
+    /// body check, a second guard) still signs them in: the uses add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
+    /// A use that turns away a caller who is not signed in ([`enforces`]); one that only
+    /// identifies the caller, opens the route or checks a sending service does not.
+    fn enforces(&self, uses: &[Use]) -> Option<bool> {
+        Some(uses.iter().any(|u| super::authn::enforces(&u.mechanism)))
+    }
+
+    /// Sign-in is of the caller of a request: a background job has none.
+    fn needs_a_caller(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
     }

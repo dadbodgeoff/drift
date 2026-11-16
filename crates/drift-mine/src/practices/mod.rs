@@ -652,6 +652,45 @@ pub trait Concern: Sync {
     ) -> Option<String> {
         None
     }
+    /// Whether doing more than a way a person accepted is still doing it: a unit whose
+    /// known uses include every use of an accepted way follows that way
+    /// ([`promote`]). True where the uses are obligations that add up (a route that
+    /// signs the caller in with the accepted guard and checks something else as well
+    /// still signs them in). False, the default, where the concern is the choice of one
+    /// instrument and the extra one is itself the departure (a config value read in
+    /// place beside the config module): there the whole key must be accepted.
+    fn additive(&self) -> bool {
+        false
+    }
+    /// Whether these uses of one known unit enforce the concern, in the classifier's own
+    /// sense (authentication: a use that turns a caller away; authorization: a check it
+    /// proved). `None` when the concern has no such notion, whatever the uses: no
+    /// practice "any way that enforces it" can then be promoted ([`promote`]).
+    fn enforces(&self, _uses: &[Use]) -> Option<bool> {
+        None
+    }
+    /// Whether these uses are what code does by doing nothing: the default or absence
+    /// the classifier records as a way (errors left to the framework). New code follows
+    /// such a way without trying, so a practice of it holds code to nothing; the
+    /// promotion list shows it apart ([`promote::Candidate::passive`]).
+    fn passive(&self, _uses: &[Use]) -> bool {
+        false
+    }
+    /// Whether a unit of the concern is about the caller of a request (sign-in,
+    /// permissions). An entry point of kind `job` ([`common::JOB`]) takes no request:
+    /// it is a unit of the map, and no unit of such a concern for what a promoted
+    /// practice counts, checks or reports.
+    fn needs_a_caller(&self) -> bool {
+        false
+    }
+}
+
+/// The mechanism of one use's key (`wrap` of `wrap:lib/auth.ts#withAuth`), in the
+/// classifier's own vocabulary ([`Use::mechanism`]): what a promoted practice that
+/// accepts a mechanism whole ([`crate::mine::Rule::Practice`] `any_mechanism`) reads.
+/// A key with no `:` is its own mechanism.
+pub fn mechanism_of(key: &str) -> &str {
+    key.split_once(':').map_or(key, |(m, _)| m)
 }
 
 // ---------- the engine ----------

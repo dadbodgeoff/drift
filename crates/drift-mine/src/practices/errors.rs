@@ -45,6 +45,12 @@ impl Concern for Errors {
         "entry_point"
     }
 
+    /// `bubble:framework_default` is the absence of any handling, recorded as a way: a
+    /// new route that handles nothing does it without trying.
+    fn passive(&self, uses: &[Use]) -> bool {
+        !uses.is_empty() && uses.iter().all(|u| u.mechanism == "bubble")
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
     }

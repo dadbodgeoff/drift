@@ -38,6 +38,12 @@ impl Concern for Api {
         "entry_point"
     }
 
+    /// A response built the accepted way that also declares its model, or carries an
+    /// error envelope because the handler has an error branch, is still built that way.
+    fn additive(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, &["http"])
     }

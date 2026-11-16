@@ -69,6 +69,29 @@ impl Concern for Authz {
         "entry_point"
     }
 
+    /// A route behind the accepted check that also scopes its query to the caller is
+    /// still behind that check: the checks add up.
+    fn additive(&self) -> bool {
+        true
+    }
+
+    /// A known use is a check proven to run on every request and to compare the caller
+    /// with what is asked for ([`obligation`]), except a query scoped to the tenant the
+    /// request names or to a fixed one: neither compares anything of the caller.
+    fn enforces(&self, uses: &[Use]) -> Option<bool> {
+        Some(uses.iter().any(|u| {
+            !matches!(
+                u.mechanism.as_str(),
+                "tenancy_requested" | "tenancy_literal"
+            )
+        }))
+    }
+
+    /// Permissions are the caller's: a background job has no caller.
+    fn needs_a_caller(&self) -> bool {
+        true
+    }
+
     fn population<'a>(&self, cx: &Cx<'a>) -> Vec<UnitRef<'a>> {
         common::entries(cx, REQUEST_KINDS)
             .into_iter()

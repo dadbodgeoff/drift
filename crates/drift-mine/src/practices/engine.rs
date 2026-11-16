@@ -1727,7 +1727,11 @@ pub(super) fn run(
         // What may be promoted is read from every unit, whether the report lists them
         // or not (`drift practices` does not by default): one reading, the one
         // `drift practices promote` makes ([`super::promote::fill_promotable`]).
-        report.units = unit_rows(&report, placed, &of_unit);
+        let classifier = classifiers
+            .iter()
+            .find(|c| c.id() == *id)
+            .map(|c| c.as_ref());
+        report.units = unit_rows(&report, placed, &of_unit, classifier);
         super::promote::fill_promotable(&mut report);
         if !opts.units {
             report.units = Vec::new();
@@ -2942,8 +2946,14 @@ fn exceptions_of(
     (out, more)
 }
 
-/// Every unit with its assignment (`--units`), sorted.
-fn unit_rows(report: &ConcernReport, placed: &[Placed], of_unit: &[String]) -> Vec<UnitRow> {
+/// Every unit with its assignment (`--units`), sorted. `classifier`, the concern's,
+/// says whether a known unit's uses enforce it ([`Concern::enforces`]).
+fn unit_rows(
+    report: &ConcernReport,
+    placed: &[Placed],
+    of_unit: &[String],
+    classifier: Option<&dyn Concern>,
+) -> Vec<UnitRow> {
     let mut out: Vec<UnitRow> = placed
         .iter()
         .zip(of_unit)
@@ -3009,9 +3019,23 @@ fn unit_rows(report: &ConcernReport, placed: &[Placed], of_unit: &[String]) -> V
                     Outcome::None { .. } => p.backing.basis.clone(),
                     _ => None,
                 },
-                kind: None,
-                uses: Vec::new(),
-                enforces: None,
+                kind: p.entry_kind.clone(),
+                // Each known use apart: a unit that does an accepted way and more
+                // follows it, which only its separate uses show.
+                uses: match &p.outcome {
+                    Outcome::Known { key, .. } | Outcome::Identified { key, .. } => key
+                        .uses
+                        .iter()
+                        .map(|u| format!("{}:{}", u.mechanism, u.instrument))
+                        .collect::<BTreeSet<String>>()
+                        .into_iter()
+                        .collect(),
+                    _ => Vec::new(),
+                },
+                enforces: match &p.outcome {
+                    Outcome::Known { key, .. } => classifier.and_then(|c| c.enforces(&key.uses)),
+                    _ => None,
+                },
                 unscoped: None,
                 instrument: match &p.outcome {
                     Outcome::Unknown { instrument, .. } => instrument.clone(),
