@@ -128,7 +128,9 @@ fn repo(routes: usize, guarded: impl Fn(usize) -> bool) -> tempfile::TempDir {
 /// The sample: 40 routes, 38 wrapped in `withAuth` (r38 and r39 are not), after `drift init`.
 fn sample() -> tempfile::TempDir {
     let dir = repo(40, |i| i < 38);
-    drift(dir.path(), &["init"]);
+    // Without the proposals from the map: this file is about promoting by hand
+    // (`s10_from_map.rs` covers what `init` proposes).
+    drift(dir.path(), &["init", "--no-from-map"]);
     dir
 }
 
@@ -156,7 +158,8 @@ fn history(guarded: impl Fn(usize) -> bool, later: impl Fn(usize) -> bool) -> te
     }
     git(r, &["add", "-A"], None);
     git(r, &["commit", "-qm", "later"], Some("2024-02-01T00:00:00Z"));
-    drift(r, &["init"]);
+    // Without the proposals from the map, as in `sample`.
+    drift(r, &["init", "--no-from-map"]);
     dir
 }
 
