@@ -423,9 +423,19 @@ struct Extra {
 /// ([`Linker::links_differently`]): a decorator that is no name.
 fn symbol_unmeasured(s: &RawSymbol) -> bool {
     !s.since_wraps.is_empty()
+        || !s.since_sinks.is_empty()
+        || s.members.iter().any(|m| !m.since_sinks.is_empty())
         || s.drf_reassigned.is_some()
         || !s.wraps_only.is_empty()
         || !s.since_only.is_empty()
+        || s.body_checks.iter().any(|b| b.since || b.measured)
+        || s.members
+            .iter()
+            .any(|m| m.body_checks.iter().any(|b| b.since || b.measured))
+        || s.controls.iter().any(|c| c == UNREAD_EXIT_MEASURED)
+        || s.members
+            .iter()
+            .any(|m| m.unread.iter().any(|c| c == UNREAD_EXIT_MEASURED))
 }
 
 /// Packages whose view classes apply the list `decorators` (Flask's `View`) or
@@ -950,6 +960,46 @@ impl<'r> Linker<'r> {
                 }))
     }
 
+    /// The sinks of a symbol or a method: those the measured build read, and, but
+    /// when linking what mining reads, those read since
+    /// ([`RawSymbol::since_sinks`]). Sorted.
+    fn sinks_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
+        let mut out = measured.to_vec();
+        if !since.is_empty() && self.since_measured() {
+            out.extend(since.iter().cloned());
+            out.sort();
+            out.dedup();
+        }
+        out
+    }
+
+    /// Whether this link holds a check of a body: one read since the measured
+    /// build is left out of what mining reads, and one that turns away the
+    /// requests that have a caller is kept there only
+    /// ([`RawBodyCheck::since`], [`RawBodyCheck::measured`]).
+    fn reads_check(&self, b: &RawBodyCheck) -> bool {
+        match b.since || b.measured {
+            true => self.since_measured() != b.measured,
+            false => true,
+        }
+    }
+
+    /// An exit only the measured build left unread ([`UNREAD_EXIT_MEASURED`]):
+    /// [`drift_core::controls::UNREAD_EXIT`] for what mining reads, where the
+    /// controls do not hold it already, and nothing otherwise.
+    fn measured_exits(&self, controls: &mut Vec<String>) {
+        let Some(i) = controls.iter().position(|c| c == UNREAD_EXIT_MEASURED) else {
+            return;
+        };
+        let unread = drift_core::controls::UNREAD_EXIT;
+        match self.since_measured() || controls.iter().any(|c| c == unread) {
+            true => {
+                controls.remove(i);
+            }
+            false => controls[i] = unread.to_string(),
+        }
+    }
+
     /// Whether the link so far met a listing the measured build did not make.
     pub fn lists_unmeasured(&self) -> bool {
         self.unmeasured.load(std::sync::atomic::Ordering::Relaxed)
@@ -1175,6 +1225,71 @@ impl<'r> Linker<'r> {
         }
     }
 
+    /// The rows a body reads as the controls write them
+    /// ([`drift_core::controls::ROWS`]), of what resolves to something of the
+    /// repository.
+    fn rows(&self, fi: usize, rows: &[(RawRef, RawRows)]) -> BTreeSet<String> {
+        let mine = |c: &str| {
+            !c.starts_with("global#") && !c.starts_with("unresolved:") && !c.starts_with("pkg:")
+        };
+        rows.iter()
+            .filter_map(|(model, by)| {
+                let model = self.canon(fi, model);
+                // A class of the repository: a value handed to a call
+                // (`app.register_blueprint(bp)`) is no rows.
+                if !mine(&model)
+                    || !self
+                        .symbol_at(&model)
+                        .is_some_and(|(_, s)| s.kind == drift_core::SymbolKind::Class)
+                {
+                    return None;
+                }
+                let by = match by {
+                    RawRows::Own(key, side, asked) => format!(
+                        "own\t{key}\t{}{}",
+                        self.side(fi, side),
+                        match asked {
+                            true => format!("\t{}", drift_core::controls::ROWS_ASKED),
+                            false => String::new(),
+                        }
+                    ),
+                    RawRows::From(refs) => format!(
+                        "from\t{}",
+                        refs.iter()
+                            .map(|r| self.canon(fi, r))
+                            .collect::<Vec<_>>()
+                            .join("\t")
+                    ),
+                    RawRows::ByRole(side) => format!("any\trole\t{}", self.side(fi, side)),
+                    RawRows::Any => "any".to_string(),
+                };
+                Some(format!("{}{model}\t{by}", drift_core::controls::ROWS))
+            })
+            .collect()
+    }
+
+    /// The sites of a body as the controls write them
+    /// ([`drift_core::controls::HANDED_AFTER`]): one for each site, the callees
+    /// that held there canonical and tab-separated; what resolves to nothing of the
+    /// repository or of a package is left out.
+    fn held(&self, fi: usize, sites: &[(RawHeld, Vec<RawRef>)]) -> BTreeSet<String> {
+        sites
+            .iter()
+            .map(|(kind, refs)| {
+                let held: BTreeSet<String> = refs
+                    .iter()
+                    .map(|r| self.canon(fi, r))
+                    .filter(|c| !c.starts_with("global#") && !c.starts_with("unresolved:"))
+                    .collect();
+                format!(
+                    "{}{}",
+                    kind.control(),
+                    held.into_iter().collect::<Vec<_>>().join("\t")
+                )
+            })
+            .collect()
+    }
+
     /// A side of a comparison or the value of a filter as
     /// [`drift_core::controls::SIDES`] writes it.
     fn side(&self, fi: usize, s: &RawSide) -> String {
@@ -1192,6 +1307,30 @@ impl<'r> Linker<'r> {
         };
         match s {
             RawSide::Caller => "caller".into(),
+            RawSide::Own(inner) => {
+                // A name the file imports that says the caller: a class of the
+                // repository is the class, whatever it is called; anything else
+                // is the caller's, as the name says.
+                if let RawSide::Value(r) = inner.as_ref() {
+                    return match self.is_repo_class(&self.canon(fi, r)) {
+                        true => self.side(fi, inner),
+                        false => format!("{}caller", drift_core::controls::OWN_SIDE),
+                    };
+                }
+                // Said only of what reads as a value of the caller here: a
+                // parameter whose annotation names no dependency is the parameter.
+                let side = self.side(fi, inner);
+                match side.as_str() {
+                    "caller" => format!("{}{side}", drift_core::controls::OWN_SIDE),
+                    s if ["gives ", "via ", "call via "]
+                        .iter()
+                        .any(|p| s.starts_with(p)) =>
+                    {
+                        format!("{}{side}", drift_core::controls::OWN_SIDE)
+                    }
+                    _ => side,
+                }
+            }
             RawSide::Request => "request".into(),
             RawSide::Param(p, at) => param(p, at),
             RawSide::Annotated(d, p, at, called) => {
@@ -1240,6 +1379,7 @@ impl<'r> Linker<'r> {
         sides: &[RawCheckSides],
         values: &[RawFilterValue],
         args: &[(RawRef, Vec<(String, RawSide)>)],
+        typed: &[RawRef],
     ) -> Vec<String> {
         let mut out: Vec<String> = sides
             .iter()
@@ -1266,21 +1406,45 @@ impl<'r> Linker<'r> {
                     self.side(fi, &v.value)
                 )
             }))
-            .chain(args.iter().filter_map(|(callee, given)| {
-                let callee = self.canon(fi, callee);
-                // A package's or a built-in's call is no body a reader follows.
-                (!callee.starts_with("global#") && !callee.starts_with("pkg:")).then(|| {
-                    let mut out = format!("{}{callee}", drift_core::controls::ARG_VALUE);
-                    for (key, side) in given {
-                        out.push_str(&format!("\t{key}\t{}", self.side(fi, side)));
+            .chain(args.iter().filter_map(|(raw, given)| {
+                let callee = self.canon(fi, raw);
+                // A package's or a built-in's call is no body a reader follows:
+                // a package's is said apart, where it is made on a value an
+                // annotation types and is handed anything.
+                let prefix = match callee.as_str() {
+                    c if c.starts_with("global#") => return None,
+                    c if c.starts_with("pkg:") => {
+                        if given.is_empty() || !typed.contains(raw) {
+                            return None;
+                        }
+                        drift_core::controls::PKG_ARG_VALUE
                     }
-                    out
-                })
+                    _ => drift_core::controls::ARG_VALUE,
+                };
+                let mut out = format!("{prefix}{callee}");
+                for (key, side) in given {
+                    out.push_str(&format!("\t{key}\t{}", self.side(fi, side)));
+                }
+                Some(out)
             }))
             .collect();
         out.sort();
         out.dedup();
         out
+    }
+
+    /// [`drift_core::controls::ROW_SET`]: what each written attribute is read
+    /// off, as a side names what a call handed back.
+    fn row_sets(&self, fi: usize, sets: &[(RawRef, String)]) -> Vec<String> {
+        sets.iter()
+            .map(|(r, attr)| {
+                format!(
+                    "{}{}\t{attr}",
+                    drift_core::controls::ROW_SET,
+                    self.canon(fi, r)
+                )
+            })
+            .collect()
     }
 
     /// [`drift_core::Symbol::caller_args`]: canonical, sorted, the built-ins left
@@ -4516,9 +4680,32 @@ impl<'r> Linker<'r> {
                 }
                 let pre = extra.config.get(&s.name).into_iter().flatten();
                 let pre = pre.chain(extra.wraps.get(&s.name).into_iter().flatten());
+                // The permission classes the view declares that its
+                // `get_permissions` does not return for this handler
+                // ([`config::REPLACES`]).
+                // On the view class too, for a class one of whose handlers does not
+                // run it: each handler carries its own, and a reader that asks the
+                // class would be told of a guard that handler does not have.
+                let of_class = format!("{}.", s.name);
+                let replaced: Vec<&str> = extra
+                    .wraps
+                    .iter()
+                    .filter(|(symbol, _)| {
+                        **symbol == s.name
+                            || (s.kind == drift_core::SymbolKind::Class
+                                && symbol.starts_with(&of_class))
+                    })
+                    .flat_map(|(_, ws)| ws)
+                    .filter_map(|w| w.wrapper.strip_prefix(config::REPLACES))
+                    .collect();
                 let mut all: Vec<Wrap> = Vec::new();
                 let mut app_middleware: Vec<String> = Vec::new();
                 for mut w in pre.cloned().chain(wraps) {
+                    if w.wrapper.starts_with(config::REPLACES)
+                        || (w.kind == WrapKind::Call && replaced.contains(&w.wrapper.as_str()))
+                    {
+                        continue;
+                    }
                     // Application middleware is no wrap of the route.
                     if let Some(m) = middleware_of(&w.wrapper) {
                         app_middleware.push(m);
@@ -4585,6 +4772,7 @@ impl<'r> Linker<'r> {
                     },
                     controls: {
                         let mut c = s.controls.clone();
+                        self.measured_exits(&mut c);
                         // A dependency the repository replaces, since the measured
                         // build.
                         if !self.overridden.is_empty()
@@ -4713,7 +4901,43 @@ impl<'r> Linker<'r> {
                         c.extend(verifies.into_iter().map(|callee| {
                             format!("{}{callee}", drift_core::controls::VERIFIES_SIGNATURE)
                         }));
-                        c.extend(self.origins(fi, &s.check_sides, &s.filter_values, &s.arg_sides));
+                        c.extend(self.origins(
+                            fi,
+                            &s.check_sides,
+                            &s.filter_values,
+                            &s.arg_sides,
+                            &s.typed_calls,
+                        ));
+                        c.extend(self.row_sets(fi, &s.row_sets));
+                        c.extend(
+                            s.fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                        );
+                        // Handed on to code of the repository: what a built-in or a
+                        // package does with it is not followed.
+                        c.extend(
+                            s.param_passes
+                                .iter()
+                                .map(|r| self.canon(fi, r))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
+                        );
+                        c.extend(self.held(fi, &s.held));
+                        c.extend(self.rows(fi, &s.rows));
+                        // What every return of the function reads its value off
+                        // ([`drift_core::controls::RETURNS_GIVEN`]): said only where
+                        // each dependency stands for something here.
+                        let given: Vec<Vec<Dep>> = s
+                            .returns_given
+                            .iter()
+                            .map(|d| self.dep_canon(fi, d, false))
+                            .collect();
+                        if !given.is_empty() && given.iter().all(|deps| !deps.is_empty()) {
+                            c.extend(given.iter().flatten().map(|dep| {
+                                format!("{}{}", drift_core::controls::RETURNS_GIVEN, dep.id)
+                            }));
+                        }
                         c.extend(s.attr_params.iter().map(|(attr, param, i)| {
                             format!("{}{attr}\t{param}\t{i}", drift_core::controls::ATTR_PARAM)
                         }));
@@ -4725,7 +4949,7 @@ impl<'r> Linker<'r> {
                     suppressions: s.suppressions.clone(),
                     reads: s.reads.clone(),
                     throws: s.throws.iter().map(|r| self.canon(fi, r)).collect(),
-                    sinks: s.sinks.clone(),
+                    sinks: self.sinks_read(&s.sinks, &s.since_sinks),
                     order: s.order.iter().map(|r| self.canon(fi, r)).collect(),
                     traits: if s.kind == drift_core::SymbolKind::Class {
                         let mut t = s.traits.clone();
@@ -4806,10 +5030,11 @@ impl<'r> Linker<'r> {
                         .map(|m| drift_core::Member {
                             name: m.name.clone(),
                             calls: m.calls.iter().map(|r| self.canon(fi, r)).collect(),
-                            sinks: m.sinks.clone(),
+                            sinks: self.sinks_read(&m.sinks, &m.since_sinks),
                             body_checks: m
                                 .body_checks
                                 .iter()
+                                .filter(|b| self.reads_check(b))
                                 .map(|b| drift_core::BodyCheck {
                                     source: self.operand(fi, &b.source, false),
                                     reads: b.reads.clone(),
@@ -4867,12 +5092,33 @@ impl<'r> Linker<'r> {
                             caller_args: self.caller_args(fi, &m.caller_args),
                             unread: {
                                 let mut unread = m.unread.clone();
+                                self.measured_exits(&mut unread);
+                                unread.extend(
+                                    m.fed_sinks
+                                        .iter()
+                                        .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                                );
+                                unread.extend(
+                                    m.param_passes
+                                        .iter()
+                                        .map(|r| self.canon(fi, r))
+                                        .filter(|c| {
+                                            !c.starts_with("global#") && !c.starts_with("pkg:")
+                                        })
+                                        .map(|c| {
+                                            format!("{}{c}", drift_core::controls::PASSES_PARAM)
+                                        }),
+                                );
+                                unread.extend(self.held(fi, &m.held));
+                                unread.extend(self.rows(fi, &m.rows));
                                 unread.extend(self.origins(
                                     fi,
                                     &m.check_sides,
                                     &m.filter_values,
                                     &m.arg_sides,
+                                    &m.typed_calls,
                                 ));
+                                unread.extend(self.row_sets(fi, &m.row_sets));
                                 unread
                             },
                             is_async: m.is_async,
@@ -4884,6 +5130,7 @@ impl<'r> Linker<'r> {
                     body_checks: s
                         .body_checks
                         .iter()
+                        .filter(|b| self.reads_check(b))
                         .map(|b| drift_core::BodyCheck {
                             source: self.operand(fi, &b.source, false),
                             reads: b.reads.clone(),
@@ -5034,6 +5281,7 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(fi, l))
                 .collect(),
             truncated: vec![],
+            unlisted_routes: vec![],
             discovers: raw.discovers.clone(),
             outgoing: if test_file {
                 vec![]

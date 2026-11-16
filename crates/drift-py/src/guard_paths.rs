@@ -333,7 +333,7 @@ impl<'t> Collector<'_, 't> {
     /// raises, returns or calls says so ([`Collector::turns_away`]), it returns an
     /// answer that does (`return jsonify(...), 401`), or it raises an error class
     /// named for it (`raise NotAuthenticated()`).
-    fn rejection(&self, s: &Stmt) -> bool {
+    pub(super) fn rejection(&self, s: &Stmt) -> bool {
         use drift_core::CheckOutcome::{Forbidden, SignInRedirect, Unauthenticated};
         use drift_core::controls::Rejection;
         if matches!(
@@ -363,7 +363,7 @@ impl<'t> Collector<'_, 't> {
 
     /// A call of a function of the module that never returns and refuses
     /// ([`crate::lower::Lowerer::denier`]).
-    fn denies(&self, e: &Expr) -> bool {
+    pub(super) fn denies(&self, e: &Expr) -> bool {
         match e {
             Expr::Call(c) => match c.func.as_ref() {
                 Expr::Name(n) => {
@@ -484,7 +484,7 @@ impl<'t> Collector<'_, 't> {
 }
 
 /// `abort(...)` as a statement of its own: the function is left there.
-fn aborts(e: &Expr) -> bool {
+pub(super) fn aborts(e: &Expr) -> bool {
     matches!(e, Expr::Call(c) if last_name(&c.func) == Some("abort"))
 }
 

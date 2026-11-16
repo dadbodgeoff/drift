@@ -629,6 +629,67 @@ pub fn sql_models(files: &[(String, String)]) -> Vec<Model> {
     models.into_values().collect()
 }
 
+/// Where each Prisma schema says its client is generated
+/// ([`drift_core::RepoFacts::generated_clients`]): the `output` of a `generator`
+/// block whose provider is Prisma's own client generator (`prisma-client-js`,
+/// `prisma-client`), resolved from the schema's directory. A generator of anything
+/// else (zod types, enums, a query builder's types) writes no client.
+pub fn generated_clients(config: &ConfigTexts) -> Vec<String> {
+    let mut out: Vec<String> = config
+        .prisma
+        .iter()
+        .flat_map(|(path, text)| prisma_client_outputs(path, text))
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+fn prisma_client_outputs(path: &str, text: &str) -> Vec<String> {
+    let value = |line: &str, key: &str| -> Option<String> {
+        let rest = line.strip_prefix(key)?.trim_start().strip_prefix('=')?;
+        let rest = rest.trim().strip_prefix('"')?;
+        Some(rest[..rest.find('"')?].to_string())
+    };
+    let dir = path.rsplit_once('/').map_or("", |(d, _)| d);
+    let mut out = Vec::new();
+    // The generator block being read: its provider and its output.
+    let mut block: Option<(Option<String>, Option<String>)> = None;
+    for line in text.lines() {
+        let t = line.trim();
+        if t.starts_with("generator ") && t.ends_with('{') {
+            block = Some((None, None));
+        } else if t.starts_with('}') {
+            if let Some((Some(provider), Some(output))) = block.take()
+                && matches!(provider.as_str(), "prisma-client-js" | "prisma-client")
+            {
+                // The output, from the schema's directory, with `.` and `..` read.
+                let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
+                let mut inside = true;
+                for p in output.split('/') {
+                    match p {
+                        "" | "." => {}
+                        ".." => inside &= parts.pop().is_some(),
+                        p => parts.push(p),
+                    }
+                }
+                // Not what leaves the repository, and not `node_modules`, which an
+                // import names by its package.
+                if inside && !parts.is_empty() && !parts.contains(&"node_modules") {
+                    out.push(parts.join("/"));
+                }
+            }
+        } else if let Some((provider, output)) = block.as_mut() {
+            if let Some(v) = value(t, "provider") {
+                *provider = Some(v);
+            } else if let Some(v) = value(t, "output") {
+                *output = Some(v);
+            }
+        }
+    }
+    out
+}
+
 /// Prisma schemas and SQL migrations in the repo.
 pub fn schema_models(config: &ConfigTexts) -> Vec<Model> {
     let mut models: Vec<Model> = config
@@ -895,6 +956,25 @@ pub fn lint_configs(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_schema_says_where_its_client_is_generated() {
+        let schema = "generator client {\n  provider = \"prisma-client\"\n  output   = \"./generated/prisma\"\n}\n\ngenerator zod {\n  provider = \"zod-prisma-types\"\n  output   = \"./zod\"\n}\n\nmodel A {\n  id Int @id\n}\n";
+        assert_eq!(
+            prisma_client_outputs("packages/prisma/schema.prisma", schema),
+            ["packages/prisma/generated/prisma"]
+        );
+        // From the schema's directory, upwards too; never out of the repository.
+        let up = "generator client {\n  provider = \"prisma-client-js\"\n  output = \"../src/generated/client\"\n}\n";
+        assert_eq!(
+            prisma_client_outputs("prisma/schema.prisma", up),
+            ["src/generated/client"]
+        );
+        assert!(prisma_client_outputs("schema.prisma", up).is_empty());
+        // No output named: the client is the package's, imported by its name.
+        let default = "generator client {\n  provider = \"prisma-client-js\"\n}\n";
+        assert!(prisma_client_outputs("prisma/schema.prisma", default).is_empty());
+    }
 
     #[test]
     fn prisma_and_sql_models() {

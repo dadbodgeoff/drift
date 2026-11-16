@@ -226,6 +226,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "param_flows",
+            "sink_fed:cookie_without_httponly",
             "unread_call"
           ],
           "string_literals": 1,
@@ -273,7 +274,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           ],
           "controls": [
             "param_flows",
-            "shape:pkg:jwt#decode(?,options={verify_signature:False})"
+            "shape:pkg:jwt#decode(?,options={verify_signature:False})",
+            "sink_fed:jwt_decode_without_verify"
           ],
           "string_literals": 1,
           "sinks": [
@@ -305,7 +307,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "drops_result_of:pkg:yaml#load",
-            "param_flows"
+            "param_flows",
+            "sink_fed:unsafe_deserialize"
           ],
           "string_literals": 0,
           "sinks": [
@@ -333,7 +336,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "controls": [
             "drops_result_of:pkg:requests#get",
             "drops_result_of:pkg:requests#post",
-            "param_flows"
+            "param_flows",
+            "sink_fed:dynamic_fetch"
           ],
           "string_literals": 1,
           "sinks": [
@@ -405,7 +409,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:weak_hash"
           ],
           "string_literals": 1,
           "sinks": [
@@ -430,7 +435,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:raw_html"
           ],
           "string_literals": 0,
           "sinks": [
@@ -481,7 +487,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "param_flows",
-            "returns_unread"
+            "returns_unread",
+            "sink_fed:raw_sql"
           ],
           "string_literals": 0,
           "sinks": [
@@ -508,7 +515,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:dynamic_redirect"
           ],
           "string_literals": 1,
           "sinks": [
@@ -579,7 +587,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:eval"
           ],
           "string_literals": 0,
           "sinks": [
@@ -674,7 +683,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
             "pkg:python:subprocess#run@99:shell"
           ],
           "controls": [
-            "param_flows"
+            "param_flows",
+            "sink_fed:shell_exec"
           ],
           "string_literals": 0,
           "sinks": [
@@ -697,6 +707,7 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
+            "sink_fed:sql_string_interpolation",
             "unread_call"
           ],
           "string_literals": 2,

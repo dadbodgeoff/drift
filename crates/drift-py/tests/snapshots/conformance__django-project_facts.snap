@@ -1526,7 +1526,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "renders": [],
           "args": [],
           "controls": [
-            "reads_input"
+            "reads_input",
+            "sink_fed:dynamic_redirect"
           ],
           "string_literals": 1,
           "sinks": [
@@ -1637,7 +1638,8 @@ expression: "serde_json::to_string_pretty(&r).unwrap()"
           "args": [],
           "controls": [
             "arg_value:blog/models.py#Post.objects.all",
-            "param_flows"
+            "param_flows",
+            "rows:blog/models.py#Post\tany"
           ],
           "string_literals": 2,
           "order": [

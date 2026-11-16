@@ -135,6 +135,15 @@ pub struct FileFacts {
     /// mining does not read yet change it ([`Listed`]). None for every other file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listed: Option<Box<Listed>>,
+    /// The lines of the registrations written as a route is (`x.get("/path", (req,
+    /// res) => ...)`: a method named for an HTTP verb, a path written out, a handler
+    /// written in place) that no listing of the file's entry points accounts for:
+    /// routes that may be served and are in no inventory. What registers them was not
+    /// read (the receiver is a parameter no call in the file hands a router, or of a
+    /// framework with no adapter). TypeScript lowering 76; sorted; omitted when
+    /// empty. Not test files.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unlisted_routes: Vec<u32>,
 }
 
 /// What a file's facts are with every listing of entry points Drift makes
@@ -377,6 +386,20 @@ pub mod not_always {
     /// The right side of an `or`: skipped when the left side holds
     /// (`caller.is_support or check()`).
     pub const BYPASS_OPERAND: &str = "bypass_operand";
+    /// A comparison that is an operand of an effective `and` whose every other
+    /// operand tests that the caller lacks a role (`if not caller.is_superuser and
+    /// row.owner_id != caller.id: raise Forbidden`, `if not (caller.is_admin or
+    /// row.owner_id == caller.id)`): the request is refused unless the caller has
+    /// the role or the comparison holds, so every request is decided, by the role
+    /// or by the comparison. [`BodyCheck::unless`] names the role (`not when
+    /// caller.is_superuser`). A reader that cannot show the role to be the
+    /// caller's reads the comparison as an [`AND_OPERAND`].
+    pub const ROLE_ALTERNATIVE: &str = "role_alternative";
+    /// The test of the role beside a [`ROLE_ALTERNATIVE`] comparison: the caller is
+    /// refused for lacking it only where the comparison fails too. Read as an
+    /// [`AND_OPERAND`]; its sides are recorded so that a reader can say whose the
+    /// role is.
+    pub const ALTERNATIVE_ROLE: &str = "alternative_role";
     /// Inside a `try` with a handler that neither raises nor answers with an error:
     /// its refusal may be caught and the request served all the same. In
     /// TypeScript (lowering 64) also a check that answers "not signed in" in a
@@ -937,7 +960,12 @@ pub struct Symbol {
     /// Classes only: what the class's own inner `class Meta:` sets (Django models,
     /// forms, filtersets, serializers, graphene types): `model=<canonical class>` for
     /// `model = Site`, and `abstract` / `proxy` for `abstract = True` / `proxy = True`.
-    /// A `Meta` inherited from a base is not recorded. Sorted; recorded by Python only.
+    /// A `Meta` inherited from a base is not recorded. Since Python lowering 72 also
+    /// what the class gives of its fields: `fields=*` for `fields = "__all__"`,
+    /// `exclude=<field>` for each field `exclude` names, and `hidden=<field>` for a
+    /// field declared as never given back (`write_only=True`, by the field or by
+    /// `extra_kwargs`; `Field(exclude=True)`, read with or without a `Meta`).
+    /// Recorded by Python only.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub meta: Vec<String>,
     /// Python classes: the reference each class decorator is called with as its first
@@ -1252,6 +1280,14 @@ pub struct SymbolCalls {
     /// when empty.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub caught: Vec<String>,
+    /// The callees every call of which stands in a branch taken only where a
+    /// credential the request carries was read and is present (`const token =
+    /// req.cookies.token; if (token && ...) { jwt.verify(token, key) }`), as
+    /// [`Symbol::calls`] writes them: a request that carries no credential runs
+    /// none of them, so whatever they refuse, they refuse no one for carrying
+    /// none. Sorted; omitted when empty. TypeScript lowering 76.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub given_credential: Vec<String>,
     /// The calls of a verifying member of a parameter
     /// ([`crate::guard_lists::VERIFIER_MEMBERS`]: `request.jwtVerify()`) outside
     /// any `try`, as `param:<parameter>.<member>`: what it throws leaves the
@@ -1654,6 +1690,16 @@ pub mod controls {
     /// for this guard is not read. Held in the listed reading only; TypeScript
     /// lowering 64. Mining never reads it.
     pub const METADATA_UNREAD: &str = "metadata_unread";
+    /// What starts the control of a NestJS guard class that reads one metadata key
+    /// of the route and does with it what is not read (`request.allowed =
+    /// this.reflector.get(OnlyAllow, context.getHandler())` in `getRequest`): where
+    /// it is read and the key, as [`OPENS_FOR_METADATA`] writes them
+    /// (`reads_metadata:handler:src/auth/only-allow.ts#OnlyAllow`). A decorator
+    /// that sets this key may change what the guard does for the route; one that
+    /// sets another key is nothing the guard reads. A read whose key or target is
+    /// not read stays [`METADATA_UNREAD`]. Held in the listed reading only;
+    /// TypeScript lowering 80. Mining never reads it.
+    pub const READS_METADATA: &str = "reads_metadata:";
     /// The body turns a caller away as not signed in or not allowed, and not every
     /// request: on some path it returns without refusing (or hands control on, or
     /// yields) before it has passed a check that refuses a caller with no identity.
@@ -1717,6 +1763,181 @@ pub mod controls {
     /// Python (lowering 58), and by TypeScript (lowering 66) in the listed reading
     /// only. Mining never proposes it.
     pub const RETURNS_CALLER: &str = "returns_caller";
+    /// What starts the control that says a risky operation of the body
+    /// ([`crate::Symbol::sinks`]) is given a value read off a parameter of the
+    /// function the body is of: `sink_fed:<kind>`. Of an entry point's handler, a
+    /// parameter is what the request sent; of any other function, what its caller
+    /// passed. The value is followed through the body as a value of the caller is:
+    /// members and items, locals in the order written, templates, objects and arrays
+    /// that hold it. An operation with no such control was given nothing of a
+    /// parameter that the lowering read. TypeScript lowering 76 (listed reading),
+    /// Python lowering 69. Mining never proposes it.
+    pub const SINK_FED: &str = "sink_fed:";
+    /// What starts the control that says the body hands a callee a value read off a
+    /// parameter of its own function: `passes_param:<callee>`, canonical. With
+    /// [`SINK_FED`] it says whether what an entry point was sent reaches an
+    /// operation some calls away: each call on the way hands on a value read off a
+    /// parameter. TypeScript lowering 76 (listed reading), Python lowering 69. On a
+    /// Python method the same strings are in [`crate::facts::Member::unread`].
+    /// Mining never proposes it.
+    pub const PASSES_PARAM: &str = "passes_param:";
+    /// As [`SINK_FED`] and [`PASSES_PARAM`], of a parameter of the function the body
+    /// hands back (`export function login() { return (req, res) => { ... } }`):
+    /// `sink_fed_made:<kind>`, `passes_made:<callee>`. What the function made is
+    /// called with is its input: where an entry point names the maker as its handler,
+    /// what the request sent. TypeScript lowering 76 (listed reading).
+    pub const SINK_FED_MADE: &str = "sink_fed_made:";
+    pub const PASSES_MADE: &str = "passes_made:";
+    /// What starts the control that says what held where a wrapper hands a request
+    /// on: one control for each call, in a function defined in another, of what the
+    /// outer function was given (`return view_func(request, *args, **kwargs)` in a
+    /// decorator's wrapper), with the callees, canonical and tab-separated, whose
+    /// call's value was true on every path to it: the test of an `if` the call is
+    /// under, the test of an `if` that left the function where it did not hold (`if
+    /// not q.exists(): return Response(status=403)`), a local bound to one, the
+    /// operands of an `and`, what `is not None` is said of. Nothing after the
+    /// prefix where nothing held. What a callee is (a lookup of the caller, say) is
+    /// read where its arguments are ([`ARG_VALUE`]). Recorded by Python (lowering
+    /// 69) where some site has something that held; on a method the same strings
+    /// are in [`crate::facts::Member::unread`]. Mining never proposes it.
+    pub const HANDED_AFTER: &str = "handed_after:";
+    /// A function whose every branch that returns early without refusing does so
+    /// for the requests it finds to be about the caller's own record: the test of
+    /// the branch is `==` or `is` between the caller itself, or the key of the
+    /// caller's record, and something else (`if user == current_user: return
+    /// user`). A check that follows ([`crate::not_always::AFTER_CONDITIONAL_RETURN`])
+    /// is asked of every other request: the body serves the caller's own record, or
+    /// what passes the check. Recorded by Python (lowering 69). Mining never
+    /// proposes it.
+    pub const RETURNS_EARLY_FOR_OWN: &str = "returns_early_for_own";
+    /// What starts the control that says which rows a statement of the body reads
+    /// and by what: `rows:<model>`, canonical, then tab-separated `own`, the key and
+    /// the side ([`OWN_SIDE`]) where the statement filters them by the caller
+    /// itself or the key of the caller's record (`select(Item).where(Item.owner_id
+    /// == current_user.id)`, `Seat.objects.filter(holder=request.user)`); `from`
+    /// and the callees or values a filter of it reads its value off
+    /// (`Comment.objects.filter(doc=doc)`); or `any` for anything else (`select(
+    /// Item)`, `session.get(Item, item_id)`). A model is what a statement names
+    /// where rows are read: the class a query method is called on, or a class handed
+    /// to a call. A filter under an `or` or a negation narrows nothing and is not
+    /// read. Recorded by Python (lowering 69); on a method the same strings are in
+    /// [`crate::facts::Member::unread`]. Mining never proposes it.
+    pub const ROWS: &str = "rows:";
+    /// What ends an `own` entry of [`ROWS`] whose statement also filters by a value
+    /// read off a parameter or off what the request sent: the caller is looked up
+    /// in what the request names.
+    pub const ROWS_ASKED: &str = "asked";
+    /// What ends the callee of a site ([`HANDED_AFTER`]) that is such a lookup
+    /// written on a value the facts give no name (`db.query(Seat).filter_by(
+    /// holder_id=user.id, space=space).first()` on a session a dependency gives):
+    /// the model, then this.
+    pub const LOOKUP_OF: &str = "()lookup";
+    /// A function whose every `return` that gives a value gives what a call or a
+    /// lookup made of a credential the request carries: its `Cookie` or
+    /// `Authorization` header, or the cookies a framework parsed
+    /// (`store.getSession(request.headers.get("cookie"))`, then the row a session
+    /// id finds, then `session.userId`). What it hands back is who the credential
+    /// says, or nothing. Recorded by TypeScript (lowering 76, the listed reading).
+    pub const RETURNS_CREDENTIAL: &str = "returns_credential";
+    /// A function of the repository whose every `return` that gives a value gives
+    /// a value of the caller, read from what its body does and never from what it
+    /// is called: by its own sources ([`RETURNS_CALLER`]), what was made of a
+    /// credential the request carries ([`RETURNS_CREDENTIAL`]), or what a function
+    /// that is one hands back where the body calls it with nothing or with the
+    /// request (`requireSeat(request)` returning what `seatOf(request)` gave), a
+    /// few calls deep. What a call of it hands back is the caller's, wherever the
+    /// value goes: a side `call <it>` is written `caller`. Linked by TypeScript
+    /// (lowering 81) into the listed reading only. Mining never proposes it.
+    pub const GIVES_CALLER: &str = "gives_caller";
+    /// `returns_built:<class>`: every `return` of the function that gives a value
+    /// gives an instance of the class, built in the body (`() => { const client =
+    /// new PrismaClient(); ...; return client }`). Where the function is bound to
+    /// what a call it was handed to gave back (`export const prisma =
+    /// remember("prisma", () => ...)`), a call through a member of the binding
+    /// (`prisma.user.findMany`) is a call on what the function built: a function
+    /// has no such member. Linked by TypeScript (lowering 81) into the listed
+    /// reading only. Mining never proposes it.
+    pub const RETURNS_BUILT: &str = "returns_built:";
+    /// Every value the function hands back is plain data: built from literals and
+    /// built-ins only, or read off a local or a binding of the file that holds
+    /// such a value (`function previous() { return solves[solves.length - 1] }` of
+    /// `const solves = [...]`). A method called on what it handed back is a
+    /// built-in's. Listed reading only; TypeScript lowering 79.
+    pub const RETURNS_DATA: &str = "returns_data";
+    /// A function whose every `return` that gives a value gives a credential the
+    /// request carries, a part of one, or what a method of one made, and nothing
+    /// else (`return req.cookies.session`, `const parts =
+    /// headers.authorization.split(" "); return parts[1]`): a request that carries
+    /// no credential is handed nothing. Listed reading only; TypeScript lowering 79.
+    pub const RETURNS_SENT_CREDENTIAL: &str = "returns_sent_credential";
+    /// What starts the control of a body every call of which to a verifying callee
+    /// stands in a branch taken only where what another call handed back is there
+    /// (`const token = tokenOf(req); if (token) { jwt.verify(token, key) }`): the
+    /// verifying callee, a tab, the callee whose value the branch is by, both
+    /// canonical. Where that callee hands back a credential the request carries or
+    /// nothing ([`RETURNS_SENT_CREDENTIAL`]), a request that carries none runs
+    /// past the verifying call, as [`super::SymbolCalls::given_credential`] says of
+    /// a credential read in the body itself. Listed reading only; TypeScript
+    /// lowering 79.
+    pub const GIVEN_RESULT_OF: &str = "given_result_of:";
+    /// What starts the control of a body every call of which to a function of the
+    /// repository is a statement of its own that nothing waits for
+    /// (`void audit(req);`, `notifyAll(order);`): where the callee is asynchronous
+    /// ([`super::Symbol::is_async`]), what it throws rejects a promise nobody
+    /// holds, and stops nothing in the body. Listed reading only; TypeScript
+    /// lowering 79.
+    pub const UNAWAITED: &str = "unawaited:";
+    /// Every `throw` of the body stands in a function written as the argument of
+    /// a promise's own method (`then`, `catch`, `finally`) on a chain that is a
+    /// statement nothing waits for (`Feedback.count().then(tally).catch(() => {
+    /// throw new Error("unavailable") })`): each rejects the promise the method
+    /// made, which nobody holds, and stops nothing in the body. The `throw`
+    /// control and [`super::Symbol::throws`] stay as the measured build wrote
+    /// them. Listed reading only; TypeScript lowering 79.
+    pub const THROWS_LOST: &str = "throws_lost";
+    /// The body calls its continuation with nothing somewhere (`next()`; not
+    /// `next(error)`, which hands an error to what answers for it): it is written
+    /// to stand before what serves the request, wherever it is given. A function a route is given last that does so (`app.post("/cards",
+    /// appendUserId())`, with the routes that serve registered after it) is read as
+    /// what stands at a guard position is, not as the handler that answers. Listed
+    /// reading only; TypeScript lowering 79.
+    pub const CONTINUES: &str = "continues";
+    /// What starts the control of a body that throws for every request for which
+    /// what a callee handed back is absent (`const userId = await
+    /// getUserId(request); if (!userId) throw redirect(target)`): one for each such
+    /// test, with the callees that may have given the value, canonical and
+    /// tab-separated. The body turns away every request with no caller where each
+    /// of them gives the caller or nothing ([`RETURNS_CREDENTIAL`],
+    /// [`RETURNS_CALLER`], a library's session read); what is thrown is not asked.
+    /// Recorded by TypeScript (lowering 76, the listed reading).
+    pub const REFUSES_WITHOUT: &str = "refuses_without:";
+    /// What starts a side of [`ARG_VALUE`] that is the caller itself or the key of
+    /// the caller's record (`request.user`, `request.user.id`), before the side it
+    /// is (`own caller`, `own gives <dependency>`): not something read off the
+    /// caller (`request.user.org_id` is `caller`). Recorded by Python (lowering
+    /// 69).
+    pub const OWN_SIDE: &str = "own ";
+    /// As [`HANDED_AFTER`], of where the symbol's own function lets a request
+    /// through: each `return` that does not refuse and the end of its body, in a
+    /// function that refuses somewhere.
+    pub const LEAVES_AFTER: &str = "leaves_after:";
+    /// As [`HANDED_AFTER`], of where the symbol's own function may answer true:
+    /// each `return` that gives anything but `False` or nothing, with what its
+    /// value says held too (`return a and q.exists()`), in a function that answers
+    /// `False` somewhere.
+    pub const TRUE_AFTER: &str = "true_after:";
+    /// What starts the control of a function whose every `return` that gives a
+    /// value gives one read off what a dependency gave it, each dependency its own
+    /// entry (`returns_given:<dependency>`, canonical): `def get_current_user(db:
+    /// SessionDep, token: TokenDep): ... return db.get(User, claims.sub)`, where
+    /// the claims are what the verification of `token` handed back. The value is
+    /// one of the caller where every such dependency gives one (it signs the
+    /// caller in), which a reader decides. Read off a dependency's value: its
+    /// members and items, what a token verifier hands back of it (`jwt.decode`),
+    /// an object built from it alone (`Claims(**payload)`), and the row a primary
+    /// key read off it names (`db.get(User, sub)`, `User.objects.get(pk=sub)`).
+    /// Recorded by Python (lowering 69). Mining never proposes it.
+    pub const RETURNS_GIVEN: &str = "returns_given:";
     /// A function whose own body returns what the request sent in every `return`
     /// that gives a value: a header, a query, path, body or cookie value, a
     /// parameter that is not a dependency (`def team(x_team_id: str = Header(...)):
@@ -1779,6 +2000,54 @@ pub mod controls {
     /// On a method the same strings are in [`crate::facts::Member::unread`].
     /// Recorded by Python (lowering 62). Mining never proposes it.
     pub const SIDES: &str = "sides:";
+    /// `called_leaving:<callee>`: every call of the callee the body makes is
+    /// written in what a `throw` outside any `try` throws (`throw redirect("/", {
+    /// headers: { "set-cookie": await sessions.destroySession(session) } })`): no
+    /// request the call ran for goes on to what the body does next, so what the
+    /// call changed is not changed before a check that follows. TypeScript
+    /// lowering 81; mining never proposes it.
+    pub const CALLED_LEAVING: &str = "called_leaving:";
+    /// `caller_from:<callee>`: the body takes what a call of the callee hands back
+    /// as who calls (`const userId = await requireUserId(request)`): what the
+    /// callee and the code it calls read to find that out is how the caller is
+    /// identified, not a scope of the rows the route reads. TypeScript lowering
+    /// 81; mining never proposes it.
+    pub const CALLER_FROM: &str = "caller_from:";
+    /// `filter_own:<callee>\t<key>`: every call of the callee the body makes that
+    /// gives the key gives it the caller itself or the key of the caller's record
+    /// (what a call that gives the caller handed back, whole; `session.user.id`),
+    /// and nothing else read off the caller (`session.user.orgId` is a group of
+    /// the caller): rows narrowed to it are this caller's, whatever the key is
+    /// called. TypeScript lowering 81; mining never proposes it.
+    pub const FILTER_OWN: &str = "filter_own:";
+    /// `filter_every:<callee>\t<key>\t<own|caller>`: every call of the callee the
+    /// body makes, on whatever path, gives the key a value of the caller (`own`
+    /// where each gives the caller itself, [`FILTER_OWN`]), in an object written
+    /// in place with no spread and no computed key at its level (`if (intent ===
+    /// "delete") await db.passkey.delete({ where: { id, userId } })`). A filter
+    /// that is itself under a condition (`where: flag ? undefined : { ... }`) is
+    /// not one. TypeScript lowering 81; mining never proposes it.
+    pub const FILTER_EVERY: &str = "filter_every:";
+    /// Python: an attribute of what a call handed back is written after the call,
+    /// by a value that is not the caller itself (`item = Item(owner_id=
+    /// current_user.id); item.owner_id = body.owner_id`): `<callee>\t<attribute>`.
+    /// What the call was given for that attribute is no longer what the row holds.
+    pub const ROW_SET: &str = "row_set:";
+    /// Python: a call of a package's code that is handed something, with what
+    /// each argument is, written as [`ARG_VALUE`] is (which holds the calls of
+    /// the repository's own code only): `session.add(current_user)` on a session
+    /// a parameter types as the package's. A call handed nothing is not recorded.
+    pub const PKG_ARG_VALUE: &str = "pkg_arg_value:";
+    /// What starts the control of a body that leaves by a refusal (a `throw`, an
+    /// answer that turns the caller away) for every request for which what one
+    /// call of it handed back is absent (`const user = await db.user.findFirst({
+    /// where: { id: userId, roles: { some: { name } } } }); if (!user) throw
+    /// forbidden()`): the callee, canonical. What the call was given says what the
+    /// request must have for it to hand anything back
+    /// ([`ARG_VALUE`]). On a method the same strings are in
+    /// [`crate::facts::Member::unread`]. Recorded by TypeScript (lowering 81, the
+    /// listed reading). Mining never proposes it.
+    pub const REFUSES_ABSENT: &str = "refuses_absent:";
     /// What starts the control that says where the value a scoped query filters by
     /// comes from ([`crate::ScopedQuery`]): `filter_value:<callee>\t<key>\t<side>`,
     /// the side as [`SIDES`] writes one. Recorded by Python (lowering 62). Mining
@@ -1794,7 +2063,65 @@ pub mod controls {
     /// repository\tparam repo #0\tprincipal\tvia <...>#resolve_principal`. On a
     /// method the same strings are in [`crate::facts::Member::unread`]. Recorded by
     /// Python (lowering 62). Mining never proposes it.
+    ///
+    /// TypeScript (lowering 78) writes the argument as `#<position>`, and the
+    /// values of an object written in place by the path of their keys
+    /// (`#0.where.userId`; an item of a list by its position, `#0.where.OR.1
+    /// .teamId.in`), to six objects deep. It records a call whose callee has no
+    /// canonical name by the name it is written under (`param:ctx.prisma.user
+    /// .findUnique`, `local:this.db.note.findMany`, `local:tx.note.update`), a
+    /// package's call where it is handed an object, and `arg_value:*` where a body
+    /// makes more calls than are recorded. Its sides: `caller`, `param <name>
+    /// #<position>`, `literal`, `call <callee>` (a value read off what a call of
+    /// the body handed back), `unread`.
+    ///
+    /// TypeScript (lowering 82) records a call of one of the body's own
+    /// parameters, given by position, under [`PARAM_CALLED`] and the parameter's
+    /// name, with no member
+    /// (`arg_value:param:handler\t#0\tunread\t#1\tunread\t#2\tcaller` of
+    /// `handler(req, res, user)` in `withUser(handler)`): what a wrapper hands the
+    /// function it was given.
     pub const ARG_VALUE: &str = "arg_value:";
+    /// What the callee of an [`ARG_VALUE`] starts with where the body calls a
+    /// parameter, or a method of what one holds.
+    pub const PARAM_CALLED: &str = "param:";
+    /// What starts the control of a body that binds, on the request or what
+    /// holds it, a key named for the caller to what the request sent:
+    /// `holds_sent:<key>` (`req.user = req.body.user`, `req.user = { id:
+    /// req.headers["x-user-id"] }`, `req.user = req.user || req.query.as`).
+    /// What a later body reads under that key is what the request chose, not
+    /// who calls. TypeScript lowering 83, the listed reading only; mining never
+    /// proposes it.
+    pub const HOLDS_SENT: &str = "holds_sent:";
+    /// What starts the control of a body that reads, off the request or what
+    /// holds it, a key named for the caller as who calls: `reads_held:<key>`
+    /// (`req.user.id`). Beside a body around the same unit that binds the key
+    /// to what the request sent ([`HOLDS_SENT`]), nothing the body does with
+    /// the caller's value is proven. TypeScript lowering 83, the listed reading
+    /// only; mining never proposes it.
+    pub const READS_HELD: &str = "reads_held:";
+    /// What starts the control of a body that takes a field out of what a call
+    /// handed back before it answers: `withholds:<callee>\t<field>`, the callee
+    /// canonical. The call is told to leave it out (`omit: { passwordHash: true
+    /// }`), the field is taken apart from the rest and never read (`const {
+    /// passwordHash, ...safe } = user`), or it is deleted or blanked (`delete
+    /// user.passwordHash`, `{ ...user, passwordHash: undefined }`). Where the
+    /// value is one the function was handed, the callee is `param #<position>`
+    /// (`function toPublic(user) { const { passwordHash, ...rest } = user }`),
+    /// and the calls of the function say which rows those are
+    /// ([`ARG_VALUE`]). No field is withheld by its name. TypeScript lowering
+    /// 84; mining never proposes it.
+    pub const WITHHOLDS: &str = "withholds:";
+    /// What starts the control of a body that hands a response the whole of what
+    /// a call handed back: `sends_whole:<callee>` (`res.json(user)`,
+    /// `NextResponse.json({ user })`). A call that chooses its fields (`select`)
+    /// hands back no whole. TypeScript lowering 84; mining never proposes it.
+    pub const SENDS_WHOLE: &str = "sends_whole:";
+    /// As [`SENDS_WHOLE`], for what the body returns: `returns_whole:<callee>`
+    /// (`return user`, `return db.user.findMany()`). Whether what a function
+    /// returns is sent back is for the reader to say (an entry point's is).
+    /// TypeScript lowering 84; mining never proposes it.
+    pub const RETURNS_WHOLE: &str = "returns_whole:";
     /// What starts the control of a class that says which parameter of `__init__` an
     /// attribute of `self` is bound from, by a statement of the constructor's own
     /// body (`self.principal = principal`):
@@ -2239,6 +2566,15 @@ pub struct RepoFacts {
     /// a full scan, where every file is in `files`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub integration_files: Vec<FileRef>,
+    /// The directories a Prisma schema of the repository says its client is
+    /// generated into (`generator client { provider = "prisma-client"; output =
+    /// "./generated/prisma" }`), repo-relative, sorted. The client written there is
+    /// build output, usually not committed: an import that resolves to no file
+    /// below one of them is an import of the database client, as one of
+    /// `@prisma/client` is. Empty, and not serialised, where no schema names an
+    /// output, and in a single-file scan.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub generated_clients: Vec<String>,
 }
 
 /// The keys one file declares, for co-change rules.
@@ -2403,11 +2739,15 @@ impl RepoFacts {
         if !listed(&self.files) && !listed(&self.context_files) {
             return std::borrow::Cow::Borrowed(self);
         }
-        let mut all = self.clone();
-        for f in all.files.iter_mut().chain(&mut all.context_files) {
+        std::borrow::Cow::Owned(self.clone().into_listed())
+    }
+
+    /// [`RepoFacts::listed`], in place: no copy of the facts is made.
+    pub fn into_listed(mut self) -> RepoFacts {
+        for f in self.files.iter_mut().chain(&mut self.context_files) {
             f.take_listed();
         }
-        std::borrow::Cow::Owned(all)
+        self
     }
 }
 
@@ -2453,6 +2793,8 @@ impl FileFacts {
     /// Keeps `full`, the same file linked with every listing, beside this one,
     /// linked without the unmeasured ones ([`Listed`]); nothing when they agree.
     pub fn hold(&mut self, full: FileFacts) {
+        // What is not listed is said of every listing made, not of the measured ones.
+        self.unlisted_routes.clone_from(&full.unlisted_routes);
         if self.entry_points == full.entry_points
             && self.mounts == full.mounts
             && self.symbols == full.symbols

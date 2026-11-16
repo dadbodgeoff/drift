@@ -21,7 +21,67 @@ pub mod kind {
     pub const JWT_DECODE: &str = "jwt_decode_without_verify";
     pub const COOKIE: &str = "cookie_without_httponly";
     pub const CORS: &str = "cors_any_origin";
+    // Read since the measured build (TypeScript lowering 76): in the listed
+    // reading only.
+    pub const PATH: &str = "path_traversal";
+    pub const TEMPLATE: &str = "template_injection";
+    pub const NOSQL: &str = "nosql_injection";
+    pub const SECRET: &str = "hardcoded_secret";
+    pub const TLS: &str = "tls_verify_disabled";
+    pub const MASS: &str = "mass_assignment";
+    pub const REGEX: &str = "dynamic_regex";
+    pub const KEY_WRITE: &str = "dynamic_key_write";
 }
+
+/// HTTP clients whose request functions take the URL first, beside the ones the
+/// measured build read (`fetch`, axios, got, node-fetch, undici).
+const MORE_CLIENTS: &[&str] = &["needle", "superagent", "ky", "ofetch", "request", "phin"];
+
+/// Methods that write a row from the object they are given.
+const WRITE_METHODS: &[&str] = &[
+    "create",
+    "update",
+    "updateOne",
+    "updateMany",
+    "findByIdAndUpdate",
+    "findOneAndUpdate",
+    "upsert",
+    "insert",
+    "insertOne",
+    "save",
+    "build",
+    "merge",
+];
+
+/// Functions of `fs` that read, write or remove the file at the path they are given.
+const FS_FNS: &[&str] = &[
+    "readFile",
+    "readFileSync",
+    "createReadStream",
+    "writeFile",
+    "writeFileSync",
+    "createWriteStream",
+    "appendFile",
+    "appendFileSync",
+    "unlink",
+    "unlinkSync",
+    "rm",
+    "rmSync",
+    "readdir",
+    "readdirSync",
+];
+
+/// Functions that compile or render the template text they are given, by package.
+const TEMPLATE_FNS: &[(&str, &str)] = &[
+    ("ejs", "render"),
+    ("ejs", "compile"),
+    ("pug", "render"),
+    ("pug", "compile"),
+    ("handlebars", "compile"),
+    ("nunjucks", "renderString"),
+    ("mustache", "render"),
+    ("lodash", "template"),
+];
 
 /// Last property name of a member callee (`res.redirect` -> `redirect`).
 fn member_name<'b>(callee: &'b Expression) -> Option<&'b str> {
@@ -119,6 +179,282 @@ fn object_value<'b, 'a>(e: &'b Expression<'a>, key: &str) -> Option<&'b Expressi
     })
 }
 
+/// Text an SQL statement is recognised by.
+const SQL_KEYWORDS: [&str; 6] = [
+    "SELECT ", "INSERT ", "UPDATE ", "DELETE ", " WHERE ", "FROM ",
+];
+
+fn has_sql(text: &str) -> bool {
+    let s = text.to_ascii_uppercase();
+    SQL_KEYWORDS.iter().any(|k| s.contains(k))
+}
+
+/// What the file's bindings hold that an SQL sink reads through a name (TypeScript
+/// lowering 76): `const q = "SELECT ... '" + id + "'"; db.query(q)` is the
+/// interpolation `db.query(`SELECT ... '${id}'`)` is, and `` `SELECT * FROM ${TABLE}` ``
+/// with `const TABLE = "users"` interpolates no input.
+#[derive(Default)]
+pub(crate) struct SqlLocals {
+    /// `const` bindings initialised with a literal: text written out, never input.
+    constants: HashSet<SymbolId>,
+    /// Bindings whose text is SQL (it holds a keyword), built or not.
+    text: HashSet<SymbolId>,
+    /// Bindings some statement gives SQL text built from a part that is no constant.
+    built: HashSet<SymbolId>,
+}
+
+/// The symbol a reference names, where the file declares it.
+fn symbol_of(scoping: &Scoping, id: &IdentifierReference) -> Option<SymbolId> {
+    id.reference_id
+        .get()
+        .and_then(|r| scoping.get_reference(r).symbol_id())
+}
+
+/// The operands of a `+` chain and of the templates in it: the text written out
+/// goes to `text`, everything else to `parts`.
+fn string_parts<'b, 'a>(
+    e: &'b Expression<'a>,
+    text: &mut String,
+    parts: &mut Vec<&'b Expression<'a>>,
+) {
+    match unwrap_expr(e) {
+        Expression::StringLiteral(l) => text.push_str(&lit(l)),
+        Expression::TemplateLiteral(t) => {
+            for q in &t.quasis {
+                text.push_str(q.value.raw.as_str());
+            }
+            for x in &t.expressions {
+                string_parts(x, text, parts);
+            }
+        }
+        Expression::BinaryExpression(b) if b.operator == BinaryOperator::Addition => {
+            string_parts(&b.left, text, parts);
+            string_parts(&b.right, text, parts);
+        }
+        other => parts.push(other),
+    }
+}
+
+/// A list of placeholders: `ids.map(() => "?").join(", ")`, `ids.map((_, i) =>
+/// `$${i + 1}`).join(",")`, `Array(n).fill("?").join(",")`. What it interpolates
+/// is the count of the values, never one of them.
+fn placeholders(e: &Expression) -> bool {
+    let Expression::CallExpression(join) = unwrap_expr(e) else {
+        return false;
+    };
+    let Expression::StaticMemberExpression(m) = unwrap_expr(&join.callee) else {
+        return false;
+    };
+    if m.property.name != "join" {
+        return false;
+    }
+    let Expression::CallExpression(made) = unwrap_expr(&m.object) else {
+        return false;
+    };
+    let first = made.arguments.first().and_then(|a| a.as_expression());
+    match member_name(&made.callee) {
+        Some("fill") => first.is_some_and(is_literal_string),
+        Some("map") => {
+            let Some(Expression::ArrowFunctionExpression(f)) = first.map(unwrap_expr) else {
+                return false;
+            };
+            let Some(body) = f.get_expression() else {
+                return false;
+            };
+            // Only the index may be interpolated: the second parameter.
+            let index = f.params.items.get(1).and_then(|p| match &p.pattern {
+                BindingPattern::BindingIdentifier(b) => Some(b.name.as_str()),
+                _ => None,
+            });
+            let mut text = String::new();
+            let mut parts = Vec::new();
+            string_parts(body, &mut text, &mut parts);
+            parts.iter().all(|p| index_only(p, index))
+        }
+        _ => false,
+    }
+}
+
+/// Arithmetic on the index and on numbers (`i + 1`, `i * 2 + offset` is not).
+fn index_only(e: &Expression, index: Option<&str>) -> bool {
+    match unwrap_expr(e) {
+        Expression::NumericLiteral(_) => true,
+        Expression::Identifier(id) => index == Some(id.name.as_str()),
+        Expression::BinaryExpression(b) => {
+            index_only(&b.left, index) && index_only(&b.right, index)
+        }
+        _ => false,
+    }
+}
+
+impl SqlLocals {
+    pub(crate) fn of(program: &Program, scoping: &Scoping) -> Self {
+        let mut found = SqlLocals::default();
+        let mut pass = SqlPass {
+            scoping,
+            found: &mut found,
+            constants: true,
+        };
+        pass.visit_program(program);
+        pass.constants = false;
+        pass.visit_program(program);
+        found
+    }
+
+    /// A value no request decides: a literal, deployment configuration, a constant
+    /// by its name or by what it is bound to, a number made of anything, a list of
+    /// placeholders.
+    /// Text built from a part that is no constant, whatever the text is: a template
+    /// or a chain of `+`.
+    pub(crate) fn builds_text(&self, scoping: &Scoping, e: &Expression) -> bool {
+        self.builds(scoping, e, true)
+    }
+
+    /// A value no request decides where a path is built: a constant, the directory
+    /// of the module (`__dirname`, `__filename`, `import.meta.dirname`), the working
+    /// or the temporary directory.
+    pub(crate) fn fixed_path(&self, scoping: &Scoping, e: &Expression) -> bool {
+        let e = unwrap_expr(e);
+        match e {
+            Expression::Identifier(id)
+                if matches!(id.name.as_str(), "__dirname" | "__filename")
+                    && symbol_of(scoping, id).is_none() =>
+            {
+                true
+            }
+            Expression::StaticMemberExpression(m)
+                if matches!(unwrap_expr(&m.object), Expression::ImportMeta(_)) =>
+            {
+                true
+            }
+            Expression::CallExpression(c) => {
+                matches!(member_name(&c.callee), Some("cwd" | "tmpdir" | "homedir"))
+                    && c.arguments.is_empty()
+            }
+            _ => self.constant(scoping, e),
+        }
+    }
+
+    pub(crate) fn constant(&self, scoping: &Scoping, e: &Expression) -> bool {
+        let e = unwrap_expr(e);
+        match e {
+            Expression::StringLiteral(_)
+            | Expression::NumericLiteral(_)
+            | Expression::BooleanLiteral(_)
+            | Expression::NullLiteral(_)
+            | Expression::BigIntLiteral(_) => true,
+            Expression::Identifier(id) => {
+                is_constant_name(e)
+                    || symbol_of(scoping, id).is_some_and(|s| self.constants.contains(&s))
+            }
+            Expression::CallExpression(c) => {
+                placeholders(e)
+                    || matches!(unwrap_expr(&c.callee), Expression::Identifier(id)
+                        if matches!(id.name.as_str(), "Number" | "parseInt" | "parseFloat")
+                            && symbol_of(scoping, id).is_none())
+            }
+            _ => is_config(e),
+        }
+    }
+
+    /// SQL text with a part that is no constant, written where it is used or bound
+    /// to the name given.
+    pub(crate) fn dynamic(&self, scoping: &Scoping, e: &Expression) -> bool {
+        if let Expression::Identifier(id) = unwrap_expr(e) {
+            return symbol_of(scoping, id).is_some_and(|s| self.built.contains(&s));
+        }
+        self.builds(scoping, e, false)
+    }
+
+    /// `e` builds text from a part that is no constant, and the text is SQL (or is
+    /// added to SQL text: `known`).
+    fn builds(&self, scoping: &Scoping, e: &Expression, known: bool) -> bool {
+        if !matches!(
+            unwrap_expr(e),
+            Expression::TemplateLiteral(_) | Expression::BinaryExpression(_)
+        ) {
+            return false;
+        }
+        let mut text = String::new();
+        let mut parts = Vec::new();
+        string_parts(e, &mut text, &mut parts);
+        (known || has_sql(&text))
+            && parts.iter().any(|p| match unwrap_expr(p) {
+                // SQL built from built SQL is built.
+                Expression::Identifier(id)
+                    if symbol_of(scoping, id).is_some_and(|s| self.built.contains(&s)) =>
+                {
+                    true
+                }
+                _ => !self.constant(scoping, p),
+            })
+    }
+}
+
+/// Fills [`SqlLocals`]: the constants first, then what is built from what is not one.
+struct SqlPass<'s, 'f> {
+    scoping: &'s Scoping,
+    found: &'f mut SqlLocals,
+    constants: bool,
+}
+
+impl<'a> Visit<'a> for SqlPass<'_, '_> {
+    fn visit_variable_declaration(&mut self, it: &VariableDeclaration<'a>) {
+        for d in &it.declarations {
+            let (BindingPattern::BindingIdentifier(b), Some(init)) = (&d.id, &d.init) else {
+                continue;
+            };
+            let Some(sym) = b.symbol_id.get() else {
+                continue;
+            };
+            if self.constants {
+                let literal = match unwrap_expr(init) {
+                    Expression::StringLiteral(_) | Expression::NumericLiteral(_) => true,
+                    Expression::TemplateLiteral(t) => t.expressions.is_empty(),
+                    _ => false,
+                };
+                if it.kind.is_const() && literal {
+                    self.found.constants.insert(sym);
+                }
+                let mut text = String::new();
+                string_parts(init, &mut text, &mut Vec::new());
+                if has_sql(&text) {
+                    self.found.text.insert(sym);
+                }
+            } else if self.found.builds(self.scoping, init, false) {
+                self.found.built.insert(sym);
+            }
+        }
+        walk::walk_variable_declaration(self, it);
+    }
+
+    fn visit_assignment_expression(&mut self, it: &AssignmentExpression<'a>) {
+        if !self.constants
+            && let AssignmentTarget::AssignmentTargetIdentifier(id) = &it.left
+            && let Some(sym) = symbol_of(self.scoping, id)
+        {
+            let known = self.found.text.contains(&sym);
+            let built = match it.operator {
+                AssignmentOperator::Assign => self.found.builds(self.scoping, &it.right, false),
+                // `q += " AND owner = '" + owner + "'"`: more of the SQL `q` holds.
+                AssignmentOperator::Addition => {
+                    known
+                        && (self.found.builds(self.scoping, &it.right, true)
+                            || !matches!(
+                                unwrap_expr(&it.right),
+                                Expression::TemplateLiteral(_) | Expression::BinaryExpression(_)
+                            ) && !self.found.constant(self.scoping, &it.right))
+                }
+                _ => false,
+            };
+            if built {
+                self.found.built.insert(sym);
+            }
+        }
+        walk::walk_assignment_expression(self, it);
+    }
+}
+
 fn import_of(r: &RawRef) -> Option<(&str, &str)> {
     match &r.base {
         RawBase::Import { spec, name } => Some((spec.trim_start_matches("node:"), name.as_str())),
@@ -185,20 +521,37 @@ impl Lowerer<'_> {
         {
             out.push(kind::SQL_RAW);
         }
-        if matches!(
+        // The measured build read SQL interpolated where the call is written, of
+        // five methods, whatever was interpolated. Since (lowering 76): text built
+        // by `+`, text bound to a name first, the statement methods of the SQLite
+        // drivers, and no hit where every part interpolated is a constant.
+        let measured = matches!(
             member,
             Some("query" | "execute" | "$queryRaw" | "$executeRaw" | "unsafe")
-        ) && let Some(Expression::TemplateLiteral(t)) = first.map(unwrap_expr)
-            && !t.expressions.is_empty()
-            && t.quasis.iter().any(|q| {
-                let s = q.value.raw.to_ascii_uppercase();
-                [
-                    "SELECT ", "INSERT ", "UPDATE ", "DELETE ", " WHERE ", "FROM ",
-                ]
-                .iter()
-                .any(|k| s.contains(k))
-            })
-        {
+        ) && matches!(first.map(unwrap_expr), Some(Expression::TemplateLiteral(t))
+            if !t.expressions.is_empty()
+                && t.quasis.iter().any(|q| has_sql(q.value.raw.as_str())));
+        let since = matches!(
+            member,
+            Some(
+                "query"
+                    | "execute"
+                    | "$queryRaw"
+                    | "$executeRaw"
+                    | "unsafe"
+                    | "all"
+                    | "get"
+                    | "run"
+                    | "each"
+                    | "exec"
+                    | "prepare"
+            )
+        ) && first.is_some_and(|e| self.sql.dynamic(self.scoping, e));
+        if measured != since && routes::unmeasured_listing() {
+            if measured {
+                out.push(kind::SQL_INTERP);
+            }
+        } else if since {
             out.push(kind::SQL_INTERP);
         }
         if member == Some("redirect")
@@ -286,6 +639,197 @@ impl Lowerer<'_> {
             if any {
                 out.push(kind::CORS);
             }
+        }
+        // What the measured build did not read is in the listed reading only.
+        let since = self.call_sinks_since(c);
+        if !since.is_empty() && !routes::unmeasured_listing() {
+            out.extend(since);
+        }
+        out
+    }
+
+    /// A regular expression's pattern that is no constant: a value, or text built
+    /// from one.
+    pub(super) fn dynamic_pattern(&self, e: &Expression) -> bool {
+        match unwrap_expr(e) {
+            Expression::RegExpLiteral(_) => false,
+            Expression::TemplateLiteral(_) | Expression::BinaryExpression(_) => {
+                self.sql.builds_text(self.scoping, e)
+            }
+            other => !self.sql.constant(self.scoping, other),
+        }
+    }
+
+    /// The function of a package a call names: `("fs", "readFile")` for
+    /// `fs.readFile(...)`, `fs.promises.readFile(...)` and a named import of it.
+    fn package_fn(&self, callee: &Expression) -> Option<(String, String)> {
+        let r = self.canon_callee(callee)?;
+        let (spec, name) = import_of(&r)?;
+        let member = r.member.trim_start_matches('.');
+        if member.contains('(') {
+            return None;
+        }
+        let function = match (name, member.rsplit('.').next().filter(|m| !m.is_empty())) {
+            ("default" | "*", Some(m)) => m,
+            // The package itself, called: `session({...})`.
+            ("default" | "*", None) => "default",
+            (n, None) => n,
+            // `promises.readFile` of `import { promises } from "fs"`.
+            (_, Some(m)) => m,
+        };
+        Some((spec.to_string(), function.to_string()))
+    }
+
+    /// Sinks one call reaches that the measured build did not read (TypeScript
+    /// lowering 76): a file at a path built from a part that is no constant,
+    /// template text that is not written out, a MongoDB `$where` built from a part
+    /// that is no constant, Angular's `bypassSecurityTrust*`, a secret written in
+    /// the code where a token is signed or a session is keyed, and a TLS
+    /// connection that does not verify the certificate.
+    fn call_sinks_since(&self, c: &CallExpression) -> Vec<&'static str> {
+        let mut out = Vec::new();
+        let args: Vec<&Expression> = c
+            .arguments
+            .iter()
+            .filter_map(|a| a.as_expression())
+            .collect();
+        let first = args.first().copied();
+        let member = member_name(&c.callee);
+        let named = self.package_fn(&c.callee);
+        let named = named.as_ref().map(|(p, f)| (p.as_str(), f.as_str()));
+        let text = |e: &Expression| matches!(unwrap_expr(e), Expression::StringLiteral(l) if !lit(l).is_empty());
+
+        // A path joined or built from a part that is no constant.
+        let built_path = |e: &Expression| -> bool {
+            if let Expression::CallExpression(j) = unwrap_expr(e)
+                && matches!(
+                    self.package_fn(&j.callee)
+                        .as_ref()
+                        .map(|(p, f)| (p.as_str(), f.as_str())),
+                    Some(("path" | "path/posix" | "path/win32", "join" | "resolve"))
+                )
+            {
+                return j.arguments.iter().any(|a| {
+                    !a.as_expression()
+                        .is_some_and(|x| self.sql.fixed_path(self.scoping, x))
+                });
+            }
+            self.sql.builds_text(self.scoping, e)
+        };
+        let reads_file = matches!(named, Some(("fs" | "fs/promises" | "fs-extra", f)) if FS_FNS.contains(&f))
+            || matches!(member, Some("sendFile" | "download"));
+        if reads_file && first.is_some_and(built_path) {
+            out.push(kind::PATH);
+        }
+        if matches!(named, Some(pf) if TEMPLATE_FNS.contains(&pf))
+            && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::TEMPLATE);
+        }
+        if matches!(
+            named,
+            Some((
+                "vm",
+                "runInNewContext" | "runInContext" | "runInThisContext"
+            ))
+        ) && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::EVAL);
+        }
+        // `{ $where: `this.owner == ${owner}` }` in what a query is given.
+        let wheres = |e: &Expression| -> bool {
+            let Expression::ObjectExpression(o) = unwrap_expr(e) else {
+                return false;
+            };
+            o.properties.iter().any(|p| match p {
+                ObjectPropertyKind::ObjectProperty(p) => {
+                    p.key
+                        .static_name()
+                        .is_some_and(|k| k.as_str() == Some("$where"))
+                        && self.sql.builds_text(self.scoping, &p.value)
+                }
+                _ => false,
+            })
+        };
+        if args.iter().any(|a| wheres(a)) {
+            out.push(kind::NOSQL);
+        }
+        if matches!(
+            member,
+            Some(
+                "bypassSecurityTrustHtml"
+                    | "bypassSecurityTrustScript"
+                    | "bypassSecurityTrustStyle"
+                    | "bypassSecurityTrustUrl"
+                    | "bypassSecurityTrustResourceUrl"
+            )
+        ) && first.is_some_and(|e| !is_literal_string(e))
+        {
+            out.push(kind::HTML);
+        }
+        // A secret written in the code: the key a token is signed or verified
+        // with, the secret a session or a cookie is signed with.
+        let secret = match named {
+            Some(("jsonwebtoken", "sign" | "verify")) => args.get(1).is_some_and(|e| text(e)),
+            Some(("express-session" | "cookie-session", _)) => first
+                .and_then(|o| object_value(o, "secret"))
+                .is_some_and(text),
+            Some(("cookie-parser", _)) => first.is_some_and(text),
+            _ => false,
+        };
+        if secret {
+            out.push(kind::SECRET);
+        }
+        // A request to a computed URL through a client the measured build did not
+        // read (`needle.get(url)`, `superagent.get(url)`).
+        if matches!(named, Some((p, f)) if MORE_CLIENTS.contains(&p)
+            && matches!(f, "default" | "get" | "post" | "put" | "patch" | "delete" | "head" | "request"))
+            && first.is_some_and(|e| {
+                !is_fixed_origin(e) && !matches!(unwrap_expr(e), Expression::ObjectExpression(_))
+            })
+        {
+            out.push(kind::FETCH);
+        }
+        // What the request sent, whole, written to a row: `User.create(req.body)`,
+        // `prisma.user.update({ where, data: req.body })`, `Object.assign(user,
+        // req.body)`. Every field the caller names is set, the ones the handler
+        // did not mean to expose among them.
+        let sent_whole = |e: &Expression| -> bool {
+            let e = match unwrap_expr(e) {
+                Expression::AwaitExpression(a) => unwrap_expr(&a.argument),
+                e => e,
+            };
+            match e {
+                Expression::StaticMemberExpression(m) => {
+                    matches!(m.property.name.as_str(), "body" | "query")
+                        && matches!(unwrap_expr(&m.object), Expression::Identifier(id)
+                            if matches!(id.name.as_str(), "req" | "request" | "ctx"))
+                }
+                // `await req.json()`, `c.req.json()`.
+                Expression::CallExpression(c) => {
+                    member_name(&c.callee) == Some("json") && c.arguments.is_empty()
+                }
+                _ => false,
+            }
+        };
+        let writes = member.is_some_and(|m| WRITE_METHODS.contains(&m));
+        let assigns = member == Some("assign")
+            && matches!(self.canon_callee(&c.callee), Some(r)
+                if matches!(&r.base, RawBase::Global(g) if g == "Object"));
+        if (writes
+            && args
+                .iter()
+                .any(|a| sent_whole(a) || object_value(a, "data").is_some_and(&sent_whole)))
+            || (assigns && args.iter().skip(1).any(|a| sent_whole(a)))
+        {
+            out.push(kind::MASS);
+        }
+        if args.iter().any(|a| {
+            object_value(a, "rejectUnauthorized").is_some_and(
+                |v| matches!(unwrap_expr(v), Expression::BooleanLiteral(b) if !b.value),
+            )
+        }) {
+            out.push(kind::TLS);
         }
         out
     }
@@ -465,7 +1009,7 @@ impl Lowerer<'_> {
 
 /// Built-in types whose values run no code of the repository when a method of
 /// theirs is called.
-const PLAIN_TYPES: &[&str] = &[
+pub(crate) const PLAIN_TYPES: &[&str] = &[
     "Array",
     "ReadonlyArray",
     "Map",

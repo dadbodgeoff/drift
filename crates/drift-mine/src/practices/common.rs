@@ -138,6 +138,38 @@ pub fn in_skipped(cx: &Cx<'_>, canonical: &str) -> bool {
 }
 
 /// A reference into a package, the runtime or an unresolved import: not the repo's.
+/// The class a call through a member of a binding is a call on an instance of,
+/// where the binding is a function handed to a call and bound to what the call
+/// gave back (`export const prisma = remember("prisma", () => { const client =
+/// new PrismaClient(); return client })`, called as `prisma.user.findMany`):
+/// the function has no such member, and every value it returns is what it built
+/// ([`drift_core::controls::RETURNS_BUILT`]). `d` is what `callee` resolves to.
+pub fn built_by_factory<'a>(cx: &Cx<'a>, callee: &str, d: &'a Symbol) -> Option<&'a str> {
+    let ctx = cx.context();
+    if !ctx.since_measured()
+        || d.kind != SymbolKind::Function
+        || d.wraps.is_empty()
+        || d.wraps.iter().any(|w| w.kind != drift_core::WrapKind::Call)
+    {
+        return None;
+    }
+    let (module, rest) = callee.split_once('#')?;
+    let rest = rest.split('(').next().unwrap_or_default();
+    let segs: Vec<&str> = rest.split('.').collect();
+    // The symbol is the shortest prefix of the reference that names it: a member
+    // is left.
+    let own = (1..=segs.len()).find(|k| {
+        ctx.definition(&format!("{module}#{}", segs[..*k].join(".")))
+            .is_some_and(|x| std::ptr::eq(x, d))
+    })?;
+    if own == segs.len() {
+        return None;
+    }
+    d.controls
+        .iter()
+        .find_map(|c| c.strip_prefix(drift_core::controls::RETURNS_BUILT))
+}
+
 pub fn external(r: &str) -> bool {
     r.starts_with("pkg:") || r.starts_with("global#") || r.starts_with("unresolved:")
 }
@@ -568,6 +600,15 @@ pub fn bodies<'a>(cx: &Cx<'a>, s: &'a Symbol) -> Vec<&'a Symbol> {
             for c in &b.calls {
                 let Some(r) = c.strip_suffix("(ref)") else {
                     continue;
+                };
+                // What a call of a function of the repository built, where that
+                // function hands back the one function written in it
+                // (`app.get("/me", currentUser())`): its facts are that body's.
+                let r = match r.strip_suffix("()") {
+                    Some(made_by) if crate::guard_position::returns_function(cx, made_by) => {
+                        made_by
+                    }
+                    _ => r,
                 };
                 if external(r) || out.len() >= MAX_BODIES {
                     continue;

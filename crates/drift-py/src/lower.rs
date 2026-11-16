@@ -7,7 +7,7 @@
 //! assignments, local imports) shadow module names, following Python's scoping
 //! rules (class bodies are not visible from their methods).
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use drift_core::{SymbolKind, WrapKind};
 use ruff_python_ast::visitor::{self, Visitor};
@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 68;
+pub const LOWERING_VERSION: u32 = 72;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -59,6 +59,8 @@ pub const KWARG_INDEX: u32 = 99;
 pub(crate) mod adapters;
 #[path = "guard_paths.rs"]
 pub(crate) mod guard_paths;
+#[path = "held.rs"]
+pub(crate) mod held;
 #[path = "outgoing.rs"]
 pub(crate) mod outgoing;
 #[path = "practice.rs"]
@@ -561,6 +563,16 @@ impl<'t> Lowerer<'t> {
             s.throws.dedup();
             s.sinks.sort();
             s.sinks.dedup();
+            s.since_sinks.sort();
+            s.since_sinks.dedup();
+            let read = s.sinks.clone();
+            s.since_sinks.retain(|k| !read.contains(k));
+            for m in &mut s.members {
+                m.since_sinks.sort();
+                m.since_sinks.dedup();
+                let read = m.sinks.clone();
+                m.since_sinks.retain(|k| !read.contains(k));
+            }
             s.methods.sort();
             s.methods.dedup();
             s.body_checks.sort();
@@ -573,6 +585,10 @@ impl<'t> Lowerer<'t> {
             s.filter_values.dedup();
             s.arg_sides.sort();
             s.arg_sides.dedup();
+            s.row_sets.sort();
+            s.row_sets.dedup();
+            s.typed_calls.sort();
+            s.typed_calls.dedup();
             s.responses.sort();
             s.responses.dedup();
             s.log_calls.sort();
@@ -1236,6 +1252,7 @@ impl<'t> Lowerer<'t> {
         m.reads.extend(part.reads);
         m.throws.extend(part.throws);
         m.sinks.extend(part.sinks);
+        m.since_sinks.extend(part.since_sinks);
         m.body_checks.extend(part.body_checks);
         m.responses.extend(part.responses);
         m.log_calls.extend(part.log_calls);
@@ -1247,6 +1264,8 @@ impl<'t> Lowerer<'t> {
         m.check_sides.extend(part.check_sides);
         m.filter_values.extend(part.filter_values);
         m.arg_sides.extend(part.arg_sides);
+        m.row_sets.extend(part.row_sets);
+        m.typed_calls.extend(part.typed_calls);
         for r in part.order {
             if !m.order.contains(&r) && m.order.len() < MAX_ORDER {
                 m.order.push(r);
@@ -2394,6 +2413,19 @@ pub(crate) struct Collector<'l, 't> {
     reads: BTreeSet<String>,
     throws: BTreeSet<RawRef>,
     pub(crate) sinks: BTreeSet<String>,
+    /// Sinks the measured build did not read ([`RawSymbol::since_sinks`]).
+    since_sinks: BTreeSet<String>,
+    /// [`RawSymbol::fed_sinks`], and the names the body binds to a value read off
+    /// a parameter or off what the request sent ([`Collector::input_reaches`]).
+    fed_sinks: BTreeSet<String>,
+    fed_locals: BTreeSet<String>,
+    /// [`RawSymbol::param_passes`].
+    param_passes: BTreeSet<RawRef>,
+    /// The names the body binds to SQL text (text that holds a keyword), and those
+    /// it binds to SQL text built from a part that is no literal
+    /// ([`Collector::note_sql_binding`]).
+    sql_text: BTreeSet<String>,
+    pub(crate) sql_built: BTreeSet<String>,
     order: Vec<RawRef>,
     /// The body turns its caller away ([`drift_core::controls::REJECTS_CALLER`]) as not
     /// signed in, or as not allowed: what it raises or returns says so
@@ -2480,6 +2512,12 @@ pub(crate) struct Collector<'l, 't> {
     /// The calls of the repository's code, with what each argument is
     /// ([`drift_core::controls::ARG_VALUE`]).
     arg_sides: BTreeSet<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back, written after it by what is not
+    /// the caller itself ([`drift_core::controls::ROW_SET`]).
+    pub(crate) row_sets: BTreeSet<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names
+    /// ([`Collector::typed_receiver`]).
+    typed_calls: BTreeSet<RawRef>,
     /// Locals by where the value they are bound to comes from
     /// ([`Collector::side`]).
     pub(crate) side_locals: BTreeMap<String, RawSide>,
@@ -2506,6 +2544,9 @@ pub(crate) struct Collector<'l, 't> {
     /// dependency where it is what one gives (`venue = get_jwt()["venue_id"]`,
     /// `venue = claims["venue_id"]`).
     pub(crate) caller_locals: BTreeMap<String, Option<RawDep>>,
+    /// Those of [`Self::caller_locals`] bound to the caller itself or the key of
+    /// the caller's record ([`Collector::caller_self`]).
+    pub(crate) self_locals: BTreeSet<String>,
     /// Locals bound to an HMAC, as the key it is keyed with ([`Collector::compare_operand`]).
     hmac_locals: BTreeMap<String, RawOperand>,
     /// Locals bound to a response or an HTTP error (`exc = HTTPException(401)`).
@@ -2523,6 +2564,10 @@ pub(crate) struct Collector<'l, 't> {
     /// (`if preview: return {...}`): what follows does not run for those. The
     /// condition in words.
     skipped: Option<String>,
+    /// Every branch that has returned so far without refusing did so for the
+    /// requests it found to be about the caller's own record
+    /// ([`Collector::own_test`]): what follows is asked of every other request.
+    skipped_own: bool,
     /// The bodies of the functions being walked, innermost last, and whether the
     /// function about to be walked is one its enclosing body never names again.
     bodies: Vec<&'t [Stmt]>,
@@ -2542,6 +2587,9 @@ pub(crate) struct Collector<'l, 't> {
     /// had by then returned for some requests
     /// ([`drift_core::controls::UNREAD_EXIT`]).
     pub(crate) claimed: HashMap<TextSize, bool>,
+    /// The exits a check read since the measured build explains
+    /// ([`crate::raw::UNREAD_EXIT_MEASURED`]), by where the statement starts.
+    pub(crate) claimed_since: HashSet<TextSize>,
     /// The callees whose call's value the body returns
     /// ([`drift_core::Symbol::returns_calls`]).
     returns_calls: BTreeSet<RawRef>,
@@ -2552,6 +2600,20 @@ pub(crate) struct Collector<'l, 't> {
     /// each so far ([`drift_core::controls::RETURNS_CALLER`]); `None` before the
     /// first.
     returns_caller: Option<bool>,
+    /// The dependencies the returns of the symbol's own function read their value
+    /// off, and whether one gives anything else
+    /// ([`drift_core::controls::RETURNS_GIVEN`]).
+    returns_via: Vec<RawDep>,
+    returns_else: bool,
+    /// The callees whose call's value the returns of the symbol's own function
+    /// give, and whether one gives anything but `False` or a call
+    /// ([`drift_core::controls::RETURNS_ONLY`]).
+    held: BTreeSet<(RawHeld, Vec<RawRef>)>,
+    /// [`RawSymbol::rows`].
+    rows: BTreeSet<(RawRef, RawRows)>,
+    /// What each enclosing branch that is taken on a role tests it of
+    /// ([`practice::role_branch`]), innermost last.
+    role_branches: Vec<RawSide>,
     /// A rejection that counts was a response the body returns, and one that was
     /// raised or made by a call (`abort(401)`), for
     /// [`drift_core::controls::RETURNS_REJECTION`].
@@ -2604,6 +2666,12 @@ impl<'l, 't> Collector<'l, 't> {
             reads: BTreeSet::new(),
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
+            since_sinks: BTreeSet::new(),
+            fed_sinks: BTreeSet::new(),
+            fed_locals: BTreeSet::new(),
+            param_passes: BTreeSet::new(),
+            sql_text: BTreeSet::new(),
+            sql_built: BTreeSet::new(),
             order: Vec::new(),
             unauthenticated: false,
             forbidden: false,
@@ -2641,6 +2709,8 @@ impl<'l, 't> Collector<'l, 't> {
             check_sides: BTreeSet::new(),
             filter_values: BTreeSet::new(),
             arg_sides: BTreeSet::new(),
+            row_sets: BTreeSet::new(),
+            typed_calls: BTreeSet::new(),
             side_locals: BTreeMap::new(),
             either_locals: BTreeSet::new(),
             returns_request: None,
@@ -2650,18 +2720,26 @@ impl<'l, 't> Collector<'l, 't> {
             param_ops: Vec::new(),
             check_locals: BTreeMap::new(),
             caller_locals: BTreeMap::new(),
+            self_locals: BTreeSet::new(),
             hmac_locals: BTreeMap::new(),
             response_vars: BTreeMap::new(),
             except_names: Vec::new(),
             conds: Vec::new(),
             skipped: None,
+            skipped_own: false,
             bodies: Vec::new(),
             uncalled: false,
             conditional_calls: BTreeSet::new(),
             claimed: HashMap::new(),
+            claimed_since: HashSet::new(),
             returns_calls: BTreeSet::new(),
             caller_args: BTreeSet::new(),
             returns_caller: None,
+            returns_via: Vec::new(),
+            returns_else: false,
+            held: BTreeSet::new(),
+            rows: BTreeSet::new(),
+            role_branches: Vec::new(),
             rejects_by_return: false,
             rejects_otherwise: false,
             returns_401: false,
@@ -2757,6 +2835,16 @@ impl<'l, 't> Collector<'l, 't> {
         sym.reads.extend(self.reads);
         sym.throws.extend(self.throws);
         sym.sinks.extend(self.sinks);
+        sym.since_sinks.extend(self.since_sinks);
+        sym.fed_sinks.extend(self.fed_sinks);
+        sym.param_passes.extend(self.param_passes);
+        if !self.returns_else && sym.kind == SymbolKind::Function {
+            sym.returns_given = std::mem::take(&mut self.returns_via);
+        }
+        if sym.kind == SymbolKind::Function {
+            sym.held = std::mem::take(&mut self.held).into_iter().collect();
+            sym.rows = std::mem::take(&mut self.rows).into_iter().collect();
+        }
         sym.forwards.extend(self.forwards);
         sym.body_checks.extend(self.body_checks);
         sym.raise_checks.extend(self.raise_checks);
@@ -2773,6 +2861,8 @@ impl<'l, 't> Collector<'l, 't> {
         sym.check_sides.extend(self.check_sides);
         sym.filter_values.extend(self.filter_values);
         sym.arg_sides.extend(self.arg_sides);
+        sym.row_sets.extend(self.row_sets);
+        sym.typed_calls.extend(self.typed_calls);
         sym.shapes.extend(self.call_shapes);
         for r in self.order {
             if !sym.order.contains(&r) && sym.order.len() < MAX_ORDER {
@@ -2922,6 +3012,7 @@ impl<'l, 't> Collector<'l, 't> {
         let side_locals = std::mem::take(&mut self.side_locals);
         let either_locals = std::mem::take(&mut self.either_locals);
         let caller_locals = std::mem::take(&mut self.caller_locals);
+        let self_locals = std::mem::take(&mut self.self_locals);
         let hmac_locals = std::mem::take(&mut self.hmac_locals);
         let log_locals = std::mem::take(&mut self.log_locals);
         let response_vars = std::mem::take(&mut self.response_vars);
@@ -2931,6 +3022,7 @@ impl<'l, 't> Collector<'l, 't> {
         let continued = std::mem::replace(&mut self.continued, false);
         let conds = std::mem::take(&mut self.conds);
         let skipped = self.skipped.take();
+        let skipped_own = std::mem::replace(&mut self.skipped_own, false);
         let prior = std::mem::take(&mut self.prior);
         if std::mem::take(&mut self.uncalled) {
             self.conds
@@ -2941,6 +3033,7 @@ impl<'l, 't> Collector<'l, 't> {
             self.visit_stmt(s);
         }
         self.bodies.pop();
+        self.note_held(body);
         match self.guard_paths(body) {
             guard_paths::Paths::Silent => {}
             guard_paths::Paths::RefusesAll => self.refuses_all = true,
@@ -2948,7 +3041,14 @@ impl<'l, 't> Collector<'l, 't> {
             guard_paths::Paths::Some => self.rejects_some = true,
         }
         self.conds = conds;
+        // The symbol's own function returns early, without refusing, only for the
+        // requests about the caller's own record.
+        if self.frames.len() == 1 && self.skipped.is_some() && self.skipped_own {
+            self.controls
+                .insert(drift_core::controls::RETURNS_EARLY_FOR_OWN.into());
+        }
         self.skipped = skipped;
+        self.skipped_own = skipped_own;
         if self.frames.len() == 1 {
             self.body_order = self.called_before();
         }
@@ -2958,6 +3058,7 @@ impl<'l, 't> Collector<'l, 't> {
         self.side_locals = side_locals;
         self.either_locals = either_locals;
         self.caller_locals = caller_locals;
+        self.self_locals = self_locals;
         self.hmac_locals = hmac_locals;
         self.log_locals = log_locals;
         self.response_vars = response_vars;
@@ -2983,6 +3084,14 @@ impl<'l, 't> Collector<'l, 't> {
             }
         }
         out
+    }
+
+    /// The statements after `stmt` in the body of the function being walked,
+    /// where it is one of that body's own statements.
+    fn following(&self, stmt: &Stmt) -> Option<&'t [Stmt]> {
+        let body = *self.bodies.last()?;
+        let at = body.iter().position(|s| std::ptr::eq(s, stmt))?;
+        Some(&body[at + 1..])
     }
 
     /// A method call on a value whose class the facts know: a parameter annotated with
@@ -3235,7 +3344,7 @@ impl<'l, 't> Collector<'l, 't> {
 
     /// The statement turns the caller away: a `raise`, or a `return` of an error
     /// response.
-    fn refuses(&self, s: &Stmt) -> bool {
+    pub(crate) fn refuses(&self, s: &Stmt) -> bool {
         match s {
             Stmt::Raise(_) => true,
             Stmt::Return(r) => r.value.as_deref().is_some_and(|e| {
@@ -3244,6 +3353,35 @@ impl<'l, 't> Collector<'l, 't> {
             }),
             _ => false,
         }
+    }
+
+    /// Notes that what follows is skipped for some requests (`skips`: for which, in
+    /// the code's words), and whether those are the requests about the caller's own
+    /// record. The first skip is what the checks that follow say; every one counts
+    /// for whose requests they are.
+    fn note_skip(&mut self, skips: Option<String>, own: bool) {
+        let Some(words) = skips else { return };
+        match self.skipped {
+            None => {
+                self.skipped = Some(words);
+                self.skipped_own = own;
+            }
+            Some(_) => self.skipped_own &= own,
+        }
+    }
+
+    /// The test holds exactly where what the request is about is the caller's own
+    /// record: one side of `==` or `is` is the caller itself or the key of the
+    /// caller's record ([`Collector::caller_self`]), the other is not (`user ==
+    /// current_user`, `user_id == request.user.id`).
+    fn own_test(&self, test: &Expr) -> bool {
+        let Expr::Compare(c) = test else {
+            return false;
+        };
+        let ([ast::CmpOp::Eq | ast::CmpOp::Is], [left, right]) = (&*c.ops, &*c.operands) else {
+            return false;
+        };
+        self.caller_self(left) != self.caller_self(right)
     }
 
     /// The first exit of the block is a `return` that does not turn the caller away:
@@ -3314,8 +3452,27 @@ impl<'l, 't> Collector<'l, 't> {
         if self.input_params.is_some() && self.hands_request_on(c) {
             self.input_escapes = true;
         }
-        for s in self.l.call_sinks(self, c) {
+        let (read, since) = (self.l.call_sinks(self, c), self.l.call_sinks_since(self, c));
+        // An operation given a value read off a parameter of the function or off
+        // what the request sent ([`drift_core::controls::SINK_FED`]).
+        if c.arguments
+            .args
+            .iter()
+            .chain(c.arguments.keywords.iter().map(|k| &k.value))
+            .any(|a| self.input_reaches(a, 0))
+        {
+            self.fed_sinks
+                .extend(read.iter().chain(&since).map(|k| k.to_string()));
+            // And handed on to what is called ([`drift_core::controls::PASSES_PARAM`]).
+            if let Some(r) = self.canon(&c.func) {
+                self.param_passes.insert(r);
+            }
+        }
+        for s in read {
             self.sinks.insert(s.to_string());
+        }
+        for s in since {
+            self.since_sinks.insert(s.to_string());
         }
         if self.l.is_validation_call(self, c) {
             self.controls.insert("validates".into());
@@ -3436,6 +3593,7 @@ impl<'l, 't> Collector<'l, 't> {
         } else if let Some(r) = self.typed_receiver(&c.func) {
             self.note_dominance(&r);
             self.note_arg_sides(&r, c);
+            self.typed_calls.insert(r.clone());
             self.caller_args
                 .extend(caller.into_iter().map(|d| (r.clone(), d)));
             if !self.order.contains(&r) && self.order.len() < MAX_ORDER {
@@ -3551,8 +3709,186 @@ fn schedules(callee: &Expr) -> bool {
     )
 }
 
+impl Collector<'_, '_> {
+    /// Notes what held where the function whose body this is hands a request on,
+    /// lets one through or answers true for one ([`held`]). Of a function defined
+    /// in another: where it calls what the outer one was given (a decorator's
+    /// wrapper). Of the symbol's own function: where it returns without a refusal
+    /// when it refuses somewhere, and where it may answer true when it answers
+    /// `False` somewhere. Said only where some site has something that held: a
+    /// body that tests nothing says nothing.
+    fn note_held(&mut self, body: &[Stmt]) {
+        let own = self.frames.len() == 1;
+        let handed: BTreeSet<String> = match self.frames.split_last() {
+            Some(((_, mine), outer)) if !outer.is_empty() => outer
+                .iter()
+                .flat_map(|(_, names)| names)
+                .filter(|n| !mine.contains(*n))
+                .cloned()
+                .collect(),
+            _ => BTreeSet::new(),
+        };
+        if !own && handed.is_empty() {
+            return;
+        }
+        let sites = self.held_sites(body, &handed);
+        let said = |sites: &BTreeSet<Vec<RawRef>>| sites.iter().any(|s| !s.is_empty());
+        if said(&sites.handed) {
+            self.held
+                .extend(sites.handed.into_iter().map(|s| (RawHeld::Handed, s)));
+        }
+        if !own {
+            return;
+        }
+        if sites.answers_false && said(&sites.truthy) {
+            self.held
+                .extend(sites.truthy.into_iter().map(|s| (RawHeld::True, s)));
+        }
+        if said(&sites.leaves) && !matches!(self.guard_paths(body), guard_paths::Paths::Silent) {
+            self.held
+                .extend(sites.leaves.into_iter().map(|s| (RawHeld::Leaves, s)));
+        }
+    }
+
+    /// The value of `e` is read off a parameter of the function, off what the
+    /// request sent ([`Collector::side`]), or off a local bound to one, or holds
+    /// one: a member or an item of it, text built from it, what a method of it or a
+    /// call given it hands back, a collection that holds it. Followed as written,
+    /// whatever the names are.
+    fn input_reaches(&self, e: &Expr, depth: usize) -> bool {
+        if depth > 6 {
+            return false;
+        }
+        let any = |es: &mut dyn Iterator<Item = &Expr>| {
+            let mut found = false;
+            for x in es {
+                found |= self.input_reaches(x, depth + 1);
+            }
+            found
+        };
+        match e {
+            Expr::Name(_) | Expr::Attribute(_) | Expr::Subscript(_) => {
+                let mut root = e;
+                while let Expr::Attribute(ast::ExprAttribute { value, .. })
+                | Expr::Subscript(ast::ExprSubscript { value, .. }) = root
+                {
+                    root = value;
+                }
+                match root {
+                    Expr::Name(n) if self.fed_locals.contains(n.id.as_str()) => true,
+                    Expr::Call(_) => self.input_reaches(root, depth + 1),
+                    _ => {
+                        self.param_value(e)
+                            || matches!(self.side(e), RawSide::Request | RawSide::Param(..))
+                    }
+                }
+            }
+            Expr::FString(f) => f.value.iter().any(|part| match part {
+                ast::FStringPartRef::Literal(_) => false,
+                ast::FStringPartRef::FString(fs) => fs.elements.iter().any(|el| match el {
+                    ast::InterpolatedStringElement::Literal(_) => false,
+                    ast::InterpolatedStringElement::Interpolation(i) => {
+                        self.input_reaches(&i.expression, depth + 1)
+                    }
+                }),
+            }),
+            Expr::BinOp(b) => any(&mut [b.left.as_ref(), b.right.as_ref()].into_iter()),
+            Expr::Await(a) => self.input_reaches(&a.value, depth + 1),
+            Expr::Starred(s) => self.input_reaches(&s.value, depth + 1),
+            Expr::Call(c) => {
+                matches!(c.func.as_ref(), Expr::Attribute(a) if self.input_reaches(&a.value, depth + 1))
+                    || any(&mut c
+                        .arguments
+                        .args
+                        .iter()
+                        .chain(c.arguments.keywords.iter().map(|k| &k.value)))
+            }
+            Expr::Dict(d) => any(&mut d.items.iter().map(|i| &i.value)),
+            Expr::List(l) => any(&mut l.elts.iter()),
+            Expr::Tuple(t) => any(&mut t.elts.iter()),
+            _ => false,
+        }
+    }
+
+    /// Notes a name the statement binds to a value read off a parameter or off
+    /// what the request sent ([`Collector::input_reaches`]), in the order written;
+    /// a name bound to anything else afterwards is one no longer.
+    fn note_fed_binding(&mut self, stmt: &Stmt) {
+        let (target, value, added) = match stmt {
+            Stmt::Assign(a) => match a.targets.as_slice() {
+                [Expr::Name(n)] => (n.id.as_str(), a.value.as_ref(), false),
+                _ => return,
+            },
+            Stmt::AnnAssign(a) => match (a.target.as_ref(), a.value.as_deref()) {
+                (Expr::Name(n), Some(v)) => (n.id.as_str(), v, false),
+                _ => return,
+            },
+            Stmt::AugAssign(a) => match a.target.as_ref() {
+                Expr::Name(n) => (n.id.as_str(), a.value.as_ref(), true),
+                _ => return,
+            },
+            _ => return,
+        };
+        if self.input_reaches(value, 0) {
+            self.fed_locals.insert(target.to_string());
+        } else if !added {
+            self.fed_locals.remove(target);
+        }
+    }
+
+    /// Notes a name the statement binds to SQL text, and one it binds to SQL text
+    /// built from a part that is no literal: `q = f"SELECT ... '{name}'"`, `q =
+    /// "SELECT ..." + name`, `q += f" AND owner = '{owner}'"` on a name that holds
+    /// SQL. A query given such a name is given the interpolation
+    /// ([`RawSymbol::since_sinks`]). By name, in the order written: the body of one
+    /// symbol is one set of names.
+    fn note_sql_binding(&mut self, stmt: &Stmt) {
+        let (target, value, added) = match stmt {
+            Stmt::Assign(a) => match a.targets.as_slice() {
+                [Expr::Name(n)] => (n.id.as_str(), a.value.as_ref(), false),
+                _ => return,
+            },
+            Stmt::AnnAssign(a) => match (a.target.as_ref(), a.value.as_deref()) {
+                (Expr::Name(n), Some(v)) => (n.id.as_str(), v, false),
+                _ => return,
+            },
+            Stmt::AugAssign(a) if matches!(a.op, ast::Operator::Add) => match a.target.as_ref() {
+                Expr::Name(n) => (n.id.as_str(), a.value.as_ref(), true),
+                _ => return,
+            },
+            _ => return,
+        };
+        let holds_sql = self.sql_text.contains(target) || self.sql_built.contains(target);
+        let built = match value {
+            // SQL built from built SQL is built.
+            Expr::Name(v) => self.sql_built.contains(v.id.as_str()) && (!added || holds_sql),
+            Expr::BinOp(b)
+                if matches!(b.op, ast::Operator::Add)
+                    && [b.left.as_ref(), b.right.as_ref()].iter().any(
+                        |x| matches!(x, Expr::Name(v) if self.sql_built.contains(v.id.as_str())),
+                    ) =>
+            {
+                true
+            }
+            v if added => holds_sql && signals::interpolates(v),
+            v => signals::interpolated_sql(v) || signals::concatenated_sql(v),
+        };
+        if built {
+            self.sql_built.insert(target.to_string());
+        } else if signals::sql_text(value) {
+            self.sql_text.insert(target.to_string());
+        }
+    }
+}
+
 impl<'a> Visitor<'a> for Collector<'_, 'a> {
     fn visit_stmt(&mut self, stmt: &'a Stmt) {
+        self.note_fed_binding(stmt);
+        self.note_sql_binding(stmt);
+        self.note_rows(stmt);
+        if Lowerer::secret_binding(stmt) {
+            self.since_sinks.insert(signals::kind::SECRET.to_string());
+        }
         // A call that is a statement of its own, or bound to a name the body never
         // reads (`checked = verify_access(rule, caller)`): its value is dropped.
         let dropped = match stmt {
@@ -3941,8 +4277,18 @@ impl<'a> Collector<'_, 'a> {
                     if let Some(v) = r.value.as_deref()
                         && !matches!(v, Expr::NoneLiteral(_))
                     {
-                        let caller = self.caller_value(v) == Some(None);
+                        let source = self.caller_value(v);
+                        let caller = source == Some(None);
                         self.returns_caller = Some(self.returns_caller.unwrap_or(true) && caller);
+                        match source {
+                            Some(Some(dep)) if !matches!(dep, RawDep::Gives(_)) => {
+                                if !self.returns_via.contains(&dep) {
+                                    self.returns_via.push(dep);
+                                }
+                            }
+                            Some(None) => {}
+                            _ => self.returns_else = true,
+                        }
                         // A parameter that is no dependency is what the request
                         // sent only in what FastAPI calls for a request; a reader
                         // asks of a dependency or a helper called with the request.
@@ -4005,7 +4351,7 @@ impl<'a> Collector<'_, 'a> {
                 // before it leaves (`if not token: raise ...` / `elif ...`).
                 use drift_core::not_always::UNDER_BRANCH;
                 let here = self.not_always();
-                self.note_body_checks(&i.test, &i.body, here.clone());
+                self.note_body_checks(&i.test, &i.body, here.clone(), false);
                 // What the branch before an `elif` tested, in words.
                 let mut previous = practice::words(&i.test);
                 let mut goes_on = !leaves(&i.body);
@@ -4026,7 +4372,7 @@ impl<'a> Collector<'_, 'a> {
                             .or_else(|| {
                                 goes_on.then(|| (UNDER_BRANCH, format!("only when not {previous}")))
                             });
-                        self.note_body_checks(t, &c.body, cond);
+                        self.note_body_checks(t, &c.body, cond, false);
                         previous = practice::words(t);
                         if served.is_none() && self.returns_without_refusing(&c.body) {
                             served = Some(format!("not when {previous}"));
@@ -4034,19 +4380,41 @@ impl<'a> Collector<'_, 'a> {
                     }
                     goes_on |= !leaves(&c.body);
                 }
+                // The `else`, and what follows an `if` whose body always leaves:
+                // reached by the requests no test of the `if` held for, so a
+                // refusal there, before anything branches, is the check the tests
+                // make the other way round (`if user.is_authenticated: return
+                // page` / `else: return redirect("login")`).
+                let otherwise: Option<&[Stmt]> = match i.elif_else_clauses.last() {
+                    Some(last) if last.test.is_none() => Some(&last.body),
+                    Some(_) => None,
+                    None if leaves(&i.body) => self.following(stmt),
+                    None => None,
+                };
+                if let Some(rest) = otherwise.filter(|rest| straight_to_exit(rest)) {
+                    let tests: Vec<&Expr> = std::iter::once(i.test.as_ref())
+                        .chain(i.elif_else_clauses.iter().filter_map(|c| c.test.as_ref()))
+                        .collect();
+                    self.note_body_checks(&none_of(&tests), rest, here.clone(), true);
+                }
                 self.test_expr(&i.test, &i.body);
                 let before = self.continued;
                 let test = practice::words(&i.test);
                 self.conds.push((UNDER_BRANCH, format!("only when {test}")));
+                let on_role = self.role_branch(&i.test, true);
+                let depth = self.role_branches.len();
+                self.role_branches.extend(on_role);
                 for s in &i.body {
                     self.visit_stmt(s);
                 }
+                self.role_branches.truncate(depth);
                 self.conds.pop();
                 // A branch that returns without refusing leaves what follows undone
                 // for the requests that took it.
                 let mut skips = self
                     .returns_without_refusing(&i.body)
                     .then(|| format!("not when {test}"));
+                let mut skips_own = skips.is_some() && self.own_test(&i.test);
                 let mut after = before || (self.continued && !leaves(&i.body));
                 let mut goes_on = !leaves(&i.body);
                 let mut previous = test;
@@ -4057,8 +4425,8 @@ impl<'a> Collector<'_, 'a> {
                     }
                     // What a later branch does comes after the return of an earlier
                     // one that served the request.
-                    if self.skipped.is_none() && skips.is_some() {
-                        self.skipped = skips.clone();
+                    if skips.is_some() {
+                        self.note_skip(skips.clone(), skips_own);
                     }
                     let own = c.test.as_ref().map(practice::words);
                     let words = match &own {
@@ -4071,14 +4439,29 @@ impl<'a> Collector<'_, 'a> {
                     if branch {
                         self.conds.push((UNDER_BRANCH, words.clone()));
                     }
+                    // An `else` of one test that holds where a role is not held
+                    // (`if not user.is_admin: ... else: ...`) is taken on the role.
+                    let on_role = match &c.test {
+                        Some(t) => self.role_branch(t, true),
+                        None if i.elif_else_clauses.len() == 1 => self.role_branch(&i.test, false),
+                        None => None,
+                    };
+                    let depth = self.role_branches.len();
+                    self.role_branches.extend(on_role);
                     for s in &c.body {
                         self.visit_stmt(s);
                     }
+                    self.role_branches.truncate(depth);
                     if branch {
                         self.conds.pop();
                     }
                     if skips.is_none() && self.returns_without_refusing(&c.body) {
                         skips = Some(words.replacen("only when", "not when", 1));
+                        skips_own = c.test.as_ref().is_some_and(|t| self.own_test(t));
+                    } else if self.returns_without_refusing(&c.body) {
+                        // A later branch returns too: for the caller's own only
+                        // where each does.
+                        skips_own &= c.test.as_ref().is_some_and(|t| self.own_test(t));
                     }
                     goes_on |= !leaves(&c.body);
                     if let Some(t) = own {
@@ -4086,9 +4469,7 @@ impl<'a> Collector<'_, 'a> {
                     }
                     after |= self.continued && !leaves(&c.body);
                 }
-                if self.skipped.is_none() {
-                    self.skipped = skips;
-                }
+                self.note_skip(skips, skips_own);
                 self.continued = after;
             }
             Stmt::Assign(a) => {
@@ -4176,9 +4557,7 @@ impl<'a> Collector<'_, 'a> {
                     }),
                     _ => None,
                 };
-                if self.skipped.is_none() {
-                    self.skipped = skips;
-                }
+                self.note_skip(skips, false);
             }
             _ => visitor::walk_stmt(self, stmt),
         }
@@ -4542,6 +4921,43 @@ impl FrameParams {
                 .collect(),
         }
     }
+}
+
+/// Nothing branches in the block before its first `return` or `raise`, or before
+/// its end: every request that enters it reaches that exit.
+fn straight_to_exit(body: &[Stmt]) -> bool {
+    for s in body {
+        match s {
+            Stmt::Return(_) | Stmt::Raise(_) => return true,
+            Stmt::Expr(_)
+            | Stmt::Assign(_)
+            | Stmt::AnnAssign(_)
+            | Stmt::AugAssign(_)
+            | Stmt::Pass(_) => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
+/// `not (a or b ...)` of the tests of an `if` and its `elif`s: what holds where
+/// its `else` runs.
+pub(crate) fn none_of(tests: &[&Expr]) -> Expr {
+    let inner = match tests {
+        [one] => (*one).clone(),
+        many => Expr::BoolOp(ast::ExprBoolOp {
+            node_index: Default::default(),
+            range: many[0].range(),
+            op: ast::BoolOp::Or,
+            values: many.iter().map(|t| (*t).clone()).collect(),
+        }),
+    };
+    Expr::UnaryOp(ast::ExprUnaryOp {
+        node_index: Default::default(),
+        range: inner.range(),
+        op: ast::UnaryOp::Not,
+        operand: Box::new(inner),
+    })
 }
 
 /// The block always leaves the function: its last statement returns or raises, or is

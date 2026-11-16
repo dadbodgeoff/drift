@@ -1171,8 +1171,10 @@ urlpatterns = [
 
 /// [STRICT] The permission classes of a DRF view that are no list of classes
 /// written in place: a tuple built by concatenation (`BASE + (IsAdminUser,)`), a
-/// name, classes combined with `|`, a `get_permissions` the view defines, an
-/// action's own (`@action(permission_classes=[AllowAny])`). None was read: the view
+/// name, classes combined with `|`, a `get_permissions` that tests anything but the
+/// request's method or the view's action (one that tests only those is read handler
+/// by handler: `drf_get_permissions.rs`), an action's own
+/// (`@action(permission_classes=[AllowAny])`). None was read: the view
 /// got the settings' default (`known config:permissions.IsAuthenticated`), the
 /// class's list where `get_permissions` or the action replaces it, or, for the
 /// combined classes, an empty list ("no guard"). Each is unknown; a view that binds
@@ -1224,7 +1226,7 @@ class DynamicViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == "list":
+        if self.action == "list" and self.request.query_params.get("preview"):
             return [permissions.AllowAny()]
         return super().get_permissions()
 
@@ -2021,7 +2023,14 @@ def nothing__dropped(rid):
     let dir = repo(&[("app.py", &app)]);
     let authz = concern(dir.path(), "authz");
     for unit in &names {
-        assert_eq!(said(&authz, unit), ("unknown", "unclassified"), "{unit}");
+        // A query given the caller itself (`filter_by(venue_id=
+        // get_jwt_identity())`) finds this caller's rows and no one else's: known,
+        // by the value. Every other source here is something read off the caller.
+        let want = match unit.as_str() {
+            "get_jwt_identity__filter_by" => ("known", "owner_filter:venue_id (session)"),
+            _ => ("unknown", "unclassified"),
+        };
+        assert_eq!(said(&authz, unit), want, "{unit}");
     }
     for unit in ["handed", "compared", "refused", "dropped"] {
         assert_eq!(
@@ -4023,12 +4032,17 @@ def k():
         "/check-under-branch",
         "/call-under-branch",
         "/call-after-preview",
-        // A refusal no check records: found, never none (and not made known here).
-        "/refused-at-the-end",
     ] {
         assert_eq!(answers[&format!("GET {route}")], "unknown", "{route}");
     }
-    for route in ["/login-required", "/check", "/call"] {
+    for route in [
+        "/login-required",
+        "/check",
+        "/call",
+        // The refusal follows an `if` that returns for the caller it found: every
+        // request without one reaches it (Python lowering 71).
+        "/refused-at-the-end",
+    ] {
         assert_eq!(answers[&format!("GET {route}")], "guarded", "{route}");
     }
     assert_eq!(answers["GET /nothing"], "no guard");

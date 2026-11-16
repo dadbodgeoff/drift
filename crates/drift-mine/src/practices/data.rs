@@ -44,6 +44,11 @@ pub fn instrument_of(cx: &Cx<'_>, callee: &str) -> Option<String> {
                 .find_map(|a| data_library(a))
                 .or_else(|| d.calls.iter().find_map(|c| data_library(c)))
         }
+        // A function bound to what a call it was handed to gave back, called through
+        // a member: a call on what the function built.
+        SymbolKind::Function => {
+            common::built_by_factory(cx, callee, d).and_then(|class| instrument_of(cx, class))
+        }
         _ => None,
     }
 }

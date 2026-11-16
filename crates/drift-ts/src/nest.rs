@@ -661,9 +661,21 @@ impl Lowerer<'_> {
             l: self,
             context: context.as_deref(),
             consumed: &consumed,
+            reads: Vec::new(),
             unread: false,
         };
         uses.visit_class(class);
+        // One key read and used in a way that is not read: the key says which
+        // decorators the guard may answer to.
+        for (target, key) in uses.reads {
+            let entry = (
+                format!("{}{target}:", drift_core::controls::READS_METADATA),
+                key,
+            );
+            if !out.contains(&entry) {
+                out.push(entry);
+            }
+        }
         if uses.unread {
             out.push((
                 drift_core::controls::METADATA_UNREAD.to_string(),
@@ -700,13 +712,21 @@ struct MetadataUses<'c, 'l, 's> {
     context: Option<&'c str>,
     /// The reads an opt-out tests, by where they start.
     consumed: &'c HashSet<u32>,
+    /// The reads of one key that no opt-out tests, by where and by key.
+    reads: Vec<(&'static str, RawOperand)>,
     unread: bool,
 }
 
 impl<'a> Visit<'a> for MetadataUses<'_, '_, '_> {
     fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
         match self.l.metadata_read(it) {
-            Some(r) => self.unread |= !self.consumed.contains(&r.start),
+            Some(r) if self.consumed.contains(&r.start) => {}
+            Some(r) => match r.read {
+                Some(read) if !self.reads.contains(&read) => self.reads.push(read),
+                Some(_) => {}
+                // The key, or where it is read, is not read.
+                None => self.unread = true,
+            },
             None => {
                 // The context, or the reflector, handed to what is not Nest's own:
                 // what that reads of the route is not read here.

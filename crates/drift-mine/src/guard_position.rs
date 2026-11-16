@@ -47,8 +47,13 @@ pub enum Verdict {
     Unknown(UnknownReason),
 }
 
-/// How deep a value is followed: a combinator's members, a function's callees.
+/// How deep a value is followed: a combinator's members, a builder's steps.
 const MAX_DEPTH: usize = 4;
+/// Calls followed at most below a function that is read to the end for whether
+/// anything in it turns a caller away ([`reads_to_nothing`]), and functions read at
+/// most for one such question. Past either, it is not read to the end.
+const BODY_DEPTH: usize = 8;
+const BODY_NODES: usize = 64;
 
 /// Whether the reading applies to a file's entry points: every language but Python,
 /// whose dependencies and decorators have their own.
@@ -261,7 +266,7 @@ pub fn nest_guard(cx: &Cx<'_>, package: &str, at: &[GuardCall], guard: &str) -> 
     let mut harmless = |calls: &[String]| {
         calls
             .iter()
-            .all(|c| harmless_call(cx, None, d, c, &mut seen, 1))
+            .all(|c| harmless_call(cx, None, d, c, false, &mut seen, 1))
     };
     if let Some(can) = member("canActivate") {
         let mut signs_in = can
@@ -275,6 +280,7 @@ pub fn nest_guard(cx: &Cx<'_>, package: &str, at: &[GuardCall], guard: &str) -> 
             // change for it ([`security::nest_opt_out`]).
             let reads_metadata = d.controls.iter().any(|c| {
                 c.starts_with(drift_core::controls::OPENS_FOR_METADATA)
+                    || c.starts_with(drift_core::controls::READS_METADATA)
                     || c == drift_core::controls::METADATA_UNREAD
             });
             let every = |c: &drift_core::BodyCheck| !c.conditional;
@@ -439,6 +445,34 @@ fn file_of<'a>(cx: &Cx<'a>, r: &str) -> Option<&'a FileFacts> {
     crate::practices::file_at(cx.facts, module)
 }
 
+/// `callee` is a function of the repository that hands back the one function
+/// written where it returns ([`drift_core::SymbolCalls::returns_function`]): what a
+/// call of it builds runs that function's body, which its facts hold.
+pub(crate) fn returns_function(cx: &Cx<'_>, callee: &str) -> bool {
+    let v = crate::mine::norm_ref(callee);
+    !external(&v)
+        && cx.context().definition(&v).is_some_and(|d| {
+            d.kind == SymbolKind::Function
+                && v.rsplit_once('#').is_some_and(|(_, n)| n == d.name)
+                && file_of(cx, &v).is_some_and(|f| f.returns_function(d))
+        })
+}
+
+/// [`returns_function`], and the function it hands back serves the request: it
+/// does not call a continuation ([`drift_core::controls::CONTINUES`]). One that
+/// does stands before what serves, as a middleware does.
+pub(crate) fn builds_handler(cx: &Cx<'_>, callee: &str) -> bool {
+    returns_function(cx, callee)
+        && cx
+            .context()
+            .definition(&crate::mine::norm_ref(callee))
+            .is_some_and(|d| {
+                !d.controls
+                    .iter()
+                    .any(|c| c == drift_core::controls::CONTINUES)
+            })
+}
+
 /// The exports of the guard and combinator lists a definition calls.
 fn listed_callees(d: &Symbol) -> Vec<&str> {
     d.calls
@@ -492,7 +526,7 @@ fn repository_value(
                     Some(calls)
                         if calls
                             .iter()
-                            .all(|c| harmless_call(cx, None, d, c, &mut seen, depth)) =>
+                            .all(|c| harmless_call(cx, None, d, c, false, &mut seen, depth)) =>
                     {
                         Verdict::Nothing
                     }
@@ -502,6 +536,27 @@ fn repository_value(
         };
     }
     let bound = matches!(d.kind, SymbolKind::Const | SymbolKind::Variable);
+    // A member of an instance the module builds from a class or a constructor of
+    // the repository, and from nothing else (`const session = new Session(db)`,
+    // then `session.required` where a guard goes): the class's own method. Not of
+    // a binding that may be given another value (`let`).
+    if d.kind == SymbolKind::Const
+        && !itself
+        && d.derives_from.is_empty()
+        && let [made] = d.calls.as_slice()
+        && let Some(class) = made.strip_suffix("(new)")
+        && !external(class)
+        && let Some(member) = short
+            .strip_prefix(d.name.as_str())
+            .filter(|m| m.starts_with('.') && !m[1..].contains(['.', '(']))
+    {
+        let method = format!("{}{member}", crate::mine::norm_ref(class));
+        return match value_at(cx, package, &[], &method, depth + 1) {
+            // Named as it is written where it stands.
+            Verdict::Guard(_) => Verdict::Guard(v),
+            other => other,
+        };
+    }
     // The base procedure of a tRPC instance (`t.procedure`): it runs no middleware.
     if bound
         && short.strip_prefix(d.name.as_str()) == Some(".procedure")
@@ -811,22 +866,61 @@ pub fn reads_to_nothing(
     seen: &mut BTreeSet<String>,
     depth: usize,
 ) -> bool {
+    body_reads_to_nothing(cx, value, false, false, seen, depth)
+}
+
+/// [`reads_to_nothing`] of a function, or (`held`) of a binding that holds a plain
+/// value ([`drift_core::traits::PLAIN_VALUE`]: an object, a list, a map written in
+/// the module), a method of which is called: what runs is a built-in's method or
+/// a function written in the binding's own value, and the binding's facts are
+/// those of every function written in it.
+///
+/// `lost`: the function runs where nothing waits for it (an asynchronous function
+/// called and not awaited, or one whose rejection a handler written in the caller
+/// takes), so what it throws stops no one; what it answers still does.
+fn body_reads_to_nothing(
+    cx: &Cx<'_>,
+    value: &str,
+    held: bool,
+    lost: bool,
+    seen: &mut BTreeSet<String>,
+    depth: usize,
+) -> bool {
     use drift_core::CheckOutcome::{Forbidden, SignInRedirect, Unauthenticated};
     use drift_core::controls;
     let ctx = cx.context();
     let v = crate::mine::norm_ref(value).into_owned();
-    if !seen.insert(v.clone()) {
+    // Read once for each way it runs: what was read with its throws lost says
+    // nothing of a call that is waited for.
+    let key = match lost {
+        true => format!("{v}\u{0}"),
+        false => v.clone(),
+    };
+    // Or every `throw` of its own rejects a promise nothing waits for
+    // ([`controls::THROWS_LOST`]).
+    let own_lost = |d: &Symbol| d.controls.iter().any(|c| c == controls::THROWS_LOST);
+    if !seen.insert(key) {
         // Already being read: it adds nothing of its own.
         return true;
     }
-    if depth > MAX_DEPTH || seen.len() > 24 {
+    if depth > BODY_DEPTH || seen.len() > BODY_NODES {
         return false;
     }
     let (Some(d), Some(file)) = (ctx.definition(&v), file_of(cx, &v)) else {
         return false;
     };
     let short = v.rsplit_once('#').map_or(v.as_str(), |(_, n)| n);
-    if d.kind != SymbolKind::Function || d.name != short {
+    let read = match held {
+        false => d.kind == SymbolKind::Function,
+        true => {
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
+                && d.traits
+                    .iter()
+                    .any(|t| t == drift_core::traits::PLAIN_VALUE)
+                && d.members.is_empty()
+        }
+    };
+    if !read || d.name != short {
         return false;
     }
     let refuses = d
@@ -837,10 +931,10 @@ pub fn reads_to_nothing(
             c == controls::REJECTS_CALLER
                 || c == controls::HANDLER_REJECTS
                 || c == controls::HANDLER_MAY_REJECT
-                || c == "throw"
-                || c.starts_with(controls::RETURNS_REJECTION)
+                || (!lost && c.starts_with(controls::RETURNS_REJECTION))
+                || (!lost && !own_lost(d) && c == "throw")
         })
-        || !d.throws.is_empty()
+        || (!lost && !own_lost(d) && !d.throws.is_empty())
         || d.responses.iter().any(|r| matches!(r.status, 401 | 403))
         || !d.truncated.is_empty()
         || !d.derives_from.is_empty()
@@ -851,8 +945,46 @@ pub fn reads_to_nothing(
     }
     d.calls
         .iter()
-        .all(|c| harmless_call(cx, recorded, d, c, seen, depth))
+        .all(|c| harmless_call(cx, recorded, d, c, lost, seen, depth))
 }
+
+/// The package's class that gives `class` its `method`: no class of the repository
+/// on the line up declares the method, and the line ends in a package's class.
+fn package_method(
+    ctx: &crate::context::RepoContext,
+    class: &str,
+    method: &str,
+    depth: usize,
+) -> Option<String> {
+    let d = ctx.definition(class)?;
+    let named = class.rsplit_once('#').is_some_and(|(_, n)| n == d.name);
+    if depth > MAX_DEPTH
+        || !named
+        || d.kind != SymbolKind::Class
+        || d.members.iter().any(|m| m.name == method)
+        || d.declares
+            .iter()
+            .any(|a| a.split_once('=').map_or(a.as_str(), |(name, _)| name) == method)
+    {
+        return None;
+    }
+    let mut bases = d
+        .wraps
+        .iter()
+        .filter(|w| w.kind == drift_core::WrapKind::Extends)
+        .map(|w| crate::mine::norm_ref(&w.wrapper).into_owned());
+    let base = bases.next()?;
+    if bases.next().is_some() {
+        return None;
+    }
+    if base.starts_with("pkg:") {
+        return Some(base);
+    }
+    package_method(ctx, &base, method, depth + 1)
+}
+
+/// The methods the language gives every promise.
+const PROMISE_METHODS: &[&str] = &["then", "catch", "finally"];
 
 /// A call in a body that is read to turn no one away ([`reads_to_nothing`]): the
 /// runtime's, a member of a parameter, a package's that does not authenticate, the
@@ -865,6 +997,7 @@ fn harmless_call(
     recorded: Option<&drift_core::SymbolCalls>,
     body: &Symbol,
     c: &str,
+    lost: bool,
     seen: &mut BTreeSet<String>,
     depth: usize,
 ) -> bool {
@@ -872,6 +1005,15 @@ fn harmless_call(
         return false;
     }
     let callee = c.trim_end_matches("(ref)").trim_end_matches("(new)");
+    // No call of an asynchronous function of the repository is waited for
+    // ([`drift_core::controls::UNAWAITED`]): what it throws is lost.
+    let lost = lost
+        || (body
+            .controls
+            .iter()
+            .filter_map(|x| x.strip_prefix(drift_core::controls::UNAWAITED))
+            .any(|f| f == callee)
+            && cx.context().definition(callee).is_some_and(|d| d.is_async));
     let member = callee.rsplit('.').next().unwrap_or_default();
     let verifies = if callee.starts_with(crate::practices::PARAM_CALLEE) {
         guard_lists::VERIFIER_MEMBERS.contains(&member)
@@ -885,6 +1027,33 @@ fn harmless_call(
                 ))
     };
     if verifies {
+        // Called only where the request carries a credential: a request that
+        // carries none runs past it, whatever it refuses.
+        if recorded.is_some_and(|r| r.given_credential.iter().any(|x| x == callee)) {
+            return true;
+        }
+        // Or only where what a function of the repository handed back is there,
+        // and that is a credential the request carries or nothing
+        // ([`drift_core::controls::GIVEN_RESULT_OF`]).
+        let mut by = body
+            .controls
+            .iter()
+            .filter_map(|x| x.strip_prefix(drift_core::controls::GIVEN_RESULT_OF))
+            .filter_map(|x| x.split_once('\t'))
+            .filter(|(verifier, _)| *verifier == callee)
+            .map(|(_, by)| by)
+            .peekable();
+        if by.peek().is_some()
+            && by.all(|f| {
+                cx.context().definition(f).is_some_and(|d| {
+                    d.controls
+                        .iter()
+                        .any(|c| c == drift_core::controls::RETURNS_SENT_CREDENTIAL)
+                })
+            })
+        {
+            return true;
+        }
         let swallowed = !body.catches.is_empty()
             && body.catches.iter().all(|k| {
                 k.does
@@ -908,6 +1077,108 @@ fn harmless_call(
     if c.ends_with("(new)") {
         return false;
     }
+    // A method of what a function of the repository handed back, where every value
+    // it hands back is plain data ([`drift_core::controls::RETURNS_DATA`]:
+    // `previous().timestamp.getTime()`): a built-in's method, and the function is
+    // read as any other.
+    if let Some((made_by, _)) = callee.split_once("().")
+        && !made_by.contains('(')
+        && cx.context().definition(made_by).is_some_and(|d| {
+            d.kind == SymbolKind::Function
+                && made_by.rsplit_once('#').is_some_and(|(_, n)| n == d.name)
+                && d.controls
+                    .iter()
+                    .any(|c| c == drift_core::controls::RETURNS_DATA)
+        })
+    {
+        return body_reads_to_nothing(cx, made_by, false, lost, seen, depth + 1);
+    }
+    // A method a class of the repository declares nowhere on its line, where the
+    // line ends in a package's class (`class Challenge extends Model`; then
+    // `challenge.save()`): the package's method, as one called on the package's own
+    // class is.
+    // Whatever of a promise's own methods hangs on the call (`Complaint
+    // .findAndCountAll(query).then(tally)`).
+    let mut called = callee;
+    while let Some((before, method)) = called.rsplit_once("().")
+        && PROMISE_METHODS.contains(&method)
+    {
+        called = before;
+    }
+    if let Some((class, method)) = called.rsplit_once('.')
+        && !method.contains('(')
+        && let Some(base) = package_method(cx.context(), class, method, 0)
+    {
+        return !crate::practices::of_an_auth_library(&base)
+            && !crate::practices::authn_callee(&base)
+            && matches!(
+                guard_lists::library(&base, None),
+                Library::Unlisted | Library::Never
+            );
+    }
+    // A promise's own method on the call of an asynchronous function of the
+    // repository (`notify(challenge).catch(report)`): the language's, and the
+    // function is read as any other.
+    if let Some((made_by, method)) = callee.split_once("().")
+        && !made_by.contains('(')
+        && PROMISE_METHODS.contains(&method)
+        && cx.context().definition(made_by).is_some_and(|d| {
+            d.is_async && made_by.rsplit_once('#').is_some_and(|(_, n)| n == d.name)
+        })
+    {
+        // What it rejects with goes to the handler a `.catch` hangs on it, which
+        // is the body's own code.
+        return body_reads_to_nothing(
+            cx,
+            made_by,
+            false,
+            lost || method == "catch",
+            seen,
+            depth + 1,
+        );
+    }
+    // A method of a value the module builds from a package that does not
+    // authenticate (`const counter = new Counter(...)`, `const log = createLogger()`;
+    // then `counter.labels(code).inc()`, `log.info(...)`): a package's call, as one
+    // written through the import is. By what the binding is built from, not by its
+    // name.
+    let binding = callee
+        .split_once('#')
+        .map(|(file, path)| {
+            let name = &path[..path.find(['.', '(']).unwrap_or(path.len())];
+            (format!("{file}#{name}"), path.len() > name.len())
+        })
+        .filter(|(_, member)| *member);
+    // A method of a plain value the module holds (`const seen = []`, `const cache =
+    // { get(k) { ... }, put(k, v) { ... } }`; then `seen.forEach(...)`, `cache
+    // .get(token)`): read by what is written in the value.
+    if let Some((binding, _)) = &binding
+        && cx.context().definition(binding).is_some_and(|d| {
+            d.traits
+                .iter()
+                .any(|t| t == drift_core::traits::PLAIN_VALUE)
+        })
+    {
+        return body_reads_to_nothing(cx, binding, true, lost, seen, depth + 1);
+    }
+    if let Some((binding, _)) = binding
+        && cx.context().definition(&binding).is_some_and(|d| {
+            matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
+                && !d.calls.is_empty()
+                && d.calls.iter().all(|c| {
+                    let c = c.trim_end_matches("(ref)").trim_end_matches("(new)");
+                    c.starts_with("pkg:")
+                        && !crate::practices::of_an_auth_library(c)
+                        && !crate::practices::authn_callee(c)
+                        && matches!(
+                            guard_lists::library(c, None),
+                            Library::Unlisted | Library::Never
+                        )
+                })
+        })
+    {
+        return true;
+    }
     // The application or router the body hands the request on to.
     if cx.context().definition(callee).is_some_and(|d| {
         matches!(d.kind, SymbolKind::Const | SymbolKind::Variable)
@@ -916,7 +1187,7 @@ fn harmless_call(
     }) {
         return true;
     }
-    reads_to_nothing(cx, callee, seen, depth + 1)
+    body_reads_to_nothing(cx, callee, false, lost, seen, depth + 1)
 }
 
 #[cfg(test)]

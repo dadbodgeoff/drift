@@ -211,6 +211,11 @@ impl Lowerer<'_> {
             ("hono", "Hono", "", true) | ("@hono/zod-openapi", "OpenAPIHono", "", true) => {
                 Some("hono")
             }
+            // `new Router()` of `@koa/router`: its routes are listed since the
+            // measured build, and what a Koa middleware does is not read.
+            ("@koa/router" | "koa-router", "default", "", true) if !unmeasured_listing() => {
+                Some("koa")
+            }
             _ => None,
         }
     }
@@ -426,6 +431,73 @@ impl Lowerer<'_> {
             }
         }
         out
+    }
+
+    /// What the router `receiver` is given where a handler goes, when it is what a
+    /// call of a package hands back, written in place or bound to a `const` of the
+    /// module ([`RawFile::handed_calls`]). `before`: what is given with it and runs
+    /// first.
+    fn note_handed_call(
+        &mut self,
+        receiver: &str,
+        prefix: &str,
+        before: &[&Expression],
+        last: &Expression,
+    ) {
+        let target = match unwrap_expr(last) {
+            Expression::CallExpression(c) => self.canon(&c.callee),
+            Expression::Identifier(id) => self.module_calls.get(id.name.as_str()).cloned(),
+            _ => None,
+        };
+        let Some(target) = target.filter(|t| matches!(t.base, RawBase::Import { .. })) else {
+            return;
+        };
+        if self.scope != 0 && !self.closure_routers.contains(receiver) {
+            return;
+        }
+        let mut middleware = self.express.get(receiver).cloned().unwrap_or_default();
+        for x in before {
+            self.collect_middleware(x, &mut middleware);
+        }
+        // What the router was given so far: for every route, and for a path, which
+        // linking holds against each route the call serves.
+        let mut hooks: Vec<RawRef> = Vec::new();
+        let mut pathed: Vec<(String, RawRef)> = Vec::new();
+        for (pattern, hook) in self.hooks.get(receiver).into_iter().flatten() {
+            if *hook == target {
+                continue;
+            }
+            match covers_mount(pattern, prefix) {
+                Some(true) if !hooks.contains(hook) => hooks.push(hook.clone()),
+                None => pathed.push((pattern.clone(), hook.clone())),
+                _ => {}
+            }
+        }
+        let mut calls = self.calls_covering(receiver, prefix);
+        let mut given = GuardPosition::default();
+        for x in before {
+            self.guard_position(x, &mut given);
+        }
+        calls.extend(given.calls);
+        hooks.extend(given.unread.iter().map(|how| Self::unread_hook(how)));
+        hooks.extend(given.members.into_iter().map(|(_, member)| member));
+        // What has no name where it was given may be the guard of what follows.
+        for how in self.scope_unread.get(receiver).into_iter().flatten() {
+            hooks.push(Self::unread_hook(how));
+        }
+        self.out.handed_calls.push((
+            RawMount {
+                prefix: prefix.to_string(),
+                target,
+                middleware,
+                parent: receiver.to_string(),
+                tentative: false,
+                hooks,
+                passed: self.passed.get(receiver).cloned().unwrap_or_default(),
+                calls,
+            },
+            pathed,
+        ));
     }
 
     /// A statement that hands a router of the module to a call (`setupAuth(app)`,
@@ -684,6 +756,50 @@ impl Lowerer<'_> {
         out
     }
 
+    /// Notes the instances a function builds and the members it reads off them
+    /// ([`Lowerer::local_refs`]), from the `const` declarations at the top of its
+    /// body, in the order written: a guard given through one is read by its class.
+    /// What was noted before, for the caller to put back. The last measured build
+    /// read none: as it listed, nothing is noted.
+    fn enter_local_refs(&mut self, body: &[Statement]) -> HashMap<SymbolId, RawRef> {
+        let outer = self.local_refs.clone();
+        let mut noted = false;
+        for st in body {
+            let Statement::VariableDeclaration(v) = st else {
+                continue;
+            };
+            if !v.kind.is_const() {
+                continue;
+            }
+            for d in &v.declarations {
+                let (BindingPattern::BindingIdentifier(id), Some(init)) = (&d.id, &d.init) else {
+                    continue;
+                };
+                let Some(sym) = id.symbol_id.get() else {
+                    continue;
+                };
+                let made = match unwrap_expr(init) {
+                    Expression::NewExpression(n) => self.canon(&n.callee),
+                    Expression::StaticMemberExpression(m) => match unwrap_expr(&m.object) {
+                        Expression::Identifier(of) if self.resolve_ident(of).is_none() => {
+                            self.canon(init)
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if let Some(r) = made {
+                    self.local_refs.insert(sym, r);
+                    noted = true;
+                }
+            }
+        }
+        if noted && unmeasured_listing() {
+            self.local_refs.clone_from(&outer);
+        }
+        outer
+    }
+
     /// Records what `e`, registered on the router `receiver` for `pattern` (`""`:
     /// every route), holds for the readings that list: its calls
     /// ([`Lowerer::position_calls`]), and what has no name, returned as
@@ -824,7 +940,15 @@ impl Lowerer<'_> {
     /// Records the router the route just pushed is registered on.
     fn route_on(&mut self, router: &str) {
         if let Some(e) = self.out.entry_points.last() {
-            if self.scope > 0 {
+            if self.scope > 0 && self.closure_routers.contains(router) {
+                // The module's own router, registered on from inside a function:
+                // the route is mounted as the router is.
+                self.scope_routes
+                    .push((e.symbol.clone(), router.to_string()));
+                self.out
+                    .route_routers
+                    .push((e.symbol.clone(), router.to_string()));
+            } else if self.scope > 0 {
                 // Not a binding of the module: the route is served as its module is.
                 self.scope_routes
                     .push((e.symbol.clone(), router.to_string()));
@@ -865,22 +989,38 @@ impl Lowerer<'_> {
             let BindingPattern::BindingIdentifier(id) = &p.pattern else {
                 continue;
             };
+            let by_name = |name: &str| match name {
+                "Express" | "Application" | "Router" | "IRouter" => Some("express"),
+                n if n.starts_with("Fastify") => Some("fastify"),
+                "Hono" | "OpenAPIHono" => Some("hono"),
+                _ => None,
+            };
             let typed = match p.type_annotation.as_ref().map(|t| &t.type_annotation) {
                 Some(TSType::TSTypeReference(r)) => match &r.type_name {
-                    TSTypeName::IdentifierReference(t) => match t.name.as_str() {
-                        "Express" | "Application" | "Router" | "IRouter" => Some("express"),
-                        n if n.starts_with("Fastify") => Some("fastify"),
-                        "Hono" | "OpenAPIHono" => Some("hono"),
-                        _ => None,
-                    },
+                    TSTypeName::IdentifierReference(t) => by_name(t.name.as_str()),
+                    // `app: express.Express`, `f: fastify.FastifyInstance`: the type
+                    // through its namespace, which the measured build did not read.
+                    TSTypeName::QualifiedName(q) => {
+                        by_name(q.right.name.as_str()).filter(|_| !unmeasured_listing())
+                    }
                     _ => None,
                 },
                 None if matches!(id.name.as_str(), "fastify" | "instance") => Some("fastify"),
                 _ => None,
             };
+            // A parameter a call in the file hands a router is one, whatever its
+            // type says (`app: ReturnType<typeof express>`, no type at all): the
+            // measured build read the type only.
+            let handed = || {
+                let adapter = *self
+                    .handed_routers
+                    .get(name?)?
+                    .get(&u32::try_from(i).ok()?)?;
+                (!unmeasured_listing()).then_some(adapter)
+            };
             let adapter = match (i, first) {
                 (0, Some(a)) => Some(a),
-                _ => typed,
+                _ => typed.or_else(handed),
             };
             if let Some(a) = adapter {
                 routers.push((id.name.to_string(), a, u32::try_from(i).ok()));
@@ -985,6 +1125,7 @@ impl Lowerer<'_> {
         }
         self.scope_prefix.push(prefix.unwrap_or_default());
         let from = self.scope_routes.len();
+        let outer_refs = self.enter_local_refs(&body.statements);
         for st in &body.statements {
             // `routes.forEach((r) => router.get(r.path, r.handler))` is a loop.
             let iterates = matches!(st, Statement::ExpressionStatement(es)
@@ -1023,6 +1164,7 @@ impl Lowerer<'_> {
         }
         self.scope_prefix.pop();
         self.scope -= 1;
+        self.local_refs = outer_refs;
         for (n, _, at) in &routers {
             let own: Vec<RawRef> = self
                 .hooks
@@ -1254,10 +1396,13 @@ impl Lowerer<'_> {
 
     /// One registration under a condition or in a loop: only a route is read.
     fn conditional_route(&mut self, e: &Expression) {
+        if !self.first_visit(e) {
+            return;
+        }
         let outer = std::mem::replace(&mut self.scope_conditional, true);
         let from = self.out.entry_points.len();
         if !self.computed_route(e) {
-            self.lower_express_routes(e, false);
+            self.express_routes(e, false);
         }
         self.scope_conditional = outer;
         // A route whose path is not a literal comes from a table: what the table
@@ -1389,6 +1534,231 @@ impl Lowerer<'_> {
         }
         let mut pass = ScopedPass { l: self, exported };
         pass.visit_program(program);
+    }
+
+    /// The router of the module a call registers on, and the method called:
+    /// `app.get(...)` where `app` is a router the module binds at its top level and
+    /// no function in between binds the name again.
+    fn module_router_call<'b>(&self, c: &'b CallExpression) -> Option<(String, &'b str)> {
+        let Expression::StaticMemberExpression(m) = unwrap_expr(&c.callee) else {
+            return None;
+        };
+        let Expression::Identifier(id) = unwrap_expr(&m.object) else {
+            return None;
+        };
+        let symbol = id
+            .reference_id
+            .get()
+            .and_then(|r| self.scoping.get_reference(r).symbol_id())?;
+        (self.out.routers.iter().any(|r| r == id.name.as_str())
+            && self.scoping.symbol_scope_id(symbol) == self.scoping.root_scope_id())
+        .then(|| (id.name.to_string(), m.property.name.as_str()))
+    }
+
+    /// What is given where a middleware goes never authenticates: a path, or a
+    /// value of a package on [`drift_core::guard_lists::NEVER_AUTHENTICATES`]
+    /// (`morgan("dev")`, `express.json()`, `cors()`).
+    fn never_authenticates(&self, e: &Expression) -> bool {
+        if string_value(e).is_some() {
+            return true;
+        }
+        // A router of the module, mounted: its routes are its own.
+        if matches!(unwrap_expr(e), Expression::Identifier(id)
+            if self.out.routers.iter().any(|r| r == id.name.as_str()))
+        {
+            return true;
+        }
+        let target = match unwrap_expr(e) {
+            Expression::CallExpression(c) => &c.callee,
+            other => other,
+        };
+        let Some(r) = self.canon(target) else {
+            return false;
+        };
+        let RawBase::Import { spec, name } = &r.base else {
+            return false;
+        };
+        let member = r
+            .member
+            .trim_start_matches('.')
+            .split(['.', '('])
+            .next()
+            .filter(|m| !m.is_empty());
+        drift_core::guard_lists::never_authenticates(
+            spec.trim_start_matches("node:"),
+            member.unwrap_or(name.as_str()),
+        )
+    }
+
+    /// [`Lowerer::closure_routes`] for every function of the module, and for every
+    /// statement of the module that is no expression and no declaration (an `if`, a
+    /// `try`, a loop, a block).
+    pub(super) fn lower_closure_routes(&mut self, program: &Program) {
+        if self.out.routers.is_empty() {
+            return;
+        }
+        for st in &program.body {
+            if matches!(
+                st,
+                Statement::IfStatement(_)
+                    | Statement::TryStatement(_)
+                    | Statement::BlockStatement(_)
+                    | Statement::ForStatement(_)
+                    | Statement::ForOfStatement(_)
+                    | Statement::ForInStatement(_)
+                    | Statement::WhileStatement(_)
+                    | Statement::DoWhileStatement(_)
+                    | Statement::SwitchStatement(_)
+            ) {
+                self.closure_routes(std::slice::from_ref(st), st.span(), true);
+            }
+        }
+        let mut pass = ClosurePass { l: self };
+        pass.visit_program(program);
+    }
+
+    /// Lowers the routes a function registers on a router of the module where it
+    /// is neither handed the router nor builds it: `function setup() {
+    /// app.get("/x", h) }`, `ready.then(() => { app.use(auth); app.get("/x", h) })`;
+    /// and the routes the module registers under a condition (`conditional`: `body`
+    /// is that one statement). The last measured build listed none of them.
+    ///
+    /// The routes are the module router's own: they are mounted as it is. What the
+    /// function registers before a route, in the order written, runs before it,
+    /// as in a module. What is registered on the router anywhere else (by the
+    /// module, by another function) may run before it or not, depending on when
+    /// the function is called: where there is any, the route's guard is unread
+    /// ([`RawSymbol::app_unread`]), never none.
+    fn closure_routes(&mut self, body: &[Statement], span: oxc_span::Span, conditional: bool) {
+        let mut uses = ClosureUse {
+            l: self,
+            depth: 0,
+            routers: BTreeSet::new(),
+        };
+        for st in body {
+            uses.visit_statement(st);
+        }
+        let routers = uses.routers;
+        if routers.is_empty() || unmeasured_listing() {
+            return;
+        }
+        let mut aside = Vec::new();
+        for n in &routers {
+            let elsewhere = self.guard_sites.get(n).is_some_and(|sites| {
+                sites
+                    .iter()
+                    .any(|(at, _)| *at < span.start || *at >= span.end)
+            }) || self.passed.contains_key(n);
+            let mut unread = self.scope_unread.get(n).cloned().unwrap_or_default();
+            if elsewhere {
+                unread.push(deferred_unread(n));
+            }
+            aside.push((
+                n.clone(),
+                self.express.insert(n.clone(), vec![]),
+                self.hooks.insert(n.clone(), vec![]),
+                self.passed.remove(n),
+                match unread.is_empty() {
+                    true => self.scope_unread.remove(n),
+                    false => self.scope_unread.insert(n.clone(), unread),
+                },
+                self.position_calls.insert(n.clone(), vec![]),
+            ));
+        }
+        // A registration under a condition, in a loop or in a `try` is not read:
+        // what it registers may run before the routes.
+        for n in &routers {
+            let mut found = ConditionalUse {
+                router: n,
+                found: false,
+                unread_routes: 0,
+            };
+            for st in body {
+                if conditional
+                    || !matches!(
+                        st,
+                        Statement::ExpressionStatement(_)
+                            | Statement::VariableDeclaration(_)
+                            | Statement::ReturnStatement(_)
+                    )
+                {
+                    found.visit_statement(st);
+                }
+            }
+            if found.found {
+                self.scope_unread
+                    .entry(n.clone())
+                    .or_default()
+                    .push(format!("what is registered on {n} under a condition"));
+            }
+        }
+        let outer = std::mem::replace(&mut self.closure_routers, routers.clone());
+        let outer_refs = self.enter_local_refs(body);
+        self.scope += 1;
+        self.scope_seq += 1;
+        self.scope_prefix.push(String::new());
+        let from = self.scope_routes.len();
+        for st in body {
+            let iterates = matches!(st, Statement::ExpressionStatement(es)
+                if matches!(peel(&es.expression), Expression::CallExpression(c)
+                    if matches!(call_name(&c.callee), Some("forEach" | "map"))));
+            if let (Statement::ExpressionStatement(es), false) = (st, iterates || conditional) {
+                self.note_app_passed(&es.expression);
+                self.lower_express_routes(&es.expression, false);
+            } else {
+                self.conditional_routes(st, 0);
+            }
+        }
+        // A Fastify route takes the hooks of its instance wherever they are added.
+        for (symbol, router) in self.scope_routes.split_off(from) {
+            if self.router_adapter.get(&router).copied() != Some("fastify") {
+                continue;
+            }
+            let hooks = self.hooks.get(&router).cloned().unwrap_or_default();
+            let calls = self
+                .position_calls
+                .get(&router)
+                .cloned()
+                .unwrap_or_default();
+            if let Some(sym) = self.out.symbols.iter_mut().find(|s| s.name == symbol) {
+                for (pattern, hook) in hooks {
+                    if pattern.is_empty() && !sym.app_middleware.contains(&hook) {
+                        sym.app_middleware.push(hook);
+                    }
+                }
+                for (pattern, call) in calls {
+                    if pattern.is_empty() && !sym.guard_calls.contains(&call) {
+                        sym.guard_calls.push(call);
+                    }
+                }
+            }
+        }
+        self.scope_prefix.pop();
+        self.scope -= 1;
+        self.closure_routers = outer;
+        self.local_refs = outer_refs;
+        for (n, express, hooks, passed, unread, calls) in aside {
+            match express {
+                Some(v) => self.express.insert(n.clone(), v),
+                None => self.express.remove(&n),
+            };
+            match hooks {
+                Some(v) => self.hooks.insert(n.clone(), v),
+                None => self.hooks.remove(&n),
+            };
+            match passed {
+                Some(v) => self.passed.insert(n.clone(), v),
+                None => self.passed.remove(&n),
+            };
+            match unread {
+                Some(v) => self.scope_unread.insert(n.clone(), v),
+                None => self.scope_unread.remove(&n),
+            };
+            match calls {
+                Some(v) => self.position_calls.insert(n, v),
+                None => self.position_calls.remove(&n),
+            };
+        }
     }
 
     /// The name an assignment exports the CommonJS way: `default` for
@@ -1529,6 +1899,25 @@ impl Lowerer<'_> {
     /// (`export default Router().get(...)`), a chain may start from a router created
     /// in place; that router is known by its export name, [`DEFAULT_ROUTER`].
     pub(super) fn lower_express_routes(&mut self, e: &Expression, inline: bool) -> bool {
+        if self.express.is_empty() {
+            return false;
+        }
+        if !self.first_visit(e) {
+            return true;
+        }
+        self.express_routes(e, inline)
+    }
+
+    /// Whether the registration `e` is lowered for the first time: one written
+    /// inside a function is met again when the functions that register on a router
+    /// of the module are lowered ([`Lowerer::closure_routes`]), which reads each
+    /// registration once.
+    fn first_visit(&mut self, e: &Expression) -> bool {
+        self.scope == 0 || self.lowered_sites.insert(e.span().start)
+    }
+
+    /// [`Lowerer::lower_express_routes`], of a registration met for the first time.
+    fn express_routes(&mut self, e: &Expression, inline: bool) -> bool {
         if self.express.is_empty() {
             return false;
         }
@@ -1749,6 +2138,9 @@ impl Lowerer<'_> {
                         // What is given for the path may be a middleware of the routes
                         // under it (`app.use("/api/*", requireUser)`) as well as a router:
                         // linking tells which.
+                        if let [_, before @ .., last] = exprs.as_slice() {
+                            self.note_handed_call(&receiver, &prefix, before, last);
+                        }
                         for x in &exprs[1..] {
                             self.note_hook(&receiver, &prefix, "use", x);
                         }
@@ -1759,7 +2151,7 @@ impl Lowerer<'_> {
                                 self.collect_middleware(x, &mut middleware);
                             }
                             let hooks = self.mount_hooks(&receiver, &prefix, &target);
-                            if self.scope == 0 {
+                            if self.scope == 0 || self.closure_routers.contains(&receiver) {
                                 let calls = self.calls_covering(&receiver, &prefix);
                                 self.out.mounts.push(RawMount {
                                     prefix,
@@ -1797,6 +2189,9 @@ impl Lowerer<'_> {
                                 self.note_hook(&receiver, "", "use", x);
                             }
                         }
+                        if let [before @ .., last] = exprs.as_slice() {
+                            self.note_handed_call(&receiver, "", before, last);
+                        }
                         // `app.use([mw...,] router)`: mounted with no path, if the last
                         // argument is a router, which only the linker can tell. What is
                         // active on the parent so far, and listed before it, guards it.
@@ -1823,7 +2218,7 @@ impl Lowerer<'_> {
                             calls.extend(before.calls);
                             hooks.extend(before.unread.iter().map(|how| Self::unread_hook(how)));
                             hooks.extend(before.members.into_iter().map(|(_, member)| member));
-                            if self.scope == 0 {
+                            if self.scope == 0 || self.closure_routers.contains(&receiver) {
                                 self.out.mounts.push(RawMount {
                                     prefix: String::new(),
                                     target,
@@ -1872,7 +2267,7 @@ impl Lowerer<'_> {
                             let middleware =
                                 self.express.get(&receiver).cloned().unwrap_or_default();
                             let hooks = self.mount_hooks(&receiver, &prefix, &target);
-                            if self.scope == 0 {
+                            if self.scope == 0 || self.closure_routers.contains(&receiver) {
                                 let calls = self.calls_covering(&receiver, &prefix);
                                 self.out.mounts.push(RawMount {
                                     prefix,
@@ -1930,6 +2325,16 @@ impl Lowerer<'_> {
                         self.route_on(&receiver);
                     }
                     m => {
+                        // `app.all("*", handler)`: every request the router did not
+                        // answer goes to what a package's call handed back.
+                        if m == "all"
+                            && base.is_none()
+                            && let [path, before @ .., last] = exprs.as_slice()
+                            && let Some(pattern) = first_text(path)
+                        {
+                            let prefix = pattern.trim_end_matches('*').trim_end_matches('/');
+                            self.note_handed_call(&receiver, prefix, before, last);
+                        }
                         let mut rest = exprs.clone();
                         // Handlers spread into the registration (`app.get(path,
                         // ...handlers)`): what runs before the last of them is not
@@ -2044,6 +2449,34 @@ impl Lowerer<'_> {
                         }
                         keys.fill(&mut sym);
                         self.handler_facts(Some(handler), &mut sym);
+                        // The handler is what a call built. A function written in
+                        // place in what the call was handed is the handler it wraps
+                        // (`wrap(async (req, res) => { ... })`): read as a function
+                        // of its own, the route's body for the readings that list.
+                        // A call handed no function stands where a guard may
+                        // (`app.get("/users", requireUser())`), as what is written
+                        // before a handler does: those readings take it as a
+                        // middleware of the route.
+                        let mut wrapped: Vec<&Expression> = Vec::new();
+                        if let Expression::CallExpression(call) = unwrap_expr(handler) {
+                            wrapped.extend(
+                                call.arguments
+                                    .iter()
+                                    .filter_map(|a| a.as_expression())
+                                    .flat_map(in_place_functions),
+                            );
+                            let mut named = Vec::new();
+                            self.inner_handler_refs(handler, &mut named, 0);
+                            if wrapped.is_empty()
+                                && named.is_empty()
+                                && let Some(r) = self.middleware_ref(handler)
+                            {
+                                self.route_position(handler, &mut sym, &mut unread);
+                                if !sym.app_middleware.contains(&r) {
+                                    sym.app_middleware.push(r);
+                                }
+                            }
+                        }
                         unread.extend(
                             self.scope_unread
                                 .get(&receiver)
@@ -2051,6 +2484,25 @@ impl Lowerer<'_> {
                                 .flatten()
                                 .cloned(),
                         );
+                        // Koa: a middleware answers by setting `ctx.status` or by
+                        // `ctx.throw`, which the reading of a guard does not follow.
+                        if adapter == "koa" {
+                            unread
+                                .push("what a Koa middleware does, which is not read".to_string());
+                        }
+                        // A route the module registers itself, on a router a
+                        // function or a condition registers a middleware on: whether
+                        // that runs before the route is not read. The measured build
+                        // did not read such a registration at all.
+                        if self.scope == 0
+                            && self
+                                .guard_sites
+                                .get(&receiver)
+                                .is_some_and(|sites| sites.iter().any(|(_, direct)| !direct))
+                            && !unmeasured_listing()
+                        {
+                            unread.push(deferred_unread(&receiver));
+                        }
                         sym.app_unread = unread;
                         sym.app_passed = self.passed.get(&receiver).cloned().unwrap_or_default();
                         self.hooks_covering(&receiver, &path, &mut sym);
@@ -2063,6 +2515,13 @@ impl Lowerer<'_> {
                             let hook = self.in_place_function(&receiver, "before", f);
                             if !sym.app_middleware.contains(&hook) {
                                 sym.app_middleware.push(hook);
+                            }
+                        }
+                        for f in wrapped {
+                            let mut body = self.in_place_function(&receiver, "handler", f);
+                            body.member.push_str("(ref)");
+                            if !sym.listed_calls.contains(&body) {
+                                sym.listed_calls.push(body);
                             }
                         }
                         self.push_route(adapter, &m.to_ascii_uppercase(), &path, line, sym);
@@ -3091,6 +3550,11 @@ pub(super) fn as_measured(on: bool) {
     AS_MEASURED.set(on);
 }
 
+/// Whether the file is being lowered as the last measured build listed it.
+fn lowering_as_measured() -> bool {
+    AS_MEASURED.get()
+}
+
 /// Whether the lowering since the last call met a listing the last measured build
 /// did not make.
 pub(super) fn take_new_listing() -> bool {
@@ -3100,7 +3564,7 @@ pub(super) fn take_new_listing() -> bool {
 /// Notes a listing the last measured build did not make: a router with a base
 /// path, a registration at several paths. True where the file is being lowered as
 /// that build listed it, which did not read them.
-fn unmeasured_listing() -> bool {
+pub(crate) fn unmeasured_listing() -> bool {
     NEW_LISTING.set(true);
     AS_MEASURED.get()
 }
@@ -3380,6 +3844,12 @@ fn covers(pattern: &str, path: &str) -> Option<bool> {
     Some(path_covers(pattern, path))
 }
 
+/// Whether what a router was given for `pattern` runs for the route at `route`,
+/// which the router serves through something else ([`covers`]).
+pub(crate) fn hook_covers(pattern: &str, route: &str) -> Option<bool> {
+    covers(pattern, route)
+}
+
 /// Whether what is given for `pattern` runs for the routes of a router mounted at
 /// `prefix` ([`covers`]): a pattern that does not take the prefix but goes on under
 /// it (`/api/admin` beside a mount at `/api`, `/api` beside one with no path) may
@@ -3389,6 +3859,23 @@ fn covers_mount(pattern: &str, prefix: &str) -> Option<bool> {
         Some(false) if !apart(pattern.trim_end_matches('*'), prefix) => None,
         c => c,
     }
+}
+
+/// The text a segment of a path pattern begins with, where something that is not
+/// text follows it: `ftp` of `ftp(?!x)`, `v` of `v:version`. Not the character a
+/// quantifier applies to (`ftp` of `ftps?`), and nothing where the segment begins
+/// with what is not text.
+fn leading_text(segment: &str) -> Option<&str> {
+    let end = segment.find([':', '*', '(', ')', '?', '+', '{', '}', '[', ']'])?;
+    let quantified = segment[end..].starts_with(['?', '*', '+', '{']);
+    let lead = match quantified {
+        true => {
+            let last = segment[..end].chars().next_back()?;
+            &segment[..end - last.len_utf8()]
+        }
+        false => &segment[..end],
+    };
+    (!lead.is_empty()).then_some(lead)
 }
 
 /// Whether `pattern` can never take `path`: a segment written out in both differs
@@ -3411,7 +3898,16 @@ fn apart(pattern: &str, path: &str) -> bool {
     }
     for (a, b) in pattern.split('/').zip(path.split('/')) {
         if !one(a) || !one(b) {
-            return false;
+            // The text a segment of the pattern begins with, before a group or a
+            // parameter (`ftp` of `ftp(?!/quarantine)`), is text the path has there
+            // too: `/rest/user/login` is never under `/ftp(?!/quarantine)/:file`.
+            // Read since the measured build.
+            return text(b)
+                && leading_text(a).is_some_and(|lead| {
+                    !b.get(..lead.len())
+                        .is_some_and(|start| start.eq_ignore_ascii_case(lead))
+                })
+                && !unmeasured_listing();
         }
         if text(a) && text(b) && !a.eq_ignore_ascii_case(b) {
             return true;
@@ -4500,6 +4996,300 @@ impl<'a> Visit<'a> for ConditionalUse<'_> {
     }
     fn visit_function(&mut self, _: &Function<'a>, _: oxc_semantic::ScopeFlags) {}
     fn visit_arrow_function_expression(&mut self, _: &ArrowFunctionExpression<'a>) {}
+}
+
+/// The methods of a router that register what runs before its routes.
+const BEFORE_ROUTES: &[&str] = &["use", "addHook", "register", "param"];
+
+/// How [`RawSymbol::app_unread`] says that a middleware is registered on the
+/// router where the order it runs in is not read: by a function, or under a
+/// condition.
+fn deferred_unread(router: &str) -> String {
+    format!("what a function or a condition registers on {router}")
+}
+
+/// Finds every registration, on a router of the module, of what runs before its
+/// routes ([`Lowerer::guard_sites`]).
+pub(super) struct RouterSites<'l, 's> {
+    l: &'l Lowerer<'s>,
+    /// How many functions enclose the node walked.
+    depth: u32,
+    /// The statement of the module being walked is an expression statement.
+    direct: bool,
+    found: BTreeMap<String, Vec<(u32, bool)>>,
+}
+
+impl<'l, 's> RouterSites<'l, 's> {
+    pub(super) fn of(l: &'l Lowerer<'s>, program: &Program) -> BTreeMap<String, Vec<(u32, bool)>> {
+        if l.out.routers.is_empty() {
+            return BTreeMap::new();
+        }
+        let mut sites = RouterSites {
+            l,
+            depth: 0,
+            direct: false,
+            found: BTreeMap::new(),
+        };
+        for st in &program.body {
+            sites.direct = matches!(st, Statement::ExpressionStatement(_));
+            sites.visit_statement(st);
+        }
+        sites.found
+    }
+}
+
+impl<'a> Visit<'a> for RouterSites<'_, '_> {
+    fn visit_function(&mut self, it: &Function<'a>, flags: oxc_semantic::ScopeFlags) {
+        self.depth += 1;
+        walk::walk_function(self, it, flags);
+        self.depth -= 1;
+    }
+
+    fn visit_arrow_function_expression(&mut self, it: &ArrowFunctionExpression<'a>) {
+        self.depth += 1;
+        walk::walk_arrow_function_expression(self, it);
+        self.depth -= 1;
+    }
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if let Some((router, method)) = self.l.module_router_call(it)
+            && BEFORE_ROUTES.contains(&method)
+            && !it.arguments.iter().all(|a| {
+                a.as_expression()
+                    .is_some_and(|x| self.l.never_authenticates(x))
+            })
+        {
+            self.found
+                .entry(router)
+                .or_default()
+                .push((it.span.start, self.direct && self.depth == 0));
+        }
+        walk::walk_call_expression(self, it);
+    }
+}
+
+/// Finds the parameters the file's own calls hand a router
+/// ([`Lowerer::handed_routers`]): `configureApp(app, db)` where `app` is bound to a
+/// router anywhere in the file (`const app = express()`).
+pub(super) struct HandedRouters<'l, 's> {
+    l: &'l Lowerer<'s>,
+    /// The bindings of the file that hold a router, with its adapter.
+    routers: HashMap<SymbolId, &'static str>,
+    /// The second walk: the calls.
+    calls: bool,
+    found: BTreeMap<String, BTreeMap<u32, &'static str>>,
+}
+
+impl<'l, 's> HandedRouters<'l, 's> {
+    pub(super) fn of(
+        l: &'l Lowerer<'s>,
+        program: &Program,
+    ) -> BTreeMap<String, BTreeMap<u32, &'static str>> {
+        let mut pass = HandedRouters {
+            l,
+            routers: HashMap::new(),
+            calls: false,
+            found: BTreeMap::new(),
+        };
+        pass.visit_program(program);
+        if pass.routers.is_empty() {
+            return BTreeMap::new();
+        }
+        pass.calls = true;
+        pass.visit_program(program);
+        pass.found
+    }
+}
+
+impl<'a> Visit<'a> for HandedRouters<'_, '_> {
+    fn visit_variable_declarator(&mut self, it: &VariableDeclarator<'a>) {
+        if !self.calls
+            && let (BindingPattern::BindingIdentifier(id), Some(init)) = (&it.id, &it.init)
+            && let Some(sym) = id.symbol_id.get()
+            // `new Hono().basePath(...)` is read where the module binds it.
+            && base_path(init).is_none()
+            && let Some(adapter) = self.l.router_adapter_of(init)
+        {
+            self.routers.insert(sym, adapter);
+        }
+        walk::walk_variable_declarator(self, it);
+    }
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if self.calls
+            && let Expression::Identifier(callee) = unwrap_expr(&it.callee)
+            // A function the file declares, not an import or a global.
+            && matches!(self.l.resolve_ident(callee), Some(RawBase::Local(_)) | None)
+        {
+            for (i, a) in it.arguments.iter().enumerate() {
+                let Some(Expression::Identifier(id)) = a.as_expression().map(unwrap_expr) else {
+                    continue;
+                };
+                let adapter = id
+                    .reference_id
+                    .get()
+                    .and_then(|r| self.l.scoping.get_reference(r).symbol_id())
+                    .and_then(|s| self.routers.get(&s));
+                if let (Some(adapter), Ok(i)) = (adapter, u32::try_from(i)) {
+                    self.found
+                        .entry(callee.name.to_string())
+                        .or_default()
+                        .insert(i, *adapter);
+                }
+            }
+        }
+        walk::walk_call_expression(self, it);
+    }
+}
+
+/// Finds the registrations written as a route is that the lowering did not list
+/// ([`drift_core::FileFacts::unlisted_routes`]): a call of a method named for an
+/// HTTP verb, on anything, with a path written out first and a handler written in
+/// place last (a function of two or three parameters, as a framework calls one).
+/// One is listed where a route of the file was lowered from its line.
+pub(super) struct UnlistedRoutes<'l, 's> {
+    l: &'l Lowerer<'s>,
+    listed: BTreeSet<u32>,
+    found: BTreeSet<u32>,
+}
+
+impl<'l, 's> UnlistedRoutes<'l, 's> {
+    pub(super) fn of(l: &'l Lowerer<'s>, program: &Program) -> Vec<u32> {
+        // The measured reading lists fewer routes: what is not listed is said of
+        // the full one ([`drift_core::FileFacts::hold`]).
+        if l.test_file || lowering_as_measured() {
+            return Vec::new();
+        }
+        let routes: BTreeSet<&str> = l
+            .out
+            .entry_points
+            .iter()
+            .filter(|e| e.kind != "cli")
+            .map(|e| e.symbol.as_str())
+            .collect();
+        let mut pass = UnlistedRoutes {
+            l,
+            listed: l
+                .out
+                .symbols
+                .iter()
+                .filter(|s| routes.contains(s.name.as_str()))
+                .map(|s| s.line)
+                .collect(),
+            found: BTreeSet::new(),
+        };
+        pass.visit_program(program);
+        pass.found.into_iter().collect()
+    }
+}
+
+impl<'a> Visit<'a> for UnlistedRoutes<'_, '_> {
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        let handler = |e: &Expression| match unwrap_expr(e) {
+            Expression::ArrowFunctionExpression(f) => matches!(f.params.items.len(), 2 | 3),
+            Expression::FunctionExpression(f) => matches!(f.params.items.len(), 2 | 3),
+            _ => false,
+        };
+        if let Expression::StaticMemberExpression(m) = unwrap_expr(&it.callee)
+            && matches!(
+                m.property.name.as_str(),
+                "get" | "post" | "put" | "patch" | "delete"
+            )
+            && it.arguments.len() >= 2
+            && it
+                .arguments
+                .first()
+                .and_then(|a| a.as_expression())
+                .and_then(string_value)
+                .is_some_and(|p| p.starts_with('/'))
+            && it
+                .arguments
+                .last()
+                .and_then(|a| a.as_expression())
+                .is_some_and(handler)
+        {
+            let line = self.l.line_of(it.span.start);
+            if !self.listed.contains(&line) {
+                self.found.insert(line);
+            }
+        }
+        walk::walk_call_expression(self, it);
+    }
+}
+
+/// Finds the routers of the module a function body registers on itself: not in a
+/// function written inside it, but for the callback of a `forEach` or a `map`.
+struct ClosureUse<'l, 's> {
+    l: &'l Lowerer<'s>,
+    depth: u32,
+    routers: BTreeSet<String>,
+}
+
+impl<'a> Visit<'a> for ClosureUse<'_, '_> {
+    fn visit_function(&mut self, _: &Function<'a>, _: oxc_semantic::ScopeFlags) {}
+
+    fn visit_arrow_function_expression(&mut self, _: &ArrowFunctionExpression<'a>) {}
+
+    fn visit_class(&mut self, _: &Class<'a>) {}
+
+    fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
+        if let Some((router, _)) = self.l.module_router_call(it) {
+            self.routers.insert(router);
+        }
+        // `routes.forEach((r) => app.get(r.path, r.handler))`: read as a loop.
+        if matches!(call_name(&it.callee), Some("forEach" | "map"))
+            && self.depth < 4
+            && let Some(f) = it.arguments.first().and_then(|a| a.as_expression())
+        {
+            self.depth += 1;
+            match unwrap_expr(f) {
+                Expression::ArrowFunctionExpression(a) => match &a.body {
+                    ArrowFunctionBody::FunctionBody(b) => {
+                        for st in &b.statements {
+                            self.visit_statement(st);
+                        }
+                    }
+                    other => {
+                        if let Some(x) = other.as_expression() {
+                            self.visit_expression(x);
+                        }
+                    }
+                },
+                Expression::FunctionExpression(a) => {
+                    for st in a.body.iter().flat_map(|b| &b.statements) {
+                        self.visit_statement(st);
+                    }
+                }
+                _ => {}
+            }
+            self.depth -= 1;
+        }
+        walk::walk_call_expression(self, it);
+    }
+}
+
+/// Finds every function of a module for [`Lowerer::closure_routes`], whatever it is
+/// written in: a declaration, a callback, a function in a function.
+struct ClosurePass<'l, 's> {
+    l: &'l mut Lowerer<'s>,
+}
+
+impl<'a> Visit<'a> for ClosurePass<'_, '_> {
+    fn visit_function(&mut self, it: &Function<'a>, flags: oxc_semantic::ScopeFlags) {
+        if let Some(body) = &it.body {
+            self.l.closure_routes(&body.statements, body.span, false);
+        }
+        walk::walk_function(self, it, flags);
+    }
+
+    fn visit_arrow_function_expression(&mut self, it: &ArrowFunctionExpression<'a>) {
+        if let ArrowFunctionBody::FunctionBody(b) = &it.body {
+            self.l.closure_routes(&b.statements, b.span, false);
+        }
+        walk::walk_arrow_function_expression(self, it);
+    }
+
+    fn visit_class(&mut self, _: &Class<'a>) {}
 }
 
 /// Finds the functions a module declares for [`Lowerer::scoped_fn`]: a declaration, a

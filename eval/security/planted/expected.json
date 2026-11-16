@@ -1,0 +1,26 @@
+{
+  "about": "Vulnerabilities planted in common shapes, and what `drift security --json` says of each. `found`: listed in `sinks` with this kind at this symbol. `missed`: not listed, with why. `safe`: a control that must not be listed. crates/drift-cli/tests/planted_benchmark.rs holds the build to this file: a miss that is found, or a find that is lost, fails until the entry is changed.",
+  "cases": [
+    { "id": "ts-sql-direct", "path": "app.ts", "symbol": "GET /a-direct", "kind": "sql_string_interpolation", "expect": "found" },
+    { "id": "ts-sql-through-a-local", "path": "app.ts", "symbol": "GET /b-local", "kind": "sql_string_interpolation", "expect": "found" },
+    { "id": "ts-sql-concatenated", "path": "app.ts", "symbol": "GET /c-concat", "kind": "sql_string_interpolation", "expect": "found" },
+    { "id": "ts-path-traversal", "path": "app.ts", "symbol": "GET /e-path", "kind": "path_traversal", "expect": "found" },
+    { "id": "ts-shell", "path": "app.ts", "symbol": "GET /f-exec", "kind": "shell_exec", "expect": "found" },
+    { "id": "ts-mass-assignment", "path": "app.ts", "symbol": "POST /g-mass", "kind": "mass_assignment", "expect": "found" },
+    { "id": "ts-prototype-pollution", "path": "app.ts", "symbol": "GET /h-proto", "kind": "dynamic_key_write", "expect": "found" },
+    { "id": "ts-regex-from-input", "path": "app.ts", "symbol": "GET /i-regex", "kind": "dynamic_regex", "expect": "found" },
+    { "id": "ts-nosql-where", "path": "app.ts", "symbol": "GET /j-nosql", "kind": "nosql_injection", "expect": "found" },
+    { "id": "ts-secret-literal", "path": "app.ts", "symbol": "(module)", "kind": "hardcoded_secret", "expect": "missed", "why": "a credential written as a literal and handed to nothing: only a secret given to what signs with it is read" },
+    { "id": "py-sql-direct", "path": "py/app.py", "symbol": "a", "kind": "sql_string_interpolation", "expect": "found" },
+    { "id": "py-sql-through-a-local", "path": "py/app.py", "symbol": "b", "kind": "sql_string_interpolation", "expect": "found" },
+    { "id": "py-path-traversal", "path": "py/app.py", "symbol": "c", "kind": "path_traversal", "expect": "found" },
+    { "id": "py-template-injection", "path": "py/app.py", "symbol": "d", "kind": "template_injection", "expect": "found" },
+    { "id": "py-xxe", "path": "py/app.py", "symbol": "e", "kind": "xml_external_entities", "expect": "found" },
+    { "id": "py-weak-randomness", "path": "py/app.py", "symbol": "f", "kind": "weak_randomness", "expect": "missed", "why": "what a random value is used for is not read, so no use of `random` is a finding" },
+    { "id": "py-session-secret", "path": "py/app.py", "symbol": "(module)", "kind": "hardcoded_secret", "expect": "found" },
+    { "id": "py-debug-server", "path": "py/app.py", "symbol": "(module)", "kind": "debug_enabled", "expect": "found" }
+  ],
+  "safe": [
+    { "id": "ts-constant-table-parameterised", "path": "app.ts", "symbol": "GET /d-safe-const", "why": "a constant table name interpolated into a parameterised query interpolates no input" }
+  ]
+}

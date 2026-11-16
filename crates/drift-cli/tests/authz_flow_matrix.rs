@@ -747,6 +747,7 @@ const TSCONFIG: &str = r#"{ "compilerOptions": { "baseUrl": ".", "paths": { "@/*
 
 const NEXT_SESSION: &str = r#"import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
 import NextAuth from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { pool } from "./data";
@@ -760,7 +761,7 @@ export const authOptions = { providers: [] };
 export async function getSession(): Promise<Session | null> {
   const raw = (await cookies()).get("session")?.value;
   if (!raw) return null;
-  return JSON.parse(Buffer.from(raw, "base64").toString()) as Session;
+  return jwt.verify(raw, process.env.SESSION_SECRET ?? "") as Session;
 }
 
 export async function currentDepot() {
@@ -1663,9 +1664,49 @@ fn keyed_expected(key: &str, u: &Use, s: &Source, lib: &Lib) -> &'static str {
     };
     if key == "orgId" && !s.caller && want == "none" {
         "unknown"
+    } else if key == "orgId" && want == "unknown" && own_value(s) && keyed_in_an_object(u, lib) {
+        // TypeScript lowering 76: a key named for a tenant, filtered by a value that
+        // is the caller's by its own source, written as the value of that key in an
+        // object the query is given, is the route's tenancy filter. What only may
+        // give a value of the caller (a helper, a holder a middleware sets) proves
+        // nothing, and neither does a key on no list.
+        "known"
+    } else if key == "orgId"
+        && want == "unknown"
+        && s.name == "what-a-sign-in-helper-that-uses-the-identity-returns"
+        && keyed_in_an_object(u, lib)
+    {
+        // TypeScript lowering 81: a helper every `return` of which gives what a
+        // sign-in accessor gave gives the caller by what it returns
+        // (`drift_core::controls::GIVES_CALLER`), and the route signs the caller in
+        // by it: a member of what it hands back, under a key named for a tenant, is
+        // the tenancy filter as the accessor's own value is. A helper that may
+        // give anything else, and a holder, still prove nothing.
+        "known"
     } else {
         want
     }
+}
+
+/// The source is a value of the caller by itself (the request's user, a session, a
+/// decorated parameter), not what a helper hands back or a holder keeps: those may
+/// give one, which a filter is not proven by.
+fn own_value(s: &Source) -> bool {
+    s.caller
+        && !["helper-", "holder-", "ctx-member-", "what-"]
+            .iter()
+            .any(|given| s.name.starts_with(given))
+}
+
+/// The use writes the value as the value of the key in an object a query is given:
+/// `{ where: { orgId: v } }`, and the filters of the libraries that take one.
+fn keyed_in_an_object(u: &Use, lib: &Lib) -> bool {
+    u.name == "object-property"
+        || (u.name == "library-filter"
+            && matches!(
+                lib.name,
+                "prisma" | "typeorm-find" | "sequelize" | "mongoose"
+            ))
 }
 
 /// Every library in every position, the frameworks in turn: a fixture per library,
@@ -1800,9 +1841,11 @@ fn nothing_becomes_known_by_a_value_of_the_caller_in_use() {
     assert_eq!(read("two-request-values").0, "unknown");
     assert_eq!(read("one-arm").0, "unknown");
     assert_eq!(read("one-arm-drizzle").0, "unknown");
-    // (Found, and not proven where the facts do not say whose the session's side
-    // is: unknown before this rule and after it.)
-    assert_eq!(read("checked").0, "unknown");
+    // The row's tenant against the session's is proven, as it was. What made the
+    // route unknown was the other half of the test (`!rule`, a 403 on what names
+    // neither a role, a tenant nor an owner): beside a check every request passes,
+    // a refusal the map cannot name turns more requests away, never fewer.
+    assert_eq!(read("checked").0, "known");
     assert_eq!(read("role").0, "known");
 }
 

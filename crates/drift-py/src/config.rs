@@ -50,6 +50,32 @@ const NO_GUARD_MIDDLEWARE: &[&str] = &[
     "whitenoise.",
     "debug_toolbar.",
     "django_prometheus.",
+    // The request or its user kept where code outside a view reads it
+    // (django-crum, django-currentuser, django-simple-history, django-htmx,
+    // django-user-agents): each sets a value and hands the request on.
+    "crum.",
+    "django_currentuser.",
+    "simple_history.",
+    "django_htmx.",
+    "django_user_agents.",
+    // Request ids, logging, profiling and tracing.
+    "log_request_id.",
+    "request_id.",
+    "django_guid.",
+    "django_structlog.",
+    "request_logging.",
+    "silk.",
+    "querycount.",
+    "nplusone.",
+    "elasticapm.",
+    "ddtrace.",
+    "opentelemetry.",
+    "rollbar.",
+    // Response headers (django-csp, django-permissions-policy) and the
+    // development reloader.
+    "csp.",
+    "django_permissions_policy.",
+    "django_browser_reload.",
 ];
 /// What stands for a middleware of `MIDDLEWARE` that is not read: `unresolved:`, so
 /// the reading of a guard position says unknown.
@@ -672,6 +698,39 @@ impl Linker<'_> {
             .then(|| self.permissions_unread(sym, &chain))
             .flatten()
             .filter(|_| self.since_measured());
+        // What the `get_permissions` of its class answers for this handler, where
+        // the method is read to the end ([`RawSymbol::drf_permission_cases`]): the
+        // classes of the case its method and its action take, in place of "not
+        // read". The `permission_classes` the view itself declares are its wraps
+        // already, and a method that returns its own lists does not run them:
+        // those are taken off ([`REPLACES`]).
+        let chosen: Option<(usize, &RawPermCase)> = match &unread {
+            Some((words, _))
+                if words == crate::raw::GET_PERMISSIONS
+                    && sym.owner.is_some()
+                    && sym.drf_permissions_unread.is_none() =>
+            {
+                chain
+                    .iter()
+                    .filter_map(|c| self.symbol_at(c))
+                    .find(|(_, s)| {
+                        s.drf_permissions_unread.as_deref() == Some(crate::raw::GET_PERMISSIONS)
+                    })
+                    .and_then(|(fi, definer)| {
+                        let case = permission_case(definer.drf_permission_cases.as_deref()?, sym)?;
+                        Some((fi, case))
+                    })
+                    .filter(|(_, case)| {
+                        case.classes.is_none()
+                            || !chain.first().is_some_and(|view| {
+                                self.symbol_at(view)
+                                    .is_some_and(|(_, s)| s.drf_reassigned.is_some())
+                            })
+                    })
+            }
+            _ => None,
+        };
+        let unread = unread.filter(|_| chosen.is_none());
         if let Some((words, _)) = &unread {
             inherited.push(wrap(&format!("unresolved:{words}"), WrapKind::Call));
         }
@@ -708,6 +767,31 @@ impl Linker<'_> {
                 ),
             ];
             for (pick, default, own_kind, cfg_kind) in slots {
+                // The classes `get_permissions` returns for this handler are its
+                // permissions: neither a base's `permission_classes` nor the
+                // settings' default run beside them.
+                if cfg_kind == WrapKind::Config
+                    && let Some((
+                        fi,
+                        RawPermCase {
+                            classes: Some(classes),
+                            ..
+                        },
+                    )) = chosen
+                {
+                    let returned: Vec<String> = classes.iter().map(|r| self.canon(fi, r)).collect();
+                    // What the view declares and the method does not return.
+                    if let Some((vi, view)) = chain.first().and_then(|c| self.symbol_at(c)) {
+                        for declared in view.drf_permissions.iter().flatten() {
+                            let declared = self.canon(vi, declared);
+                            if !returned.contains(&declared) {
+                                inherited.push(wrap(&format!("{REPLACES}{declared}"), own_kind));
+                            }
+                        }
+                    }
+                    inherited.extend(returned.iter().map(|w| wrap(w, own_kind)));
+                    continue;
+                }
                 let declared = chain.iter().enumerate().find_map(|(i, c)| {
                     let (fi, s) = self.symbol_at(c)?;
                     pick(s).as_ref().map(|l| (i, fi, l))
@@ -996,4 +1080,42 @@ impl Linker<'_> {
             });
         }
     }
+}
+
+/// What starts a wrap that takes another off a handler: the permission class its
+/// view declares and its `get_permissions` does not return for it
+/// ([`Linker::view_settings_guards`]). Never in the facts: read where a symbol's
+/// wraps are put together.
+pub(crate) const REPLACES: &str = "replaces:";
+
+/// The case of a `get_permissions` ([`RawPermCase`]) the handler `sym` takes: the
+/// first whose every test holds for its method and its action (the handler's own
+/// name: `list`, `retrieve`, an `@action`'s). `None` where a test is of the method
+/// and the handler serves more than one, and where no case is taken.
+fn permission_case<'c>(cases: &'c [RawPermCase], sym: &RawSymbol) -> Option<&'c RawPermCase> {
+    let action = sym.name.rsplit('.').next()?;
+    let method = match sym.methods.as_slice() {
+        [one] => Some(one.as_str()),
+        _ => None,
+    };
+    for case in cases {
+        let mut taken = true;
+        for t in &case.tests {
+            let named = match t.action {
+                true => t.names.iter().any(|n| n == action),
+                false => {
+                    let method = method?;
+                    t.names.iter().any(|n| n == method)
+                }
+            };
+            if named != t.holds {
+                taken = false;
+                break;
+            }
+        }
+        if taken {
+            return Some(case);
+        }
+    }
+    None
 }

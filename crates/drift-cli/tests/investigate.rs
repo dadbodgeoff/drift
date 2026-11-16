@@ -1497,7 +1497,12 @@ fn a_gap_report_writes_only_its_fixture() {
     let config_file = json!({"QQ/config.yaml": "security:\n  internal:\n    - \"\"\n"});
     for to in ["../../..", outside.to_str().unwrap(), "a/b", "a\\b", ".."] {
         let err = run(json!({ "QQ": to }), config_file.clone());
-        assert!(err.contains("a neutral name holds no"), "{to}: {err}");
+        // (The temporary directory's random name may hold the name replaced, `qq`
+        // in any case: the path is then refused for that, before its separators.)
+        assert!(
+            err.contains("a neutral name holds no") || err.contains("which is not a neutral name"),
+            "{to}: {err}"
+        );
     }
     // `QQ.` becomes `..` once `QQ` is `.`.
     let err = run(json!({"QQ": "."}), json!({"QQ./config.yaml": "x: 1\n"}));

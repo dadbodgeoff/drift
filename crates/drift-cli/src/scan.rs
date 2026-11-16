@@ -38,7 +38,19 @@ pub fn scan(root: &Path, opts: &ScanOptions) -> anyhow::Result<(RepoFacts, ScanS
     stats.files += py_stats.files;
     stats.cache_hits += py_stats.cache_hits;
     stats.parse_errors += py_stats.parse_errors;
-    Ok((repo, stats))
+    Ok((listed_where_asked(root, repo), stats))
+}
+
+/// The facts every command reads: those of the measured build's listings, or, where
+/// a person turned the experimental feature on
+/// ([`drift_mine::policy::LISTED_ENTRY_POINTS_FEATURE`]), those with every listing
+/// ([`RepoFacts::listed`]), so that what is mined and checked is what `drift
+/// security` and the practice map read.
+fn listed_where_asked(root: &Path, facts: RepoFacts) -> RepoFacts {
+    match drift_mine::policy::listed_entry_points(root) {
+        true => facts.into_listed(),
+        false => facts,
+    }
 }
 
 /// Facts sufficient to check the file `rel`, identical to a full [`scan`]'s for that
@@ -117,7 +129,7 @@ pub fn scan_file(root: &Path, opts: &ScanOptions, rel: &str) -> anyhow::Result<O
     };
     apply_packages(&root, &mut facts);
     facts.normalize();
-    Ok(Some(facts))
+    Ok(Some(listed_where_asked(&root, facts)))
 }
 
 /// A file Drift reads at all: a source, a file repo-level passes read (`package.json`,
@@ -152,6 +164,9 @@ fn merge(into: &mut RepoFacts, other: RepoFacts) {
     into.packages.extend(other.packages);
     into.context_files.extend(other.context_files);
     into.integration_files.extend(other.integration_files);
+    into.generated_clients.extend(other.generated_clients);
+    into.generated_clients.sort();
+    into.generated_clients.dedup();
     into.normalize();
 }
 

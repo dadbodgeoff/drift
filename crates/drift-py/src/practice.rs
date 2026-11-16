@@ -175,6 +175,150 @@ const FILTER_CALLS: &[&str] = &[
     "where",
 ];
 
+/// What one expression reads of rows ([`Collector::note_rows`]).
+struct RowsRead<'c, 'a, 't> {
+    c: &'c Collector<'a, 't>,
+    /// Inside what narrows nothing: an `or`, a negation.
+    narrowing: usize,
+    /// The classes named where rows are read.
+    models: Vec<RawRef>,
+    /// A filter by the caller itself: its key and the side.
+    own: Option<(String, RawSide)>,
+    /// A filter by a value read off a parameter or off what the request sent.
+    asked: bool,
+    /// What the filters that are by no caller read their values off.
+    from: Vec<RawRef>,
+}
+
+impl RowsRead<'_, '_, '_> {
+    /// A class the expression names: a bare or dotted name that is no local of a
+    /// function and no built-in.
+    fn class(&self, e: &Expr) -> Option<RawRef> {
+        matches!(e, Expr::Name(_) | Expr::Attribute(_))
+            .then(|| self.c.canon(e))
+            .flatten()
+            .filter(|r| !matches!(r.base, RawBase::Global(_)))
+    }
+
+    fn filter(&mut self, key: &str, value: &Expr) {
+        if self.narrowing > 0 {
+            return;
+        }
+        let side = self.c.side(value);
+        let caller = matches!(
+            side,
+            RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
+        ) && self.c.caller_self(value);
+        match side {
+            _ if caller => {
+                if self.own.is_none() {
+                    self.own = Some((key.to_string(), RawSide::Own(Box::new(side))));
+                }
+            }
+            RawSide::Call(r) | RawSide::Value(r) => {
+                if !self.from.contains(&r) {
+                    self.from.push(r);
+                }
+            }
+            RawSide::Request | RawSide::Param(..) => self.asked = true,
+            _ => {}
+        }
+    }
+}
+
+impl<'x> Visitor<'x> for RowsRead<'_, '_, '_> {
+    fn visit_expr(&mut self, e: &'x Expr) {
+        match e {
+            Expr::Lambda(_) => {}
+            Expr::BinOp(b) if matches!(b.op, ast::Operator::BitOr) => {
+                self.narrowing += 1;
+                visitor::walk_expr(self, e);
+                self.narrowing -= 1;
+            }
+            Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Invert | ast::UnaryOp::Not) => {
+                self.narrowing += 1;
+                visitor::walk_expr(self, e);
+                self.narrowing -= 1;
+            }
+            Expr::Call(c) => {
+                let name = last_name(&c.func);
+                // The class a query method is called on (`Item.objects.filter(...)`,
+                // `Item.query.all()`), read where the method is one a query has.
+                if let Expr::Attribute(_) = c.func.as_ref()
+                    && name
+                        .is_some_and(|n| RELATION_METHODS.contains(&n) || FILTER_CALLS.contains(&n))
+                {
+                    let mut root = c.func.as_ref();
+                    while let Expr::Attribute(a) = root {
+                        root = &a.value;
+                    }
+                    if let Some(model) = self.class(root)
+                        && !self.models.contains(&model)
+                    {
+                        self.models.push(model);
+                    }
+                }
+                // A class handed to a call that is no built-in (`select(Item)`,
+                // `session.get(Item, item_id)`, `db.query(Item)`).
+                let builtin = matches!(c.func.as_ref(), Expr::Name(_))
+                    && self
+                        .c
+                        .canon(&c.func)
+                        .is_none_or(|r| matches!(r.base, RawBase::Global(_)));
+                if !builtin {
+                    for a in &c.arguments.args {
+                        if let Some(model) = self.class(a)
+                            && !self.models.contains(&model)
+                        {
+                            self.models.push(model);
+                        }
+                    }
+                }
+                let widens = matches!(name, Some("Q" | "or_" | "not_" | "exclude"));
+                let filters = name.is_some_and(|n| FILTER_CALLS.contains(&n) || n == "and_");
+                if filters && !widens {
+                    for k in &c.arguments.keywords {
+                        if let Some(key) = &k.arg {
+                            self.filter(key.as_str(), &k.value);
+                        }
+                    }
+                    for x in &c.arguments.args {
+                        if let Expr::Compare(cmp) = x
+                            && cmp.ops.len() == 1
+                            && matches!(cmp.ops[0], ast::CmpOp::Eq)
+                        {
+                            let (l, r) = (cmp.first_operand(), cmp.second_operand());
+                            // The column is the side that is a member of a class.
+                            let column = |e: &Expr| match e {
+                                Expr::Attribute(a) => {
+                                    self.class(&a.value).is_some().then(|| a.attr.to_string())
+                                }
+                                Expr::Call(call) => match call.arguments.args.first() {
+                                    // `col(Item.owner_id)`
+                                    Some(Expr::Attribute(a)) if call.arguments.args.len() == 1 => {
+                                        self.class(&a.value).is_some().then(|| a.attr.to_string())
+                                    }
+                                    _ => None,
+                                },
+                                _ => None,
+                            };
+                            if let Some(key) = column(l) {
+                                self.filter(&key, r);
+                            } else if let Some(key) = column(r) {
+                                self.filter(&key, l);
+                            }
+                        }
+                    }
+                }
+                self.narrowing += usize::from(widens);
+                visitor::walk_expr(self, e);
+                self.narrowing -= usize::from(widens);
+            }
+            _ => visitor::walk_expr(self, e),
+        }
+    }
+}
+
 /// A traced log receiver ([`Collector::log_recv`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum LogRecv {
@@ -1671,6 +1815,16 @@ impl<'t> Collector<'_, 't> {
             }
             return;
         }
+        // An attribute of what a call handed back, written by what is not the
+        // caller itself ([`drift_core::controls::ROW_SET`]).
+        for t in &a.targets {
+            if let Expr::Attribute(x) = t
+                && let RawSide::Call(r) = self.side(&x.value)
+                && !self.caller_self(&a.value)
+            {
+                self.row_sets.insert((r, x.attr.to_string()));
+            }
+        }
         // A value written on an object of the module (`_local.tenant_id = tenant`,
         // `CURRENT[key] = org`): kept past the request
         // ([`drift_core::controls::KEEPS_VALUE`]).
@@ -1727,6 +1881,11 @@ impl<'t> Collector<'_, 't> {
                     }
                     // A local bound to a value of the caller is one
                     // ([`Collector::caller_value`]).
+                    if self.caller_self(&a.value) {
+                        self.self_locals.insert(name.clone());
+                    } else {
+                        self.self_locals.remove(&name);
+                    }
                     match self.caller_value(&a.value) {
                         // What a helper may give, under a name that says the
                         // caller: the name decides, as it did (`session =
@@ -1776,6 +1935,7 @@ impl<'t> Collector<'_, 't> {
                         self.response_vars.remove(n);
                         self.check_locals.remove(n);
                         self.caller_locals.remove(n);
+                        self.self_locals.remove(n);
                         // Bound to a part of a value: not read.
                         self.side_locals.insert(n.to_string(), RawSide::Unread);
                     }
@@ -2090,30 +2250,108 @@ impl<'t> Collector<'_, 't> {
     /// `cond`: why the `if` itself does not run for every request, when it does not
     /// ([`Collector::not_always`]). An operand of an effective `and` is conditional on
     /// the others ([`drift_core::not_always::AND_OPERAND`]).
+    ///
+    /// `since`: the block is the `else` of the test, or what follows an `if` whose
+    /// body always leaves, and `test` says when it runs: read since the measured
+    /// build, so what the measured build records of the block is left as it was.
+    ///
+    /// A test that turns away the requests that have a caller
+    /// ([`Collector::without_a_caller`]), or reads nothing but the verb of the
+    /// request ([`Collector::reads_the_verb_alone`]), asks no one to sign in,
+    /// whatever the answer is: marked where the measured build read it, not
+    /// recorded since.
     pub(crate) fn note_body_checks(
         &mut self,
         test: &Expr,
         body: &[Stmt],
         cond: Option<(&'static str, String)>,
+        since: bool,
     ) {
         if !self.counting() || self.frames.is_empty() {
             return;
         }
-        self.claim_exit(test, body);
-        self.note_raise_checks(test, body, &cond);
+        if !since {
+            self.claim_exit(test, body);
+            self.note_raise_checks(test, body, &cond);
+        }
         let Some(outcome) = self.exit_outcome(body) else {
             return;
         };
+        let absent = self.without_a_caller(test, 0);
+        let sign_in = matches!(
+            outcome,
+            CheckOutcome::Unauthenticated | CheckOutcome::SignInRedirect
+        );
+        let backwards = sign_in && (absent == Some(false) || self.reads_the_verb_alone(test, 0));
+        if since && backwards {
+            return;
+        }
+        // Every request without a caller takes the exit: what is asked of it is
+        // the one read of the caller that says so, whatever else the test reads.
+        let read = match absent {
+            Some(true) => self
+                .read_of_the_caller(test, 0, true)
+                .or_else(|| self.read_of_the_caller(test, 0, false)),
+            _ => None,
+        };
+        let word = read.is_some_and(|(read, _)| states_signed_in(read));
+        let asked = read.map(|(read, holds)| match holds {
+            true => read.clone(),
+            false => super::none_of(&[read]),
+        });
+        // A 403 or a 404 for having no caller turns the caller away for not being
+        // signed in, as a 401 does: where the test reads the framework's own word
+        // for being signed in (a value kept for the caller, `session.get("cart")`,
+        // may be there for a visitor who never signed in). It asks nothing more
+        // where that word is all the test reads.
+        let hides = word && matches!(outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound);
+        let presence = hides && read.is_some_and(|(read, _)| std::ptr::eq(read, unnegated(test)));
+        if since
+            && (asked.is_some() || self.reads_every_operand(test))
+            && let Some(exit) = body
+                .iter()
+                .find(|s| matches!(s, Stmt::Raise(_) | Stmt::Return(_)))
+        {
+            self.claimed_since.insert(exit.range().start());
+        }
+        match (&asked, since) {
+            (Some(asked), true) if sign_in => {
+                self.record_checks(asked, outcome, &cond, true, false)
+            }
+            (Some(_), true) if presence => {}
+            _ => self.record_checks(test, outcome, &cond, since, backwards || presence),
+        }
+        if let Some(asked) = asked.filter(|_| hides) {
+            self.record_checks(&asked, CheckOutcome::Unauthenticated, &cond, true, false);
+        }
+    }
+
+    /// One [`RawBodyCheck`] for each condition of the test.
+    fn record_checks(
+        &mut self,
+        test: &Expr,
+        outcome: CheckOutcome,
+        cond: &Option<(&'static str, String)>,
+        since: bool,
+        measured: bool,
+    ) {
         let mut conds = Vec::new();
         self.conditions(test, &mut conds, 0, false);
-        for (((source, reads), compares, subject, _, op, sides), guard) in conds {
+        let roles = self.roles_beside(test, &conds, cond);
+        let mut role_sides = roles.iter().flat_map(|(sides, _)| sides.iter().cloned());
+        for (((source, reads), compares, subject, compared, op, sides), guard) in conds {
+            let role = role_operand(compared, &compares);
+            let role_side = match (&roles, role) {
+                (Some(_), true) => role_sides.next(),
+                _ => None,
+            };
             if matches!(outcome, CheckOutcome::Forbidden | CheckOutcome::NotFound) && !subject {
                 continue;
             }
             if matches!(source, RawOperand::Literal | RawOperand::Env) {
                 continue;
             }
-            if let Some((left, right)) = sides {
+            if let Some((left, right)) = sides.or(role_side.map(|s| (s, RawSide::Literal))) {
                 self.check_sides.insert(RawCheckSides {
                     source: source.clone(),
                     reads: reads.clone(),
@@ -2122,7 +2360,10 @@ impl<'t> Collector<'_, 't> {
                     right,
                 });
             }
-            let (condition, unless) = why(&cond, guard);
+            let (condition, unless) = match &roles {
+                Some((_, words)) => why_beside_roles(role, words, guard),
+                None => why(cond, guard),
+            };
             self.body_checks.insert(RawBodyCheck {
                 source,
                 reads,
@@ -2133,8 +2374,166 @@ impl<'t> Collector<'_, 't> {
                 condition,
                 unless,
                 after: self.called_before(),
+                since,
+                measured,
             });
         }
+    }
+
+    /// What the test is for a request that has no caller: `Some(true)` where every
+    /// such request passes it (`not request.user.is_authenticated`, a value of
+    /// the caller compared with `None`, the framework's `is_anonymous`),
+    /// `Some(false)` where none does (`request.user.is_authenticated`, a value
+    /// of the caller read for its truth), `None` where that is not read (a
+    /// helper's answer, another attribute of the caller, a comparison with
+    /// anything else). An `and` passes where every operand does and fails where
+    /// one does; an `or` the other way round.
+    fn without_a_caller(&self, test: &Expr, depth: usize) -> Option<bool> {
+        if depth > MAX_DEPTH {
+            return None;
+        }
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => self
+                .without_a_caller(&u.operand, depth + 1)
+                .map(|passes| !passes),
+            Expr::BoolOp(b) => {
+                let each: Vec<Option<bool>> = b
+                    .values
+                    .iter()
+                    .map(|v| self.without_a_caller(v, depth + 1))
+                    .collect();
+                // What settles the whole by one operand, and what it is otherwise
+                // when every operand agrees.
+                let settles = matches!(b.op, ast::BoolOp::Or);
+                match each.contains(&Some(settles)) {
+                    true => Some(settles),
+                    false => each
+                        .iter()
+                        .all(|x| *x == Some(!settles))
+                        .then_some(!settles),
+                }
+            }
+            _ => self.caller_read(test).map(|(_, passes)| passes),
+        }
+    }
+
+    /// The test reads the verb of the request and nothing else
+    /// (`request.method != "POST"`): which verb a request used says nothing of
+    /// who sent it.
+    fn reads_the_verb_alone(&self, test: &Expr, depth: usize) -> bool {
+        if depth > MAX_DEPTH {
+            return false;
+        }
+        let verb = |e: &Expr| matches!(e, Expr::Attribute(a) if a.attr.as_str() == "method" && self.is_request(&a.value));
+        let words = |e: &Expr| match e {
+            Expr::Tuple(ast::ExprTuple { elts, .. })
+            | Expr::List(ast::ExprList { elts, .. })
+            | Expr::Set(ast::ExprSet { elts, .. }) => {
+                elts.iter().all(|x| string_value(x).is_some())
+            }
+            one => string_value(one).is_some(),
+        };
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                self.reads_the_verb_alone(&u.operand, depth + 1)
+            }
+            Expr::BoolOp(b) => b
+                .values
+                .iter()
+                .all(|v| self.reads_the_verb_alone(v, depth + 1)),
+            Expr::Compare(c) if c.ops.len() == 1 => {
+                let (l, r) = (c.first_operand(), c.second_operand());
+                (verb(l) && words(r)) || (words(l) && verb(r))
+            }
+            _ => false,
+        }
+    }
+
+    /// The first read of the caller in the test whose answer for a request that
+    /// has none is known, and that answer ([`Collector::without_a_caller`]).
+    /// `word`: only the framework's own word for being signed in
+    /// ([`states_signed_in`]).
+    fn read_of_the_caller<'e>(
+        &self,
+        test: &'e Expr,
+        depth: usize,
+        word: bool,
+    ) -> Option<(&'e Expr, bool)> {
+        if depth > MAX_DEPTH {
+            return None;
+        }
+        match test {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                self.read_of_the_caller(&u.operand, depth + 1, word)
+            }
+            Expr::BoolOp(b) => b
+                .values
+                .iter()
+                .find_map(|v| self.read_of_the_caller(v, depth + 1, word)),
+            _ => self
+                .caller_read(test)
+                .filter(|(read, _)| !word || states_signed_in(read)),
+        }
+    }
+
+    /// What one read of the caller is for a request that has none
+    /// ([`Collector::without_a_caller`]), where that is known.
+    fn caller_read<'e>(&self, test: &'e Expr) -> Option<(&'e Expr, bool)> {
+        match test {
+            Expr::Compare(c) => {
+                let [op] = &*c.ops else {
+                    return None;
+                };
+                let (left, right) = (c.first_operand(), c.second_operand());
+                if !matches!(right, Expr::NoneLiteral(_)) || self.caller_value(left).is_none() {
+                    return None;
+                }
+                match op {
+                    ast::CmpOp::Is | ast::CmpOp::Eq => Some((test, true)),
+                    ast::CmpOp::IsNot | ast::CmpOp::NotEq => Some((test, false)),
+                    _ => None,
+                }
+            }
+            // An attribute of the caller: what the framework's user says of being
+            // signed in is known for its anonymous one, another attribute is not.
+            Expr::Attribute(a) if self.caller_value(&a.value).is_some() => match a.attr.as_str() {
+                ANONYMOUS => Some((test, true)),
+                AUTHENTICATED => Some((test, false)),
+                _ => None,
+            },
+            Expr::Name(_) | Expr::Attribute(_) | Expr::Subscript(_) | Expr::Call(_) => {
+                self.caller_value(test).map(|_| (test, false))
+            }
+            _ => None,
+        }
+    }
+
+    /// Where a condition refuses a caller unless a role or one comparison holds
+    /// ([`role_alternatives`]), and every operand of it was read as one check: the
+    /// side each role is read off ([`Collector::side`]), in the order written, and
+    /// the roles in the code's own words. None where the condition is another, where
+    /// it stands under a condition of its own (`cond`), and where its operands do
+    /// not read one for one (the checks are then operands of an `and`, as before).
+    fn roles_beside(
+        &self,
+        test: &Expr,
+        conds: &[(Operand, Option<String>)],
+        cond: &Option<(&'static str, String)>,
+    ) -> Option<(Vec<RawSide>, Vec<String>)> {
+        if cond.is_some() {
+            return None;
+        }
+        let roles = role_alternatives(test)?;
+        let read_as_roles = conds
+            .iter()
+            .filter(|((_, compares, _, compared, _, _), _)| role_operand(*compared, compares))
+            .count();
+        (conds.len() == roles.len() + 1 && read_as_roles == roles.len()).then(|| {
+            (
+                roles.iter().map(|e| self.side(e)).collect(),
+                roles.iter().map(|e| words(e)).collect(),
+            )
+        })
     }
 
     /// The first exit of the block turns the caller away: a `raise`, an error answer,
@@ -2161,18 +2560,22 @@ impl<'t> Collector<'_, 't> {
             self.claimed
                 .insert(exit.range().start(), self.skipped.is_some());
         }
-        let mut conds = Vec::new();
-        self.conditions(test, &mut conds, 0, false);
-        let unread = conds.is_empty()
-            || conds
-                .iter()
-                .any(|(((source, _), compares, _, compared, _, _), _)| {
-                    *source == RawOperand::None && (!compared || *compares == RawOperand::None)
-                });
-        if unread {
+        if !self.reads_every_operand(test) {
             self.controls
                 .insert(drift_core::controls::UNREAD_EXIT.into());
         }
+    }
+
+    /// Every operand of the condition was read ([`Collector::claim_exit`]).
+    fn reads_every_operand(&self, test: &Expr) -> bool {
+        let mut conds = Vec::new();
+        self.conditions(test, &mut conds, 0, false);
+        !conds.is_empty()
+            && !conds
+                .iter()
+                .any(|(((source, _), compares, _, compared, _, _), _)| {
+                    *source == RawOperand::None && (!compared || *compares == RawOperand::None)
+                })
     }
 
     /// A `raise` or an error answer that only some requests reach and that is not the
@@ -2192,8 +2595,11 @@ impl<'t> Collector<'_, 't> {
             None => returned || !self.conds.is_empty(),
         };
         if unread {
-            self.controls
-                .insert(drift_core::controls::UNREAD_EXIT.into());
+            let control = match self.claimed_since.contains(&exit.range().start()) {
+                true => crate::raw::UNREAD_EXIT_MEASURED,
+                false => drift_core::controls::UNREAD_EXIT,
+            };
+            self.controls.insert(control.into());
         }
     }
 
@@ -2400,6 +2806,46 @@ impl<'t> Collector<'_, 't> {
                 if bare && last_name(&c.func).is_some_and(|n| CALLER_ACCESSORS.contains(&n)) {
                     return Some(None);
                 }
+                // What a token verifier hands back of a value of the caller:
+                // `jwt.decode(token, key, algorithms=[...])`.
+                if self
+                    .canon(&c.func)
+                    .as_ref()
+                    .and_then(dotted)
+                    .is_some_and(|d| TOKEN_DECODERS.contains(&d.as_str()))
+                    && let Some(token) = c.arguments.args.first()
+                    && let Some(source) = self.caller_source(token, depth + 1)
+                {
+                    return Some(source);
+                }
+                // An object built from a value of the caller alone:
+                // `TokenPayload(**payload)`.
+                if let ([], [only]) = (&*c.arguments.args, &*c.arguments.keywords)
+                    && only.arg.is_none()
+                    && let Some(source) = self.caller_source(&only.value, depth + 1)
+                {
+                    return Some(source);
+                }
+                // The row a primary key of the caller's names: `db.get(User,
+                // claims.sub)`, `User.objects.get(pk=claims["sub"])`.
+                if let Expr::Attribute(a) = c.func.as_ref()
+                    && a.attr.as_str() == "get"
+                {
+                    let key = match (&*c.arguments.args, &*c.arguments.keywords) {
+                        ([Expr::Name(_) | Expr::Attribute(_), key], []) => Some(key),
+                        ([], [k])
+                            if k.arg
+                                .as_ref()
+                                .is_some_and(|n| matches!(n.as_str(), "pk" | "id")) =>
+                        {
+                            Some(&k.value)
+                        }
+                        _ => None,
+                    };
+                    if let Some(source) = key.and_then(|k| self.caller_source(k, depth + 1)) {
+                        return Some(source);
+                    }
+                }
                 match c.func.as_ref() {
                     // `claims.get("venue_id")`, `session.get("org", None)`.
                     Expr::Attribute(a)
@@ -2471,6 +2917,71 @@ impl<'t> Collector<'_, 't> {
         }
     }
 
+    /// The value is the caller itself or the key of the caller's record
+    /// (`request.user`, `request.user.id`, `current_user.pk`, `get_jwt_identity()`,
+    /// a local bound to one), and nothing read off the caller (`request.user
+    /// .org_id`, `get_jwt()["venue_id"]`, `g.venue_id`): rows a query finds by it
+    /// are rows of this caller and of no one else, whatever the key is called.
+    pub(crate) fn caller_self(&self, e: &Expr) -> bool {
+        let e = match e {
+            Expr::Await(a) => a.value.as_ref(),
+            e => e,
+        };
+        // `str(x)`, `int(x)`: the value converted.
+        if let Expr::Call(c) = e
+            && let Expr::Name(n) = c.func.as_ref()
+            && matches!(n.id.as_str(), "str" | "int" | "UUID")
+            && c.arguments.args.len() == 1
+            && c.arguments.keywords.is_empty()
+        {
+            return self.caller_self(&c.arguments.args[0]);
+        }
+        if self.caller_value(e).is_none() {
+            return false;
+        }
+        // What the key is read off, where it is the key of a record: `.id`, `.pk`,
+        // and the same as an item (`user["id"]`, or `claims["sub"]`, the subject a
+        // token names).
+        let owner = match e {
+            Expr::Attribute(a) if matches!(a.attr.as_str(), "id" | "pk") => a.value.as_ref(),
+            Expr::Subscript(sub)
+                if matches!(sub.slice.as_ref(), Expr::StringLiteral(k)
+                    if matches!(k.value.to_str(), "id" | "pk" | "sub")) =>
+            {
+                sub.value.as_ref()
+            }
+            e => e,
+        };
+        match owner {
+            // `get_jwt_identity()`, `get_current_user()`: called with nothing.
+            Expr::Call(c) => c.arguments.is_empty() && self.caller_value(owner) == Some(None),
+            // A local bound to one; what a dependency gives a parameter; a name the
+            // file imports (`current_user` of flask_login). A name the module
+            // itself binds is a value of the module, whatever it is called.
+            Expr::Name(n) => match self.caller_locals.contains_key(n.id.as_str()) {
+                true => self.self_locals.contains(n.id.as_str()),
+                false => {
+                    matches!(self.operand(owner, 0).0, RawOperand::Dep(..))
+                        || matches!(self.resolve(n.id.as_str()), Some(RawBase::Import { .. }))
+                }
+            },
+            // `request.user`, `g.user`: the member that says the caller, read off
+            // what is no value of the caller itself.
+            Expr::Attribute(a) => {
+                names_caller(a.attr.as_str())
+                    && match self.caller_value(&a.value) {
+                        None => true,
+                        // A parameter whose annotation may name a dependency
+                        // (`request: Request`): the path is the caller's by its
+                        // own source all the same, whatever the annotation is.
+                        Some(Some(RawDep::Alias(_))) => self.caller_value(owner) == Some(None),
+                        Some(_) => false,
+                    }
+            }
+            _ => false,
+        }
+    }
+
     /// Where the value of an expression that is compared or filtered by comes from
     /// ([`drift_core::controls::SIDES`]): a value of the caller by the closed list
     /// ([`Collector::caller_value`]), what the request sent, a parameter, an
@@ -2498,10 +3009,63 @@ impl<'t> Collector<'_, 't> {
             .filter_map(|k| k.arg.as_ref().map(|a| (a.to_string(), &k.value)));
         // Every call, also one given nothing: a reader says what a parameter of
         // the callee was handed by every call of it.
-        let mut given: Vec<(String, RawSide)> = positional
-            .chain(keywords)
-            .map(|(key, value)| (key, self.side(value)))
-            .collect();
+        let one = |c: &Self, key: String, value: &Expr| {
+            let side = c.side(value);
+            // The caller itself, or the key of the caller's record: said
+            // apart from what is read off the caller.
+            let own = matches!(
+                side,
+                RawSide::Caller | RawSide::Gives(_) | RawSide::Annotated(..)
+            ) && c.caller_self(value);
+            // A bare name the file imports: the caller where it is no class of
+            // the repository, which the linker says (`current_user` of
+            // flask_login; not `User` of `app/models.py`).
+            let imported = match value {
+                Expr::Name(n)
+                    if own
+                        && !c.caller_locals.contains_key(n.id.as_str())
+                        && matches!(c.resolve(n.id.as_str()), Some(RawBase::Import { .. })) =>
+                {
+                    c.canon(value)
+                }
+                _ => None,
+            };
+            (
+                key,
+                match (own, imported) {
+                    (true, Some(r)) => RawSide::Own(Box::new(RawSide::Value(r))),
+                    (true, None) => RawSide::Own(Box::new(side)),
+                    (false, _) => side,
+                },
+            )
+        };
+        let mut given: Vec<(String, RawSide)> = Vec::new();
+        for (key, value) in positional.chain(keywords) {
+            // A dict written in place, every key a literal and nothing unpacked
+            // into it: each of its values, under `<argument>.<key>`
+            // (`Item.model_validate(item_in, update={"owner_id": user.id})`).
+            if let Expr::Dict(d) = value
+                && !d.items.is_empty()
+                && d.items
+                    .iter()
+                    .all(|i| matches!(&i.key, Some(Expr::StringLiteral(_))))
+            {
+                let mut written = BTreeSet::new();
+                for i in &d.items {
+                    let Some(Expr::StringLiteral(k)) = &i.key else {
+                        continue;
+                    };
+                    let k = k.value.to_str();
+                    // A key written twice holds the last value: not read.
+                    if written.insert(k.to_string()) {
+                        given.push(one(self, format!("{key}.{k}"), &i.value));
+                    } else {
+                        given.retain(|(x, _)| *x != format!("{key}.{k}"));
+                    }
+                }
+            }
+            given.push(one(self, key, value));
+        }
         let unpacked = c
             .arguments
             .args
@@ -2845,6 +3409,17 @@ impl<'t> Collector<'_, 't> {
                     RawOperand::Ref(r) => RawSide::Value(r),
                     RawOperand::Literal => RawSide::Literal,
                     RawOperand::Env => RawSide::Setting,
+                    // What the function was passed beyond its named parameters
+                    // (`kwargs["slug"]` of `def wrapper(request, *args,
+                    // **kwargs)`): a parameter's value as any other.
+                    RawOperand::None
+                        if self.frame_params.last().is_some_and(|f| {
+                            let n = n.id.as_str();
+                            f.all.iter().any(|p| p == n) && !f.named.iter().any(|p| p == n)
+                        }) =>
+                    {
+                        RawSide::Param(n.id.to_string(), None)
+                    }
                     RawOperand::None => RawSide::Unread,
                 }
             }
@@ -3055,13 +3630,20 @@ impl<'t> Collector<'_, 't> {
         };
         let mut conds = Vec::new();
         self.conditions(test, &mut conds, 0, false);
+        let roles = self.roles_beside(test, &conds, cond);
+        let mut role_sides = roles.iter().flat_map(|(sides, _)| sides.iter().cloned());
         for (((source, reads), compares, _, compared, op, sides), guard) in conds {
+            let role = role_operand(compared, &compares);
+            let role_side = match (&roles, role) {
+                (Some(_), true) => role_sides.next(),
+                _ => None,
+            };
             if matches!(source, RawOperand::Literal | RawOperand::Env)
                 || (source == RawOperand::None && compares == RawOperand::None)
             {
                 continue;
             }
-            if let Some((left, right)) = sides {
+            if let Some((left, right)) = sides.or(role_side.map(|s| (s, RawSide::Literal))) {
                 self.check_sides.insert(RawCheckSides {
                     source: source.clone(),
                     reads: reads.clone(),
@@ -3070,7 +3652,10 @@ impl<'t> Collector<'_, 't> {
                     right,
                 });
             }
-            let (condition, unless) = why(cond, guard);
+            let (condition, unless) = match &roles {
+                Some((_, words)) => why_beside_roles(role, words, guard),
+                None => why(cond, guard),
+            };
             self.raise_checks.insert(RawRaiseCheck {
                 source,
                 reads,
@@ -3353,6 +3938,95 @@ impl<'t> Collector<'_, 't> {
             }
         }
         out
+    }
+
+    /// Notes the rows a statement reads and by what ([`RawSymbol::rows`]): of each
+    /// expression the statement itself evaluates (not those of the statements
+    /// inside it), the classes it names where rows are read, and whether a filter of
+    /// it is by the caller itself.
+    pub(crate) fn note_rows(&mut self, stmt: &Stmt) {
+        if self.frames.is_empty() {
+            return;
+        }
+        let mut heads: Vec<&Expr> = Vec::new();
+        match stmt {
+            Stmt::Assign(a) => heads.push(&a.value),
+            Stmt::AnnAssign(a) => heads.extend(a.value.as_deref()),
+            Stmt::AugAssign(a) => heads.push(&a.value),
+            Stmt::Return(r) => heads.extend(r.value.as_deref()),
+            Stmt::Expr(x) => heads.push(&x.value),
+            Stmt::If(i) => {
+                heads.push(&i.test);
+                heads.extend(i.elif_else_clauses.iter().filter_map(|c| c.test.as_ref()));
+            }
+            Stmt::While(w) => heads.push(&w.test),
+            Stmt::For(f) => heads.push(&f.iter),
+            Stmt::With(w) => heads.extend(w.items.iter().map(|i| &i.context_expr)),
+            Stmt::Assert(a) => heads.push(&a.test),
+            Stmt::Raise(r) => heads.extend(r.exc.as_deref()),
+            _ => {}
+        }
+        for e in heads {
+            for row in self.rows_of(e) {
+                self.rows.insert(row);
+            }
+        }
+    }
+
+    /// What a branch taken on a role tests it of: the side of the member a test
+    /// asks to be set or to be a literal (`if current_user.is_superuser:`, `if
+    /// user.role == "admin":`), read as a refusing condition reads one
+    /// ([`role_test`]); `held`: the branch is the one taken where the test holds
+    /// (false for the `else` of `if not user.is_admin:`). None for any other test,
+    /// for the key of the caller's own record (every caller has one) and for what
+    /// says only that a caller is signed in ([`super::verdict::says_status`]).
+    pub(crate) fn role_branch(&self, test: &Expr, held: bool) -> Option<RawSide> {
+        let member = role_test(test, held)?;
+        let status =
+            matches!(member, Expr::Attribute(a) if super::verdict::says_status(a.attr.as_str()));
+        (!status && !self.caller_self(member)).then(|| self.side(member))
+    }
+
+    /// The rows one expression reads, by the classes it names, and by what.
+    fn rows_of(&self, e: &Expr) -> Vec<(RawRef, RawRows)> {
+        let mut read = RowsRead {
+            c: self,
+            narrowing: 0,
+            models: Vec::new(),
+            own: None,
+            asked: false,
+            from: Vec::new(),
+        };
+        read.visit_expr(e);
+        let (models, own, asked, from) = (read.models, read.own, read.asked, read.from);
+        models
+            .into_iter()
+            .map(|model| {
+                let by = match (&own, from.is_empty(), self.role_branches.last()) {
+                    (Some((key, side)), _, _) => RawRows::Own(key.clone(), side.clone(), asked),
+                    (None, false, _) => RawRows::From(from.clone()),
+                    (None, true, Some(role)) => RawRows::ByRole(role.clone()),
+                    (None, true, None) => RawRows::Any,
+                };
+                (model, by)
+            })
+            .collect()
+    }
+
+    /// `e` looks the caller up in what the request names, on rows of one class: a
+    /// query filtered by the caller itself and by a value read off a parameter or
+    /// off what the request sent ([`drift_core::controls::LOOKUP_OF`]). The class,
+    /// marked as that lookup: what a site of the body is reached after
+    /// ([`super::held`]) where the query is written on a value the facts give no
+    /// name.
+    pub(crate) fn caller_lookup(&self, e: &Expr) -> Option<RawRef> {
+        match self.rows_of(e).as_slice() {
+            [(model, RawRows::Own(_, _, true))] => Some(RawRef {
+                base: model.base.clone(),
+                member: format!("{}{}", model.member, drift_core::controls::LOOKUP_OF),
+            }),
+            _ => None,
+        }
     }
 
     /// Data-access calls whose filter names a tenant-like key ([`RawScoped`]): keyword
@@ -3719,6 +4393,10 @@ fn path_names(e: &Expr) -> impl Iterator<Item = &str> {
 /// its older `get_jwt_claims()`, `get_raw_jwt()`; `auth.current_user()`
 /// (flask_httpauth) and `current_user_id()` (flask_praetorian). A function of the
 /// repository under one of these names is read the same.
+/// Calls that verify a token and hand back what it carries: of a value of the
+/// caller, a value of the caller.
+const TOKEN_DECODERS: &[&str] = &["jwt.decode", "jwt.api_jwt.decode", "jose.jwt.decode"];
+
 const CALLER_ACCESSORS: &[&str] = &[
     "get_jwt",
     "get_jwt_identity",
@@ -4161,6 +4839,91 @@ fn why(cond: &Option<(&'static str, String)>, guard: Option<String>) -> (String,
     }
 }
 
+/// The role tests of a condition that refuses a caller unless a role or one
+/// comparison holds ([`drift_core::not_always::ROLE_ALTERNATIVE`]): an effective
+/// `and` (`a and b`, `not (a or b)`) every operand of which but one tests that a
+/// member is not set or is not a literal (`not user.is_superuser`, `user.role !=
+/// "admin"`, `user.role not in ("admin", "staff")`), the one left being a
+/// comparison. Each role test by the member it reads. None for any other condition.
+fn role_alternatives(test: &Expr) -> Option<Vec<&Expr>> {
+    let (values, negated) = match test {
+        Expr::BoolOp(b) if matches!(b.op, ast::BoolOp::And) => (&b.values, false),
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => match u.operand.as_ref() {
+            Expr::BoolOp(b) if matches!(b.op, ast::BoolOp::Or) => (&b.values, true),
+            _ => return None,
+        },
+        _ => return None,
+    };
+    let roles: Vec<&Expr> = values
+        .iter()
+        .filter_map(|v| role_test(v, negated))
+        .collect();
+    let rest: Vec<&Expr> = values
+        .iter()
+        .filter(|v| role_test(v, negated).is_none())
+        .collect();
+    let comparison = |v: &Expr| match v {
+        Expr::Compare(c) => c.ops.len() == 1,
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => {
+            matches!(u.operand.as_ref(), Expr::Compare(c) if c.ops.len() == 1)
+        }
+        _ => false,
+    };
+    (!roles.is_empty() && rest.len() == 1 && comparison(rest[0])).then_some(roles)
+}
+
+/// The member a value tests to be unset, or to be other than a literal, where the
+/// condition it stands in refuses on it ([`role_alternatives`]); `negated`: the
+/// condition is the negation of what is written.
+fn role_test(v: &Expr, negated: bool) -> Option<&Expr> {
+    let member = |e: &Expr| matches!(e, Expr::Attribute(_));
+    let literal = |e: &Expr| match e {
+        Expr::StringLiteral(_) => true,
+        Expr::Tuple(t) => t.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        Expr::List(l) => l.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        Expr::Set(l) => l.elts.iter().all(|x| matches!(x, Expr::StringLiteral(_))),
+        _ => false,
+    };
+    let (inner, negated) = match v {
+        Expr::UnaryOp(u) if matches!(u.op, ast::UnaryOp::Not) => (u.operand.as_ref(), !negated),
+        other => (other, negated),
+    };
+    match inner {
+        e if member(e) && negated => Some(e),
+        Expr::Compare(c)
+            if c.ops.len() == 1 && member(c.first_operand()) && literal(c.second_operand()) =>
+        {
+            let differs = matches!(c.ops[0], ast::CmpOp::NotEq | ast::CmpOp::NotIn);
+            let same = matches!(c.ops[0], ast::CmpOp::Eq | ast::CmpOp::In);
+            ((differs && !negated) || (same && negated)).then_some(c.first_operand())
+        }
+        _ => None,
+    }
+}
+
+/// The operand is a role test as [`role_alternatives`] reads one: a test of a value
+/// itself, or a comparison with a literal.
+fn role_operand(compared: bool, compares: &RawOperand) -> bool {
+    !compared || *compares == RawOperand::Literal
+}
+
+/// [`why`] for an operand of a condition whose role tests are `roles`
+/// ([`role_alternatives`]): the comparison is decided by the role or by itself, and
+/// says which role; the role test says it is one. `words`: the roles, as written.
+fn why_beside_roles(role: bool, words: &[String], guard: Option<String>) -> (String, String) {
+    use drift_core::not_always::{ALTERNATIVE_ROLE, ROLE_ALTERNATIVE};
+    match role {
+        true => (
+            ALTERNATIVE_ROLE.to_string(),
+            guard.map_or_else(String::new, |g| clip(format!("only when {g}"))),
+        ),
+        false => (
+            ROLE_ALTERNATIVE.to_string(),
+            clip(format!("not when {}", words.join(" or "))),
+        ),
+    }
+}
+
 /// At most [`drift_core::not_always::MAX_WORDS`] characters.
 fn clip(s: String) -> String {
     let max = drift_core::not_always::MAX_WORDS;
@@ -4238,4 +5001,23 @@ fn literal_value(e: &Expr) -> bool {
             | Expr::NoneLiteral(_)
             | Expr::EllipsisLiteral(_)
     )
+}
+
+/// The test under its `not`s.
+fn unnegated(test: &Expr) -> &Expr {
+    match test {
+        Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => unnegated(&u.operand),
+        other => other,
+    }
+}
+
+/// What the user object of a framework says of being signed in (Django's and
+/// Flask-Login's users both hold the two): `True` for a signed-in user alone, and
+/// `True` for the anonymous one alone.
+const AUTHENTICATED: &str = "is_authenticated";
+const ANONYMOUS: &str = "is_anonymous";
+
+/// The read is the framework's own word for being signed in.
+fn states_signed_in(read: &Expr) -> bool {
+    matches!(read, Expr::Attribute(a) if [AUTHENTICATED, ANONYMOUS].contains(&a.attr.as_str()))
 }

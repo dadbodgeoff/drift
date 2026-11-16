@@ -4,6 +4,7 @@
 //! modules and re-export chains -> framework adapters -> [`RepoFacts`].
 
 pub mod arena;
+pub mod filerouters;
 mod flow;
 mod index;
 pub mod lint;
@@ -230,6 +231,7 @@ fn scan_inner(
         context_files: vec![],
         key_files: vec![],
         integration_files: vec![],
+        generated_clients: repo::generated_clients(&config),
     };
     repo::pair_tests(&mut repo);
     repo::mark_cli_entries(&mut repo, root, &config);

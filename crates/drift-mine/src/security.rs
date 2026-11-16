@@ -32,6 +32,12 @@ pub const INPUT_SINKS: &[&str] = &[
     "dynamic_redirect",
     "dynamic_fetch",
     "unsafe_deserialize",
+    "path_traversal",
+    "template_injection",
+    "nosql_injection",
+    "mass_assignment",
+    "dynamic_regex",
+    "dynamic_key_write",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -40,6 +46,31 @@ pub struct SinkUse {
     pub path: String,
     pub symbol: String,
     pub line: u32,
+    /// The operation is given a value read off a parameter of the function it is in
+    /// ([`drift_core::controls::SINK_FED`]): of a handler, what the request sent.
+    /// Not serialised when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fed: bool,
+}
+
+/// What a row says of an operation that is given a value read off a parameter.
+pub const FED: &str = " (fed by a parameter)";
+
+/// The symbol's operation of this kind is given a value read off a parameter of
+/// its function ([`drift_core::controls::SINK_FED`]).
+fn sink_fed(s: &Symbol, kind: &str) -> bool {
+    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
+    s.controls.iter().any(|c| {
+        c.strip_prefix(SINK_FED_MADE)
+            .or_else(|| c.strip_prefix(SINK_FED))
+            .is_some_and(|k| k == kind)
+    })
+}
+
+/// The facts of a body that say what it does with its parameters: a symbol's
+/// controls, or a method's own ([`drift_core::Member::unread`]).
+fn flow_facts<'a>(node: &Node<'a>) -> &'a [String] {
+    node.member.map_or(&node.symbol.controls, |m| &m.unread)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -47,6 +78,10 @@ pub struct Reach {
     pub kind: String,
     /// Internal call chain from the entry point to the symbol with the sink, inclusive.
     pub via: Vec<String>,
+    /// The operation is given a value read off a parameter of the function it is in
+    /// ([`SinkUse::fed`]). Not serialised when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fed: bool,
 }
 
 /// Where an entry point is reachable from, as far as the repository says. Ordered as
@@ -71,6 +106,317 @@ impl Exposure {
             Exposure::Unknown => "unknown",
         }
     }
+}
+
+/// One registration written as a route is that Drift did not list
+/// ([`Inventory::unlisted`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct Unlisted {
+    pub path: String,
+    pub line: u32,
+    /// A function that reads a request and answers it, and that no listed entry
+    /// point reaches ([`unreached_handlers`]): its name. Empty for a registration
+    /// found where it is written. Not serialised when empty.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub symbol: String,
+}
+
+/// The share of the entry points that query one thing and filter it by a value of
+/// the caller, from which the ones that filter it by none are listed ([`ScopeGap`]).
+pub const SCOPE_GAP_SHARE: f64 = 0.7;
+/// The fewest entry points that must query the thing for that to be said.
+pub const SCOPE_GAP_MIN: usize = 5;
+
+/// One entry point named in a [`ScopeGap`].
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct ScopeRef {
+    pub path: String,
+    pub symbol: String,
+    pub line: u32,
+    pub kind: String,
+    pub method: Option<String>,
+    pub route: Option<String>,
+}
+
+/// What the repository does to keep callers to their own rows, learned from the
+/// repository and from nothing else: most of the entry points that query one thing
+/// (`resource`: what the query is called on, as the facts name it) give the query a
+/// value of the caller under one key (`key`: `where.userId`), and some query it and
+/// give it no value of the caller under any key. The exceptions are facts to look
+/// at, not verdicts: an administrator's route, a job and a lookup that a check
+/// follows are among them.
+///
+/// No list says which key scopes or which thing holds rows: the key is whichever
+/// one the repository's own queries fill with the caller's value, and the thing is
+/// whatever they are called on.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct ScopeGap {
+    pub resource: String,
+    pub key: String,
+    /// The entry points that query the resource: those that filter it by the key,
+    /// and the exceptions.
+    pub members: usize,
+    pub scoped: usize,
+    /// The entry points that query it and filter it by no value of the caller.
+    pub exceptions: Vec<ScopeRef>,
+    /// The first entry point (by path) that filters it by the key: one to copy from.
+    pub example: ScopeRef,
+}
+
+/// What a query is called on: the callee without its last member
+/// (`src/db.ts#prisma.note.findMany` -> `src/db.ts#prisma.note`). None for a callee
+/// that is called on nothing (a function).
+fn queried(callee: &str) -> Option<&str> {
+    let (_, path) = callee.split_once('#')?;
+    let cut = path.trim_end_matches("()").rfind('.')?;
+    (cut > 0).then(|| &callee[..callee.len() - path.len() + cut])
+}
+
+/// [`ScopeGap`]s of the repository: for each request entry point, what the bodies it
+/// reaches query and what they filter by a value of the caller
+/// ([`drift_core::controls::FILTER_VALUE`]); then, for each thing queried, the key
+/// most of them filter it by and the entry points that filter it by none.
+fn scope_gaps<'a>(
+    repo: &'a RepoFacts,
+    index: &Index<'a>,
+    cx: &crate::practices::Cx<'a>,
+) -> Vec<ScopeGap> {
+    struct Seen {
+        at: ScopeRef,
+        queried: BTreeSet<String>,
+        scoped: BTreeSet<(String, String)>,
+    }
+    let mut entries: Vec<Seen> = Vec::new();
+    for f in &repo.files {
+        if is_test_path(&f.path) {
+            continue;
+        }
+        for e in &f.entry_points {
+            if !crate::practices::REQUEST_KINDS.contains(&e.kind.as_str()) || e.kind == "job" {
+                continue;
+            }
+            let Some((origin, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let mut seen = Seen {
+                at: ScopeRef {
+                    path: f.path.clone(),
+                    symbol: e.symbol.clone(),
+                    line: s.line,
+                    kind: e.kind.clone(),
+                    method: e.method.clone(),
+                    route: e.route.clone(),
+                },
+                queried: BTreeSet::new(),
+                scoped: BTreeSet::new(),
+            };
+            for node in index.reach_nodes((origin, s)) {
+                let args = node.member.map_or(&node.symbol.args, |m| &m.args);
+                for a in args {
+                    // `<callee>@<index>:<key path>`: a call given an object.
+                    if let Some((callee, _)) = a.rsplit_once('@')
+                        && let Some(r) = queried(callee)
+                    {
+                        seen.queried.insert(r.to_string());
+                    }
+                }
+                for fact in flow_facts(&node) {
+                    let Some(rest) = fact.strip_prefix(drift_core::controls::FILTER_VALUE) else {
+                        continue;
+                    };
+                    let parts: Vec<&str> = rest.split('\t').collect();
+                    let [callee, key, side] = parts.as_slice() else {
+                        continue;
+                    };
+                    let Some(r) = queried(callee) else { continue };
+                    seen.queried.insert(r.to_string());
+                    if crate::practices::side_is_callers(cx, side) {
+                        seen.scoped.insert((r.to_string(), key.to_string()));
+                    }
+                }
+            }
+            if !seen.queried.is_empty() {
+                entries.push(seen);
+            }
+        }
+    }
+    // Each thing queried, and the keys it is filtered by with the caller's value.
+    let mut keys: BTreeMap<&str, BTreeMap<&str, usize>> = BTreeMap::new();
+    for e in &entries {
+        for (r, k) in &e.scoped {
+            *keys.entry(r).or_default().entry(k).or_default() += 1;
+        }
+    }
+    let mut out = Vec::new();
+    for (resource, by_key) in keys {
+        // The key most of them use; the first by name where two tie.
+        let Some((key, _)) = by_key.iter().max_by(|a, b| a.1.cmp(b.1).then(b.0.cmp(a.0))) else {
+            continue;
+        };
+        let with: Vec<&Seen> = entries
+            .iter()
+            .filter(|e| e.scoped.iter().any(|(r, k)| r == resource && k == key))
+            .collect();
+        let mut exceptions: Vec<ScopeRef> = entries
+            .iter()
+            .filter(|e| {
+                e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
+            })
+            .map(|e| e.at.clone())
+            .collect();
+        let members = with.len() + exceptions.len();
+        if exceptions.is_empty()
+            || members < SCOPE_GAP_MIN
+            || (with.len() as f64) < SCOPE_GAP_SHARE * members as f64
+        {
+            continue;
+        }
+        exceptions.sort();
+        let Some(example) = with.iter().map(|e| &e.at).min().cloned() else {
+            continue;
+        };
+        out.push(ScopeGap {
+            resource: resource.to_string(),
+            key: key.to_string(),
+            members,
+            scoped: with.len(),
+            exceptions,
+            example,
+        });
+    }
+    out.sort();
+    out
+}
+
+/// The functions of production code that read what a request sent and answer it
+/// (a response built in their own body), and that nothing listed reaches: no entry
+/// point is one, calls one through any number of the repository's own calls, or
+/// runs one as a wrapper, a decorator or a middleware. Whatever serves such a
+/// function, Drift did not list it: a route of a framework it has no adapter for, a
+/// handler registered where it does not read. Said by what the function does, never
+/// by a name or a framework, so it holds for any of them.
+///
+/// Not a function the inventory would not list as an entry point either: a method
+/// of a class, a test, demonstration code.
+fn unreached_handlers(
+    repo: &RepoFacts,
+    index: &Index<'_>,
+    non_production: &NonProduction,
+) -> Vec<Unlisted> {
+    use drift_core::controls::READS_INPUT;
+    let shaped = |s: &Symbol| {
+        s.kind == drift_core::SymbolKind::Function
+            && !s.responses.is_empty()
+            && s.controls.iter().any(|c| c == READS_INPUT)
+    };
+    let production = |f: &FileFacts| {
+        !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+    };
+    if !repo
+        .files
+        .iter()
+        .any(|f| production(f) && f.symbols.iter().any(shaped))
+    {
+        return Vec::new();
+    }
+    // What the entry points reach: themselves, what runs around them, and every
+    // function of the repository any of those calls.
+    let mut reached: BTreeSet<String> = BTreeSet::new();
+    let mut queue: VecDeque<Node> = VecDeque::new();
+    let mut around: Vec<&str> = Vec::new();
+    for f in &repo.files {
+        for e in &f.entry_points {
+            let Some((origin, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let node = index.start(origin, s);
+            if reached.insert(node.key()) {
+                queue.push_back(node);
+            }
+            reached.insert(format!("{}#{}", origin.path, s.name));
+            around.extend(s.wraps.iter().map(|w| w.wrapper.as_str()));
+            around.extend(s.app_middleware.iter().map(String::as_str));
+            around.extend(s.decorator_args.iter().map(String::as_str));
+        }
+        around.extend(
+            f.mounts
+                .iter()
+                .flat_map(|m| m.wraps.iter().map(|w| w.wrapper.as_str())),
+        );
+        around.extend(
+            f.mounts
+                .iter()
+                .flat_map(|m| m.app_middleware.iter().map(String::as_str)),
+        );
+    }
+    for a in around {
+        if let Some(node) = index.target(a)
+            && reached.insert(node.key())
+        {
+            queue.push_back(node);
+        }
+    }
+    while let Some(node) = queue.pop_front() {
+        for c in node.calls() {
+            // A function written in a value and listed under the value's name
+            // (`Handler.show` of a constructor that assigns it on `this`, of an
+            // object) is reached by the reference that names it.
+            let named = crate::mine::norm_ref(c);
+            reached.insert(
+                named
+                    .trim_end_matches("(ref)")
+                    .trim_end_matches("()")
+                    .to_string(),
+            );
+            if let Some(next) = index.target(c)
+                && reached.insert(next.key())
+            {
+                // A class reached is reached with its methods' own callees.
+                queue.push_back(next);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for f in repo.files.iter().filter(|f| production(f)) {
+        // A file that lists entry points of its own is read: what it holds beside
+        // them is theirs to reach or a helper.
+        if !f.entry_points.is_empty() {
+            continue;
+        }
+        for s in f.symbols.iter().filter(|s| shaped(s)) {
+            let key = format!("{}#{}", f.path, s.name);
+            if !reached.contains(&key) {
+                out.push(Unlisted {
+                    path: f.path.clone(),
+                    line: s.line,
+                    symbol: s.name.clone(),
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Where an entry point that reaches a risky operation stands in the list a person
+/// reads top down ([`render_at`]): the guard (none found, not read, a guard), then
+/// where it is reachable from (internet-facing, unknown, internal), then whether an
+/// operation it reaches is fed by what a request sent ([`INPUT_SINKS`]). Lower
+/// first. A rank, not a verdict: it orders facts and judges none.
+fn review_rank(e: &EntryRow) -> (u8, Exposure, bool, bool) {
+    let guard = match (e.guards.is_empty(), e.opaque.is_empty()) {
+        _ if e.local => 3,
+        (true, true) => 0,
+        (true, false) => 1,
+        (false, _) => 2,
+    };
+    let input = e
+        .reaches
+        .iter()
+        .any(|r| INPUT_SINKS.contains(&r.kind.as_str()));
+    // Before all of that kind: one where the operation is given a value read off a
+    // parameter, which for a handler is what the request sent.
+    let fed = e.reaches.iter().any(|r| r.fed);
+    (guard, e.exposure, !fed, !input)
 }
 
 /// One directory and what the repository says about its exposure.
@@ -3532,6 +3878,44 @@ pub struct Inventory {
     /// serialised when empty.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub skipped: Vec<drift_core::Skipped>,
+    /// Registrations written as a route is that Drift did not list
+    /// ([`drift_core::FileFacts::unlisted_routes`]), in production code: a route in
+    /// one may be served and is not in the inventory. Sorted; not serialised when
+    /// empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unlisted: Vec<Unlisted>,
+    /// What most entry points that query it filter by a value of the caller, with
+    /// the entry points that query it and filter by none ([`ScopeGap`]). Sorted; not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub scope_gaps: Vec<ScopeGap>,
+    /// The bodies that send rows back whole where other code of the repository
+    /// withholds a field of the same rows ([`crate::whole_rows`]). Sorted; not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub whole_rows: Vec<crate::whole_rows::WholeRow>,
+    /// What the repository's CI workflows do with what an outsider controls
+    /// ([`crate::workflows`]): a pull request's code checked out where the
+    /// repository's secrets are, text of the event interpolated into a shell step.
+    /// Filled by the caller, which knows where the repository is. Not serialised
+    /// when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub workflows: Vec<crate::workflows::WorkflowFinding>,
+    /// What the repository's manifests install that nothing fixes
+    /// ([`crate::dependencies`]): a repository named by a branch, an archive at a
+    /// URL with no digest, a source over plain HTTP, a second package index, a
+    /// download handed to an interpreter while an image is built or a package is
+    /// installed. Filled by the caller, which knows where the repository is. Not
+    /// serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<crate::dependencies::DependencyFinding>,
+    /// What the repository's Kubernetes manifests open ([`crate::kubernetes`]): a
+    /// path from outside the cluster, a Service with an address outside it, a
+    /// workload given the node it runs on, a Secret whose values are written in the
+    /// file, a role over everything. Filled by the caller, which knows where the
+    /// repository is. Not serialised when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub cluster: Vec<crate::kubernetes::ClusterFinding>,
     /// What could not be read around the inventory, so a part of it is missing (a
     /// `.drift/conventions.yaml` that does not parse: shared guards are listed without
     /// their conventions). Not serialised when empty.
@@ -3950,8 +4334,48 @@ pub fn authenticating_root(ctx: &crate::context::RepoContext, wrapper: &str) -> 
                 && (has(s, drift_core::controls::REJECTS_SOME)
                     || has(s, drift_core::controls::REFUSAL_NOT_RETURNED)))
                 && rejects(s))
+            // It throws for every request for which what gives the caller gave
+            // nothing, whatever it throws.
+            || (since && refuses_without_identity(ctx, s).is_some())
     })
     .filter(|root| !ctx.definition(root).is_some_and(overridden))
+}
+
+/// `giver` hands back who calls, or nothing: a library's session read
+/// ([`crate::practices::libraries::authn_callee`]); a function of the repository
+/// whose every return gives what was made of a credential the request carries
+/// ([`drift_core::controls::RETURNS_CREDENTIAL`]) or a value of the caller
+/// ([`drift_core::controls::RETURNS_CALLER`]). Read from what the function does:
+/// no word of its name is asked.
+fn gives_identity(ctx: &crate::context::RepoContext, giver: &str) -> bool {
+    let g = crate::mine::norm_ref(giver);
+    if external(&g) {
+        return crate::practices::libraries::authn_callee(&g);
+    }
+    let name = g.rsplit_once('#').map_or(&*g, |(_, n)| n);
+    ctx.definition(&g).is_some_and(|d| {
+        d.name == name
+            && d.controls.iter().any(|c| {
+                c == drift_core::controls::RETURNS_CREDENTIAL
+                    || c == drift_core::controls::RETURNS_CALLER
+                    || c == drift_core::controls::GIVES_CALLER
+            })
+    })
+}
+
+/// The body throws for every request for which what gives the caller gave
+/// nothing ([`drift_core::controls::REFUSES_WITHOUT`]): some test of it is on a
+/// value each of whose givers hands back who calls or nothing
+/// ([`gives_identity`]). The first such giver.
+pub(crate) fn refuses_without_identity<'a>(
+    ctx: &crate::context::RepoContext,
+    s: &'a Symbol,
+) -> Option<&'a str> {
+    s.controls
+        .iter()
+        .filter_map(|c| c.strip_prefix(drift_core::controls::REFUSES_WITHOUT))
+        .find(|by| !by.is_empty() && by.split('\t').all(|g| gives_identity(ctx, g)))
+        .and_then(|by| by.split('\t').next())
 }
 
 /// The body rejects a caller ([`drift_core::controls::REJECTS_CALLER`]) or throws an
@@ -4434,6 +4858,17 @@ pub fn library_guard_in(ctx: &crate::context::RepoContext, canonical: &str) -> b
     if ctx.since_measured()
         && crate::mine::norm_ref(canonical).trim_end_matches("()")
             == "pkg:starlette#authentication.requires"
+    {
+        return true;
+    }
+    // Every export the guard lists read the call shape of
+    // ([`drift_core::guard_lists::library_guard_export`]: express-jwt's default export
+    // of the versions before 7, as its `expressjwt`): one list, for the readings
+    // that prove a guard by its shape.
+    if ctx.since_measured()
+        && drift_core::guard_lists::library_guard_export(
+            crate::mine::norm_ref(canonical).trim_end_matches("()"),
+        )
     {
         return true;
     }
@@ -5337,53 +5772,77 @@ fn decorator_metadata<'a>(
     keys
 }
 
-/// The metadata keys whose presence on a route makes the guard class let it through
-/// ([`drift_core::controls::OPENS_FOR_METADATA`]), each with where the guard reads
-/// it (`handler`, `class`, `any`), and whether the guard reads metadata in a way
-/// that is not read ([`drift_core::controls::METADATA_UNREAD`]). A class with no
-/// `canActivate` of its own runs its base's; a library's class is not read.
+/// What a guard class consults of the route it runs for ([`guard_metadata`]).
+#[derive(Default)]
+struct GuardMetadata<'a> {
+    /// The keys whose presence makes the guard let the route through
+    /// ([`drift_core::controls::OPENS_FOR_METADATA`]), each with where it is read
+    /// (`handler`, `class`, `any`).
+    opens: Vec<(&'a str, &'a str)>,
+    /// The keys it reads and uses in a way that is not read
+    /// ([`drift_core::controls::READS_METADATA`]), the same way.
+    reads: Vec<(&'a str, &'a str)>,
+    /// It reads metadata where neither the key nor the use is read
+    /// ([`drift_core::controls::METADATA_UNREAD`]).
+    unread: bool,
+}
+
+/// What the guard class `guard` consults of a route's metadata. A class with no
+/// `canActivate` of its own runs its base's; a library's class is not read, but for
+/// `@nestjs/passport`'s, whose `canActivate` reads no route metadata: what it calls
+/// of the class (`getRequest`, `handleRequest`) is read with the class.
 fn guard_metadata<'a>(
     ctx: &crate::context::RepoContext<'a>,
     guard: &str,
     depth: usize,
-) -> (Vec<(&'a str, &'a str)>, bool) {
+) -> GuardMetadata<'a> {
     let passport = |r: &str| r.trim_end_matches("()") == PASSPORT_AUTH_GUARD;
     let g = crate::mine::norm_ref(guard);
     let g = g.trim_end_matches("()");
     // A library's class: what it does with a route's metadata is not read.
     let Some(def) = (!external(g)).then(|| ctx.definition(g)).flatten() else {
-        return (Vec::new(), true);
+        return GuardMetadata {
+            unread: true,
+            ..GuardMetadata::default()
+        };
     };
-    let mut opens: Vec<(&str, &str)> = def
-        .controls
-        .iter()
-        .filter_map(|c| c.strip_prefix(drift_core::controls::OPENS_FOR_METADATA))
-        .filter_map(|c| c.split_once(':'))
-        .collect();
-    let mut unread = def.kind != drift_core::SymbolKind::Class
-        || def
-            .controls
+    let keyed = |start: &str| -> Vec<(&'a str, &'a str)> {
+        def.controls
             .iter()
-            .any(|c| c == drift_core::controls::METADATA_UNREAD);
+            .filter_map(|c| c.strip_prefix(start))
+            .filter_map(|c| c.split_once(':'))
+            .collect()
+    };
+    let mut out = GuardMetadata {
+        opens: keyed(drift_core::controls::OPENS_FOR_METADATA),
+        reads: keyed(drift_core::controls::READS_METADATA),
+        unread: def.kind != drift_core::SymbolKind::Class
+            || def
+                .controls
+                .iter()
+                .any(|c| c == drift_core::controls::METADATA_UNREAD),
+    };
     let own = def.members.iter().any(|m| m.name == "canActivate");
     for base in def.wraps.iter().filter(|w| w.kind == WrapKind::Extends) {
         let b = crate::mine::norm_ref(&base.wrapper);
         // `@nestjs/passport`'s `canActivate` reads no route metadata: behind a
-        // `canActivate` of the class's own that was read, it changes nothing.
-        if passport(&b) && own {
+        // `canActivate` of the class's own, or run as the class's, it changes
+        // nothing.
+        if passport(&b) && (own || ctx.since_measured()) {
             continue;
         }
         // Its own `canActivate` may run the base's, or not: what the base consults
         // is this guard's only where the base's method is the one that runs.
         if own || depth >= 3 {
-            unread = true;
+            out.unread = true;
             continue;
         }
-        let (inherited, base_unread) = guard_metadata(ctx, &b, depth + 1);
-        opens.extend(inherited);
-        unread |= base_unread;
+        let inherited = guard_metadata(ctx, &b, depth + 1);
+        out.opens.extend(inherited.opens);
+        out.reads.extend(inherited.reads);
+        out.unread |= inherited.unread;
     }
-    (opens, unread)
+    out
 }
 
 /// The decorators written on a Nest route, each with whether it is written on the
@@ -5446,7 +5905,11 @@ pub fn nest_opt_out<'a>(
     if metadata.is_empty() {
         return NestOptOut::Applies;
     }
-    let (opens, mut unsure) = guard_metadata(ctx, guard, 0);
+    let GuardMetadata {
+        opens,
+        reads,
+        unread: mut unsure,
+    } = guard_metadata(ctx, guard, 0);
     for (decorator, on_class, keys) in &metadata {
         for k in keys {
             if *k == "?" {
@@ -5470,6 +5933,11 @@ pub fn nest_opt_out<'a>(
                     unsure = true;
                 }
             }
+            // A key the guard reads and uses in a way that is not read: what the
+            // decorator sets may change what the guard does for this route.
+            unsure |= reads
+                .iter()
+                .any(|(_, key)| *key == k || key.starts_with('"') != k.starts_with('"'));
         }
         // Written to open the route, by the decorator's name or by the text of a
         // key it sets (`@SetMetadata("isPublic", true)`): something not read may
@@ -5785,6 +6253,17 @@ fn guards_and_wrappers(
         {
             continue;
         }
+        // The call that built the route's handler, where its callee hands back the
+        // function written in it and that function serves the request: the
+        // handler's body, read below.
+        if crate::guard_position::builds_handler(cx, m)
+            && s.calls.iter().any(|c| {
+                c.strip_suffix("()(ref)")
+                    .is_some_and(|made_by| crate::mine::norm_ref(made_by) == same)
+            })
+        {
+            continue;
+        }
         match read_route_middleware(cx, file, s, m) {
             AppMiddleware::Guard(g, _) => {
                 by_middleware = true;
@@ -5997,7 +6476,7 @@ fn guards_and_wrappers(
     // (What a request handler's body may do to its caller is asked of request
     // entry points, as the practice map asks it.)
     let request = crate::practices::REQUEST_KINDS.contains(&entry.kind.as_str());
-    let (in_body, unproven) = body_guards(ctx, s, python, request);
+    let (in_body, unproven) = body_guards(cx, s, python, request);
     guards.extend(in_body);
     opaque.extend(unproven);
     if nest {
@@ -6204,11 +6683,12 @@ pub const BODY_CHECK: &str = " (body check)";
 /// Second, the calls that look like a guard and are not proven to reject
 /// ([`BodyCall::Unproven`]): never guards, they go to [`EntryRow::opaque`].
 fn body_guards(
-    ctx: &crate::context::RepoContext,
+    cx: &crate::practices::Cx<'_>,
     s: &Symbol,
     python: bool,
     request: bool,
 ) -> (Vec<String>, Vec<String>) {
+    let ctx = cx.context();
     let mut bodies: Vec<&Symbol> = vec![s];
     let mut level: Vec<&Symbol> = vec![s];
     for _ in 0..2 {
@@ -6217,6 +6697,14 @@ fn body_guards(
             for c in &b.calls {
                 let Some(r) = c.strip_suffix("(ref)") else {
                     continue;
+                };
+                // What a call of a function that hands back the function written
+                // in it built: that body ([`crate::practices::common::bodies`]).
+                let r = match r.strip_suffix("()") {
+                    Some(made_by) if crate::guard_position::returns_function(cx, made_by) => {
+                        made_by
+                    }
+                    _ => r,
                 };
                 if external(r) || bodies.len() >= 8 {
                     continue;
@@ -6267,6 +6755,13 @@ fn body_guards(
                 continue;
             }
             out.push(format!("{what}{BODY_CHECK}"));
+        }
+        // TypeScript: the body throws where what gives the caller gave nothing.
+        if !python
+            && ctx.since_measured()
+            && let Some(giver) = refuses_without_identity(ctx, b)
+        {
+            out.push(format!("{}{BODY_CHECK}", short(giver)));
         }
         // TypeScript: a branch on the caller's value hands back what was not read.
         for c in &b.controls {
@@ -6571,23 +7066,71 @@ impl<'a> Index<'a> {
         }
     }
 
+    /// The bodies `start` runs: itself and what it calls, through at most
+    /// [`MAX_HOPS`] internal calls, each once.
+    fn reach_nodes(&self, start: (&'a FileFacts, &'a Symbol)) -> Vec<Node<'a>> {
+        let first = self.start(start.0, start.1);
+        let mut seen: BTreeSet<String> = BTreeSet::from([first.key()]);
+        let mut out = Vec::new();
+        let mut queue: VecDeque<(Node, usize)> = VecDeque::from([(first, 0)]);
+        while let Some((node, hops)) = queue.pop_front() {
+            if hops < MAX_HOPS {
+                for c in node.calls() {
+                    if let Some(next) = self.target(c)
+                        && seen.insert(next.key())
+                    {
+                        let same = std::ptr::eq(next.symbol, node.symbol);
+                        queue.push_back((next, hops + usize::from(!same)));
+                    }
+                }
+            }
+            out.push(node);
+        }
+        out
+    }
+
     /// Sinks reached from `start` through at most [`MAX_HOPS`] internal calls,
     /// one shortest chain per sink kind.
     fn reaches(&self, start: (&'a FileFacts, &'a Symbol)) -> Vec<Reach> {
         let first = self.start(start.0, start.1);
         let entry = format!("{}#{}", start.0.path, start.1.name);
-        let mut found: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        // One chain per kind: the shortest, and before it one whose operation is fed
+        // by a parameter.
+        let mut found: BTreeMap<String, (Vec<String>, bool)> = BTreeMap::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         // Hops are counted between symbols: a call of a sibling method of the same class
         // (`this.fetchFile()` in `download`) is no hop, as it was none while a class was
         // read as a whole.
-        let mut queue: VecDeque<(Node, Vec<String>, usize)> = VecDeque::new();
+        // `carried`: every call on the way handed on a value read off a parameter
+        // ([`drift_core::controls::PASSES_PARAM`]), so what the entry point was sent
+        // may be what the body here is given. A body is read once carried and once
+        // not, the carried reading first where both are met.
+        let mut queue: VecDeque<(Node, Vec<String>, usize, bool)> = VecDeque::new();
+        let mut seen_carried: BTreeSet<String> = BTreeSet::new();
         seen.insert(first.key());
-        queue.push_back((first, vec![entry], 0));
-        while let Some((node, chain, hops)) = queue.pop_front() {
+        seen_carried.insert(first.key());
+        queue.push_back((first, vec![entry], 0, true));
+        while let Some((node, chain, hops, carried)) = queue.pop_front() {
+            let facts = flow_facts(&node);
+            let says = |start: &str, what: &str| {
+                facts
+                    .iter()
+                    .any(|c| c.strip_prefix(start).is_some_and(|x| x == what))
+            };
+            // What the entry point names as its handler may be a function that
+            // makes the handler (`app.post("/login", login())`): the parameters of
+            // what it makes are what the request sent.
+            let made = chain.len() <= 2;
             for k in node.sinks() {
                 if chain.len() == 1 || INPUT_SINKS.contains(&k.as_str()) {
-                    found.entry(k.clone()).or_insert_with(|| chain.clone());
+                    use drift_core::controls::{SINK_FED, SINK_FED_MADE};
+                    let fed = (carried && says(SINK_FED, k)) || (made && says(SINK_FED_MADE, k));
+                    match found.get(k) {
+                        Some((_, was)) if *was || !fed => {}
+                        _ => {
+                            found.insert(k.clone(), (chain.clone(), fed));
+                        }
+                    }
                 }
             }
             if hops >= MAX_HOPS {
@@ -6598,17 +7141,21 @@ impl<'a> Index<'a> {
                     continue;
                 };
                 let key = next.key();
-                if seen.insert(key.clone()) {
+                let passes = (carried && says(drift_core::controls::PASSES_PARAM, c))
+                    || (made && says(drift_core::controls::PASSES_MADE, c));
+                let new = seen.insert(key.clone());
+                let newly_carried = passes && seen_carried.insert(key.clone());
+                if new || newly_carried {
                     let same = std::ptr::eq(next.symbol, node.symbol);
                     let mut chain = chain.clone();
                     chain.push(key);
-                    queue.push_back((next, chain, hops + usize::from(!same)));
+                    queue.push_back((next, chain, hops + usize::from(!same), passes));
                 }
             }
         }
         found
             .into_iter()
-            .map(|(kind, via)| Reach { kind, via })
+            .map(|(kind, (via, fed))| Reach { kind, via, fed })
             .collect()
     }
 }
@@ -6788,6 +7335,20 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             skipped.dedup();
             skipped
         },
+        unlisted: repo
+            .files
+            .iter()
+            .filter(|f| {
+                !is_test_path(&f.path) && non_production.dir_of(&f.path, &f.package).is_none()
+            })
+            .flat_map(|f| {
+                f.unlisted_routes.iter().map(|line| Unlisted {
+                    path: f.path.clone(),
+                    line: *line,
+                    symbol: String::new(),
+                })
+            })
+            .collect(),
         ..Inventory::default()
     };
     // Before any entry point is given its service's exposure.
@@ -6816,6 +7377,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
                     path: f.path.clone(),
                     symbol: s.name.clone(),
                     line: s.line,
+                    fed: sink_fed(s, k),
                 });
             }
             for r in &s.reads {
@@ -6970,6 +7532,45 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
         }
     }
     inv.guard_gaps = guard_gaps(&inv.entry_points);
+    inv.scope_gaps = scope_gaps(repo, &index, &cx);
+    inv.whole_rows = crate::whole_rows::read(
+        repo,
+        &inv.entry_points
+            .iter()
+            .map(|e| (e.path.clone(), e.symbol.clone()))
+            .collect(),
+    );
+    let unreached = unreached_handlers(repo, &index, &non_production);
+    inv.unlisted.extend(unreached);
+    inv.unlisted.sort();
+    inv.unlisted.dedup();
+    // A property written under a key read off a parameter is a risk where a
+    // request chooses the key. In a helper, the parameter is whatever its callers
+    // pass: the write is listed where an entry point reaches it with a value each
+    // call from the entry point handed on, and nowhere else.
+    const KEY_WRITE: &str = "dynamic_key_write";
+    for e in &mut inv.entry_points {
+        e.reaches.retain(|r| r.kind != KEY_WRITE || r.fed);
+    }
+    let fed_writes: BTreeSet<String> = inv
+        .entry_points
+        .iter()
+        .flat_map(|e| &e.reaches)
+        .filter(|r| r.kind == KEY_WRITE)
+        .filter_map(|r| r.via.last().cloned())
+        .collect();
+    // A method that is no symbol of its own is reached as a member of its class
+    // (`path#Class.method`), while its write is a row of the class (`path#Class`).
+    inv.sinks.retain(|s| {
+        let key = format!("{}#{}", s.path, s.symbol);
+        let member = format!("{key}.");
+        s.kind != KEY_WRITE
+            || fed_writes.contains(&key)
+            || fed_writes
+                .range(member.clone()..)
+                .next()
+                .is_some_and(|w| w.starts_with(&member))
+    });
     inv.sinks.sort();
     inv.client_leaks = leaks
         .into_iter()
@@ -7981,6 +8582,29 @@ pub fn render_at(
             if skipped.len() > 5 { ", ..." } else { "" }
         );
     }
+    let unlisted: Vec<&Unlisted> = inv.unlisted.iter().filter(|u| keep(&u.path)).collect();
+    if !unlisted.is_empty() {
+        let shown: Vec<String> = unlisted
+            .iter()
+            .take(5)
+            .map(|u| match u.symbol.is_empty() {
+                true => format!("{}:{}", sanitize(&u.path, 160), u.line),
+                false => format!(
+                    "{}:{} {}",
+                    sanitize(&u.path, 160),
+                    u.line,
+                    sanitize(&u.symbol, 60)
+                ),
+            })
+            .collect();
+        let _ = writeln!(
+            out,
+            "{} place(s) that look served are NOT LISTED (a registration written as a route is, or a function that reads a request and answers it and that no listed entry point reaches): what serves them was not read, so a route there is in no row below: {}{}",
+            unlisted.len(),
+            shown.join(", "),
+            if unlisted.len() > 5 { ", ..." } else { "" }
+        );
+    }
     let app_only = entries.iter().filter(|e| e.only_app_hooks()).count();
     if app_only > 0 {
         let _ = writeln!(
@@ -8058,10 +8682,11 @@ pub fn render_at(
             for u in uses.iter().take(max_rows) {
                 let _ = writeln!(
                     out,
-                    "    {}:{} {}",
+                    "    {}:{} {}{}",
                     sanitize(&u.path, 160),
                     u.line,
-                    sanitize(&u.symbol, 80)
+                    sanitize(&u.symbol, 80),
+                    if u.fed { FED } else { "" }
                 );
             }
             if uses.len() > max_rows {
@@ -8069,7 +8694,13 @@ pub fn render_at(
             }
         }
     }
-    let risky: Vec<&&EntryRow> = entries.iter().filter(|e| !e.reaches.is_empty()).collect();
+    let mut risky: Vec<&&EntryRow> = entries.iter().filter(|e| !e.reaches.is_empty()).collect();
+    // What most needs a person's eye first: an entry point where no guard was found
+    // before one whose guard is not read and one that has a guard, one an outside
+    // caller reaches before one that is internal, and one that reaches an operation
+    // fed by what the request sent before one that does not. Within a rank, the
+    // order they are listed in.
+    risky.sort_by_key(|e| review_rank(e));
     if !risky.is_empty() {
         let _ = writeln!(out, "\nEntry points reaching risky operations");
         for e in risky.iter().take(max_rows) {
@@ -8114,8 +8745,9 @@ pub fn render_at(
                     .collect::<Vec<_>>();
                 let _ = writeln!(
                     out,
-                    "      {}{}",
+                    "      {}{}{}",
                     r.kind,
+                    if r.fed { FED } else { "" },
                     if via.is_empty() {
                         String::new()
                     } else {
@@ -8196,6 +8828,185 @@ pub fn render_at(
         }
         if gaps.len() > max_rows {
             let _ = writeln!(out, "  ... {} more", gaps.len() - max_rows);
+        }
+    }
+    let scope_gaps: Vec<&ScopeGap> = inv
+        .scope_gaps
+        .iter()
+        .filter(|g| only.is_none_or(|o| g.exceptions.iter().any(|e| o.contains(&e.path))))
+        .collect();
+    let workflows: Vec<&crate::workflows::WorkflowFinding> = inv
+        .workflows
+        .iter()
+        .filter(|w| only.is_none_or(|o| o.contains(&w.path)))
+        .collect();
+    if !workflows.is_empty() {
+        let _ = writeln!(out, "\nCI workflows that run what an outsider wrote");
+        for w in workflows.iter().take(max_rows) {
+            let what = match w.kind.as_str() {
+                "untrusted_checkout" => {
+                    "checks out the pull request's code where the repository's secrets are"
+                }
+                "unpinned_action" => {
+                    "runs another owner's action by a name its owner can move, where it holds secrets or may write"
+                }
+                "piped_download" => "hands a download to an interpreter",
+                _ => "interpolates text of the event into a shell step",
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  job {} {what}: {}",
+                sanitize(&w.path, 160),
+                w.line,
+                sanitize(&w.job, 80),
+                sanitize(&w.detail, 120)
+            );
+        }
+        if workflows.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", workflows.len() - max_rows);
+        }
+    }
+    let dependencies: Vec<&crate::dependencies::DependencyFinding> = inv
+        .dependencies
+        .iter()
+        .filter(|d| only.is_none_or(|o| o.contains(&d.path)))
+        .collect();
+    if !dependencies.is_empty() {
+        let _ = writeln!(out, "\nDependencies installed from a source nothing fixes");
+        for d in dependencies.iter().take(max_rows) {
+            let what = match d.kind.as_str() {
+                "mutable_git" => {
+                    "is a repository named by a branch, a tag or nothing, and no lockfile records its commit"
+                }
+                "unpinned_url" => "is an archive at a URL, with no digest",
+                "plain_http" => "is fetched over plain HTTP or with the certificate check off",
+                "second_index" => {
+                    "adds a second package index: a name meant for one can be answered by the other"
+                }
+                _ => "hands a download to an interpreter",
+            };
+            let name = match d.name.is_empty() {
+                true => String::new(),
+                false => format!("{} ", sanitize(&d.name, 80)),
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {name}{what}: {}",
+                sanitize(&d.path, 160),
+                d.line,
+                sanitize(&d.detail, 120)
+            );
+        }
+        if dependencies.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", dependencies.len() - max_rows);
+        }
+    }
+    let cluster: Vec<&crate::kubernetes::ClusterFinding> = inv
+        .cluster
+        .iter()
+        .filter(|c| only.is_none_or(|o| o.contains(&c.path)))
+        .collect();
+    if !cluster.is_empty() {
+        let _ = writeln!(out, "\nWhat the Kubernetes manifests open");
+        for c in cluster.iter().take(max_rows) {
+            let what = match c.kind.as_str() {
+                "ingress" => "routes requests from outside the cluster",
+                "public_service" => "has an address outside the cluster",
+                "host_access" => "is given the node it runs on",
+                "secret_value" => "is a Secret whose values are written in the file",
+                _ => "is a role over everything, or bound to callers with no credential",
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {} {what}: {}",
+                sanitize(&c.path, 160),
+                c.line,
+                sanitize(&c.object, 100),
+                sanitize(&c.detail, 200)
+            );
+        }
+        if cluster.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", cluster.len() - max_rows);
+        }
+    }
+    let whole_rows: Vec<&crate::whole_rows::WholeRow> = inv
+        .whole_rows
+        .iter()
+        .filter(|w| only.is_none_or(|o| o.contains(&w.path)))
+        .collect();
+    if !whole_rows.is_empty() {
+        let _ = writeln!(
+            out,
+            "\nRows sent back whole where other code withholds a field of them"
+        );
+        for w in whole_rows.iter().take(max_rows) {
+            let more = match w.withheld_count.saturating_sub(w.withheld_at.len()) {
+                0 => String::new(),
+                n => format!(" and {n} more"),
+            };
+            let _ = writeln!(
+                out,
+                "  {}:{}  {} sends {} rows whole (from {}); withheld elsewhere: {} (by {}{more})",
+                sanitize(&w.path, 160),
+                w.line,
+                sanitize(&w.symbol, 100),
+                sanitize(&w.rows, 160),
+                sanitize(&w.from, 120),
+                sanitize(&w.fields.join(", "), 160),
+                sanitize(&w.withheld_at.join(", "), 240)
+            );
+        }
+        if whole_rows.len() > max_rows {
+            let _ = writeln!(out, "  ... and {} more", whole_rows.len() - max_rows);
+        }
+    }
+    if !scope_gaps.is_empty() {
+        let _ = writeln!(
+            out,
+            "\nWhat most entry points filter by a value of the caller, and the ones that do not"
+        );
+        for g in scope_gaps.iter().take(max_rows) {
+            let _ = writeln!(
+                out,
+                "  {} by {}: {} of {} entry points that query it give it the caller's own value; {} give it none",
+                sanitize(&g.resource, 160),
+                sanitize(&g.key, 80),
+                g.scoped,
+                g.members,
+                g.exceptions.len()
+            );
+            for e in g.exceptions.iter().take(GAP_EXCEPTIONS) {
+                let what = [e.method.as_deref(), e.route.as_deref()]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                let _ = writeln!(
+                    out,
+                    "      {} {}  {}:{}",
+                    e.kind,
+                    sanitize(&what, 120),
+                    sanitize(&e.path, 160),
+                    e.line
+                );
+            }
+            if g.exceptions.len() > GAP_EXCEPTIONS {
+                let _ = writeln!(
+                    out,
+                    "      ... {} more",
+                    g.exceptions.len() - GAP_EXCEPTIONS
+                );
+            }
+            let _ = writeln!(
+                out,
+                "      to copy: {}:{} {}",
+                sanitize(&g.example.path, 160),
+                g.example.line,
+                sanitize(&g.example.symbol, 80)
+            );
+        }
+        if scope_gaps.len() > max_rows {
+            let _ = writeln!(out, "  ... {} more", scope_gaps.len() - max_rows);
         }
     }
     // Entry points with no guard, then those whose guard cannot be read.

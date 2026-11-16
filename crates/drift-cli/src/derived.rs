@@ -107,6 +107,7 @@ pub fn facts_digest(facts: &RepoFacts) -> blake3::Hash {
         context_files,
         key_files,
         integration_files,
+        generated_clients,
     } = facts;
     let of_files = |files: &[drift_core::FileFacts]| -> Vec<blake3::Hash> {
         let mut buf = Vec::new();
@@ -160,6 +161,11 @@ pub fn facts_digest(facts: &RepoFacts) -> blake3::Hash {
     ))
     .unwrap_or_default();
     h.update(&rest);
+    // Where there are none the digest is what it was before the facts held them.
+    if !generated_clients.is_empty() {
+        h.update(b"generated clients\0");
+        h.update(&serde_json::to_vec(generated_clients).unwrap_or_default());
+    }
     h.finalize()
 }
 

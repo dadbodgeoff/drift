@@ -98,6 +98,9 @@ const NON_CONVENTION_CONTROLS: &[&str] = &[
     drift_core::controls::OVERRIDDEN,
     drift_core::controls::HANDS_BACK_PARAM,
     drift_core::controls::KEEPS_VALUE,
+    // For whom a body returns early, read with the checks that follow
+    // (`practices::authz`).
+    drift_core::controls::RETURNS_EARLY_FOR_OWN,
 ];
 /// Rules in one role whose holder sets overlap this much are reported once.
 const NEAR_DUPLICATE: f64 = 0.9;
@@ -647,6 +650,15 @@ fn signal_label(signal: &str) -> String {
             "cookie_without_httponly" => "cookies without httpOnly",
             "cors_any_origin" => "CORS for any origin",
             "unsafe_deserialize" => "unsafe deserialisation (pickle, yaml.load)",
+            "path_traversal" => "files at paths built from values",
+            "template_injection" => "templates built from values",
+            "nosql_injection" => "MongoDB $where built from values",
+            "xml_external_entities" => "XML parsers that resolve external entities",
+            "hardcoded_secret" => "signing secrets written in the code",
+            "debug_enabled" => "servers started in debug mode",
+            "tls_verify_disabled" => "TLS without certificate verification",
+            "mass_assignment" => "rows written from the whole request body",
+            "dynamic_regex" => "regular expressions built from values",
             other => other,
         };
         return format!("do not use {what}");
@@ -3254,6 +3266,18 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                 if !NON_CONVENTION_CONTROLS.contains(&c.as_str())
                     && !c.starts_with(drift_core::controls::SHAPE)
                     && !c.starts_with(drift_core::controls::SIDES)
+                    && !c.starts_with(drift_core::controls::REFUSES_ABSENT)
+                    && !c.starts_with(drift_core::controls::CALLED_LEAVING)
+                    && !c.starts_with(drift_core::controls::CALLER_FROM)
+                    && !c.starts_with(drift_core::controls::HOLDS_SENT)
+                    && !c.starts_with(drift_core::controls::READS_HELD)
+                    && !c.starts_with(drift_core::controls::WITHHOLDS)
+                    && !c.starts_with(drift_core::controls::SENDS_WHOLE)
+                    && !c.starts_with(drift_core::controls::RETURNS_WHOLE)
+                    && !c.starts_with(drift_core::controls::FILTER_OWN)
+                    && !c.starts_with(drift_core::controls::ROW_SET)
+                    && !c.starts_with(drift_core::controls::PKG_ARG_VALUE)
+                    && !c.starts_with(drift_core::controls::FILTER_EVERY)
                     && !c.starts_with(drift_core::controls::FILTER_VALUE)
                     && !c.starts_with(drift_core::controls::ARG_VALUE)
                     && !c.starts_with(drift_core::controls::ATTR_PARAM)
@@ -3262,6 +3286,21 @@ fn features(view: &View, ctx: &RepoContext) -> BTreeSet<Rule> {
                     && !c.starts_with(drift_core::controls::DROPS_RESULT_OF)
                     && !c.starts_with(drift_core::controls::EXIT_UNREAD)
                     && !c.starts_with(drift_core::controls::VERIFIES_SIGNATURE)
+                    // What a body does with what it is given, and what its returns
+                    // give: read by `drift security` and the practice map only.
+                    && !c.starts_with(drift_core::controls::SINK_FED)
+                    && !c.starts_with(drift_core::controls::SINK_FED_MADE)
+                    && !c.starts_with(drift_core::controls::PASSES_PARAM)
+                    && !c.starts_with(drift_core::controls::PASSES_MADE)
+                    && !c.starts_with(drift_core::controls::RETURNS_GIVEN)
+                    && !c.starts_with(drift_core::controls::REFUSES_WITHOUT)
+                    && c != drift_core::controls::RETURNS_CREDENTIAL
+                    && c != drift_core::controls::GIVES_CALLER
+                    && !c.starts_with(drift_core::controls::RETURNS_BUILT)
+                    && !c.starts_with(drift_core::controls::ROWS)
+                    && !c.starts_with(drift_core::controls::HANDED_AFTER)
+                    && !c.starts_with(drift_core::controls::LEAVES_AFTER)
+                    && !c.starts_with(drift_core::controls::TRUE_AFTER)
                 {
                     out.insert(Rule::Control { value: c.clone() });
                 }

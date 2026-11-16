@@ -2460,10 +2460,17 @@ const DRF_POSITIONS: &[DrfPosition] = &[
         "class Covered(APIView):\n    permission_classes = [IsAuthenticated]\n\n    def get(self, request):\n        return Response({\"ok\": True})\n\n\nCovered.permission_classes = [{E}]\n",
         None,
     ),
-    // What `get_permissions` hands back for a request is not read.
+    // What `get_permissions` returns for every request is the view's permissions.
     (
         "get_permissions",
         "class Covered(APIView):\n    def get_permissions(self):\n        return [{E}()]\n\n    def get(self, request):\n        return Response({\"ok\": True})\n",
+        None,
+    ),
+    // What it hands back by anything but the request's method or the view's
+    // action is not read.
+    (
+        "get_permissions_unread",
+        "class Covered(APIView):\n    def get_permissions(self):\n        return [permission() for permission in self.chosen()]\n\n    def chosen(self):\n        return [{E}]\n\n    def get(self, request):\n        return Response({\"ok\": True})\n",
         Some(UNKNOWN),
     ),
 ];

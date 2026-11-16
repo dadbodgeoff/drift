@@ -46,7 +46,7 @@ The full list of files and when each is written is in [Files Drift Writes](Files
 | Code | Meaning |
 | --- | --- |
 | 0 | Success. For `security`, `practices`, `map`, `card`, `census` and `hook`, always 0 unless there is an error. |
-| 1 | `drift check`: a new violation that fails (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
+| 1 | `drift check`: a new violation that fails, or a security finding that is not in the committed baseline (see [`check`](#drift-check)). `drift setup`: one of several answers in a run could not be applied. |
 | 2 | Error: a message beginning `drift:` on standard error. Also a command-line usage error (an unknown subcommand or flag, a missing argument). |
 
 Reading from a pipe that closes early (`drift census | head`) is not an error: Drift exits quietly with the code it had decided (for `check`, the check's).
@@ -192,6 +192,7 @@ drift census [OPTIONS]
 | `--test-roles` | Also form and mine test roles (selector version 4), as `test_roles` in the config's `experimental` list does: off by default. For the study; writes nothing |  |
 | `--kind-roles` | Also form and mine kind roles (selector version 4): roles of one structural kind (components, hooks, pydantic models, routers, ...) across the repository, as `kind_roles` in the config's `experimental` list does: off by default. For the study; writes nothing |  |
 | `--coverage` | How much of the repository Drift maps: the seven coverage measures (parsed, in a package, in a structural role, imports resolved, entry points, under a mined and under a shown convention), the production and test maps apart, a table per package and the unmapped files by reason. With --json, as JSON. Writes nothing |  |
+| `--listed` | Mine over every entry point Drift lists, not only those the last measured build listed: the routes `drift security` and the practice map read become members of the roles conventions are mined for. A preview of the next measured round: the precision of what it proposes was not measured, and nothing is written |  |
 | `--suggestions <N>` | Suggestions to list, best first (default 5, or `suggestion_cap` in .drift/conventions.yaml). The default tier is always listed in full |  |
 | `--all` | List every suggestion |  |
 
@@ -521,6 +522,8 @@ Shows only what agents are shown: accepted conventions of the default tier, sugg
 
 Checks the code against accepted conventions and reports new violations. Legacy violations baselined in `drift.lock` never fail.
 
+Where the repository committed a security baseline (`.drift/security.lock`, written by `drift security --write-baseline`), a check of the whole tree or of a diff also lists the security findings that are not in it and exits 1 on any (text: a `Security baseline` section; `--format json`: `security`; `--format github`: one `::error` annotation each; SARIF: a notification each). A check of named files reads no inventory. See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
+
 ```text
 drift check [OPTIONS] [FILES]...
 ```
@@ -597,6 +600,9 @@ drift security [OPTIONS] [FILES]...
 | `--diff-base <REF>` | Report only what the change since the merge base with this ref introduces: entry points lacking a guard their siblings share, unguarded entry points reaching a risky operation, risky operations and client leaks added, and entry points made internet-facing. Facts for a pull request; exit 0 |  |
 | `--no-cache` | Disable the on-disk fact cache |  |
 | `--github` | With --diff-base: GitHub Actions output (notice annotations, and a job summary when GITHUB_STEP_SUMMARY is set) |  |
+| `--fail-on <KINDS>` | With --diff-base: exit 1 when the change introduces any of these, separated by commas: `unguarded-reaching`, `no-guard`, `guard-gap`, `risky`, `leak`, `public`, or `any`. With --ratchet: only these kinds fail (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `whole-row`, `workflow`, `dependency`, `kubernetes`, `leak`, or `any`). Off unless given |  |
+| `--write-baseline` | Write the security baseline (`.drift/security.lock`): every finding of the inventory as it is now, and every entry point the practice map reads as checking nothing of a signed-in caller, keyed by handler and route, never by line. Commit it |  |
+| `--ratchet` | Report the findings that are not in the security baseline, and those of it that are gone, with no commit to compare with. Exits 1 when a finding was added (with `--fail-on`, only for the kinds named) |  |
 | `--max <MAX>` | Rows shown per section in text output (entry points with no wrapper or decorator: always the first 50; exceptions per shared guard: the first 10) | `20` |
 
 **Examples**
@@ -626,7 +632,7 @@ With `--diff-base`, a section 'New entry points where Drift found no guard, or c
 
 **Exit codes**
 
-0 on success, including when it lists findings. 2 on error (for example `--diff-base` outside a git work tree or with a ref Git cannot find).
+0 on success, including when it lists findings. 1 with `--fail-on`, when the change introduces one of the kinds named (standard error says which), and with `--ratchet`, when a finding that is not in the baseline is found. 2 on error (for example `--diff-base` outside a git work tree or with a ref Git cannot find, or a `--fail-on` name that is none of the kinds).
 
 **Notes**
 

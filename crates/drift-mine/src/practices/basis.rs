@@ -290,6 +290,13 @@ const NOT_MODELLED: &[(&str, &str)] = &[
 
 /// Adds what `body` (named `name`) does that the facts mark and do not model.
 fn not_modelled(b: &mut Basis, name: &str, controls: &[String]) {
+    if controls
+        .iter()
+        .any(|c| c.starts_with(drift_core::controls::READS_METADATA))
+    {
+        let words = "route metadata it reads by key and uses where the facts do not follow";
+        b.add(kind::NOT_MODELLED, &format!("{name}: {words}"), words);
+    }
     for (control, words) in NOT_MODELLED {
         if controls.iter().any(|c| c == control) {
             b.add(kind::NOT_MODELLED, &format!("{name}: {words}"), words);

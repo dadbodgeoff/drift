@@ -467,6 +467,293 @@ impl<'t> Lowerer<'t> {
         (!read).then(|| format!("permission_classes = {}", crate::lower::practice::words(e)))
     }
 
+    /// What a view's `get_permissions` returns, case by case
+    /// ([`RawSymbol::drf_permission_cases`]), where its body is nothing but tests
+    /// of the request's method or the view's action, each answered by a list of
+    /// classes: `if self.request.method in SAFE_METHODS: return [A()]` then `return
+    /// [B()]`; or a name bound to a list in each branch and returned instantiated
+    /// (`permission_classes = [A]` ... `return [p() for p in permission_classes]`).
+    /// `None` where anything else is written: the permissions are then not read,
+    /// as before.
+    pub(crate) fn permission_cases(&self, f: &ast::StmtFunctionDef) -> Option<Vec<RawPermCase>> {
+        let this = f
+            .parameters
+            .posonlyargs
+            .iter()
+            .chain(&f.parameters.args)
+            .next()?
+            .parameter
+            .name
+            .as_str();
+        // The name a branch binds its classes to: a local, or `self.permission_classes`.
+        let bound = |target: &Expr| -> Option<String> {
+            match target {
+                Expr::Name(n) => Some(n.id.to_string()),
+                Expr::Attribute(a)
+                    if a.attr.as_str() == "permission_classes"
+                        && matches!(a.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                {
+                    Some(format!("{this}.permission_classes"))
+                }
+                _ => None,
+            }
+        };
+        let mut cases: Vec<RawPermCase> = Vec::new();
+        // The tests no earlier branch held for.
+        let mut rest: Vec<RawPermTest> = Vec::new();
+        // The lists a name was bound to, by the tests of each binding.
+        // (The name, the cases its bindings make, and what it held before them.)
+        type Held = (String, Vec<RawPermCase>, Option<Option<Vec<RawRef>>>);
+        let mut held: Option<Held> = None;
+        for stmt in super::without_docstring(&f.body) {
+            match stmt {
+                Stmt::Pass(_) => {}
+                Stmt::Assign(a) => {
+                    let [target] = a.targets.as_slice() else {
+                        return None;
+                    };
+                    let name = bound(target)?;
+                    if held.is_some() {
+                        return None;
+                    }
+                    held = Some((name, Vec::new(), Some(self.permission_list(&a.value)?)));
+                }
+                Stmt::If(i) => {
+                    let branches = std::iter::once((Some(i.test.as_ref()), i.body.as_slice()))
+                        .chain(
+                            i.elif_else_clauses
+                                .iter()
+                                .map(|c| (c.test.as_ref(), c.body.as_slice())),
+                        );
+                    let mut otherwise = false;
+                    for (test, body) in branches {
+                        let mut tests = rest.clone();
+                        match test {
+                            Some(t) => {
+                                let t = self.permission_test(t, this)?;
+                                rest.push(RawPermTest {
+                                    holds: !t.holds,
+                                    ..t.clone()
+                                });
+                                tests.push(t);
+                            }
+                            None => otherwise = true,
+                        }
+                        match body {
+                            [Stmt::Return(r)] if held.as_ref().is_none_or(|h| h.1.is_empty()) => {
+                                if held.is_some() {
+                                    return None;
+                                }
+                                cases.push(RawPermCase {
+                                    tests,
+                                    classes: self.permission_list(r.value.as_deref()?)?,
+                                });
+                            }
+                            [Stmt::Assign(a)] if cases.is_empty() => {
+                                let [target] = a.targets.as_slice() else {
+                                    return None;
+                                };
+                                let name = bound(target)?;
+                                let h =
+                                    held.get_or_insert_with(|| (name.clone(), Vec::new(), None));
+                                if h.0 != name {
+                                    return None;
+                                }
+                                h.1.push(RawPermCase {
+                                    tests,
+                                    classes: self.permission_list(&a.value)?,
+                                });
+                            }
+                            _ => return None,
+                        }
+                    }
+                    if otherwise && held.is_none() {
+                        // Every request was answered.
+                        return Some(cases);
+                    }
+                    if otherwise && let Some(h) = &mut held {
+                        // No request keeps what the name held before.
+                        h.2 = None;
+                    }
+                }
+                Stmt::Return(r) => {
+                    let value = r.value.as_deref()?;
+                    return match held {
+                        None => {
+                            cases.push(RawPermCase {
+                                tests: rest,
+                                classes: self.permission_list(value)?,
+                            });
+                            Some(cases)
+                        }
+                        // The name, instantiated: `[p() for p in name]`, or, of
+                        // `self.permission_classes`, what the base's own method
+                        // makes of it.
+                        Some((name, mut bound_cases, default)) => {
+                            let of_name = |e: &Expr| bound(e).as_deref() == Some(name.as_str());
+                            let instantiated = match value {
+                                Expr::ListComp(l) => match l.generators.as_slice() {
+                                    [g] if g.ifs.is_empty() => {
+                                        of_name(&g.iter)
+                                            && matches!(l.elt.as_ref(), Expr::Call(c)
+                                                if c.arguments.is_empty()
+                                                    && matches!((c.func.as_ref(), &g.target),
+                                                        (Expr::Name(x), Expr::Name(t)) if x.id == t.id))
+                                    }
+                                    _ => false,
+                                },
+                                _ => {
+                                    name.ends_with(".permission_classes")
+                                        && self.permission_list(value) == Some(None)
+                                }
+                            };
+                            if !instantiated {
+                                return None;
+                            }
+                            // The requests no branch bound it for keep what it held.
+                            match default {
+                                Some(classes) => bound_cases.push(RawPermCase {
+                                    tests: rest,
+                                    classes,
+                                }),
+                                None if bound_cases.is_empty() => return None,
+                                None => {}
+                            }
+                            Some(bound_cases)
+                        }
+                    };
+                }
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    /// The classes a `get_permissions` returns in one place: a list of classes or
+    /// of calls of them (`[IsAuthenticated(), IsOwner()]`), such a list
+    /// instantiated in a comprehension, or `super().get_permissions()` (`None`:
+    /// the view's `permission_classes`).
+    fn permission_list(&self, e: &Expr) -> Option<Option<Vec<RawRef>>> {
+        if let Expr::Call(c) = e
+            && c.arguments.is_empty()
+            && let Expr::Attribute(a) = c.func.as_ref()
+            && a.attr.as_str() == "get_permissions"
+            && matches!(a.value.as_ref(), Expr::Call(s)
+                if matches!(s.func.as_ref(), Expr::Name(n) if n.id.as_str() == "super"))
+        {
+            return Some(None);
+        }
+        let listed = match e {
+            Expr::ListComp(l) => match l.generators.as_slice() {
+                [g] if g.ifs.is_empty() => elements(&g.iter)?,
+                _ => return None,
+            },
+            other => elements(other)?,
+        };
+        listed
+            .iter()
+            .map(|x| {
+                let class = match x {
+                    Expr::Call(c) if c.arguments.is_empty() => c.func.as_ref(),
+                    Expr::Call(_) => return None,
+                    other => other,
+                };
+                matches!(class, Expr::Name(_) | Expr::Attribute(_))
+                    .then(|| self.canon(class))
+                    .flatten()
+                    .filter(|r| !matches!(r.base, RawBase::Global(_)))
+            })
+            .collect::<Option<Vec<RawRef>>>()
+            .map(Some)
+    }
+
+    /// A test `get_permissions` branches on ([`RawPermTest`]): the request's
+    /// method or the view's action against a literal, a list of literals, or DRF's
+    /// `SAFE_METHODS`; negated, or an `or` of such tests of one of the two.
+    fn permission_test(&self, e: &Expr, this: &str) -> Option<RawPermTest> {
+        match e {
+            Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => {
+                let t = self.permission_test(&u.operand, this)?;
+                Some(RawPermTest {
+                    holds: !t.holds,
+                    ..t
+                })
+            }
+            Expr::BoolOp(b) if b.op == ast::BoolOp::Or => {
+                let mut tests = b.values.iter().map(|v| self.permission_test(v, this));
+                let mut all = tests.next()??;
+                for t in tests {
+                    let t = t?;
+                    if !all.holds || !t.holds || t.action != all.action {
+                        return None;
+                    }
+                    all.names.extend(t.names);
+                }
+                Some(all)
+            }
+            Expr::Compare(c) => {
+                let ([op], [left, right]) = (&*c.ops, &*c.operands) else {
+                    return None;
+                };
+                let holds = match op {
+                    ast::CmpOp::Eq | ast::CmpOp::In => true,
+                    ast::CmpOp::NotEq | ast::CmpOp::NotIn => false,
+                    _ => return None,
+                };
+                // `self.action`, `self.request.method`, `request.method`.
+                let action = match left {
+                    Expr::Attribute(a)
+                        if a.attr.as_str() == "action"
+                            && matches!(a.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                    {
+                        true
+                    }
+                    Expr::Attribute(a) if a.attr.as_str() == "method" => match a.value.as_ref() {
+                        Expr::Name(n) if n.id.as_str() == "request" => false,
+                        Expr::Attribute(r)
+                            if r.attr.as_str() == "request"
+                                && matches!(r.value.as_ref(), Expr::Name(n) if n.id.as_str() == this) =>
+                        {
+                            false
+                        }
+                        _ => return None,
+                    },
+                    _ => return None,
+                };
+                let literal = |x: &Expr| match x {
+                    Expr::StringLiteral(s) => Some(s.value.to_str().to_string()),
+                    _ => None,
+                };
+                let mut names: Vec<String> = match (op, right) {
+                    (ast::CmpOp::Eq | ast::CmpOp::NotEq, r) => vec![literal(r)?],
+                    (_, r) if elements(r).is_some() => elements(r)?
+                        .iter()
+                        .map(literal)
+                        .collect::<Option<Vec<String>>>()?,
+                    (_, r)
+                        if !action
+                            && self.dotted_of(r).as_deref()
+                                == Some("rest_framework.permissions.SAFE_METHODS") =>
+                    {
+                        ["GET", "HEAD", "OPTIONS"].map(String::from).to_vec()
+                    }
+                    _ => return None,
+                };
+                if !action {
+                    for n in &mut names {
+                        *n = n.to_ascii_uppercase();
+                    }
+                }
+                Some(RawPermTest {
+                    action,
+                    names,
+                    holds,
+                })
+            }
+            _ => None,
+        }
+    }
+
     pub(crate) fn class_list(&self, e: Option<&Expr>) -> Vec<RawRef> {
         e.and_then(elements)
             .map(|els| {
@@ -1508,6 +1795,7 @@ impl<'t> Lowerer<'t> {
                     let m = f.name.as_str();
                     if m == "get_permissions" {
                         sym.drf_permissions_unread = Some(crate::raw::GET_PERMISSIONS.into());
+                        sym.drf_permission_cases = self.permission_cases(f);
                     }
                     if HANDLER_METHODS.contains(&m) {
                         sym.methods.push(m.to_ascii_uppercase());
@@ -1903,6 +2191,11 @@ impl<'t> Lowerer<'t> {
                 name: f.name.to_string(),
                 calls,
                 sinks: tmp.sinks,
+                since_sinks: tmp.since_sinks,
+                fed_sinks: tmp.fed_sinks,
+                param_passes: tmp.param_passes,
+                held: tmp.held,
+                rows: tmp.rows,
                 body_checks: tmp.body_checks,
                 throws: tmp.throws,
                 args: tmp.args,
@@ -1926,6 +2219,8 @@ impl<'t> Lowerer<'t> {
                 check_sides: tmp.check_sides,
                 filter_values: tmp.filter_values,
                 arg_sides: tmp.arg_sides,
+                row_sets: tmp.row_sets,
+                typed_calls: tmp.typed_calls,
                 unread: tmp
                     .controls
                     .iter()
@@ -1937,6 +2232,7 @@ impl<'t> Lowerer<'t> {
                         [
                             KEEPS_VALUE,
                             UNREAD_EXIT,
+                            crate::raw::UNREAD_EXIT_MEASURED,
                             SCOPE_UNREAD,
                             HANDLER_REJECTS,
                             HANDLER_MAY_REJECT,
@@ -1983,13 +2279,41 @@ impl<'t> Lowerer<'t> {
 
     /// What a class's own `class Meta:` sets: `model` (a reference), and the
     /// `abstract` / `proxy` flags when `True`. The last `Meta` and assignment win, as
-    /// in Python.
+    /// in Python. With them, what the class gives of its fields (lowering 72):
+    /// `fields=*` for `fields = "__all__"`, `exclude=<field>` for each field `exclude`
+    /// names, and `hidden=<field>` for a field declared as never given back
+    /// (`password = CharField(write_only=True)`, `extra_kwargs = {"password":
+    /// {"write_only": True}}`, `hashed_password: str = Field(exclude=True)`; the
+    /// last two are read with or without a `Meta`).
     fn class_meta(&self, body: &[Stmt]) -> Vec<(String, Option<RawRef>)> {
+        // What the class leaves out of what it gives of its fields, read where a
+        // field is declared: `password = CharField(write_only=True)`,
+        // `hashed_password: str = Field(exclude=True)`.
+        let set = |c: &ast::ExprCall, k: &str| matches!(keyword(c, k), Some(Expr::BooleanLiteral(b)) if b.value);
+        let mut left_out: BTreeSet<String> = BTreeSet::new();
+        for s in body {
+            let (target, value) = match s {
+                Stmt::Assign(a) => match a.targets.as_slice() {
+                    [Expr::Name(t)] => (t.id.as_str(), Some(a.value.as_ref())),
+                    _ => continue,
+                },
+                Stmt::AnnAssign(a) => match a.target.as_ref() {
+                    Expr::Name(t) => (t.id.as_str(), a.value.as_deref()),
+                    _ => continue,
+                },
+                _ => continue,
+            };
+            if let Some(Expr::Call(c)) = value
+                && (set(c, "write_only") || set(c, "exclude"))
+            {
+                left_out.insert(format!("hidden={target}"));
+            }
+        }
         let Some(meta) = body.iter().rev().find_map(|s| match s {
             Stmt::ClassDef(m) if m.name.as_str() == "Meta" => Some(m),
             _ => None,
         }) else {
-            return vec![];
+            return left_out.into_iter().map(|k| (k, None)).collect();
         };
         let mut model = None;
         let mut flags = std::collections::BTreeMap::new();
@@ -1999,6 +2323,36 @@ impl<'t> Lowerer<'t> {
                 continue;
             };
             match t.id.as_str() {
+                // The whole of the model, or the whole but what is named.
+                "fields" if string_value(&a.value).as_deref() == Some("__all__") => {
+                    left_out.insert("fields=*".into());
+                }
+                "exclude" => left_out.extend(
+                    elements(&a.value)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(string_value)
+                        .map(|f| format!("exclude={f}")),
+                ),
+                // `extra_kwargs = {"password": {"write_only": True}}`.
+                "extra_kwargs" => {
+                    if let Expr::Dict(d) = a.value.as_ref() {
+                        for item in &d.items {
+                            let (Some(field), Expr::Dict(opts)) =
+                                (item.key.as_ref().and_then(string_value), &item.value)
+                            else {
+                                continue;
+                            };
+                            if opts.items.iter().any(|o| {
+                                o.key.as_ref().and_then(string_value).as_deref()
+                                    == Some("write_only")
+                                    && matches!(&o.value, Expr::BooleanLiteral(b) if b.value)
+                            }) {
+                                left_out.insert(format!("hidden={field}"));
+                            }
+                        }
+                    }
+                }
                 "model" => {
                     model = match a.value.as_ref() {
                         v @ (Expr::Name(_) | Expr::Attribute(_)) => self.canon(v),
@@ -2020,6 +2374,7 @@ impl<'t> Lowerer<'t> {
         if let Some(m) = model {
             out.push(("model".into(), Some(m)));
         }
+        out.extend(left_out.into_iter().map(|k| (k, None)));
         out
     }
 
@@ -2251,6 +2606,22 @@ impl<'t> Lowerer<'t> {
             e => {
                 if let Some(els) = elements(e) {
                     for x in els {
+                        // `urlpatterns = [*cycle_urls, *module_urls]`: each list
+                        // unpacked in place is a pattern list of its own, of this
+                        // module or of another. The measured build read no such
+                        // element, so what one lists is marked.
+                        if let Expr::Starred(starred) = x {
+                            let (mounts, registrations) =
+                                (self.out.mounts.len(), self.out.registrations.len());
+                            self.lower_urlpatterns_at(&starred.value, prefix, depth + 1);
+                            for m in &mut self.out.mounts[mounts..] {
+                                m.unmeasured = true;
+                            }
+                            for r in &mut self.out.registrations[registrations..] {
+                                r.unmeasured = true;
+                            }
+                            continue;
+                        }
                         self.lower_url_entry_at(x, prefix, depth + 1);
                     }
                 } else {
@@ -3328,10 +3699,15 @@ impl<'t> Lowerer<'t> {
             }
             // Starlette and FastAPI: `app.mount("/v1", sub)` serves the application
             // `sub` under the path.
+            // A mount under what is written as a URL with a scheme
+            // (`session.mount("https://", adapter)`, a transport of an HTTP client)
+            // serves nothing: a path an application is served under has none.
             "mount" => {
                 if let Some(target) = arg(c, 1, "app") {
                     let prefix = self.path_value(arg(c, 0, "path")).unwrap_or_default();
-                    self.mount_app(parent, prefix, target, locals, None);
+                    if !prefix.contains("://") {
+                        self.mount_app(parent, prefix, target, locals, None);
+                    }
                 }
             }
             // An extension given its application after it is built

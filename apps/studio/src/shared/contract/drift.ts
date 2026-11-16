@@ -1135,6 +1135,8 @@ export interface CheckReport {
   diff?: DiffInfo;
   /** What the practice map says of the files the check looked at (newer drift; omitted when nothing departs). Facts, not rules: never a violation, never part of the exit code. */
   practices?: CheckPractices;
+  /** What the repository's security baseline (`.drift/security.lock`) does not hold (newer drift; absent with no baseline, and where files are named). A finding in `added` fails the check. */
+  security?: SecurityRatchet;
 }
 
 /** `check --format json` `practices` (crates/drift-cli/src/main.rs `CheckPractices`). */
@@ -1204,6 +1206,8 @@ export interface PracticeDeparture {
 export interface Reach {
   kind: string;
   via: string[];
+  /** As `SinkUse.fed` (newer drift; absent when false). */
+  fed?: boolean;
 }
 
 /**
@@ -1348,6 +1352,8 @@ export interface SinkUse {
   path: string;
   symbol: string;
   line: number;
+  /** The operation is given a value read off a parameter of its function: of a handler, what the request sent (newer drift; absent when false). */
+  fed?: boolean;
 }
 
 export interface LeakGroup {
@@ -1409,8 +1415,48 @@ export interface Inventory {
   unchecked?: string[];
   /** Source files that were not read (too large, a line too long, nested too deep, not UTF-8), tests and generated files apart: an entry point or a risky operation in one is not listed (newer drift; absent when empty). */
   skipped?: { path: string; reason: string }[];
+  /** Registrations written as a route is that no listing accounts for, in production code: a route in one may be served and is not in `entry_points` (newer drift; absent when empty). */
+  unlisted?: { path: string; line: number; symbol?: string }[];
+  /** What most entry points that query one thing filter by a value of the caller, and the entry points that query it and filter it by none (newer drift; absent when empty). */
+  scope_gaps?: {
+    resource: string;
+    key: string;
+    members: number;
+    scoped: number;
+    exceptions: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null }[];
+    example: { path: string; symbol: string; line: number; kind: string; method: string | null; route: string | null };
+  }[];
+  /** What the repository's CI workflows do with what an outsider controls: a pull request's code checked out where the repository's secrets are (`untrusted_checkout`), text of the event interpolated into a shell step (`script_injection`) (newer drift; absent when empty). Newer kinds: `unpinned_action` (another owner's action named by a tag, in a job that holds secrets or may write) and `piped_download` (a download handed to an interpreter). */
+  workflows?: { kind: string; path: string; line: number; job: string; detail: string }[];
+  /** What the repository's manifests install that nothing fixes: a repository named by a branch, a tag or nothing with no lockfile recording its commit (`mutable_git`), an archive at a URL with no digest (`unpinned_url`), a source over plain HTTP or with the certificate check off (`plain_http`), a second package index (`second_index`), a download handed to an interpreter in an image build or an install script (`piped_download`). `name` is empty where the file says it of every dependency. Absent when there are none. */
+  /** The bodies that send rows back whole where other code of the repository withholds a field of the same rows (a query's `omit`, a field taken apart from the rest and never read, one deleted or blanked, by the body or by a function the row is handed to). `rows` is the name the code reads them under (`user`), `from` the call that handed them back, `fields` what other code withholds and this body does not, `withheld_at` the first places that withhold one (`path#symbol`) of `withheld_count`. Python (newer drift): a class over a model that takes the whole of it (`from` is `fields = "__all__"` or `exclude`) where another class of its kind withholds a field, and a route whose declared response is the table class itself (`from` is `response_model` or `the return annotation`) where another route's is that class with fields left out; `rows` is then the class (`app/models.py#User`). Absent when there are none. */
+  whole_rows?: {
+    path: string;
+    line: number;
+    symbol: string;
+    rows: string;
+    from: string;
+    fields: string[];
+    withheld_at: string[];
+    withheld_count: number;
+  }[];
+  dependencies?: { kind: string; path: string; line: number; name: string; detail: string }[];
+  /** What the repository's Kubernetes manifests open: a path from outside the cluster (`ingress`), a Service with an address outside it (`public_service`), a workload given the node it runs on (`host_access`), a Secret whose values are written in the file (`secret_value`, keys only), a role over everything or a binding to callers with no credential (`wide_role`). `object` is `Kind/name`, with the namespace first where the object names one. Absent when there are none. */
+  cluster?: { kind: string; path: string; line: number; object: string; detail: string }[];
   /** What could not be read around the inventory: a `.drift/conventions.yaml` that does not parse, so shared guards come without their `convention` (newer drift; absent when empty; older drift exited 2 instead). */
   warnings?: string[];
+}
+
+// ---------- drift security --ratchet --json (crates/drift-mine/src/ratchet.rs `Ratchet`) ----------
+
+/** What a run found against the security baseline (`.drift/security.lock`). Newer drift. */
+export interface SecurityRatchet {
+  /** Found now and not in the baseline, by kind (`unguarded-reaching`, `no-guard`, `guard-gap`, `scope-gap`, `no-authorization`, `risky`, `workflow`, `leak`): the finding's key (handler, method, route; never a line) and where it is. */
+  added: Record<string, { key: string; at: string }[]>;
+  /** In the baseline and no longer found. */
+  gone: { kind: string; key: string }[];
+  /** How many findings of the baseline are still found. */
+  kept: number;
 }
 
 // ---------- drift card <path> --json (crates/drift-mine/src/card.rs `Card`, schema 1) ----------
@@ -1697,7 +1743,9 @@ export type PracticeObligation =
   /** A policy decision computed and not used to refuse (a header, a log): no check (newer drift). */
   | "result_not_refused"
   /** A symbol declared in `.drift/config.yaml` that the unit is not shown to run on every path (newer drift). */
-  | "path_unread";
+  | "path_unread"
+  /** A filter by the caller scopes its own query; another query of the route selects rows by nothing of the caller (newer drift). */
+  | "other_read_unscoped";
 
 /**
  * A check found for a unit that is unknown as `check_not_proven` (authz): what was found and what is not proven of

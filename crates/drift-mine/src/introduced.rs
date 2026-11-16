@@ -125,6 +125,15 @@ pub fn does(kind: &str) -> String {
         "cookie_without_httponly" => "sets a cookie without httpOnly",
         "cors_any_origin" => "allows CORS from any origin",
         "unsafe_deserialize" => "deserialises with pickle or another unsafe loader",
+        "path_traversal" => "opens a file at a path built from a value",
+        "template_injection" => "renders template text that is not written out",
+        "nosql_injection" => "builds a MongoDB $where from a value",
+        "xml_external_entities" => "parses XML with external entities resolved",
+        "hardcoded_secret" => "signs with a secret written in the code",
+        "debug_enabled" => "starts a server in debug mode",
+        "tls_verify_disabled" => "does not verify the TLS certificate",
+        "mass_assignment" => "writes a row from the whole request body",
+        "dynamic_regex" => "builds a regular expression from a value",
         other => return format!("has a risky operation ({})", sanitize(other, 40)),
     };
     format!("{what} ({kind})")
@@ -607,6 +616,7 @@ mod tests {
         Reach {
             kind: kind.into(),
             via: via.iter().map(|v| v.to_string()).collect(),
+            fed: false,
         }
     }
 
@@ -616,6 +626,7 @@ mod tests {
             path: path.into(),
             symbol: symbol.into(),
             line,
+            fed: false,
         }
     }
 

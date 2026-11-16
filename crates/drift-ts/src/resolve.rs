@@ -887,6 +887,20 @@ type MountParent = (
     Vec<drift_core::GuardCall>,
 );
 
+/// A call of a package whose result a router is given where a handler goes
+/// ([`Linker::handed_calls`]).
+struct Handed {
+    file: String,
+    spec: String,
+    node: String,
+    pathed: Vec<(String, String)>,
+}
+
+/// The node [`Linker::mount_chains`] serves the `i`-th such call of `file` by.
+fn handed_node(file: &str, i: usize) -> String {
+    format!("{file}#(handed {i})")
+}
+
 /// Package calls that are handed an application and register nothing on it: they
 /// start a server on it, wrap it for a platform, or drive it in a test.
 const PLAIN_APP_CALLS: &[&str] = &[
@@ -944,6 +958,26 @@ pub struct Linker<'r> {
     /// plugin function): (the router it is mounted on, the prefix, the middleware
     /// active there, outermost first, as canonical ids).
     mount_parents: BTreeMap<String, BTreeSet<MountParent>>,
+    /// The functions that give the caller by what their body returns
+    /// ([`drift_core::controls::GIVES_CALLER`]).
+    gives_caller: BTreeSet<String>,
+    /// The functions of the repository, by canonical name: what a body takes for
+    /// the caller by the name of one is verified by its body
+    /// ([`Linker::by_name_only`]).
+    repo_functions: BTreeSet<String>,
+    /// The methods of the instances of the repository's classes that bindings
+    /// hold (`path#sessions.getSession` of `export const sessions = new
+    /// Sessions()`), with whether the method's own body gives the caller
+    /// ([`crate::lower::RawMember::gives_caller`]).
+    repo_methods: BTreeMap<String, bool>,
+    /// Those of them that turn away every request with no caller (a check of
+    /// their own body that answers "not signed in", or a throw where what a
+    /// callee gave is absent: [`drift_core::controls::REFUSES_WITHOUT`]): what
+    /// one hands back is who the request is from, not a setting read off the
+    /// caller.
+    refuses_without: BTreeSet<String>,
+    /// The calls of a package whose result a router is given where a handler goes.
+    handed: Vec<Handed>,
     /// What each function of the repository registers on the router it is handed
     /// as its n-th argument ([`crate::lower::RawRegisters`]): the middleware,
     /// canonical, or `None` where some of it is not read.
@@ -976,6 +1010,12 @@ pub struct Linker<'r> {
     trpc: TrpcOrigins,
     /// Package directory -> built with Next.js ([`crate::nextjs::package_uses_next`]).
     next_packages: Mutex<BTreeMap<String, bool>>,
+    /// Package directory -> the file-convention router it is built with
+    /// ([`crate::filerouters::framework_of`]).
+    file_routers: Mutex<BTreeMap<String, Option<crate::filerouters::Framework>>>,
+    /// The files that export a middleware of a file-convention route
+    /// ([`crate::lower::RawFile::route_middleware`]).
+    route_middleware: BTreeSet<String>,
     /// What [`Linker::origin`] answered, per module and name.
     origins: OriginMemo,
     /// The middleware applied to the routes of each Nest application beside them
@@ -1313,6 +1353,11 @@ impl<'r> Linker<'r> {
             specs,
             modules,
             mount_parents: BTreeMap::new(),
+            gives_caller: BTreeSet::new(),
+            repo_functions: BTreeSet::new(),
+            repo_methods: BTreeMap::new(),
+            refuses_without: BTreeSet::new(),
+            handed: Vec::new(),
             registers: BTreeMap::new(),
             decorated: BTreeMap::new(),
             register_calls: BTreeMap::new(),
@@ -1332,6 +1377,12 @@ impl<'r> Linker<'r> {
             composed: BTreeMap::new(),
             trpc: TrpcOrigins::default(),
             next_packages: Mutex::new(BTreeMap::new()),
+            file_routers: Mutex::new(BTreeMap::new()),
+            route_middleware: files
+                .iter()
+                .filter(|f| f.raw.route_middleware)
+                .map(|f| f.rel_path.clone())
+                .collect(),
             origins: OriginMemo::default(),
             nest: Vec::new(),
             nest_prefixed: BTreeSet::new(),
@@ -1376,6 +1427,7 @@ impl<'r> Linker<'r> {
             })
             .collect();
         linker.mount_parents = linker.mounts(files);
+        linker.handed = linker.handed_calls(files);
         linker.trpc = linker.trpc_origins(files);
         let composed = files
             .iter()
@@ -1556,6 +1608,120 @@ impl<'r> Linker<'r> {
                             .any(|c| c == drift_core::controls::RETURNS_CALLER)
                     })
                     .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
+        // What gives the caller by what its body returns
+        // ([`drift_core::controls::GIVES_CALLER`]): a value of the caller, what was
+        // made of the request's credential, or what such a function handed back, a
+        // few calls deep.
+        let mut gives: BTreeSet<String> = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| {
+                        s.kind == drift_core::SymbolKind::Function
+                            && (s.listed_controls.iter().any(|c| {
+                                c == drift_core::controls::RETURNS_CALLER
+                                    || c == drift_core::controls::RETURNS_CREDENTIAL
+                            }) || (!s.returns_kept.is_empty()
+                                && s.returns_kept.iter().all(|store| kept_for_caller(f, store))))
+                    })
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
+        for _ in 0..4 {
+            let more: Vec<String> = files
+                .iter()
+                .flat_map(|f| f.raw.symbols.iter().map(move |s| (f, s)))
+                .filter(|(f, s)| {
+                    s.kind == drift_core::SymbolKind::Function
+                        && !s.returns_via.is_empty()
+                        && s.returns_via
+                            .iter()
+                            .all(|g| gives.contains(&self.canon(&f.rel_path, g)))
+                })
+                .map(|(f, s)| format!("{}#{}", f.rel_path, s.name))
+                .filter(|name| !gives.contains(name))
+                .collect();
+            if more.is_empty() {
+                break;
+            }
+            gives.extend(more);
+        }
+        // A name the file declares twice is not one function.
+        for f in files {
+            let mut seen: BTreeSet<&str> = BTreeSet::new();
+            for s in &f.raw.symbols {
+                if !seen.insert(s.name.as_str()) {
+                    gives.remove(&format!("{}#{}", f.rel_path, s.name));
+                }
+            }
+        }
+        self.returns_caller.extend(gives.iter().cloned());
+        self.refuses_without = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| {
+                        !s.refuses_without.is_empty()
+                            || s.body_checks.iter().any(|c| {
+                                !c.conditional
+                                    && matches!(
+                                        c.outcome,
+                                        drift_core::CheckOutcome::Unauthenticated
+                                            | drift_core::CheckOutcome::SignInRedirect
+                                    )
+                            })
+                    })
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .filter(|name| gives.contains(name))
+            .collect();
+        self.gives_caller = gives;
+        self.repo_functions = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| s.kind == drift_core::SymbolKind::Function)
+                    .map(move |s| format!("{}#{}", f.rel_path, s.name))
+            })
+            .collect();
+        // The methods of what a binding built of a class of the repository holds.
+        let classes: BTreeMap<String, &crate::lower::RawSymbol> = files
+            .iter()
+            .flat_map(|f| {
+                f.raw
+                    .symbols
+                    .iter()
+                    .filter(|s| s.kind == drift_core::SymbolKind::Class)
+                    .map(move |s| (format!("{}#{}", f.rel_path, s.name), s))
+            })
+            .collect();
+        self.repo_methods = files
+            .iter()
+            .flat_map(|f| {
+                let classes = &classes;
+                let this = &*self;
+                f.raw.symbols.iter().flat_map(move |s| {
+                    s.built
+                        .as_ref()
+                        .and_then(|class| classes.get(&this.canon(&f.rel_path, class)))
+                        .into_iter()
+                        .flat_map(move |class| {
+                            class.members.iter().map(move |m| {
+                                (
+                                    format!("{}#{}.{}", f.rel_path, s.name, m.name),
+                                    m.gives_caller,
+                                )
+                            })
+                        })
+                })
             })
             .collect();
         // A holder's key is held where some body binds on it a value that is the
@@ -1952,39 +2118,86 @@ impl<'r> Linker<'r> {
                     if parent == node {
                         continue;
                     }
-                    let middleware = m
-                        .middleware
-                        .iter()
-                        .map(|r| self.canon(&f.rel_path, r))
-                        .collect();
-                    let mut hooks: Vec<String> = m
-                        .hooks
-                        .iter()
-                        .map(|r| self.canon(&f.rel_path, r))
-                        .filter(|c| !routers.contains(c) && !self.routers.contains(c))
-                        .collect();
-                    let mut calls: Vec<drift_core::GuardCall> = m
-                        .calls
-                        .iter()
-                        .map(|c| self.guard_call(&f.rel_path, c))
-                        .filter(|c| !self.routers.contains(&c.callee))
-                        .collect();
-                    for (callee, at) in &m.passed {
-                        let callee = self.canon(&f.rel_path, callee);
-                        hooks.extend(self.app_passed(&callee, *at));
-                        calls.extend(self.passed_calls(&callee, *at));
-                    }
-                    parents.entry(node).or_default().insert((
+                    parents.entry(node).or_default().insert(self.mount_parent(
+                        f,
+                        m,
                         parent.clone(),
-                        m.prefix.clone(),
-                        middleware,
-                        hooks,
-                        calls,
+                        &routers,
                     ));
                 }
             }
+            // What a package's call handed back, given where a handler goes: a node
+            // of its own, mounted on the router it was given to.
+            for (i, (m, _)) in f.raw.handed_calls.iter().enumerate() {
+                let parent = format!("{}#{}", f.rel_path, m.parent);
+                parents
+                    .entry(handed_node(&f.rel_path, i))
+                    .or_default()
+                    .insert(self.mount_parent(f, m, parent, &routers));
+            }
         }
         parents
+    }
+
+    /// One mount as [`Linker::mount_chains`] follows it: what the mounting router
+    /// `parent` runs before what it mounts, canonical.
+    fn mount_parent(
+        &self,
+        f: &LoweredFile,
+        m: &crate::lower::RawMount,
+        parent: String,
+        routers: &BTreeSet<String>,
+    ) -> MountParent {
+        let middleware = m
+            .middleware
+            .iter()
+            .map(|r| self.canon(&f.rel_path, r))
+            .collect();
+        let mut hooks: Vec<String> = m
+            .hooks
+            .iter()
+            .map(|r| self.canon(&f.rel_path, r))
+            .filter(|c| !routers.contains(c) && !self.routers.contains(c))
+            .collect();
+        let mut calls: Vec<drift_core::GuardCall> = m
+            .calls
+            .iter()
+            .map(|c| self.guard_call(&f.rel_path, c))
+            .filter(|c| !self.routers.contains(&c.callee))
+            .collect();
+        for (callee, at) in &m.passed {
+            let callee = self.canon(&f.rel_path, callee);
+            hooks.extend(self.app_passed(&callee, *at));
+            calls.extend(self.passed_calls(&callee, *at));
+        }
+        (parent, m.prefix.clone(), middleware, hooks, calls)
+    }
+
+    /// The calls of a package whose result a router is given where a handler goes
+    /// ([`crate::lower::RawFile::handed_calls`]): the file, the package called,
+    /// the node [`Linker::mount_chains`] serves it by, and what the router was
+    /// given for a path that may take some of what the call serves.
+    fn handed_calls(&self, files: &[LoweredFile]) -> Vec<Handed> {
+        let mut out = Vec::new();
+        for f in files {
+            for (i, (m, pathed)) in f.raw.handed_calls.iter().enumerate() {
+                let target = self.canon(&f.rel_path, &m.target);
+                let Some((spec, _)) = target.strip_prefix("pkg:").and_then(|t| t.split_once('#'))
+                else {
+                    continue;
+                };
+                out.push(Handed {
+                    file: f.rel_path.clone(),
+                    spec: spec.to_string(),
+                    node: handed_node(&f.rel_path, i),
+                    pathed: pathed
+                        .iter()
+                        .map(|(pattern, hook)| (pattern.clone(), self.canon(&f.rel_path, hook)))
+                        .collect(),
+                });
+            }
+        }
+        out
     }
 
     /// Every way the router `node` (`module#binding`, or a module) is served: one
@@ -2650,6 +2863,302 @@ impl<'r> Linker<'r> {
             .or_insert_with(|| crate::nextjs::package_uses_next(&self.resolver.root, package))
     }
 
+    /// The file-convention router the package at `package` is built with, read once
+    /// per package.
+    fn file_router(&self, package: &str) -> Option<crate::filerouters::Framework> {
+        let mut memo = self.file_routers.lock().unwrap_or_else(|e| e.into_inner());
+        *memo
+            .entry(package.to_string())
+            .or_insert_with(|| crate::filerouters::framework_of(&self.resolver.root, package))
+    }
+
+    /// What a body hands the repository's code and filters its queries by, as the
+    /// controls write it ([`drift_core::controls::ARG_VALUE`],
+    /// [`drift_core::controls::FILTER_VALUE`]): each call of a callee of the
+    /// repository with what every argument is, and each key of an object given to a
+    /// callee whose value is read off a parameter.
+    fn flow_controls(
+        &self,
+        rel: &str,
+        arg_sides: &[(RawRef, Vec<(String, String)>)],
+        loose_sides: &[(String, Vec<(String, String)>)],
+        param_keys: &[(RawRef, String, String)],
+        check_sides: &[crate::lower::CheckSides],
+        refuses_absent: &[String],
+    ) -> Vec<String> {
+        // A value read off what a call handed back names the call by its
+        // canonical callee ([`crate::lower::RawSymbol::loose_sides`]).
+        let side = |side: &str| -> String {
+            match side
+                .strip_prefix("call ")
+                .filter(|j| j.starts_with('{'))
+                .and_then(|j| serde_json::from_str::<RawRef>(j).ok())
+            {
+                // What a function that gives the caller handed back is the
+                // caller's ([`drift_core::controls::GIVES_CALLER`]).
+                Some(r) => match self.canon(rel, &r) {
+                    c if self.gives_caller.contains(&c) => "caller".to_string(),
+                    c => format!("call {c}"),
+                },
+                None => side.to_string(),
+            }
+        };
+        let control = |c: &str, given: &[(String, String)]| {
+            let mut control = format!("{}{c}", drift_core::controls::ARG_VALUE);
+            for (key, s) in given {
+                control.push('\t');
+                control.push_str(key);
+                control.push('\t');
+                control.push_str(&side(s));
+            }
+            control
+        };
+        let mut out: Vec<String> = arg_sides
+            .iter()
+            .map(|(callee, given)| (self.canon(rel, callee), given))
+            // A package's call by what it is handed under the keys of an object
+            // only (`db.note.findMany({ where: { userId } })` through a client
+            // typed by its package): a value handed by position is not followed
+            // into a package.
+            .filter(|(c, given)| {
+                !c.starts_with("global#")
+                    && (!c.starts_with("pkg:") || given.iter().any(|(key, _)| key.contains('.')))
+            })
+            .map(|(c, given)| control(&c, given))
+            .collect();
+        out.extend(loose_sides.iter().map(|(c, given)| control(c, given)));
+        // A key whose value was read off what a call handed back filters by the
+        // caller where that call gives the caller, and says nothing otherwise.
+        out.extend(param_keys.iter().filter_map(|(callee, key, given)| {
+            let given = side(given);
+            (!given.starts_with("call ")).then(|| {
+                format!(
+                    "{}{}\t{key}\t{given}",
+                    drift_core::controls::FILTER_VALUE,
+                    self.canon(rel, callee)
+                )
+            })
+        }));
+        // The sides of each comparison a check makes
+        // ([`crate::lower::RawSymbol::check_sides`]), keyed as the check is written.
+        out.extend(
+            check_sides
+                .iter()
+                .map(|(source, reads, compares, left, right)| {
+                    format!(
+                        "{}{}\t{reads}\t{}\t{}\t{}",
+                        drift_core::controls::SIDES,
+                        self.operand(rel, source, ""),
+                        self.operand(rel, compares, "call:"),
+                        side(left),
+                        side(right)
+                    )
+                }),
+        );
+        // The calls whose result's absence the body refuses on
+        // ([`crate::lower::RawSymbol::refuses_absent`]).
+        out.extend(refuses_absent.iter().filter_map(|call| {
+            let call = side(call);
+            call.strip_prefix("call ")
+                .map(|callee| format!("{}{callee}", drift_core::controls::REFUSES_ABSENT))
+        }));
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// What a body withholds of what a call handed back, and the calls whose
+    /// whole result it sends or returns ([`crate::lower::RawSymbol::row_uses`]),
+    /// as the controls write them: the call by its canonical callee, whatever
+    /// it gives.
+    fn row_controls(&self, rel: &str, row_uses: &[String]) -> Vec<String> {
+        row_uses
+            .iter()
+            .filter_map(|u| {
+                let mut parts = u.splitn(3, '\t');
+                let (kind, call) = (parts.next()?, parts.next()?);
+                // A parameter of the function itself stays as it is written.
+                let callee = match call.strip_prefix("call ") {
+                    Some(callee) => match serde_json::from_str::<RawRef>(callee) {
+                        Ok(r) if callee.starts_with('{') => self.canon(rel, &r),
+                        _ => callee.to_string(),
+                    },
+                    None if call.starts_with("param #") => call.to_string(),
+                    None => return None,
+                };
+                let prefix = match kind {
+                    "withholds" => drift_core::controls::WITHHOLDS,
+                    "sends_whole" => drift_core::controls::SENDS_WHOLE,
+                    _ => drift_core::controls::RETURNS_WHOLE,
+                };
+                Some(match parts.next() {
+                    Some(field) => format!("{prefix}{callee}\t{field}"),
+                    None => format!("{prefix}{callee}"),
+                })
+            })
+            .collect()
+    }
+
+    /// The callees a body signs the caller in by: what its own checks answer "not
+    /// signed in" on, and what it throws without.
+    fn signed_by(
+        &self,
+        rel: &str,
+        checks: &[crate::lower::RawBodyCheck],
+        refuses_without: &[Vec<RawRef>],
+    ) -> BTreeSet<String> {
+        checks
+            .iter()
+            .filter(|c| {
+                matches!(
+                    c.outcome,
+                    drift_core::CheckOutcome::Unauthenticated
+                        | drift_core::CheckOutcome::SignInRedirect
+                )
+            })
+            .filter_map(|c| match &c.source {
+                crate::lower::RawOperand::Ref(r) => Some(self.canon(rel, r)),
+                _ => None,
+            })
+            .chain(refuses_without.iter().flatten().map(|r| self.canon(rel, r)))
+            .collect()
+    }
+
+    /// The keys a body's calls give the caller itself, and those every call of a
+    /// callee gives a value of the caller, as the controls write them
+    /// ([`drift_core::controls::FILTER_OWN`],
+    /// [`drift_core::controls::FILTER_EVERY`]): where what may give each value
+    /// gives the caller ([`drift_core::controls::GIVES_CALLER`]).
+    ///
+    /// What a function hands back is the caller itself where the function gives the
+    /// caller and its absence is what turns a request away: the function throws
+    /// without it, or the body it is called in does (`signed_by`: the callees of
+    /// the body's own sign-in checks and refusals). One that gives a value of the
+    /// caller and never refuses (`localeOf(request)`) gives a setting.
+    fn own_controls(
+        &self,
+        rel: &str,
+        own_keys: &[(RawRef, String, Vec<RawRef>)],
+        every_keys: &[(RawRef, String, Vec<RawRef>, bool)],
+        signed_by: &BTreeSet<String>,
+    ) -> Vec<String> {
+        let given = |givers: &[RawRef]| {
+            givers
+                .iter()
+                .all(|g| self.gives_caller.contains(&self.canon(rel, g)))
+        };
+        let itself = |givers: &[RawRef]| {
+            givers.iter().all(|g| {
+                let g = self.canon(rel, g);
+                self.gives_caller.contains(&g)
+                    && (self.refuses_without.contains(&g) || signed_by.contains(&g))
+            })
+        };
+        let own =
+            own_keys
+                .iter()
+                .filter(|(_, _, givers)| itself(givers))
+                .map(|(callee, key, _)| {
+                    format!(
+                        "{}{}\t{key}",
+                        drift_core::controls::FILTER_OWN,
+                        self.canon(rel, callee)
+                    )
+                });
+        let every = every_keys
+            .iter()
+            .filter(|(_, _, givers, _)| given(givers))
+            .map(|(callee, key, givers, own)| {
+                format!(
+                    "{}{}\t{key}\t{}",
+                    drift_core::controls::FILTER_EVERY,
+                    self.canon(rel, callee),
+                    match *own && itself(givers) {
+                        true => "own",
+                        false => "caller",
+                    }
+                )
+            });
+        own.chain(every).collect()
+    }
+
+    /// The function of the repository a body takes for who calls by its name
+    /// alone ([`drift_core::controls::CALLER_FROM`]: `getUser(req)`,
+    /// `getSession(req)`), where its own body does not give the caller
+    /// ([`drift_core::controls::GIVES_CALLER`]): it may hand back a row the
+    /// request names, or what the request sent. So is a function an object of
+    /// the repository holds (`auth.getUser(req)`, a symbol of its own:
+    /// [`crate::lower::RawSymbol::in_place`]) and a method of an instance of a
+    /// class of the repository a binding holds (`sessions.getSession(req)`).
+    /// A package's accessor is what its package documents, and so is a method of
+    /// what a package's call or class built.
+    fn named_giver(&self, controls: &[String]) -> Option<String> {
+        controls
+            .iter()
+            .filter_map(|c| c.strip_prefix(drift_core::controls::CALLER_FROM))
+            .find(|c| {
+                (self.repo_functions.contains(*c) && !self.gives_caller.contains(*c))
+                    || self.repo_methods.get(*c) == Some(&false)
+            })
+            .map(str::to_string)
+    }
+
+    /// The listed reading of a body that takes for the caller what a function of
+    /// the repository hands back by its name alone ([`Linker::named_giver`]):
+    /// what the body calls the caller's is what that call handed back, and proves
+    /// nothing of who calls. A filter by it is written with the side `named
+    /// <function>` ([`drift_core::controls::FILTER_VALUE`]), a value handed on
+    /// or compared as `call <function>` ([`drift_core::controls::ARG_VALUE`],
+    /// [`drift_core::controls::SIDES`]), and the keys given the caller itself
+    /// ([`drift_core::controls::FILTER_OWN`],
+    /// [`drift_core::controls::FILTER_EVERY`]) are not written. The whole body:
+    /// which of its values came from that call is not kept apart.
+    fn by_name_only(&self, controls: &mut Vec<String>) -> bool {
+        use drift_core::controls::{ARG_VALUE, FILTER_EVERY, FILTER_OWN, FILTER_VALUE, SIDES};
+        let Some(giver) = self.named_giver(controls) else {
+            return false;
+        };
+        let handed = format!("call {giver}");
+        controls.retain(|c| !c.starts_with(FILTER_OWN) && !c.starts_with(FILTER_EVERY));
+        for c in controls.iter_mut() {
+            if c.starts_with(FILTER_VALUE) {
+                if let Some(rest) = c.strip_suffix("\tcaller") {
+                    *c = format!("{rest}\tnamed {giver}");
+                }
+            } else if c.starts_with(ARG_VALUE) {
+                // `<callee>`, then a key and a side for each value handed.
+                let mut parts: Vec<&str> = c.split('\t').collect();
+                let mut changed = false;
+                for side in parts.iter_mut().skip(2).step_by(2) {
+                    if *side == "caller" {
+                        *side = handed.as_str();
+                        changed = true;
+                    }
+                }
+                if changed {
+                    *c = parts.join("\t");
+                }
+            } else if c.starts_with(SIDES) {
+                // The two sides are the last two fields.
+                let mut parts: Vec<&str> = c.split('\t').collect();
+                let n = parts.len();
+                let mut changed = false;
+                for side in parts.iter_mut().skip(n.saturating_sub(2)) {
+                    if *side == "caller" {
+                        *side = handed.as_str();
+                        changed = true;
+                    }
+                }
+                if changed {
+                    *c = parts.join("\t");
+                }
+            }
+        }
+        controls.sort();
+        controls.dedup();
+        true
+    }
+
     pub fn link(&self, f: &LoweredFile, package: String) -> FileFacts {
         let rel = f.rel_path.as_str();
         let specs = &self.specs[rel];
@@ -2814,7 +3323,45 @@ impl<'r> Linker<'r> {
                     .iter()
                     .map(|(r, i, k)| format!("{}@{i}:{k}", self.canon(rel, r)))
                     .collect(),
-                controls: s.controls.clone(),
+                // With what the body hands the repository's code and which of its
+                // parameters its filters read ([`Linker::flow_controls`]): facts of
+                // the body as it is written, the same in both readings, and never
+                // a rule (mining leaves these controls out by their prefix).
+                controls: {
+                    let mut controls = s.controls.clone();
+                    controls.extend(self.flow_controls(
+                        rel,
+                        &s.arg_sides,
+                        &s.loose_sides,
+                        &s.param_keys,
+                        &s.check_sides,
+                        &s.refuses_absent,
+                    ));
+                    controls.extend(self.row_controls(rel, &s.row_uses));
+                    controls.extend(s.leaving_calls.iter().map(|c| {
+                        format!(
+                            "{}{}",
+                            drift_core::controls::CALLED_LEAVING,
+                            self.canon(rel, c)
+                        )
+                    }));
+                    controls.extend(s.caller_from.iter().map(|c| {
+                        format!(
+                            "{}{}",
+                            drift_core::controls::CALLER_FROM,
+                            self.canon(rel, c)
+                        )
+                    }));
+                    controls.extend(self.own_controls(
+                        rel,
+                        &s.own_keys,
+                        &s.every_keys,
+                        &self.signed_by(rel, &s.body_checks, &s.refuses_without),
+                    ));
+                    controls.sort();
+                    controls.dedup();
+                    controls
+                },
                 string_literals: s.string_literals,
                 suppressions: s.suppressions.clone(),
                 reads: s.reads.clone(),
@@ -2907,7 +3454,51 @@ impl<'r> Linker<'r> {
                             .iter()
                             .map(|(r, i, k)| format!("{}@{i}:{k}", self.canon(rel, r)))
                             .collect(),
-                        unread: m.unread.clone(),
+                        unread: {
+                            // With what the method's own body filters by and hands
+                            // on ([`Linker::flow_controls`]), and the keys it
+                            // filters by a value of the caller.
+                            let mut unread = m.unread.clone();
+                            unread.extend(self.flow_controls(
+                                rel,
+                                &m.arg_sides,
+                                &m.loose_sides,
+                                &m.param_keys,
+                                &m.check_sides,
+                                &m.refuses_absent,
+                            ));
+                            unread.extend(self.row_controls(rel, &m.row_uses));
+                            unread.extend(m.leaving_calls.iter().map(|c| {
+                                format!(
+                                    "{}{}",
+                                    drift_core::controls::CALLED_LEAVING,
+                                    self.canon(rel, c)
+                                )
+                            }));
+                            unread.extend(m.caller_from.iter().map(|c| {
+                                format!(
+                                    "{}{}",
+                                    drift_core::controls::CALLER_FROM,
+                                    self.canon(rel, c)
+                                )
+                            }));
+                            unread.extend(self.own_controls(
+                                rel,
+                                &m.own_keys,
+                                &m.every_keys,
+                                &self.signed_by(rel, &m.body_checks, &[]),
+                            ));
+                            unread.extend(m.caller_keys.iter().map(|(callee, key)| {
+                                format!(
+                                    "{}{}\t{key}\tcaller",
+                                    drift_core::controls::FILTER_VALUE,
+                                    self.canon(rel, callee)
+                                )
+                            }));
+                            unread.sort();
+                            unread.dedup();
+                            unread
+                        },
                         caller_args: self.caller_args(rel, &m.caller_args),
                         // Python records these for a method; TypeScript does not yet.
                         scoped_queries: vec![],
@@ -3048,6 +3639,7 @@ impl<'r> Linker<'r> {
                 .filter_map(|l| self.registry(rel, l))
                 .collect(),
             truncated: vec![],
+            unlisted_routes: f.raw.unlisted_routes.clone(),
             discovers,
             outgoing: f.raw.outgoing.clone(),
             test_requests: f
@@ -3116,6 +3708,13 @@ impl<'r> Linker<'r> {
                     .collect();
                 caught.sort();
                 caught.dedup();
+                let mut given_credential: Vec<String> = s
+                    .given_credential
+                    .iter()
+                    .map(|r| self.canon(rel, r))
+                    .collect();
+                given_credential.sort();
+                given_credential.dedup();
                 let mut verifies = s.verifies.clone();
                 verifies.sort();
                 verifies.dedup();
@@ -3126,12 +3725,89 @@ impl<'r> Linker<'r> {
                     hands_on: s.hands_on,
                     returns_function: s.returns_function,
                     caught,
+                    given_credential,
                     verifies,
                     param_flows: s.param_flows,
                 }
             })
             .collect();
         facts.entry_points = crate::nextjs::entry_points(&facts, self.uses_next(&facts.package));
+        // A route of a file-convention router other than Next.js: listed since the
+        // measured build, with what runs before it (a parent route, a server hook)
+        // unread.
+        if f.raw.file_routes
+            && let Some(framework) = self.file_router(&facts.package)
+        {
+            // What runs before the handler is not read, but for a React Router
+            // or Remix route of a package that puts nothing there: no router of
+            // its own (a server whose middleware runs first) and no route module
+            // that exports a middleware.
+            let within = |path: &str| {
+                facts.package.is_empty()
+                    || path
+                        .strip_prefix(facts.package.as_str())
+                        .is_some_and(|rest| rest.starts_with('/'))
+            };
+            let route_middleware = self.route_middleware.iter().any(|f| within(f));
+            // A router of the package given the framework's own request handler
+            // serves the routes: what it runs before the handler runs before them.
+            // Given it in one place, by one chain of mounts; any other way, which
+            // of them answers is not read.
+            let handed: Vec<(&Handed, MountChain)> = self
+                .handed
+                .iter()
+                .filter(|h| within(&h.file) && framework.hands_requests(&h.spec))
+                .flat_map(|h| {
+                    self.mount_chains(&h.node, 0)
+                        .into_iter()
+                        .map(move |c| (h, c))
+                })
+                .collect();
+            let through = match handed.as_slice() {
+                [(h, c)] if !c.opaque && !route_middleware => Some((*h, c)),
+                _ => None,
+            };
+            let unread_before = through.is_none()
+                && (framework != crate::filerouters::Framework::ReactRouter
+                    || self.routers.iter().any(|r| within(r))
+                    || route_middleware);
+            for e in crate::filerouters::entry_points(&facts, framework) {
+                if facts.entry_points.iter().any(|x| x.symbol == e.symbol) {
+                    continue;
+                }
+                let route = e.route.clone().unwrap_or_default();
+                let mut wraps = Vec::new();
+                let mut app_middleware = Vec::new();
+                if let Some((h, c)) = through {
+                    wraps.extend(c.middleware.iter().map(|w| Wrap {
+                        wrapper: w.clone(),
+                        kind: drift_core::WrapKind::Call,
+                    }));
+                    app_middleware.extend(c.hooks.iter().cloned());
+                    // What the router was given for a path: for the routes the
+                    // path takes, and as something that may run where that is
+                    // not read.
+                    for (pattern, hook) in &h.pathed {
+                        match crate::lower::routes::hook_covers(pattern, &route) {
+                            Some(true) => app_middleware.push(hook.clone()),
+                            Some(false) => {}
+                            None => app_middleware.push(format!(
+                                "global#a middleware given for {pattern}, which may cover the route"
+                            )),
+                        }
+                    }
+                }
+                facts.mounts.push(drift_core::MountFacts {
+                    symbol: e.symbol.clone(),
+                    route,
+                    wraps,
+                    opaque: unread_before,
+                    elsewhere: false,
+                    app_middleware,
+                });
+                facts.entry_points.push(e);
+            }
+        }
         // Route paths from adapters are file-local: one entry point for each way the
         // route's router is mounted, under that mount's prefix.
         for e in &raw_entry_points {
@@ -3195,16 +3871,33 @@ impl<'r> Linker<'r> {
             .iter()
             .filter(|s| {
                 !s.listed_controls.is_empty()
+                    || !s.caller_keys.is_empty()
+                    || !s.fed_sinks.is_empty()
+                    || !s.param_passes.is_empty()
+                    || !s.refuses_without.is_empty()
+                    || !s.made_fed_sinks.is_empty()
+                    || !s.made_passes.is_empty()
                     || !s.nest_metadata.is_empty()
                     || !s.result_uses.is_empty()
+                    || !s.given_result.is_empty()
                     || !s.returns_builder.is_empty()
                     || !s.unread_exits.is_empty()
+                    || s.returns_built.is_some()
+                    || self.gives_caller.contains(&format!("{rel}#{}", s.name))
             })
             .map(|s| {
                 // What the body does with what a function that turns callers away
                 // by its value hands back ([`crate::lower::RawSymbol::result_uses`]).
                 let uses = s.result_uses.iter().filter_map(|(callee, how)| {
                     let callee = self.canon(rel, callee);
+                    // No call of it is waited for: of the repository's own, where
+                    // what it is can be read.
+                    if how == "unawaited" {
+                        return (!callee.starts_with("global#")
+                            && !callee.starts_with("pkg:")
+                            && !callee.starts_with("unresolved:"))
+                        .then(|| format!("{}{callee}", drift_core::controls::UNAWAITED));
+                    }
                     if !self.hands_back.contains(&callee) {
                         // A function that answers on the response it was handed:
                         // only that its value is dropped.
@@ -3260,8 +3953,73 @@ impl<'r> Linker<'r> {
                     s.listed_controls
                         .iter()
                         .cloned()
+                        .chain(
+                            self.gives_caller
+                                .contains(&format!("{rel}#{}", s.name))
+                                .then(|| drift_core::controls::GIVES_CALLER.to_string()),
+                        )
+                        .chain(s.returns_built.iter().map(|class| {
+                            format!(
+                                "{}{}",
+                                drift_core::controls::RETURNS_BUILT,
+                                self.canon(rel, class)
+                            )
+                        }))
+                        // Where the value a query filters by comes from: the
+                        // caller's own ([`crate::lower::RawSymbol::caller_keys`]).
+                        .chain(s.caller_keys.iter().map(|(callee, key)| {
+                            format!(
+                                "{}{}\t{key}\tcaller",
+                                drift_core::controls::FILTER_VALUE,
+                                self.canon(rel, callee)
+                            )
+                        }))
+                        .chain(
+                            s.fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED)),
+                        )
+                        // Handed on to code of the repository: what a built-in or a
+                        // package does with it is not followed.
+                        .chain(
+                            s.param_passes
+                                .iter()
+                                .map(|callee| self.canon(rel, callee))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_PARAM)),
+                        )
+                        .chain(s.refuses_without.iter().map(|by| {
+                            format!(
+                                "{}{}",
+                                drift_core::controls::REFUSES_WITHOUT,
+                                by.iter()
+                                    .map(|callee| self.canon(rel, callee))
+                                    .collect::<Vec<_>>()
+                                    .join("\t")
+                            )
+                        }))
+                        .chain(
+                            s.made_fed_sinks
+                                .iter()
+                                .map(|k| format!("{}{k}", drift_core::controls::SINK_FED_MADE)),
+                        )
+                        .chain(
+                            s.made_passes
+                                .iter()
+                                .map(|callee| self.canon(rel, callee))
+                                .filter(|c| !c.starts_with("global#") && !c.starts_with("pkg:"))
+                                .map(|c| format!("{}{c}", drift_core::controls::PASSES_MADE)),
+                        )
                         .chain(metadata)
                         .chain(uses)
+                        .chain(s.given_result.iter().map(|(by, callee)| {
+                            format!(
+                                "{}{}\t{}",
+                                drift_core::controls::GIVEN_RESULT_OF,
+                                self.canon(rel, callee),
+                                self.canon(rel, by)
+                            )
+                        }))
                         .chain(built)
                         .chain(unread)
                         .collect::<Vec<String>>(),
@@ -3319,6 +4077,16 @@ impl<'r> Linker<'r> {
                 (s.name.as_str(), s.line, wraps.collect())
             })
             .collect();
+        // The calls of a route that only the listed reading holds
+        // ([`crate::lower::RawSymbol::listed_calls`]).
+        let listed_calls: Vec<(&str, u32, Vec<String>)> = raw_symbols
+            .iter()
+            .filter(|s| !s.listed_calls.is_empty())
+            .map(|s| {
+                let calls = s.listed_calls.iter().map(|r| self.canon(rel, r));
+                (s.name.as_str(), s.line, calls.collect())
+            })
+            .collect();
         // The guards a body's `useGlobalGuards(...)` names are what mining reads of
         // the call; the listed reading has the call itself, on the routes
         // ([`crate::lower::RawSymbol::measured_args`]).
@@ -3352,15 +4120,61 @@ impl<'r> Linker<'r> {
             })
             .filter(|(_, _, args, tags)| !args.is_empty() || !tags.is_empty())
             .collect();
+        // The class each property of a class is declared with
+        // ([`crate::lower::RawSymbol::attr_types`]).
+        let attrs: Vec<(&str, u32, Vec<String>)> = raw_symbols
+            .iter()
+            .filter(|s| !s.attr_types.is_empty())
+            .map(|s| {
+                let mut types: Vec<String> = s
+                    .attr_types
+                    .iter()
+                    .map(|(attr, class)| format!("{attr}={}", self.canon(rel, class)))
+                    .collect();
+                types.sort();
+                (s.name.as_str(), s.line, types)
+            })
+            .collect();
         if !in_place.is_empty()
+            || !attrs.is_empty()
             || !listed_controls.is_empty()
             || !flows.is_empty()
             || !measured_args.is_empty()
             || !goes_on.is_empty()
             || !unwraps.is_empty()
+            || !listed_calls.is_empty()
             || !built.is_empty()
+            || facts.symbols.iter().any(|s| {
+                self.named_giver(&s.controls).is_some()
+                    || s.members
+                        .iter()
+                        .any(|m| self.named_giver(&m.unread).is_some())
+            })
         {
             let mut measured = facts.clone();
+            for (name, line, types) in attrs {
+                for s in facts
+                    .symbols
+                    .iter_mut()
+                    .filter(|s| s.name == name && s.line == line)
+                {
+                    s.attr_types = types.clone();
+                }
+            }
+            for (name, line, calls) in listed_calls {
+                for s in facts
+                    .symbols
+                    .iter_mut()
+                    .filter(|s| s.name == name && s.line == line)
+                {
+                    for c in &calls {
+                        if !s.calls.contains(c) {
+                            s.calls.push(c.clone());
+                        }
+                    }
+                    s.calls.sort();
+                }
+            }
             for (name, line, checks) in built {
                 for s in facts
                     .symbols
@@ -3419,6 +4233,14 @@ impl<'r> Linker<'r> {
                     s.controls.extend(controls.iter().cloned());
                     s.controls.sort();
                     s.controls.dedup();
+                }
+            }
+            // What a body takes for the caller by a name alone proves nothing of
+            // who calls ([`Linker::by_name_only`]).
+            for s in facts.symbols.iter_mut() {
+                self.by_name_only(&mut s.controls);
+                for m in s.members.iter_mut() {
+                    self.by_name_only(&mut m.unread);
                 }
             }
             for (name, line, args) in measured_args {
@@ -3525,6 +4347,27 @@ fn check_condition(c: &crate::lower::RawBodyCheck) -> String {
     } else {
         String::new()
     }
+}
+
+/// What the keyed store `store` of the file (a top-level declaration) holds under
+/// a key that is the caller's is a value of the caller: every `set` any body of
+/// the file makes on it puts a value of the caller under such a key
+/// ([`crate::lower::RawSymbol::keeps`]), and no other module can fill it (the
+/// file does not export it). A session kept by the token it was made from
+/// (`CACHE.set(JSON.stringify(token), session)`) is that caller's session.
+fn kept_for_caller(f: &LoweredFile, store: &str) -> bool {
+    let mut fills = f
+        .raw
+        .symbols
+        .iter()
+        .flat_map(|s| s.keeps.iter())
+        .filter(|(filled, _)| filled == store)
+        .peekable();
+    fills.peek().is_some()
+        && fills.all(|(_, kept)| *kept)
+        && !f.raw.exports.iter().any(
+            |e| matches!(&e.target, crate::lower::RawExportTarget::Local(local) if local == store),
+        )
 }
 
 #[cfg(test)]

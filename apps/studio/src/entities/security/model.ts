@@ -72,6 +72,17 @@ export const SINK_LABELS: Record<string, string> = {
   jwt_decode_without_verify: "jwt.decode() without verify",
   cookie_without_httponly: "Cookie without httpOnly",
   cors_any_origin: "CORS for any origin",
+  unsafe_deserialize: "Unsafe deserialisation",
+  path_traversal: "File at a path built from a value",
+  template_injection: "Template built from a value",
+  nosql_injection: "MongoDB $where built from a value",
+  xml_external_entities: "XML external entities resolved",
+  hardcoded_secret: "Signing secret written in the code",
+  debug_enabled: "Server started in debug mode",
+  tls_verify_disabled: "TLS certificate not verified",
+  mass_assignment: "Row written from the whole request body",
+  dynamic_regex: "Regular expression built from a value",
+  dynamic_key_write: "Property written under a key read off a value",
 };
 
 export const sinkLabel = (k: string) => SINK_LABELS[k] ?? k;

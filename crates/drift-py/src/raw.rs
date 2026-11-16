@@ -28,6 +28,67 @@ pub struct RawRef {
     pub member: String,
 }
 
+/// One way a view's `get_permissions` answers
+/// ([`RawSymbol::drf_permission_cases`]): for the requests every test holds for,
+/// and none of an earlier case, these classes.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawPermCase {
+    pub tests: Vec<RawPermTest>,
+    /// The classes returned; `None` for `super().get_permissions()`, which is the
+    /// view's `permission_classes`.
+    pub classes: Option<Vec<RawRef>>,
+}
+
+/// A test of a [`RawPermCase`]: the request's method (`self.request.method in
+/// SAFE_METHODS`), or the view's action (`self.action == "list"`), is one of
+/// `names` (`holds`), or none of them.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawPermTest {
+    pub action: bool,
+    pub names: Vec<String>,
+    pub holds: bool,
+}
+
+/// By what a statement reads the rows of a model ([`RawSymbol::rows`]).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum RawRows {
+    /// Filtered by the caller itself or the key of the caller's record, under
+    /// this key; and whether another filter of the statement is by a value read
+    /// off a parameter or off what the request sent.
+    Own(String, RawSide, bool),
+    /// Filtered by a value read off what these gave.
+    From(Vec<RawRef>),
+    /// Filtered by nothing of the caller, in a branch taken where a member of
+    /// this value is set or is a literal (`if current_user.is_superuser:`): read
+    /// for the callers a role lets through.
+    ByRole(RawSide),
+    Any,
+}
+
+/// What a site of a body is ([`RawSymbol::held`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum RawHeld {
+    /// A call of the function an enclosing function was given
+    /// ([`drift_core::controls::HANDED_AFTER`]).
+    Handed,
+    /// A `return` that does not refuse, or the end of the body
+    /// ([`drift_core::controls::LEAVES_AFTER`]).
+    Leaves,
+    /// A `return` that may give a true value
+    /// ([`drift_core::controls::TRUE_AFTER`]).
+    True,
+}
+
+impl RawHeld {
+    pub fn control(self) -> &'static str {
+        match self {
+            Self::Handed => drift_core::controls::HANDED_AFTER,
+            Self::Leaves => drift_core::controls::LEAVES_AFTER,
+            Self::True => drift_core::controls::TRUE_AFTER,
+        }
+    }
+}
+
 /// [`RawSymbol::drf_permissions_unread`] of a view class that defines
 /// `get_permissions`: the permissions are what the method returns for the request,
 /// whatever `permission_classes` any class of its chain declares.
@@ -166,6 +227,35 @@ pub struct RawSymbol {
     pub reads: Vec<String>,
     pub throws: Vec<RawRef>,
     pub sinks: Vec<String>,
+    /// Sinks the measured build did not read, beside [`Self::sinks`] (Python
+    /// lowering 69): SQL built from input and bound to a name before the query is
+    /// given it (`q = f"SELECT ... {name}"; cursor.execute(q)`). Linked into the
+    /// listed reading only ([`drift_core::Listed`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_sinks: Vec<String>,
+    /// The dependencies whose value every `return` of the function that gives a
+    /// value reads it off ([`drift_core::controls::RETURNS_GIVEN`]); empty where a
+    /// return gives anything else.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub returns_given: Vec<RawDep>,
+    /// Where the body hands a request on, lets one through or answers true for
+    /// one, each with the callees whose call's value was true on the way there
+    /// ([`drift_core::controls::HANDED_AFTER`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub held: Vec<(RawHeld, Vec<RawRef>)>,
+    /// The rows each statement of the body reads, by the class it names, and by
+    /// what ([`drift_core::controls::ROWS`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<(RawRef, RawRows)>,
+    /// The risky operations of the body that are given a value read off a
+    /// parameter of the function or off what the request sent
+    /// ([`drift_core::controls::SINK_FED`]), by kind.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks: Vec<String>,
+    /// The callees the body hands a value read off a parameter of the function or
+    /// off what the request sent ([`drift_core::controls::PASSES_PARAM`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes: Vec<RawRef>,
     pub order: Vec<RawRef>,
     /// FastAPI dependencies of a function, in parameter order; of a class, its
     /// `__init__`'s (what `Depends(Class)` runs).
@@ -205,6 +295,12 @@ pub struct RawSymbol {
     /// [`Self::drf_permissions`] and the wraps stay what they were.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drf_permissions_unread: Option<String>,
+    /// What the `get_permissions` the class defines returns, by the request's
+    /// method and the view's action, where its body is read to the end
+    /// ([`RawPermCase`]): the linker picks the case of each handler, in place of
+    /// saying that the permissions were not read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drf_permission_cases: Option<Vec<RawPermCase>>,
     /// DRF `authentication_classes`, likewise.
     #[serde(default)]
     pub drf_authentication: Option<Vec<RawRef>>,
@@ -312,6 +408,15 @@ pub struct RawSymbol {
     /// (`*` for an unpacking) and side.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arg_sides: Vec<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back that the body writes after it, by a
+    /// value that is not the caller itself ([`drift_core::controls::ROW_SET`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_sets: Vec<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names (`db.add(row)`
+    /// with `db: Session`): of [`RawSymbol::arg_sides`], those a package's class
+    /// may be the receiver of ([`drift_core::controls::PKG_ARG_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed_calls: Vec<RawRef>,
     /// For a class: the parameter of `__init__` each attribute of `self` is bound
     /// from, with its position ([`drift_core::controls::ATTR_PARAM`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -505,6 +610,11 @@ pub enum RawSide {
     Call(RawRef),
     /// A module-level name that is no call.
     Value(RawRef),
+    /// A value of the caller that is the caller itself or the key of the caller's
+    /// record (`request.user`, `request.user.id`), not something read off it
+    /// (`request.user.org_id`): written `own <side>`. Recorded of what a call is
+    /// given ([`drift_core::controls::ARG_VALUE`]) only.
+    Own(Box<RawSide>),
     Unread,
 }
 
@@ -549,7 +659,26 @@ pub struct RawBodyCheck {
     /// What the function calls before the check ([`drift_core::BodyCheck::after`]).
     #[serde(default)]
     pub after: Vec<RawReceiverCall>,
+    /// Read since the measured build: the refusal is in the `else` of the test,
+    /// or follows an `if` whose body always leaves. Not linked for what mining
+    /// reads.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub since: bool,
+    /// Only the measured build reads it as a check, and links it: the test turns
+    /// away the requests that have a caller, not those that have none (`if
+    /// request.user.is_authenticated: return redirect("login")`); it reads only
+    /// the verb of the request (`if request.method != "POST": return
+    /// redirect("login")`); or it is a 403 or a 404 for having no caller, which
+    /// asks nothing of the caller beyond being signed in.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub measured: bool,
 }
+
+/// In a function's controls, for [`drift_core::controls::UNREAD_EXIT`]: an exit
+/// the measured build did not read, which a check read since explains
+/// ([`RawBodyCheck::since`]). Linked as that control for what mining reads, and
+/// dropped otherwise.
+pub(crate) const UNREAD_EXIT_MEASURED: &str = "unread_exit:measured";
 
 /// A condition whose first exit raises an error class ([`drift_core::RaiseCheck`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -661,6 +790,21 @@ pub struct RawMember {
     pub name: String,
     pub calls: Vec<RawRef>,
     pub sinks: Vec<String>,
+    /// As [`RawSymbol::since_sinks`], of the method's own body.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_sinks: Vec<String>,
+    /// As [`RawSymbol::fed_sinks`] and [`RawSymbol::param_passes`], of the method's
+    /// own body.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fed_sinks: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub param_passes: Vec<RawRef>,
+    /// As [`RawSymbol::held`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub held: Vec<(RawHeld, Vec<RawRef>)>,
+    /// As [`RawSymbol::rows`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<(RawRef, RawRows)>,
     /// The method's own checks that turn the caller away.
     #[serde(default)]
     pub body_checks: Vec<RawBodyCheck>,
@@ -705,6 +849,15 @@ pub struct RawMember {
     pub filter_values: Vec<RawFilterValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arg_sides: Vec<(RawRef, Vec<(String, RawSide)>)>,
+    /// Attributes of what a call handed back that the body writes after it, by a
+    /// value that is not the caller itself ([`drift_core::controls::ROW_SET`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub row_sets: Vec<(RawRef, String)>,
+    /// The calls made on a value whose class an annotation names (`db.add(row)`
+    /// with `db: Session`): of [`RawSymbol::arg_sides`], those a package's class
+    /// may be the receiver of ([`drift_core::controls::PKG_ARG_VALUE`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub typed_calls: Vec<RawRef>,
     /// What the method's own body does that no other fact records
     /// ([`drift_core::Member::unread`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1265,6 +1418,12 @@ impl RawSymbol {
             reads: vec![],
             throws: vec![],
             sinks: vec![],
+            since_sinks: vec![],
+            returns_given: vec![],
+            held: vec![],
+            rows: vec![],
+            fed_sinks: vec![],
+            param_passes: vec![],
             order: vec![],
             deps: vec![],
             call_deps: vec![],
@@ -1277,6 +1436,7 @@ impl RawSymbol {
             traits: vec![],
             drf_permissions: None,
             drf_permissions_unread: None,
+            drf_permission_cases: None,
             drf_authentication: None,
             meta: vec![],
             decorator_args: vec![],
@@ -1305,6 +1465,8 @@ impl RawSymbol {
             check_sides: vec![],
             filter_values: vec![],
             arg_sides: vec![],
+            row_sets: vec![],
+            typed_calls: vec![],
             attr_params: vec![],
             shapes: vec![],
             since_wraps: vec![],

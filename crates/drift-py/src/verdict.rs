@@ -236,6 +236,12 @@ fn both(each: &[Option<Asks>]) -> Option<Asks> {
     }
 }
 
+/// A member of the user that says a caller is signed in and nothing of what they
+/// may do, in the closed set [`asks_of_expr`] reads.
+pub(crate) fn says_status(member: &str) -> bool {
+    matches!(member, "is_authenticated" | "is_active" | "is_anonymous")
+}
+
 /// The closed set of what a test of the user says: `<user>.is_staff`,
 /// `is_superuser`, `has_perm(...)`, `has_perms(...)`, `has_module_perms(...)` and
 /// `groups.filter(...).exists()` ask a role; `is_authenticated`, `is_active`, `not
@@ -318,9 +324,14 @@ fn of_body(body: &[Stmt], t: &Test) -> Option<Verdict> {
             if !matches!(r.value.as_deref(), Some(Expr::BooleanLiteral(b)) if !b.value) {
                 return None;
             }
-            // `if not <signed in>:`, or an `or` with such an operand.
+            // `if not <signed in>:`, or an `or` with such an operand; and `if
+            // <user>.is_anonymous:`, which Django's anonymous user alone has as
+            // `True`: the same test, said of who is not signed in.
             let negated = |e: &Expr| match e {
                 Expr::UnaryOp(u) if u.op == ast::UnaryOp::Not => of_expr(&u.operand, t),
+                Expr::Attribute(a) if a.attr.as_str() == "is_anonymous" && (t.user)(&a.value) => {
+                    Some(Verdict::SignedIn)
+                }
                 _ => None,
             };
             let found: Vec<Verdict> = match i.test.as_ref() {
