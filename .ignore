@@ -1,0 +1,15 @@
+# Paths Drift (and other tools that read `.ignore`, such as ripgrep) leave out:
+# test data, not product code. Drift is run on its own repository in CI; see
+# CONTRIBUTING.md, "Drift on its own repository". `rg --no-ignore-dot` still
+# searches them.
+
+# Fixture repositories the Rust tests and the Studio read.
+crates/*/tests/fixtures/
+apps/studio/fixtures/
+
+# Code planted with known vulnerabilities, the security inventory's test data.
+eval/security/planted/
+
+# Evaluation data held out from development, by name.
+eval/**/*holdout*
+eval/**/*heldout*

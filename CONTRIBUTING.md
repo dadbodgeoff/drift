@@ -5,9 +5,10 @@ Thanks for helping. A few rules keep the project predictable.
 ## Before you open a pull request
 
 These are the commands CI runs. CI also builds with `RUSTFLAGS=-D warnings`
-and `INSTA_UPDATE=no`. The same tests run on macOS on `main`, nightly and on demand
-(output must be identical across operating systems); macOS does not gate pull
-requests, and a macOS failure on `main` is fixed there:
+and `INSTA_UPDATE=no`. The same tests run on macOS on `main`, nightly, on demand
+and on pull requests that change the Rust build (output must be identical across
+operating systems); macOS does not gate pull requests, and a macOS failure on
+`main` is fixed there:
 
 ```sh
 cargo fmt --all --check
@@ -58,6 +59,40 @@ gate. `cargo deny check` is not part of it; run it separately.
 
 `scripts/snapshot.sh OUTDIR` exports the tracked tree at one commit, with no history, for a public copy. It fails, writing nothing, if a name in the private `scripts/snapshot-deny.txt` appears in a file (binary files included), a file or directory name or a link target, or if a string shaped like a secret remains outside the files listed in `scripts/snapshot-fake-secrets.txt` (exact paths); `scripts/snapshot-exclude.txt` takes shell globs. A deny list with no names fails. After changing `scripts/snapshot.sh`, run `scripts/snapshot-test.sh`.
 
+### Drift on its own repository
+
+Drift checks this repository like any other. The policy is committed:
+`.drift/conventions.yaml` and `drift.lock`, as `drift init` wrote them, and
+`drift.lock merge=union` in `.gitattributes`. `.drift/cache/` and the other
+local directories are ignored (see the wiki's Files Drift Writes). Every
+proposal is left undecided: accepting one, setting one to block and writing the
+security baseline (`drift security --write-baseline`) are the maintainers'
+decisions, made with `drift review`, never in a pull request that does
+something else. Until one is accepted, `drift check` cannot fail here; once one
+is in block mode, a pull request that newly breaks it fails the `oracle` job.
+
+The root `.ignore` leaves out of the scan what is test data, not product code:
+the fixture repositories under `crates/*/tests/fixtures/` and
+`apps/studio/fixtures/`, the planted vulnerable code in `eval/security/planted/`
+and held-out evaluation data (by name). Drift reads `.ignore` like `.gitignore`;
+so does ripgrep, so `rg` skips those paths too unless given `--no-ignore-dot` or
+the directory itself. Do not add real source there to quiet a finding. A run
+whose root is one of those directories (as the tests and fixture scripts do) is
+not affected.
+
+Run it as CI does, with the cache outside the checkout:
+
+```sh
+cargo build --locked -p drift-cli
+export DRIFT_CACHE_DIR="$(mktemp -d)"
+target/debug/drift check --diff-base origin/main --format github   # a branch
+target/debug/drift check --format github                           # the whole repository
+```
+
+`drift census`, `drift security` and `drift practices` show what Drift reads
+of this code; `drift init` again after a change merges new proposals and keeps
+every decision.
+
 ### Every CI job, command by command
 
 These are the commands of `.github/workflows/ci.yml`, job by job, as CI runs
@@ -76,8 +111,10 @@ cargo fmt --all --check
 cargo clippy --all-targets --locked -- -D warnings
 ```
 
-`test` (and `test-macos`, the same on macOS, on `main`, nightly and on demand,
-not on pull requests):
+`test` (and `test-macos`, the same on macOS, on `main`, nightly, on demand and,
+non-blocking, on pull requests that change the Rust build; `test-windows` also
+runs `cargo build --release --locked -p drift-cli` first and never fails the
+run):
 
 ```sh
 INSTA_UPDATE=no cargo test --all --locked
@@ -107,7 +144,25 @@ for f in eval/study/*.test.mjs; do node --test "$f" || exit 1; done
 cargo build --locked -p drift-cli
 npm install --prefix "$RUNNER_TEMP/ts" --no-save --no-audit --no-fund --ignore-scripts typescript@5.9.3
 TS_PATH="$RUNNER_TEMP/ts/node_modules/typescript" node eval/oracle/fixtures.mjs --drift target/debug/drift
+# Drift on this repository (needs full history on a pull request: fetch-depth: 0)
+export DRIFT_CACHE_DIR="$(mktemp -d "$RUNNER_TEMP/drift-cache.XXXXXX")"
+target/debug/drift check --diff-base <pull request base commit> --format github  # pull requests
+target/debug/drift check --format github                                         # other events
 ```
+
+`harness` (python3 from the runner, standard library only):
+
+```sh
+(cd eval/scoreboard && python3 -I -m unittest discover -s tests)
+(cd eval/benchmark && python3 -I -m unittest discover -s tests)
+sh scripts/snapshot-test.sh
+```
+
+`scripts/gates.sh` is not run in CI: each of its gates is already a CI job
+(`fmt` and `clippy` in `lint`, `test` in `test`, `study` in `study`, the
+`--studio` gates in `studio`). `scripts/snapshot.sh` is not run either: it
+needs the private deny and fake-secret lists, and without the second it fails on
+the known fake secrets of the redaction test data.
 
 `packaging`:
 

@@ -157,11 +157,14 @@ jobs:
     # Parameter-type facts (`Symbol.arg_types`) against the TypeScript compiler on the
     # synthetic fixtures of crates/drift-ts/tests/fixtures/param-types*: every key the
     # compiler answers must match, and Drift may answer no key the compiler cannot.
+    # Then, with the same build, `drift check` on this repository (the last step).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+          # Full history, so the pull request's base commit is there for --diff-base.
+          fetch-depth: 0
       - run: rustup show
       - uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
       - run: cargo build --locked -p drift-cli
@@ -172,6 +175,43 @@ jobs:
       - run: node eval/oracle/fixtures.mjs --drift target/debug/drift
         env:
           TS_PATH: ${{ runner.temp }}/ts/node_modules/typescript
+      # Drift on its own repository, against the policy committed in .drift/ and
+      # drift.lock. On a pull request only what it introduces is reported (--diff-base
+      # its base commit); on every other event the whole repository is checked. Exit 1
+      # means an accepted block-mode convention is newly broken (none is accepted yet,
+      # so today this proves the command on a real repository); exit 2 is an error. A
+      # fresh cache outside the checkout, as the Drift Action uses, so the change
+      # cannot supply cached facts.
+      - name: Drift check on this repository
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          DRIFT_CACHE_DIR=$(mktemp -d "$RUNNER_TEMP/drift-cache.XXXXXX")
+          export DRIFT_CACHE_DIR
+          if [ -n "$BASE" ]; then
+            target/debug/drift check --diff-base "$BASE" --format github
+          else
+            target/debug/drift check --format github
+          fi
+
+  harness:
+    # The Python harness unit tests (eval/scoreboard, eval/benchmark; eval/replay has
+    # none) on the runner's python3, with nothing installed: they use the standard
+    # library, git and bash only. Then the tests of scripts/snapshot.sh, which run it
+    # on throwaway repositories. snapshot.sh itself is not run here: it needs the
+    # private deny and fake-secret lists, which are not in the repository, and without
+    # the second it fails on the known fake secrets of the redaction test data.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - run: python3 --version
+      - run: python3 -I -m unittest discover -s tests
+        working-directory: eval/scoreboard
+      - run: python3 -I -m unittest discover -s tests
+        working-directory: eval/benchmark
+      - run: sh scripts/snapshot-test.sh
 
   packaging:
     # The release path without building Drift (no musl build here): YAML and shape
