@@ -86,7 +86,9 @@ launcher and `RELEASING.md` all name the repository in `npm/config.json`.
 - [ ] **The version number**, then `node npm/set-version.mjs X.Y.Z` on a
       release branch (for example `0.1.0-beta.1`, or above `0.9.46`: see A1). A
       prerelease tag is published to npm under `next`, not `latest`, and becomes
-      a GitHub prerelease.
+      a GitHub prerelease. Recommended: `0.10.0-beta.1`. It sorts above every tag
+      the release repository already has (`v0.9.46` is the highest), so tools that
+      pick the newest tag pick this code, and it is still a prerelease below 1.0.
 - [ ] **The full rehearsal ran green on the release commit** in the release
       repository: `gh workflow run release.yml --ref <release-branch>`, then
       `gh run watch <run id>`, then `gh run download <run id>` and a look at

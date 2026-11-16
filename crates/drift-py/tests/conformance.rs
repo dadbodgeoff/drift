@@ -767,7 +767,10 @@ fn star_import_fan_out_in_settings_is_linear() {
     let started = std::time::Instant::now();
     let inv = drift_mine::security::inventory(&scan_files(&files));
     let took = started.elapsed();
-    assert!(took < std::time::Duration::from_secs(1), "took {took:?}");
+    // Once per path would never finish; once per module is a fraction of a second. The
+    // bound only has to tell those apart, so it leaves room for a slow shared runner
+    // (a 1 second bound failed on one at 1.3 seconds with the tests beside it running).
+    assert!(took < std::time::Duration::from_secs(10), "took {took:?}");
     // The settings at the end of the chain reach `s0`: the plain view is guarded.
     let unguarded: Vec<&str> = inv.unguarded().map(|e| e.symbol.as_str()).collect();
     assert_eq!(unguarded, ["OpenView.get"]);
