@@ -154,13 +154,39 @@ pub struct ScopeGap {
     pub resource: String,
     pub key: String,
     /// The entry points that query the resource: those that filter it by the key,
-    /// and the exceptions.
+    /// the exceptions, and those whose filter was not read.
     pub members: usize,
     pub scoped: usize,
     /// The entry points that query it and filter it by no value of the caller.
     pub exceptions: Vec<ScopeRef>,
+    /// The entry points that query it with a filter whose value Drift could not read
+    /// (`unread`): whether it is the caller's is unknown, so they are no exception,
+    /// listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<ScopeRef>,
     /// The first entry point (by path) that filters it by the key: one to copy from.
     pub example: ScopeRef,
+}
+
+/// A side of [`drift_core::controls::FILTER_VALUE`] that says nothing of where the
+/// value comes from: what the lowering could not read, or a call it could not
+/// resolve. A filter by it may be the caller's.
+fn side_unread(side: &str) -> bool {
+    side.is_empty() || side == "unread" || side.contains("unresolved:")
+}
+
+#[cfg(test)]
+mod side_unread_tests {
+    /// Pins what a scope gap holds apart: a filter by a side that says nothing of
+    /// where the value comes from may be the caller's, so it is no exception.
+    #[test]
+    fn a_side_that_says_nothing_of_its_source_is_unread() {
+        assert!(super::side_unread(""));
+        assert!(super::side_unread("unread"));
+        assert!(super::side_unread("call unresolved:getOrg"));
+        assert!(!super::side_unread("param"));
+        assert!(!super::side_unread("caller"));
+    }
 }
 
 /// What a query is called on: the callee without its last member
@@ -185,6 +211,8 @@ fn scope_gaps<'a>(
         at: ScopeRef,
         queried: BTreeSet<String>,
         scoped: BTreeSet<(String, String)>,
+        /// What it queries with a filter whose value was not read ([`side_unread`]).
+        unread: BTreeSet<String>,
     }
     let mut entries: Vec<Seen> = Vec::new();
     for f in &repo.files {
@@ -209,6 +237,7 @@ fn scope_gaps<'a>(
                 },
                 queried: BTreeSet::new(),
                 scoped: BTreeSet::new(),
+                unread: BTreeSet::new(),
             };
             for node in index.reach_nodes((origin, s)) {
                 let args = node.member.map_or(&node.symbol.args, |m| &m.args);
@@ -232,6 +261,8 @@ fn scope_gaps<'a>(
                     seen.queried.insert(r.to_string());
                     if crate::practices::side_is_callers(cx, side) {
                         seen.scoped.insert((r.to_string(), key.to_string()));
+                    } else if side_unread(side) {
+                        seen.unread.insert(r.to_string());
                     }
                 }
             }
@@ -257,14 +288,25 @@ fn scope_gaps<'a>(
             .iter()
             .filter(|e| e.scoped.iter().any(|(r, k)| r == resource && k == key))
             .collect();
+        let unscoped = |e: &&Seen| {
+            e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
+        };
+        // Unknown is never an exception: a filter whose value was not read may be
+        // the caller's.
         let mut exceptions: Vec<ScopeRef> = entries
             .iter()
-            .filter(|e| {
-                e.queried.contains(resource) && !e.scoped.iter().any(|(r, _)| r == resource)
-            })
+            .filter(unscoped)
+            .filter(|e| !e.unread.contains(resource))
             .map(|e| e.at.clone())
             .collect();
-        let members = with.len() + exceptions.len();
+        let mut unknown: Vec<ScopeRef> = entries
+            .iter()
+            .filter(unscoped)
+            .filter(|e| e.unread.contains(resource))
+            .map(|e| e.at.clone())
+            .collect();
+        // Counted as before: what was not read neither makes a gap nor hides one.
+        let members = with.len() + exceptions.len() + unknown.len();
         if exceptions.is_empty()
             || members < SCOPE_GAP_MIN
             || (with.len() as f64) < SCOPE_GAP_SHARE * members as f64
@@ -272,6 +314,7 @@ fn scope_gaps<'a>(
             continue;
         }
         exceptions.sort();
+        unknown.sort();
         let Some(example) = with.iter().map(|e| &e.at).min().cloned() else {
             continue;
         };
@@ -281,6 +324,7 @@ fn scope_gaps<'a>(
             members,
             scoped: with.len(),
             exceptions,
+            unknown,
             example,
         });
     }
@@ -3769,8 +3813,14 @@ pub struct GuardGap {
     pub guard: String,
     pub members: usize,
     pub with_guard: usize,
-    /// Members without the guard, sorted by path.
+    /// Members without the guard, sorted by path: neither it nor a guard built on it
+    /// ([`guard_gaps_with`]), and nothing whose guard cannot be read.
     pub exceptions: Vec<EntryRef>,
+    /// Members without the guard that have something whose guard cannot be read
+    /// ([`EntryRow::opaque`]): it may be the guard, so they are no exception (guard
+    /// unknown), listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unknown: Vec<EntryRef>,
     /// The first member (by path) with the guard: one to copy from.
     pub example: EntryRef,
     /// The convention that says the same (a `wrapped_by` rule on this guard covering
@@ -7689,7 +7739,7 @@ pub fn inventory_with(repo: &RepoFacts, boundaries: Boundaries) -> Inventory {
             }
         }
     }
-    inv.guard_gaps = guard_gaps(&inv.entry_points);
+    inv.guard_gaps = guard_gaps_built_on(repo, &cx, &inv.entry_points);
     inv.scope_gaps = scope_gaps(repo, &index, &cx);
     inv.whole_rows = crate::whole_rows::read(
         repo,
@@ -7876,11 +7926,17 @@ pub struct Regressions {
     pub now_public: Vec<EntryRef>,
     /// Entry points the change adds (in files it added or changed, of a handler the
     /// merge base did not have) that a request reaches ([`ADDED_KINDS`]) where Drift
-    /// found no guard in what it read, or cannot tell its guard ([`EntryRow::opaque`]),
-    /// whatever their siblings do and whatever they reach. One the map knows to be open
-    /// on purpose ([`EntryRow::known_open`]) is not one, and one listed above (under
-    /// `guard_gaps` or `unguarded_reaching`) is not listed again.
+    /// found no guard in what it read, whatever their siblings do and whatever they
+    /// reach. One the map knows to be open on purpose ([`EntryRow::known_open`]) is not
+    /// one, and one listed above (under `guard_gaps` or `unguarded_reaching`) is not
+    /// listed again. One whose guard Drift cannot read is not one either: it is in
+    /// `guard_unknown`.
     pub added_without_guard: Vec<EntryRow>,
+    /// The entry points the change adds, as `added_without_guard` counts them, with
+    /// no guard and something whose guard cannot be read ([`EntryRow::opaque`]): guard
+    /// unknown, never a finding, listed apart. Omitted when empty (additive).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub guard_unknown: Vec<EntryRow>,
 }
 
 /// The kinds of entry point a person's request reaches, whose lack of a sign-in check
@@ -7897,6 +7953,7 @@ impl Regressions {
             && self.sinks.is_empty()
             && self.leaks.is_empty()
             && self.now_public.is_empty()
+            && self.guard_unknown.is_empty()
     }
 }
 
@@ -8056,7 +8113,11 @@ pub fn regressions(
         .filter(|e| !listed.contains(&(e.path.as_str(), e.symbol.as_str(), e.line)))
         .cloned()
         .collect();
+    // Unknown is never a finding: what could not be read may be the guard.
+    let (unknown, added): (Vec<EntryRow>, Vec<EntryRow>) =
+        added.into_iter().partition(|e| !e.opaque.is_empty());
     out.added_without_guard = added;
+    out.guard_unknown = unknown;
     out
 }
 
@@ -8093,7 +8154,7 @@ pub fn render_regressions(
     if r.is_empty() {
         let _ = writeln!(
             out,
-            "Security: this change ({files} file(s) added or changed, {against}) introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard or cannot tell, no new risky operation, no new client leak, and makes nothing internet-facing."
+            "Security: this change ({files} file(s) added or changed, {against}) introduces no entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard, no new risky operation, no new client leak, and makes nothing internet-facing."
         );
         let _ = writeln!(
             out,
@@ -8186,7 +8247,7 @@ Entry points lacking a guard most of their siblings have"
         let _ = writeln!(
             out,
             "
-New entry points where Drift found no guard, or cannot tell"
+New entry points where Drift found no guard"
         );
         for e in &r.added_without_guard {
             let _ = writeln!(
@@ -8200,6 +8261,23 @@ New entry points where Drift found no guard, or cannot tell"
                     Some(x) => format!("; {x}"),
                     None => String::new(),
                 }
+            );
+        }
+    }
+    if !r.guard_unknown.is_empty() {
+        let _ = writeln!(
+            out,
+            "
+New entry points whose guard is unknown (Drift could not read what may be one; not findings)"
+        );
+        for e in &r.guard_unknown {
+            let _ = writeln!(
+                out,
+                "  {}:{} {}: {}",
+                sanitize(&e.path, 160),
+                e.line,
+                what(&entry_ref(e)),
+                sanitize(&added_has(e), 200)
             );
         }
     }
@@ -8311,7 +8389,9 @@ pub fn github_regression_annotations(r: &Regressions) -> String {
             }
         );
     }
-    for e in &r.added_without_guard {
+    // A new entry point whose guard is unknown is a notice too, said so: never a
+    // finding.
+    for e in r.added_without_guard.iter().chain(&r.guard_unknown) {
         let mut what = String::new();
         if let Some(m) = &e.method {
             what.push_str(m);
@@ -8357,7 +8437,7 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
         sanitize(&merge_base[..merge_base.len().min(12)], 12)
     );
     if r.is_empty() {
-        out.push_str("No entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard or cannot tell, no new risky operation, no new client leak; nothing made internet-facing.\n");
+        out.push_str("No entry point lacking a guard its siblings share, no unguarded entry point reaching a risky operation, no new entry point where Drift found no guard, no new risky operation, no new client leak; nothing made internet-facing.\n");
     }
     if !r.guard_gaps.is_empty() {
         out.push_str("### Entry points lacking a guard most of their siblings have\n\n");
@@ -8407,7 +8487,7 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
         out.push('\n');
     }
     if !r.added_without_guard.is_empty() {
-        out.push_str("### New entry points where Drift found no guard, or cannot tell\n\n");
+        out.push_str("### New entry points where Drift found no guard\n\n");
         for e in &r.added_without_guard {
             let _ = writeln!(
                 out,
@@ -8420,6 +8500,20 @@ pub fn regressions_summary(r: &Regressions, base: &str, merge_base: &str, files:
                     Some(x) => format!(" ({x})"),
                     None => String::new(),
                 }
+            );
+        }
+        out.push('\n');
+    }
+    if !r.guard_unknown.is_empty() {
+        out.push_str("### New entry points whose guard is unknown (not findings)\n\n");
+        for e in &r.guard_unknown {
+            let _ = writeln!(
+                out,
+                "- `{}:{}` {}: {}",
+                sanitize(&e.path, 160),
+                e.line,
+                sanitize(e.route.as_deref().unwrap_or(&e.symbol), 120),
+                sanitize(&added_has(e), 200)
             );
         }
         out.push('\n');
@@ -8510,10 +8604,25 @@ pub(crate) fn role_dirs(package: &str, path: &str) -> Vec<String> {
     dirs
 }
 
+/// [`GuardGap`]s of sorted `entries`, comparing guards by name alone
+/// ([`guard_gaps_with`]).
+pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
+    guard_gaps_with(entries, &|_, _, _| false)
+}
+
 /// [`GuardGap`]s of sorted `entries`. Hooks the whole app runs are not guards here:
 /// every member has them by construction. Deterministic: roles are visited broadest
 /// first and the output is sorted.
-pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
+///
+/// A member lacking the guard by name has it when `built_on(member, guard, with)`
+/// says one of its own guards is built on it (`with`: the members that have it by
+/// name): such a member is no exception. That only removes exceptions; the share is
+/// still counted by name. A member that lacks it and has something whose guard
+/// cannot be read is no exception either ([`GuardGap::unknown`]).
+pub fn guard_gaps_with(
+    entries: &[EntryRow],
+    built_on: &dyn Fn(&EntryRow, &str, &[&EntryRow]) -> bool,
+) -> Vec<GuardGap> {
     use crate::mine::MIN_ROLE_SIZE;
     let mut roles: BTreeMap<(&str, &str, String), Vec<usize>> = BTreeMap::new();
     for (i, e) in entries.iter().enumerate() {
@@ -8554,14 +8663,22 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
             {
                 continue;
             }
+            let with: Vec<&EntryRow> = members
+                .iter()
+                .copied()
+                .filter(|&i| has(i, guard))
+                .map(|i| &entries[i])
+                .collect();
             let lacking: BTreeSet<usize> = members
                 .iter()
                 .copied()
                 .filter(|&i| !has(i, guard))
+                .filter(|&i| !built_on(&entries[i], guard, with.as_slice()))
                 .collect();
-            if reported
-                .get(guard)
-                .is_some_and(|sets| sets.iter().any(|s| lacking.is_subset(s)))
+            if lacking.is_empty()
+                || reported
+                    .get(guard)
+                    .is_some_and(|sets| sets.iter().any(|s| lacking.is_subset(s)))
             {
                 continue;
             }
@@ -8569,6 +8686,14 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
             let Some(&example) = members.iter().find(|&&i| has(i, guard)) else {
                 continue;
             };
+            // Unknown is never an exception: what could not be read may be the guard.
+            let (unknown, exceptions): (Vec<usize>, Vec<usize>) = lacking
+                .iter()
+                .copied()
+                .partition(|&i| !entries[i].opaque.is_empty());
+            if exceptions.is_empty() {
+                continue;
+            }
             out.push(GuardGap {
                 package: key.0.to_string(),
                 kind: key.1.to_string(),
@@ -8576,7 +8701,8 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
                 guard: guard.to_string(),
                 members: members.len(),
                 with_guard,
-                exceptions: lacking.iter().map(|&i| entry_ref(&entries[i])).collect(),
+                exceptions: exceptions.iter().map(|&i| entry_ref(&entries[i])).collect(),
+                unknown: unknown.iter().map(|&i| entry_ref(&entries[i])).collect(),
                 example: entry_ref(&entries[example]),
                 convention: None,
             });
@@ -8584,6 +8710,106 @@ pub fn guard_gaps(entries: &[EntryRow]) -> Vec<GuardGap> {
     }
     out.sort();
     out
+}
+
+/// A guard's short name without what says how it is applied (` (body call)`, ` (app
+/// hook)`, ...): the name of what it calls.
+fn guard_name(guard: &str) -> &str {
+    let mut g = guard;
+    for suffix in [BODY_CALL, BODY_CHECK, MIDDLEWARE, APP_HOOK, BASE, " (settings)"] {
+        g = g.strip_suffix(suffix).unwrap_or(g);
+    }
+    g
+}
+
+/// `own` (a reference, normalised) is built on `target`: `target` is `own`, or what
+/// [`built_on`] reads `own` to rest on (the binding it derives from, what it is
+/// given by reference, its wrappers and bases, what it calls one call deep) reaches
+/// `target`'s definition; for a package's guard, what proves `own` a guard
+/// ([`authenticating_root`], [`proving_root`]) is `target`.
+fn rests_on(ctx: &crate::context::RepoContext, own: &str, target: &str) -> bool {
+    if own == target {
+        return true;
+    }
+    if external(target) {
+        return authenticating_root(ctx, own).as_deref() == Some(target)
+            || proving_root(ctx, own).as_deref() == Some(target);
+    }
+    let Some(t) = ctx.definition(target) else {
+        return false;
+    };
+    built_on(ctx, own.to_string(), false, false, &|s| std::ptr::eq(s, t)).is_some()
+}
+
+/// [`guard_gaps_with`] for the inventory: a member has a guard when one of its own
+/// guards is built on it ([`rests_on`]), the guards matched by what the members'
+/// handlers reference (their wrappers and calls, and those of the functions they
+/// pass by reference), never by a name alone. The epic case: a route that calls
+/// `requireRecentVerification`, whose first line is `requireUserId(request)`, has
+/// `requireUserId`.
+fn guard_gaps_built_on(
+    repo: &RepoFacts,
+    cx: &crate::practices::Cx<'_>,
+    entries: &[EntryRow],
+) -> Vec<GuardGap> {
+    let ctx = cx.context();
+    // File -> handler -> what it references, normalised.
+    let mut refs: BTreeMap<&str, BTreeMap<&str, BTreeSet<String>>> = BTreeMap::new();
+    for f in &repo.files {
+        for e in &f.entry_points {
+            let Some((_, s)) = crate::entries::entry_symbol(repo, f, e) else {
+                continue;
+            };
+            let mut bodies: Vec<&Symbol> = vec![s];
+            for c in &s.calls {
+                if let Some(r) = c.strip_suffix("(ref)")
+                    && !external(r)
+                    && let Some(d) = ctx.definition(r)
+                {
+                    bodies.push(d);
+                }
+            }
+            let set = refs
+                .entry(f.path.as_str())
+                .or_default()
+                .entry(e.symbol.as_str())
+                .or_default();
+            for b in bodies {
+                for w in &b.wraps {
+                    set.insert(crate::mine::norm_ref(unwrapped(&w.wrapper)).into_owned());
+                }
+                for c in &b.calls {
+                    let c = c
+                        .strip_suffix("(ref)")
+                        .or_else(|| c.strip_suffix("(new)"))
+                        .unwrap_or(c);
+                    set.insert(crate::mine::norm_ref(c).into_owned());
+                }
+            }
+        }
+    }
+    // The references of a member's handler that a guard of this name names.
+    let named = |e: &EntryRow, name: &str| -> Vec<String> {
+        refs.get(e.path.as_str())
+            .and_then(|m| m.get(e.symbol.as_str()))
+            .into_iter()
+            .flatten()
+            .filter(|r| short(r) == name)
+            .cloned()
+            .collect()
+    };
+    guard_gaps_with(entries, &|e, guard, with| {
+        let targets: BTreeSet<String> = with
+            .iter()
+            .flat_map(|w| named(*w, guard_name(guard)))
+            .collect();
+        !targets.is_empty()
+            && e.guards
+                .iter()
+                .filter(|g| !g.ends_with(APP_HOOK))
+                .flat_map(|g| named(e, guard_name(g)))
+                .any(|own| targets.iter().any(|t| rests_on(ctx, &own, t)))
+    })
 }
 
 /// Exceptions listed per guard gap in text output; the rest are counted.
@@ -8973,6 +9199,21 @@ pub fn render_at(
                     g.exceptions.len() - GAP_EXCEPTIONS
                 );
             }
+            if !g.unknown.is_empty() {
+                let _ = writeln!(
+                    out,
+                    "      guard unknown, not exceptions ({}): {}",
+                    g.unknown.len(),
+                    sanitize(
+                        &g.unknown
+                            .iter()
+                            .map(|e| format!("{}:{}", e.path, e.line))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        400
+                    )
+                );
+            }
             let _ = writeln!(
                 out,
                 "      to copy: {}:{} {}",
@@ -9153,6 +9394,21 @@ pub fn render_at(
                     out,
                     "      ... {} more",
                     g.exceptions.len() - GAP_EXCEPTIONS
+                );
+            }
+            if !g.unknown.is_empty() {
+                let _ = writeln!(
+                    out,
+                    "      filter not read, not exceptions ({}): {}",
+                    g.unknown.len(),
+                    sanitize(
+                        &g.unknown
+                            .iter()
+                            .map(|e| format!("{}:{}", e.path, e.line))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        400
+                    )
                 );
             }
             let _ = writeln!(
