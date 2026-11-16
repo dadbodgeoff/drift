@@ -83,7 +83,11 @@ fn app(r: &Path, guarded: usize, open: usize) {
     write(
         r,
         "lib/auth.ts",
-        "import { TRPCError } from \"@trpc/server\";\n\nexport function withAuth<T>(h: T): T {\n  if (!(globalThis as any).user) {\n    throw new TRPCError({ code: \"UNAUTHORIZED\" });\n  }\n  return h;\n}\n",
+        // The guard signs the caller in and checks their role: a guard that only signs
+        // in leaves every wrapped route `no-authorization` (as before this build), so
+        // each wrapped route a change adds is a new finding of its own, in a file the
+        // change touched, and the change fails for that, not for the guard gap.
+        "import { TRPCError } from \"@trpc/server\";\n\nexport function withAuth<T>(h: T): T {\n  const user = (globalThis as any).user;\n  if (!user) {\n    throw new TRPCError({ code: \"UNAUTHORIZED\" });\n  }\n  if (user.role !== \"admin\") {\n    throw new TRPCError({ code: \"FORBIDDEN\" });\n  }\n  return h;\n}\n",
     );
     for i in 0..guarded {
         write(r, &format!("app/api/r{i:02}/route.ts"), GUARDED);

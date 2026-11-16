@@ -725,8 +725,18 @@ fn a_rename_into_a_role_with_edits_away_from_the_declaration() {
     );
 }
 
-/// Changes that break untouched routes from another file: plain check fails, so PR
-/// mode must too (main would go red on push). The merge-base worktree is cleaned up.
+/// Changes that break untouched routes from another file. PR mode fails exactly where
+/// the plain check would fail on main after the merge, and to tell the change's
+/// violations from main's it compares with the merge base. The merge-base worktree is
+/// cleaned up.
+///
+/// Before S7 both changes failed the plain check (every route a violation, the rule in
+/// block). S7 changed that on purpose: a route wrapped in a wrapper that resolves to no
+/// code Drift read is "cannot tell", never reported; and a mined rule fewer than 75% of
+/// whose tellable members follow it is stale and advises (`check::mode_now`). Both
+/// changes leave the auth rule stale, so the plain check advises and exits 0, and PR
+/// mode exits 0 too. `--strict` fails on advice: there PR mode still compares with the
+/// merge base, reports what the change caused and not what main had.
 #[test]
 fn cross_file_causes_compare_with_the_merge_base() {
     for case in ["delete the wrapper", "re-export the wrapper"] {
@@ -750,22 +760,50 @@ fn cross_file_causes_compare_with_the_merge_base() {
         git(r, &["add", "-A"]);
         git(r, &["commit", "-qm", "pr"]);
         let (plain, out, _) = drift(r, &["check"], &[]);
-        assert_eq!(plain, 1, "{case}: plain check fails: {out}");
+        assert_eq!(plain, 0, "{case}: the stale rule advises: {out}");
+        assert!(
+            out.contains(&format!(
+                "drift: [{}] was block, now advise because it is stale: ",
+                ids.auth
+            )),
+            "{case}: {out}"
+        );
+        if case == "delete the wrapper" {
+            assert!(
+                out.contains("it is wrapped in withAuth, which does not resolve to code Drift read"),
+                "{case}: {out}"
+            );
+        }
+        let (code, out, err) = drift(r, &["check", "--diff-base", "main"], &[]);
+        assert_eq!(code, 0, "{case}: as the plain check: {out}{err}");
         let status = git_out(r, &["status", "--porcelain"]);
         let indexes = cache_indexes(r);
         let (code, out, err) = drift(
             r,
-            &["check", "--diff-base", "main", "--format", "json"],
+            &[
+                "check",
+                "--strict",
+                "--diff-base",
+                "main",
+                "--format",
+                "json",
+            ],
             &[],
         );
-        assert_eq!(code, 1, "{case}: {out}{err}");
         let report = json(&out);
         assert_eq!(report["diff"]["base_checked"], true, "{case}");
         let new = new_in(&report);
-        assert!(
-            new.contains(&t(&ids.auth, "app/api/r00/route.ts", "GET")),
-            "{case}: {new:?}"
-        );
+        if case == "delete the wrapper" {
+            // Every route is cannot-tell: nothing of the change's is reported.
+            assert_eq!(code, 0, "{case}: {out}{err}");
+            assert!(new.is_empty(), "{case}: {new:?}");
+        } else {
+            assert_eq!(code, 1, "{case}: {out}{err}");
+            assert!(
+                new.contains(&t(&ids.auth, "app/api/r00/route.ts", "GET")),
+                "{case}: {new:?}"
+            );
+        }
         // What main already had is still not the pull request's.
         assert!(
             !new.contains(&t(&ids.auth, "app/api/old/route.ts", "GET")),
@@ -836,9 +874,11 @@ fn check_json_lists_policy_conventions_after_the_report() {
     without.as_object_mut().unwrap().remove("conventions");
     assert_eq!(old, without);
     // `exempt` is #45's (here `src/lib/log.ts#logLine`, a shared part of its role, #52).
+    // `standing` is S7's (`CheckReport::standing`: per accepted mined rule, what the
+    // check read of its members), serialised with the report, before `conventions`.
     assert_eq!(
         old.as_object().unwrap().keys().collect::<Vec<_>>(),
-        ["violations", "fixed", "exempt"]
+        ["violations", "fixed", "exempt", "standing"]
     );
     assert!(
         old["exempt"]
