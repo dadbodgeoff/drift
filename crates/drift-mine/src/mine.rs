@@ -218,6 +218,17 @@ pub enum Rule {
         /// a unit the classifier cannot tell is never a violation. Absent when false.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         any_enforcing: bool,
+        /// The one file the practice holds in (repo-relative), when its place is a
+        /// file rather than its role's directory
+        /// ([`crate::practices::promote::Place::file`]). Absent for a directory, so a
+        /// practice of a directory is written as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        in_file: Option<String>,
+        /// The literal route prefix the practice holds under, in its role's package
+        /// (`/api/workspaces/[*]`, [`crate::practices::promote::Place::route`]). Absent
+        /// for a directory, so a practice of a directory is written as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        under_route: Option<String>,
     },
 }
 
