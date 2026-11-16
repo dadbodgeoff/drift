@@ -156,6 +156,17 @@ main branch.
   exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
   and unknown must not rise without a matching fall). For contributors; it is
   not part of the `drift` binary.
+- **Exposure from Kubernetes manifests:** `drift security` reads an `Ingress`, a
+  Gateway API route, an OpenShift `Route` or a `LoadBalancer`/`NodePort` Service
+  through its Service's selector to a workload, and a route of the code that
+  workload runs is internet-facing, internal or unknown with the manifest file
+  and line in its reason. A route that read unknown only because manifests were
+  there may now read either way. A workload is tied to code by an image the
+  repository builds (compose `build` with `image`, a Skaffold artifact) or by
+  `security.kubernetes` in `.drift/config.yaml`, which `drift setup` asks for
+  (question kind `kubernetes`). Kustomize `resources` and `bases` are read; a
+  patch, a name prefix or an unread key makes what it touches unknown, and Helm
+  charts stay unread. The security baseline is unchanged.
 
 ### Changed: the files Drift writes
 

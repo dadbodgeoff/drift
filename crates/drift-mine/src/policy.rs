@@ -337,6 +337,10 @@ pub struct SecuritySettings {
     /// What a person says of the repository's Terraform ([`TerraformTie`]).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terraform: Vec<TerraformTie>,
+    /// What a person says of the repository's Kubernetes manifests
+    /// ([`KubernetesTie`]): which workload runs which code.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kubernetes: Vec<KubernetesTie>,
     /// The entries of `not_deployed` that rest only on an agent's answer to `drift
     /// setup` that no person confirmed ([`agents_word`]): they count only where they
     /// make Drift more cautious, judged each time the boundary is read
@@ -441,6 +445,24 @@ pub struct TerraformTie {
     pub code: String,
 }
 
+/// One entry of `security.kubernetes`: `{workload: [<namespace>/]<Kind>/<name>, code:
+/// <dir>}`, with `container: <name>` where the pod has more than one. A person's
+/// statement that the workload of the repository's Kubernetes manifests (a
+/// `Deployment`, `StatefulSet`, `DaemonSet`, `Pod`, ...) runs the code in `code`: what
+/// Drift cannot tell itself when the image it runs is not one the repository is
+/// seen to build. The manifests are then read for the routes of `code`
+/// ([`crate::security::Boundaries`]).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct KubernetesTie {
+    /// `Kind/name` or `namespace/Kind/name`, as `drift security` names the object.
+    pub workload: String,
+    /// The container of its pod, when one is named.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container: Option<String>,
+    /// The code directory, repo-relative; "" is the whole repository.
+    pub code: String,
+}
+
 /// A path of the config as Drift compares it: no `./`, no `/` at the end, `.` the root.
 fn config_dir(d: &str) -> Option<String> {
     let d = d.trim().trim_start_matches("./").trim_end_matches('/');
@@ -464,6 +486,10 @@ impl SecuritySettings {
         for (k, v) in map {
             if k == "terraform" {
                 out.terraform = Self::ties(v, warnings);
+                continue;
+            }
+            if k == "kubernetes" {
+                out.kubernetes = Self::workloads(v, warnings);
                 continue;
             }
             let list = match k.as_str() {
@@ -552,6 +578,55 @@ impl SecuritySettings {
             out.push(TerraformTie {
                 module,
                 group,
+                code,
+            });
+        }
+        out
+    }
+}
+
+impl SecuritySettings {
+    /// Reads `security.kubernetes`; an entry that is not `{workload, code}` (and
+    /// optionally `container`) is a warning.
+    fn workloads(v: &serde_json::Value, warnings: &mut Vec<String>) -> Vec<KubernetesTie> {
+        let mut out = Vec::new();
+        let shape = format!(
+            "{CONFIG_FILE}: `security.kubernetes` must be a list of `{{workload: [<namespace>/]<Kind>/<name>, code: <dir>}}`, with `container: <name>` where its pod has more than one"
+        );
+        let Some(items) = v.as_array() else {
+            warnings.push(format!("{shape} (ignored)"));
+            return out;
+        };
+        for item in items {
+            let text = |key: &str| item.get(key).and_then(|v| v.as_str());
+            let known = item.as_object().is_some_and(|o| {
+                o.keys()
+                    .all(|k| matches!(k.as_str(), "workload" | "code" | "container"))
+            });
+            let container = match item.get("container") {
+                None => Some(None),
+                Some(c) => c
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|c| !c.is_empty())
+                    .map(|c| Some(c.to_string())),
+            };
+            let workload = text("workload").map(str::trim).filter(|w| {
+                let parts: Vec<&str> = w.split('/').collect();
+                matches!(parts.len(), 2 | 3) && parts.iter().all(|p| !p.is_empty())
+            });
+            let (Some(workload), Some(code), Some(container), true) = (
+                workload,
+                text("code").and_then(config_dir),
+                container,
+                known,
+            ) else {
+                warnings.push(format!("{shape} (an entry is ignored)"));
+                continue;
+            };
+            out.push(KubernetesTie {
+                workload: workload.to_string(),
+                container,
                 code,
             });
         }

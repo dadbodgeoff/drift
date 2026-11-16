@@ -422,6 +422,7 @@ fn setup_of(questions: &[Question], kind: ItemKind, about: &str) -> Option<Strin
         let hit = match (&q.subject, kind) {
             (Subject::Check { instrument, .. }, ItemKind::Check) => instrument == about,
             (Subject::Tie { dir, .. }, ItemKind::Exposure) => dir == about,
+            (Subject::Workload { dir, .. }, ItemKind::Exposure) => dir == about,
             (Subject::Reach { dirs, .. }, ItemKind::Exposure) => dirs.iter().any(|d| d == about),
             _ => false,
         };

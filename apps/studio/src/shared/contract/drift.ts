@@ -2328,8 +2328,11 @@ export interface DriftSetupProposal {
 export interface DriftSetupQuestion {
   /** `S-` and 4 hex digits, stable for what the question is about. */
   id: string;
-  /** A compose file that may be a test stack; the Terraform target group of a service; a helper to confirm as a check. */
-  kind: "deployment" | "terraform" | "check";
+  /**
+   * A compose file that may be a test stack; the Terraform target group of a service; the Kubernetes workload that
+   * runs a service (`security.kubernetes`); a helper to confirm as a check.
+   */
+  kind: "deployment" | "terraform" | "kubernetes" | "check";
   /**
    * `changed`: answered, and the evidence it rests on changed since, so it is asked again. `proposed`: an agent's
    * answer waits for a person (`proposal`). `rejected`: a person rejected an agent's answer on this same evidence (listed
