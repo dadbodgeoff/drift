@@ -33,6 +33,12 @@ main branch.
 
 ### Added
 
+- **Routes of Elysia, hapi, Restify, h3 and Astro endpoints.** `drift security`
+  and the practice map list them with their prefixes and mounts across files,
+  what runs before each (a hook, a prerequisite, an extension, hapi's route
+  authentication, an Astro middleware) read as a guard, and their request
+  schemas as validation. What cannot be followed is unread, never "no guard".
+  Mining is unchanged: they are in the listed reading only.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

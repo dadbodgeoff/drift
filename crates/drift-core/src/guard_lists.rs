@@ -231,7 +231,33 @@ pub const LIBRARY_GUARDS: &[LibraryGuard] = &[
             }
         },
     },
+    // hapi 17 to 21, a route's authentication (`options.auth`, or the server's
+    // default): the TypeScript reader writes `auth.required` of the package for a
+    // route whose auth names a strategy in the mode `required`, the mode hapi
+    // gives a strategy unless told otherwise. Documented: such a route answers 401
+    // to a request that does not authenticate, whatever the strategy.
+    LibraryGuard {
+        package: "@hapi/hapi",
+        export: "auth",
+        understood: "a route's auth in the mode required, as the reader writes it",
+        read: hapi_auth,
+    },
+    LibraryGuard {
+        package: "hapi",
+        export: "auth",
+        understood: "as @hapi/hapi",
+        read: hapi_auth,
+    },
 ];
+
+/// [`LIBRARY_GUARDS`]: hapi's route authentication, as the reader writes it.
+fn hapi_auth(chain: &[&str], _: Calls) -> Library {
+    if chain == ["required"] {
+        Library::Guard
+    } else {
+        Library::Unread
+    }
+}
 
 /// The combinators: a call that runs the guards it is given.
 pub struct Combinator {

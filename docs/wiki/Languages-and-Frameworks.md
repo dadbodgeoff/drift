@@ -30,6 +30,11 @@ Conventions are mined from any parsed code, whatever the framework. What follows
 | SvelteKit | TS/JS | `+server.ts` endpoints by exported method; `load` and `actions` of `+page.server.ts` and `+layout.server.ts`. Listed since, with `hooks.server` unread | run |
 | Nuxt and Nitro | TS/JS | `server/api/**` and `server/routes/**` handlers, the method from the file name (`[id].get.ts`). Listed since, with server middleware unread | run |
 | Koa (`@koa/router`, `koa-router`) | TS/JS | Routes on a router. Listed since; what a Koa middleware does is not read, so every route's guard is unknown | run |
+| Elysia | TS/JS | Routes chained on `new Elysia({ prefix })` or registered on its binding, under `.group` and `.guard`, with the instances `.use` adds across files. Listed since; `beforeHandle`, `onBeforeHandle`, `onRequest`, `onTransform`, `derive` and `resolve` are read as guards, a route schema (`body: t.Object(...)`) as validation; a route option Elysia does not document (a macro's), and what a plugin of another file adds with a scope, are unread | run |
+| hapi (`@hapi/hapi`, `hapi`) | TS/JS | `server.route({ method, path, handler, options })`, objects or arrays, and plugins registered with `routes: { prefix }` across files. Listed since; `options.auth` (and the server's default, where set before the route) is the guard, `false` and the modes `try` and `optional` are none; `options.pre` and `server.ext` before the handler are read; `options.validate` is validation. A route array of another file is not listed | run |
+| Restify | TS/JS | `server.get/post/put/patch/del/head/opts(path or { path, version }, ...handlers)` on `restify.createServer()`. Listed since; `server.use` and `server.pre` run for every route, the plugins Restify ships are nothing | run |
+| h3 (standalone) | TS/JS | Routes of `createRouter()`, mounted with `app.use(path, router.handler)` across files; `app.use` event handlers and `defineEventHandler({ onRequest })` are read as guards. Listed since | run |
+| Astro endpoints | TS/JS | `src/pages/**/*.{ts,js}` exporting `GET`, `POST`, ... or `ALL`, the route from the file path; `onRequest` of `src/middleware.ts` runs before each and is read as a middleware. Listed since; `.astro` pages are not parsed | run |
 | tRPC | TS/JS | Procedures, as `rpc` entry points (`QUERY hello`) | run |
 | Inngest | TS/JS | Functions (`createFunction`), as `job` or, with a cron trigger, `cron` | run (job) |
 | BullMQ | TS/JS | Workers, as `job` | run |
@@ -54,7 +59,7 @@ A route registered in a way Drift cannot read (a loop it cannot unroll, `getattr
 
 ## Frameworks not listed
 
-These were tried on a small repository and their routes did not appear (**run**): Hapi, Restify, Astro, Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit and Nuxt are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
+These were tried on a small repository and their routes did not appear (**run**): Sanic, Tornado, aiohttp, Litestar, Bottle and Quart. (Koa, Remix and React Router, SvelteKit, Nuxt, Elysia, hapi, Restify, h3 and Astro endpoints are listed since the last measured build; see the table above. Their routes are listed with their guard unknown unless one is found in the handler's own body, because what runs before them is not read.) The same holds, unverified, for any framework not in the table above. For such a repository:
 
 - `drift security` lists none of its routes, `drift practices` has no recipe for them, and a card says it knows no entry point for the file.
 - Convention mining, `drift check`, the review flow and the hooks' rule priming still work on the code as code.
