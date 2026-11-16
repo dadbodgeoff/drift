@@ -1662,7 +1662,16 @@ fn keyed_expected(key: &str, u: &Use, s: &Source, lib: &Lib) -> &'static str {
     } else {
         expected(u.reads, s, lib, false)
     };
-    if key == "orgId" && !s.caller && want == "none" {
+    if key == "orgId" && requested(s) && keyed_in_an_object(u, lib) {
+        // TypeScript lowering 87 (the tenant scoping of the listed reading): a key
+        // named for a tenant, filtered by what the request sent (read through what
+        // carries input: `req.query`, `req.params`, `req.body`, `req.headers`,
+        // tRPC's `input`, a decorated parameter itself), written as the value of
+        // that key in a query the facts read, is the tenant the request asked for
+        // (`tenancy_requested`), as Python reads the same route. Before, no fact
+        // said where the value came from, and the route was unknown.
+        "known"
+    } else if key == "orgId" && !s.caller && want == "none" {
         "unknown"
     } else if key == "orgId" && want == "unknown" && own_value(s) && keyed_in_an_object(u, lib) {
         // TypeScript lowering 76: a key named for a tenant, filtered by a value that
@@ -1699,14 +1708,36 @@ fn own_value(s: &Source) -> bool {
 }
 
 /// The use writes the value as the value of the key in an object a query is given:
-/// `{ where: { orgId: v } }`, and the filters of the libraries that take one.
+/// `{ where: { orgId: v } }`, and the filters of the libraries that take one; or,
+/// since TypeScript lowering 87, as what Drizzle's `eq` compares a table's column
+/// to, alone or in an `and` (`.where(and(eq(parcels.orgId, v), ...))`): the same
+/// equality of the key and the value.
 fn keyed_in_an_object(u: &Use, lib: &Lib) -> bool {
     u.name == "object-property"
+        || u.name == "orm-operators-and"
         || (u.name == "library-filter"
             && matches!(
                 lib.name,
-                "prisma" | "typeorm-find" | "sequelize" | "mongoose"
+                "prisma" | "typeorm-find" | "sequelize" | "mongoose" | "drizzle"
             ))
+}
+
+/// The source is what the request sent, read where the facts say so: a value read
+/// through what carries a request's input (`req.query.depot`, `(request.body as
+/// any).depot`, `req.headers["x-depot"]`, tRPC's `input.depot`), or a parameter a
+/// decorator fills with it (Nest's `@Query("depot") depot`). Not one read by a
+/// method (`req.nextUrl.searchParams.get(...)`, Hono's `c.req.query(...)`), and not
+/// a member of a decorated whole body (`body.depot` of `@Body() body`), which the
+/// reading does not follow: those stay unknown.
+fn requested(s: &Source) -> bool {
+    let bare = s.v.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_');
+    !s.caller
+        && s.how == How::Plain
+        && (bare
+            || s.v.starts_with("input.")
+            || [".query", ".params", ".body", ".headers"]
+                .iter()
+                .any(|m| s.v.contains(m)))
 }
 
 /// Every library in every position, the frameworks in turn: a fixture per library,

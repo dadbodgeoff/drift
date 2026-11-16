@@ -13,6 +13,7 @@ pub mod nextjs;
 pub mod repo;
 pub mod resolve;
 pub mod sfc;
+mod tenant;
 mod typeres;
 mod types;
 

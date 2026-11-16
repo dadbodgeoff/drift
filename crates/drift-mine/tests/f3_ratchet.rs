@@ -45,7 +45,6 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     // Python GraphQL resolvers are entry points too.
     for kind in [
         "guard-gap",
-        "no-authorization",
         "no-guard",
         "scope-gap",
         "unguarded-reaching",
@@ -58,6 +57,10 @@ fn every_kind_a_reading_widened_is_found_since_the_widening() {
     assert_eq!(found_since("workflow", "x"), 3);
     // Widened again by the scripts of single-file components.
     assert_eq!(found_since("risky", "x"), 3);
+    // Widened again by the TypeScript tenant reading (inventory 3).
+    for kind in ["no-authorization", "scope-gap", "unscoped-key"] {
+        assert_eq!(found_since(kind, "x"), 3, "{kind}");
+    }
     // Read as before.
     for kind in ["dependency", "kubernetes", "leak"] {
         assert_eq!(found_since(kind, "x"), 1, "{kind}");

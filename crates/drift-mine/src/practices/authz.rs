@@ -5398,12 +5398,45 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             Node::Member(m) => &m.args,
         },
     );
+    // TypeScript: the filters the scoped queries below were read for (the listed
+    // reading writes them, [`drift_core::Symbol::scoped_queries`]); the keys of
+    // `args` read below leave them alone.
+    let mut taken: std::collections::BTreeSet<(&str, &str)> = std::collections::BTreeSet::new();
     for q in &scoped {
         // Python: by where the value comes from, as the lowering recorded it
         // ([`python_filter`]): the caller's, the caller's tenant; what the request
         // sent, the tenant it asked for; a literal, one tenant named; anything
         // else, a filter found and not proven.
         if let Some(o) = python_filter(cx, r, ev, &q.callee, &q.key) {
+            // TypeScript: a filter by the caller's value that `args` also hold is
+            // read below, as it was before the scoped queries were written (what
+            // other reads of the unit select is asked there). One `args` do not
+            // hold is read here, and is found, not proven, beside another read of
+            // the unit that selects rows by nothing of the caller.
+            if !ev.python && o == Origin::Caller {
+                let in_args = args.iter().any(|a| {
+                    a.rsplit_once('@')
+                        .and_then(|(c, rest)| rest.split_once(':').map(|(_, k)| (c, k)))
+                        .is_some_and(|(c, k)| k == q.key && crate::mine::norm_ref(c) == q.callee)
+                });
+                if in_args {
+                    continue;
+                }
+                if let Some(other) = ev.unscoped_read.clone() {
+                    taken.insert((q.callee.as_str(), q.key.as_str()));
+                    ev.find(
+                        "tenancy_filter",
+                        &format!("{} (session)", q.key),
+                        obligation::OTHER_READ_UNSCOPED,
+                        &common::short(&other).replace("()", ""),
+                        false,
+                    );
+                    continue;
+                }
+            }
+            if !ev.python {
+                taken.insert((q.callee.as_str(), q.key.as_str()));
+            }
             // What the request sent, handed on to a method below the handler, is
             // found and not proven there, as a method's parameter always was; to a
             // function, it is the tenant the request asked for, as before.
@@ -5469,6 +5502,13 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
         }
         ev.add(mechanism, &q.label(), VariantSource::Usage);
     }
+    // Whether the scoped queries said what this filter is: Python's, of the whole
+    // body; TypeScript's, of the filter the loop above read.
+    let python = ev.python;
+    let scoped_here = |callee: &str, key: &str| match python {
+        true => !scoped.is_empty(),
+        false => taken.contains(&(crate::mine::norm_ref(callee).as_ref(), key)),
+    };
     for a in args {
         let Some((callee, key)) = a
             .rsplit_once('@')
@@ -5507,7 +5547,7 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
                         true => "tenancy_filter",
                         false => "owner_filter",
                     };
-                    if !names_tenant(last) || scoped.is_empty() {
+                    if !names_tenant(last) || !scoped_here(callee, key) {
                         ev.find(
                             mechanism,
                             &format!("{key} (session)"),
@@ -5601,7 +5641,7 @@ fn filters<'a>(cx: &Cx<'a>, r: &Reached<'a>, ev: &mut Evidence) {
             // its value came from (`where: { orgId }` with `orgId` from the query
             // string, the body, a cookie or a constant filters by what the request
             // chose): found, not proven.
-            if scoped.is_empty() {
+            if !scoped_here(callee, key) {
                 match callers {
                     true => ev.add(
                         "tenancy_filter",
@@ -6935,7 +6975,15 @@ fn unscoped<'a>(
                 drift_core::ScopeSource::Param | drift_core::ScopeSource::Header
             )
         })
-        .map(|q| q.key.clone())
+        // A TypeScript key is the path of the filter (`where.team.orgId`): the
+        // key the caller names is the field named for the tenant on it.
+        .map(|q| {
+            q.key
+                .rsplit('.')
+                .find(|seg| names_tenant(seg))
+                .unwrap_or(&q.key)
+                .to_string()
+        })
         .min()
 }
 
@@ -6965,10 +7013,16 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
         // outer body binds: the outer body holds the inner one's calls, by what the
         // local was built from. Where the outer body records every call it hands a
         // value to, it is read too (more than the request runs, never less).
+        // (A body every such call of which writes the response hands the value to
+        // the framework, which sends it: [`drift_core::controls::UNREAD_RESPONDS`].)
         if let Node::Sym(s) = n
             && s.controls
                 .iter()
                 .any(|c| c == drift_core::controls::UNREAD_CALL)
+            && !(ctx.since_measured()
+                && s.controls
+                    .iter()
+                    .any(|c| c == drift_core::controls::UNREAD_RESPONDS))
         {
             let outer = enclosing_function(cx, s).filter(|o| {
                 !o.controls

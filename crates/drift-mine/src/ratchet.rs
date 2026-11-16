@@ -48,7 +48,10 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 /// findings of CI systems other than GitHub Actions ([`crate::ci`]); the entry
 /// points a deployment file names ([`crate::serverless`]); the scripts of
 /// single-file components (`.vue`, `.svelte`, `.astro`) read; the resolvers of a
-/// Python GraphQL schema's root fields listed as entry points ([`READ_SINCE`]).
+/// Python GraphQL schema's root fields listed as entry points; TypeScript queries
+/// filtered under a tenant's key read as Python's are (the tenant the request names,
+/// the caller's), and bodies whose only unrecorded calls write the response read to
+/// the end ([`READ_SINCE`]).
 pub const INVENTORY_VERSION: u32 = 3;
 
 /// The version of a baseline written before baselines were stamped.
@@ -128,6 +131,12 @@ const DETECTOR_SINCE: &[(&str, u32)] = &[];
 ///
 /// 3: `risky`: the risky operations of the scripts of single-file components, and of
 /// the files only a component imports, which were set apart as reached by nothing.
+///
+/// 3: `unscoped-key`, `no-authorization`: TypeScript routes whose query is filtered
+/// under a tenant's key by what the request names (`where: { orgId:
+/// req.params.orgId }`), and handlers whose only unrecorded calls write the
+/// response (`res.json(rows)`), read to the end; `scope-gap`: TypeScript filters in
+/// an `AND` list read by their keys.
 const READ_SINCE: &[(&str, u32)] = &[
     ("guard-gap", 3),
     ("no-authorization", 3),

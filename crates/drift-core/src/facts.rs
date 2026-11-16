@@ -1571,6 +1571,12 @@ pub mod controls {
     /// (`rows.all()`, `d.get("k")`, `rows.map((r) => r.id)`) is not one. Mining never
     /// proposes it.
     pub const UNREAD_CALL: &str = "unread_call";
+    /// Beside [`UNREAD_CALL`]: every such call of the body writes the response
+    /// (`res.json(rows)`, `res.status(404).send(msg)`, `reply.send(x)`) on a
+    /// parameter that holds it. The value goes to the framework, which sends it,
+    /// so nothing the body leaves undone hides there. TypeScript lowering 87, the
+    /// listed reading only; mining never proposes it.
+    pub const UNREAD_RESPONDS: &str = "unread_responds";
     /// What starts the control of a body that calls a method on a member of a
     /// parameter whose declared type gives that member a built-in value's type: an
     /// object type literal declaring it a string, a number, a boolean or an array

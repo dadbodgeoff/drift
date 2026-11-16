@@ -4365,7 +4365,8 @@ impl<'r> Linker<'r> {
             || !listed_calls.is_empty()
             || !built.is_empty()
             || facts.symbols.iter().any(|s| {
-                self.named_giver(&s.controls).is_some()
+                crate::tenant::scopes(s)
+                    || self.named_giver(&s.controls).is_some()
                     || s.members
                         .iter()
                         .any(|m| self.named_giver(&m.unread).is_some())
@@ -4465,6 +4466,11 @@ impl<'r> Linker<'r> {
                 for m in s.members.iter_mut() {
                     self.by_name_only(&mut m.unread);
                 }
+            }
+            // The queries filtered under a tenant's key, with where the value comes
+            // from, as Python writes them ([`crate::tenant`]).
+            for s in facts.symbols.iter_mut() {
+                crate::tenant::fill(s);
             }
             for (name, line, args) in measured_args {
                 for s in facts
