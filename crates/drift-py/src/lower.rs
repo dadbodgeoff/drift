@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 74;
+pub const LOWERING_VERSION: u32 = 75;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -57,6 +57,8 @@ pub const KWARG_INDEX: u32 = 99;
 
 #[path = "adapters.rs"]
 pub(crate) mod adapters;
+#[path = "env_libs.rs"]
+pub(crate) mod env_libs;
 #[path = "guard_paths.rs"]
 pub(crate) mod guard_paths;
 #[path = "held.rs"]
@@ -95,6 +97,7 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.out.parse_ok = parsed.errors().is_empty();
     l.collect_bindings(&module.body, Ctx::default());
     l.collect_env_tables(&module.body);
+    l.collect_env_libraries(&module.body);
     let mut finder = ImportFinder {
         found: BTreeMap::new(),
         depth: 0,
@@ -119,6 +122,7 @@ pub fn lower_file(_rel_path: &str, text: &str) -> RawFile {
     l.lower_error_handlers(&module.body);
     l.lower_main_guard(&module.body);
     l.lower_tests(&module.body);
+    l.lower_settings_reads(&module.body);
     {
         let mut sent = outgoing::OutgoingFinder::new(&l, text);
         for s in &module.body {
@@ -246,6 +250,8 @@ pub(crate) struct Lowerer<'t> {
     /// Module-level names bound to a logger derived with bound fields
     /// (`log = structlog.get_logger().bind(service="x")`).
     pub(crate) bound_loggers: BTreeSet<String>,
+    /// The module's readers of a configuration library ([`env_libs`]).
+    pub(crate) env_libs: env_libs::EnvTables,
     /// While a class's methods are lowered: the class of each `self.<attr>` that
     /// `__init__` binds from a typed parameter or a constructor call, so
     /// `self.repo.find()` is a call of that class's method.
@@ -516,6 +522,7 @@ impl<'t> Lowerer<'t> {
             env_helpers: BTreeMap::new(),
             env_names: BTreeSet::new(),
             bound_loggers: BTreeSet::new(),
+            env_libs: env_libs::EnvTables::default(),
             self_types: HashMap::new(),
             self_class: None,
             self_methods: BTreeSet::new(),
@@ -563,6 +570,8 @@ impl<'t> Lowerer<'t> {
             s.controls.dedup();
             s.reads.sort();
             s.reads.dedup();
+            s.since_reads.sort();
+            s.since_reads.dedup();
             s.throws.sort();
             s.throws.dedup();
             s.sinks.sort();
@@ -1259,6 +1268,7 @@ impl<'t> Lowerer<'t> {
         m.controls.extend(part.controls);
         m.string_literals += part.string_literals;
         m.reads.extend(part.reads);
+        m.since_reads.extend(part.since_reads);
         m.throws.extend(part.throws);
         m.sinks.extend(part.sinks);
         m.since_sinks.extend(part.since_sinks);
@@ -2559,6 +2569,8 @@ pub(crate) struct Collector<'l, 't> {
     pub(crate) controls: BTreeSet<String>,
     strings: u32,
     reads: BTreeSet<String>,
+    /// Env reads through a configuration library ([`RawSymbol::since_reads`]).
+    since_reads: BTreeSet<String>,
     throws: BTreeSet<RawRef>,
     pub(crate) sinks: BTreeSet<String>,
     /// Sinks the measured build did not read ([`RawSymbol::since_sinks`]).
@@ -2831,6 +2843,7 @@ impl<'l, 't> Collector<'l, 't> {
             controls: BTreeSet::new(),
             strings: 0,
             reads: BTreeSet::new(),
+            since_reads: BTreeSet::new(),
             throws: BTreeSet::new(),
             sinks: BTreeSet::new(),
             since_sinks: BTreeSet::new(),
@@ -3027,6 +3040,7 @@ impl<'l, 't> Collector<'l, 't> {
         sym.controls.extend(self.controls);
         sym.string_literals += self.strings;
         sym.reads.extend(self.reads);
+        sym.since_reads.extend(self.since_reads);
         sym.throws.extend(self.throws);
         sym.sinks.extend(self.sinks);
         sym.since_sinks.extend(self.since_sinks);
@@ -3686,6 +3700,8 @@ impl<'l, 't> Collector<'l, 't> {
         }
         if let Some(var) = self.l.env_read_call(self, c) {
             self.reads.insert(var);
+        } else if let Some(var) = self.l.env_library_read(self, c) {
+            self.since_reads.insert(var);
         }
         if !self.frames.is_empty() || self.scopes.is_empty() {
             if let Some(l) = self.log_call(c) {

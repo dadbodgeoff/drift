@@ -156,6 +156,15 @@ main branch.
   exits 1 when a guard regresses (plain `drift census` must stay byte-identical,
   and unknown must not rise without a matching fall). For contributors; it is
   not part of the `drift` binary.
+- **Python: env reads through python-decouple, environs, django-environ and
+  pydantic settings classes** (Python lowering 75). `drift security` lists them
+  under environment reads (`decouple.SECRET_KEY`, `environs.PORT`,
+  `environ.DATABASE_URL`, `pydantic_settings.APP_DATABASE_URL`, with environs'
+  `prefixed` blocks and pydantic's `env_prefix` applied), and the practice map's
+  `config` concern counts each such read as that library's env schema
+  (`env_schema:environ`), never as a read of `os.environ` in place. A module
+  constant read this way is a value from the environment where a check compares
+  with it. Mining is unchanged.
 
 ### Changed: the files Drift writes
 

@@ -1062,6 +1062,19 @@ impl<'r> Linker<'r> {
                 }))
     }
 
+    /// The env reads of a symbol: those the measured build read, and, where
+    /// [`Linker::since_frozen`] says, those read through a configuration library
+    /// since ([`RawSymbol::since_reads`]). Sorted.
+    fn reads_read(&self, measured: &[String], since: &[String]) -> Vec<String> {
+        let mut out = measured.to_vec();
+        if !since.is_empty() && self.since_frozen() {
+            out.extend(since.iter().cloned());
+            out.sort();
+            out.dedup();
+        }
+        out
+    }
+
     /// The sinks of a symbol or a method: those the measured build read, and, but
     /// when linking what mining reads, those read since
     /// ([`RawSymbol::since_sinks`]). Sorted. One marked [`crate::raw::SINCE`] was
@@ -1796,13 +1809,15 @@ impl<'r> Linker<'r> {
         let Some(sym) = self.files[fi].raw.symbols.iter().find(|s| s.name == name) else {
             return false;
         };
+        // Read through a configuration library: in the listed reading only.
+        let reads = !sym.reads.is_empty() || (!sym.since_reads.is_empty() && self.since_frozen());
         if !rest.contains('.') {
-            return !sym.reads.is_empty();
+            return reads;
         }
         if !secret {
             return false;
         }
-        !sym.reads.is_empty()
+        reads
             || sym.calls.iter().any(|r| {
                 let c = self.canon(fi, r);
                 let (cm, cn) = c.split_once('#').unwrap_or_default();
@@ -5163,7 +5178,7 @@ impl<'r> Linker<'r> {
                     },
                     string_literals: s.string_literals,
                     suppressions: s.suppressions.clone(),
-                    reads: s.reads.clone(),
+                    reads: self.reads_read(&s.reads, &s.since_reads),
                     throws: s.throws.iter().map(|r| self.canon(fi, r)).collect(),
                     sinks: self.sinks_read(&s.sinks, &s.since_sinks),
                     order: s.order.iter().map(|r| self.canon(fi, r)).collect(),
