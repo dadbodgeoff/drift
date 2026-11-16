@@ -2972,6 +2972,18 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                         !known.contains(id.as_str())
                             || Lock::split_fingerprint(key)
                                 .is_some_and(|(_, member)| lock.contains(id, member))
+                            // A proposal from the map a person accepted by hand (the
+                            // file says it may be edited so): it was left out of the
+                            // lock while proposed, so its debt of today is recorded
+                            // once, as `drift review` would have. Accepted only, never
+                            // a proposal; once it has a line it is never baselined again.
+                            || (!lock.entries.iter().any(|(i, _)| i == id)
+                                && policy.conventions.iter().any(|c| {
+                                    c.id == *id
+                                        && c.status == Status::Accepted
+                                        && c.from_map.is_some()
+                                        && c.rule.is_practice()
+                                }))
                     })
                     .cloned()
                     .collect();

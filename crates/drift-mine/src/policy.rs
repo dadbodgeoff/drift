@@ -1424,10 +1424,15 @@ impl ConventionsFile {
     /// The `(role, rule)` of every accepted convention: what hysteresis keeps when
     /// `drift init` mines again ([`crate::mine::mine_keeping`]). Not a promoted practice:
     /// mining never drafts one, so there is nothing to keep, and its role is only a place.
+    /// Not a convention proposed from a map ([`Convention::from_map`]) either: mining did
+    /// not draft it, and mining is frozen, so accepting one must not change what is mined
+    /// (a layering convention's id is mining's id for its role and rule, so keeping it
+    /// would keep a mined draft the caps drop).
     pub fn accepted_rules(&self) -> Vec<(RoleSelector, Rule)> {
         self.conventions
             .iter()
             .filter(|c| c.status == Status::Accepted && !c.rule.is_practice())
+            .filter(|c| c.from_map.is_none())
             .map(|c| (c.role.clone(), c.rule.clone()))
             .collect()
     }

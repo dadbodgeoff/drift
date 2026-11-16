@@ -165,6 +165,12 @@ pub struct Collected {
     /// restrictions another convention states or Drift cannot express, wiring
     /// regularities, instruction files ([`drift_mine::declared::Note`]).
     pub notes: Vec<drift_mine::declared::Note>,
+    /// Set by [`for_init`]: how many of the proposals written use a form a Drift that
+    /// reads up to [`drift_mine::policy::POLICY_VERSION_PACKAGES`] cannot read
+    /// ([`drift_mine::policy::misread_before_forms`]), when they alone raise the file to
+    /// [`drift_mine::policy::POLICY_VERSION_FORMS`]; 0 otherwise. Said in one line, so
+    /// a person knows why an older Drift now refuses the file though nothing was decided.
+    pub raised_by: usize,
 }
 
 /// A rule Drift already has: a convention of the policy (neither a practice nor from
@@ -669,8 +675,8 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
             let differ = candidate.exceptions.len();
             let mut line = format!(
                 "  [{}] {}: {} of the {} {} Drift could read here follow it, {} {}",
-                c.id,
-                c.summary,
+                sanitize(&c.id, 40),
+                sanitize(&c.summary, 240),
                 candidate.follows,
                 read,
                 units_word(&candidate.unit, read),
@@ -686,8 +692,8 @@ fn proposal_lines(p: &FromMap) -> Vec<String> {
         Basis::Layering { evidence, unknown } => {
             out.push(format!(
                 "  [{}] {}: {} of the {} files there that import code of this repository follow it, 0 differ; {} could not be read (never reported)",
-                c.id,
-                c.summary,
+                sanitize(&c.id, 40),
+                sanitize(&c.summary, 240),
                 evidence.importing,
                 evidence.importing,
                 unknown
@@ -726,6 +732,13 @@ pub fn init_lines(c: &Collected) -> Vec<String> {
             "  Proposed in advise mode: nothing is checked and no agent is told of one until you accept it (`drift review`)."
                 .to_string(),
         );
+    }
+    if c.raised_by > 0 {
+        out.push(format!(
+            "  {CONVENTIONS_FILE} is now policy format {} because {} proposal(s) from the map use a form older Drift cannot read: a Drift older than this one refuses the file until it is upgraded. `drift init --no-from-map` writes none of them.",
+            drift_mine::policy::POLICY_VERSION_FORMS,
+            c.raised_by
+        ));
     }
     out.push(format!(
         "  Also seen, not proposed: {} (`drift census --from-map` lists each, with why).",
@@ -874,7 +887,7 @@ pub fn for_init(
     python_on: bool,
     off: bool,
 ) -> Collected {
-    let c = if off {
+    let mut c = if off {
         Collected::default()
     } else {
         let report = crate::practices::report_units_kept(root, repo, None);
@@ -889,7 +902,29 @@ pub fn for_init(
         )
     };
     write(policy, &c);
+    c.raised_by = raised_by(policy);
     c
+}
+
+/// How many undecided proposals from the map in `policy` use a form older Drift cannot
+/// read, when without them the file would be written below
+/// [`drift_mine::policy::POLICY_VERSION_FORMS`]; 0 when none does, or when the file is
+/// at that format anyway because of what a person decided.
+fn raised_by(policy: &ConventionsFile) -> usize {
+    let n = policy
+        .conventions
+        .iter()
+        .filter(|x| undecided(x) && drift_mine::policy::misread_before_forms(x))
+        .count();
+    if n == 0 {
+        return 0;
+    }
+    let without = left_out_of_lock(policy);
+    if drift_mine::policy::written_version(&without) < drift_mine::policy::POLICY_VERSION_FORMS {
+        n
+    } else {
+        0
+    }
 }
 
 // ---------- drift review ----------
@@ -984,6 +1019,23 @@ fn accept_practice(
     Some(n)
 }
 
+/// The id of another accepted practice of the same concern whose place overlaps the
+/// one the proposed practice `conv` stands for now, as `drift practices promote` refuses
+/// it ("covered", [`crate::promote::covering`]): accepting both would report each unit
+/// twice. `None` when there is none, or when the proposal no longer qualifies (the
+/// caller says that). Sanitized, as it is read from the file.
+fn covered_by(
+    report: &PracticesReport,
+    policy: &ConventionsFile,
+    conv: &Convention,
+) -> Option<String> {
+    let cand = recompute(report, conv)?;
+    let id = promote::convention_id(&cand.place, &cand.concern);
+    crate::promote::covering(policy, &cand)
+        .filter(|x| x.id != id && x.id != conv.id)
+        .map(|x| sanitize(&x.id, 40))
+}
+
 /// What [`review_step`] did.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Step {
@@ -995,7 +1047,8 @@ pub struct Step {
 fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option<Vec<String>> {
     let mut out = vec![format!(
         "[{}] {} (from the map, not mined: it did not go through the miner's measured gates)",
-        c.id, c.summary
+        sanitize(&c.id, 40),
+        sanitize(&c.summary, 240)
     )];
     match c.from_map.as_deref() {
         Some(PRACTICE) => {
@@ -1010,7 +1063,12 @@ fn card(report: &PracticesReport, known: &[Known<'_>], c: &Convention) -> Option
                 cand.unknown
             ));
             for e in cand.exceptions.iter().take(3) {
-                out.push(format!("  differs: {}#{} (line {})", e.path, e.symbol, e.line));
+                out.push(format!(
+                    "  differs: {}#{} (line {})",
+                    sanitize(&e.path, 160),
+                    sanitize(&e.symbol, 80),
+                    e.line
+                ));
             }
             if cand.exceptions.len() > 3 {
                 out.push(format!("  and {} more", cand.exceptions.len() - 3));
@@ -1101,6 +1159,14 @@ pub fn review_step(
         match line.trim() {
             "y" => {
                 if conv.from_map.as_deref() == Some(PRACTICE) {
+                    if let Some(x) = covered_by(report, policy, &conv) {
+                        println!(
+                            "  {} is covered by {x}, accepted for the same concern in a place that overlaps it: left as proposed (`drift review --reject {}` declines it)",
+                            sanitize(&id, 40),
+                            sanitize(&id, 40)
+                        );
+                        continue;
+                    }
                     match accept_practice(repo, report, policy, &mut lock, &conv) {
                         Some(n) => {
                             println!("  accepted: {id}, advise ({n} recorded in {LOCK_FILE})")
@@ -1194,16 +1260,27 @@ pub fn accept_ids(
     let mut next = policy.clone();
     let mut out = Vec::new();
     let mut gone = Vec::new();
+    let mut covered: Vec<String> = Vec::new();
     for id in &ids {
         let Some(conv) = next.conventions.iter().find(|c| &c.id == id).cloned() else {
             continue;
         };
+        if let Some(x) = covered_by(&report, &next, &conv) {
+            covered.push(format!("{} (covered by {x})", sanitize(id, 40)));
+            continue;
+        }
         match accept_practice(&repo, &report, &mut next, &mut lock, &conv) {
             Some(n) => out.push(format!(
                 "{id}: from the map, written as `drift practices promote` writes it ({n} unit(s) that differ today recorded in {LOCK_FILE})"
             )),
             None => gone.push(id.as_str()),
         }
+    }
+    if !covered.is_empty() {
+        bail!(
+            "{}: another accepted practice of the same concern holds a place that overlaps it, so each unit would be reported twice; nothing was changed. `drift review --reject <id>` declines the proposal",
+            covered.join(", ")
+        );
     }
     if !gone.is_empty() {
         bail!(
@@ -1334,6 +1411,54 @@ mod tests {
         assert!(!dir_overlaps("lib", "app/api"));
         assert!(!dir_overlaps(".", "app"));
         assert!(dir_overlaps(".", ""));
+    }
+
+    fn file_with(conventions: Vec<Convention>) -> ConventionsFile {
+        ConventionsFile {
+            version: 1,
+            engine: String::new(),
+            file_kinds: FileKinds::default(),
+            suggestion_cap: None,
+            agents: Default::default(),
+            review_log: Default::default(),
+            packages: Vec::new(),
+            conventions,
+        }
+    }
+
+    /// Pins F7 row 1: a proposal whose form an older Drift cannot read (a mechanism
+    /// accepted whole), alone in raising the file to format 3, is counted and said in
+    /// one line; where a person's accepted practice needs that format anyway, it is not.
+    #[test]
+    fn a_proposal_alone_raising_the_format_is_said() {
+        let mut c = cand(drift_mine::practices::AUTHN, "api", 40);
+        c.mechanisms = vec!["wrap".to_string()];
+        let p = proposed(&c);
+        assert!(drift_mine::policy::misread_before_forms(&p));
+        assert_eq!(raised_by(&file_with(vec![p.clone()])), 1);
+        let mut other = cand(drift_mine::practices::AUTHN, "lib", 40);
+        other.mechanisms = vec!["wrap".to_string()];
+        let accepted = promote::convention(&other);
+        assert_eq!(accepted.status, Status::Accepted);
+        assert_eq!(raised_by(&file_with(vec![p.clone(), accepted])), 0);
+        let said = init_lines(&Collected {
+            proposals: vec![FromMap {
+                convention: p,
+                basis: Basis::Practice {
+                    candidate: c,
+                    settles: 0,
+                },
+                twins: Vec::new(),
+            }],
+            held: Vec::new(),
+            notes: Vec::new(),
+            raised_by: 1,
+        });
+        assert!(
+            said.iter().any(|l| l.contains("is now policy format 3 because 1 proposal(s) from the map")
+                && l.contains("`drift init --no-from-map` writes none of them")),
+            "{said:?}"
+        );
     }
 
     #[test]

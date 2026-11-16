@@ -360,6 +360,15 @@ pub fn decide_card(adm: &dyn Admission, id: &str, rule: &Rule, tier: Tier, lang:
 /// tier: shown when a person chose `agents: show`, or forced an accepted suggestion to
 /// block; otherwise a suggestion is what `adm` decides ([`decide_card`]).
 pub fn decide_convention(adm: &dyn Admission, c: &Convention) -> Decision {
+    // A proposal from a map ([`Convention::from_map`]) went through none of mining's
+    // gates, so no family's track record speaks for it: while it is proposed only a
+    // person's `agents: show` shows it, whatever the family table admits.
+    if c.from_map.is_some()
+        && c.status != Status::Accepted
+        && c.agents != Some(AgentsChoice::Show)
+    {
+        return candidate();
+    }
     let d = if c.tier() == Tier::Default {
         if matches!(c.status, Status::Accepted) {
             Decision::new(

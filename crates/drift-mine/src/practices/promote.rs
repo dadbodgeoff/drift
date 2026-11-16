@@ -127,6 +127,19 @@ fn route_segments(route: Option<&str>) -> (Vec<String>, bool) {
     };
     let mut out: Vec<String> = Vec::new();
     for seg in raw.split('/').filter(|s| !s.is_empty()) {
+        // A segment that takes any number of segments (`[...slug]`, `[[...slug]]`,
+        // `{p:path}`, `<path:p>`, `:p*`, `:p(.*)`) is no one parameter: the routes it
+        // serves are not known, so reading stops and the unit is counted as not read
+        // wherever it could be under a prefix (`[[...slug]]` serves the prefix itself
+        // too), never a member of a prefix it was read to the end of.
+        let catch_all = seg.starts_with("[...")
+            || seg.starts_with("[[")
+            || (seg.starts_with('{') && seg.ends_with(":path}"))
+            || seg.starts_with("<path:")
+            || (seg.starts_with(':') && seg.contains(|ch: char| matches!(ch, '*' | '+' | '(')));
+        if catch_all {
+            return (out, false);
+        }
         let param = !seg.contains('?')
             && seg.len() > 1
             && (seg.starts_with(':')
@@ -515,8 +528,18 @@ impl Place {
     /// candidate of the same concern would: of one package, and a directory that holds
     /// the other (directory or file), the same file, one route prefix of the other, or
     /// a route place and its whole package. Otherwise no.
+    ///
+    /// Also a route place and any directory or file place of its package: a file's path
+    /// cannot rule out that it serves a route under the prefix ([`Place::holds`]), so
+    /// they may hold the same units (`app/api` and `.:/api` in a Next.js app). Every
+    /// refusal and every choice of one proposal over another reads this, so two
+    /// practices of one concern never report one unit twice. Containment
+    /// ([`Place::contains`]) stays strict for what needs it.
     pub fn overlaps(&self, other: &Place) -> bool {
-        self.contains(other) || other.contains(self)
+        self.contains(other)
+            || other.contains(self)
+            || (self.package == other.package
+                && (self.kind() == Kind::Route) != (other.kind() == Kind::Route))
     }
 
     /// The place as output names it: the path from the repository root (`apps/api/views`),
@@ -2225,6 +2248,31 @@ pub fn covers_file(c: &Convention, f: &FileFacts) -> bool {
             declares_unit(unit, f)
         }
     })
+}
+
+/// Whether the unit `symbol` of the file `f` is one the check of the promoted practice
+/// `c` reads as a member, so a surface that says departures as facts can leave it to
+/// the check. A directory or file place: [`covers_file`]. A route place: only when an
+/// entry point of `symbol` in `f` has a route Drift read to the end as a literal, under
+/// the prefix, as the check's own reading of membership counts one ([`Reading`]); a
+/// unit whose route was not read so, or that is served elsewhere, is no member, so the
+/// check says nothing of it and its departure is still said. Cheap: the file's facts
+/// alone.
+pub fn covers_unit(c: &Convention, f: &FileFacts, symbol: &str) -> bool {
+    if !covers_file(c, f) {
+        return false;
+    }
+    let Some(prefix) = place_of(c).and_then(|p| p.route) else {
+        return true;
+    };
+    let want = prefix_segments(&prefix);
+    f.listed_entry_points()
+        .iter()
+        .filter(|e| e.symbol == symbol && e.kind != JOB)
+        .any(|e| {
+            let (segs, whole) = route_segments(e.route.as_deref());
+            whole && segs.len() >= want.len() && compatible(&segs[..], &want[..])
+        })
 }
 
 /// Whether the registered classifier of `concern` is about the caller of a request

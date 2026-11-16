@@ -199,10 +199,10 @@ pub fn run(
             "covered",
             &format!(
                 "{} already holds {} to a practice in a place that overlaps {}: `drift review --reject {}` drops it first; nothing was written",
-                x.id,
+                drift_mine::report::sanitize(&x.id, 40),
                 drift_mine::practices::plain_concern(&cand.concern),
-                cand.place.shown(),
-                x.id
+                drift_mine::report::sanitize(&cand.place.shown(), 160),
+                drift_mine::report::sanitize(&x.id, 40)
             ),
         );
     }
@@ -429,7 +429,13 @@ pub fn refusal_message(report: &PracticesReport, r: &Refusal) -> String {
                 let named: Vec<String> = read
                     .iter()
                     .take(MECHANISMS_NAMED)
-                    .map(|(m, n)| format!("{m} ({n} {})", if *n == 1 { "unit" } else { "units" }))
+                    .map(|(m, n)| {
+                        format!(
+                            "{} ({n} {})",
+                            drift_mine::report::sanitize(m, 60),
+                            if *n == 1 { "unit" } else { "units" }
+                        )
+                    })
                     .collect();
                 let more = match read.len().saturating_sub(MECHANISMS_NAMED) {
                     0 => String::new(),
@@ -636,7 +642,10 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
 /// The promoted practice of `policy`, accepted, of the candidate's concern, whose
 /// place overlaps the candidate's. One only proposed (`drift init`'s, from the map) is
 /// no decision: a person has not promoted it.
-fn covering<'a>(policy: &'a ConventionsFile, c: &Candidate) -> Option<&'a Convention> {
+pub(crate) fn covering<'a>(
+    policy: &'a ConventionsFile,
+    c: &Candidate,
+) -> Option<&'a Convention> {
     policy.conventions.iter().find(|x| {
         x.status == Status::Accepted
             && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == c.concern)
@@ -667,8 +676,10 @@ pub fn command(c: &Candidate) -> String {
             s.push_str(&shell_word(&c.concern));
         }
     }
-    s.push_str(" --in ");
-    s.push_str(&shell_word(&c.place.shown()));
+    // A place that starts with `-` would be read by the command line as a flag.
+    let place = c.place.shown();
+    s.push_str(if place.starts_with('-') { " --in=" } else { " --in " });
+    s.push_str(&shell_word(&place));
     for w in c.ways.iter().skip(1) {
         s.push_str(" --with ");
         s.push_str(&shell_word(&w.id));
@@ -694,34 +705,6 @@ pub fn shell_word(w: &str) -> String {
     } else {
         format!("'{}'", w.replace('\'', "'\\''"))
     }
-}
-
-/// The request that asks for `c` again ([`promote::candidate_for`]): its concern, its
-/// ways (the first, then the others as `with`), its mechanisms, any enforcing way, and
-/// `force` when it was promoted below the share.
-pub fn request_of(c: &Candidate) -> Request {
-    Request {
-        concern: c.concern.clone(),
-        ways: c
-            .ways
-            .first()
-            .map(|w| vec![w.id.clone()])
-            .unwrap_or_default(),
-        with: c.ways.iter().skip(1).map(|w| w.id.clone()).collect(),
-        mechanisms: c.mechanisms.clone(),
-        any_enforcing: c.any_enforcing,
-        force: c.forced,
-    }
-}
-
-/// The command that promotes `c` in its place, only when `drift practices promote` would
-/// take it as `report` stands: the engine is asked ([`promote::candidate_for`]) and its
-/// refusal is returned otherwise. A surface that prints a promote command asks this first,
-/// so it never prints one the command then refuses. Not wired yet: the surfaces that
-/// print a promote command (`crate::practices`) are where it goes.
-#[allow(dead_code)]
-pub fn checked_command(report: &PracticesReport, c: &Candidate) -> Result<String, Refusal> {
-    promote::candidate_for(report, Some(&c.place), &request_of(c)).map(|x| command(&x))
 }
 
 /// Takes the offer to promote off every variant of `shown` that `drift practices promote
@@ -770,9 +753,8 @@ fn keep_offer(full: &PracticesReport, v: &mut drift_mine::practices::Variant) ->
 /// Clears the promote command ([`drift_mine::practices::Departure::promote`]) of every
 /// departure whose place a person already decided on for its concern: a promoted practice
 /// (not rejected) whose place holds or is held by the departure's, or a rejected one of
-/// that very place. `report` is the map the departures were read from. Not wired yet:
-/// `crate::practices::check_departures` is where it goes, with the policy.
-#[allow(dead_code)]
+/// that very place. `report` is the map the departures were read from. Called by
+/// `crate::practices::check_departures`, with the policy.
 pub fn drop_decided_departures(
     report: &PracticesReport,
     policy: &ConventionsFile,
@@ -907,8 +889,8 @@ fn candidate_lines(c: &Candidate, departures: usize) -> [String; 2] {
         format!(
             "  {} in {}: {} in {} of {} {}; {} {}{of_them}, {} could not be read",
             drift_mine::practices::plain_concern(&c.concern),
-            c.place.shown(),
-            accepted(c),
+            drift_mine::report::sanitize(&c.place.shown(), 160),
+            drift_mine::report::sanitize(&accepted(c), 240),
             c.follows,
             c.total,
             units(&c.unit),
@@ -920,7 +902,7 @@ fn candidate_lines(c: &Candidate, departures: usize) -> [String; 2] {
             },
             c.unknown
         ),
-        format!("    {}", command(c)),
+        format!("    {}", drift_mine::report::sanitize(&command(c), 480)),
     ]
 }
 
@@ -1337,6 +1319,17 @@ pub fn review_step(
         if covering(policy, cand).is_some() {
             continue;
         }
+        // A proposal from the map of this place and concern was just asked about in
+        // the step before (`crate::from_map_cli::review_step`): skipped there, it is
+        // not asked again here under another preview.
+        let cand_id = promote::convention_id(&cand.place, &cand.concern);
+        if policy
+            .conventions
+            .iter()
+            .any(|x| x.id == cand_id && crate::from_map_cli::undecided(x))
+        {
+            continue;
+        }
         let mut conv = written(policy, cand);
         let id = conv.id.clone();
         println!();
@@ -1484,15 +1477,89 @@ mod tests {
             let got = command(&c);
             assert_eq!(got, want);
             assert!(!got.contains("promote  "), "{got}");
-            // The request it stands for asks for the same candidate again.
-            let r = request_of(&c);
-            assert_eq!(r.concern, c.concern);
-            assert_eq!(
-                r.ways.iter().chain(&r.with).cloned().collect::<Vec<_>>(),
-                c.ways.iter().map(|w| w.id.clone()).collect::<Vec<_>>()
-            );
-            assert_eq!(r.mechanisms, c.mechanisms);
-            assert_eq!(r.any_enforcing, c.any_enforcing);
+            // The command, read as a shell reads it and parsed as the CLI parses it,
+            // asks for the same candidate again.
+            assert_round_trip(&got, &c);
+        }
+    }
+
+    /// The words a POSIX shell reads in `s`, for the quoting [`shell_word`] writes:
+    /// words split on spaces, single quotes kept literally, a backslash outside quotes
+    /// taking the next character as it is.
+    fn shell_split(s: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut cur = String::new();
+        let (mut any, mut quoted, mut escaped) = (false, false, false);
+        for ch in s.chars() {
+            if escaped {
+                cur.push(ch);
+                escaped = false;
+                any = true;
+            } else if ch == '\'' {
+                quoted = !quoted;
+                any = true;
+            } else if ch == '\\' && !quoted {
+                escaped = true;
+            } else if ch == ' ' && !quoted {
+                if any {
+                    out.push(std::mem::take(&mut cur));
+                    any = false;
+                }
+            } else {
+                cur.push(ch);
+                any = true;
+            }
+        }
+        if any {
+            out.push(cur);
+        }
+        out
+    }
+
+    /// `drift practices promote`'s arguments alone, for clap to parse.
+    #[derive(clap::Parser, Debug)]
+    struct PromoteOnly {
+        #[command(flatten)]
+        args: PromoteArgs,
+    }
+
+    /// Pins the round trip a person pastes: `command` read by a shell, parsed by clap
+    /// and turned into a request ([`request`]) names the candidate's ways, mechanisms,
+    /// any enforcing way, its place as shown, and its concern when no way is named.
+    fn assert_round_trip(got: &str, c: &Candidate) {
+        let words = shell_split(got);
+        assert_eq!(words[..3].join(" "), "drift practices promote", "{got}");
+        let argv = std::iter::once("promote".to_string()).chain(words[3..].iter().cloned());
+        let parsed = <PromoteOnly as clap::Parser>::try_parse_from(argv)
+            .unwrap_or_else(|e| panic!("{got}: {e}"));
+        assert_eq!(parsed.args.place.as_deref(), Some(c.place.shown().as_str()), "{got}");
+        let r = request(&parsed.args).unwrap_or_else(|(code, m)| panic!("{got}: {code}: {m}"));
+        if c.ways.is_empty() {
+            assert_eq!(r.concern, c.concern, "{got}");
+        }
+        assert_eq!(
+            r.ways.iter().chain(&r.with).cloned().collect::<Vec<_>>(),
+            c.ways.iter().map(|w| w.id.clone()).collect::<Vec<_>>(),
+            "{got}"
+        );
+        assert_eq!(r.mechanisms, c.mechanisms, "{got}");
+        assert_eq!(r.any_enforcing, c.any_enforcing, "{got}");
+    }
+
+    /// Pins the quoting of places a shell or clap would misread (a space, `(`, `[`, a
+    /// route place, a file place): each command round-trips to its candidate.
+    #[test]
+    fn a_command_of_any_place_round_trips() {
+        let mut places = vec![
+            cand("authn", "apps/my app", &["P-a"], &[], false),
+            cand("authn", "app/(auth)/[id]", &["P-a"], &[], false),
+            cand("authn", ".:/api/[*]", &["P-a"], &[], false),
+        ];
+        let mut file = cand("authn", "app", &["P-a"], &[], false);
+        file.place = Place::file_of("", "app/(auth)/api/route.ts").unwrap();
+        places.push(file);
+        for c in places {
+            assert_round_trip(&command(&c), &c);
         }
     }
 
