@@ -22,7 +22,7 @@
 //! Deterministic: units are keyed `path#symbol` and recorded in sorted order within one
 //! update.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 
@@ -145,45 +145,48 @@ impl Probation {
 }
 
 /// The units of `concern` in `place` (`path#symbol`), as `report` (made with every unit
-/// listed) has them: what [`Probation::start`] records.
+/// listed) has them: what [`Probation::start`] records. Membership is the one `drift
+/// check` and the replay read ([`super::promote::place_units`]), never the files a
+/// place could hold ([`Place::holds`]): a route place holds the entry points served
+/// under its prefix (and those whose route was not read and could be), not every file
+/// of its package, and a background job of a concern about the caller is in no place.
 pub fn units_of(report: &PracticesReport, concern: &str, place: &Place) -> BTreeSet<String> {
-    report
-        .concerns
-        .iter()
-        .filter(|c| c.id == concern)
-        .flat_map(|c| c.units.iter())
-        .filter(|u| place.holds(&u.package, &u.path))
-        .map(|u| format!("{}#{}", u.path, u.symbol))
+    super::promote::place_units(report, concern, place)
+        .into_iter()
+        .map(|(unit, _)| unit)
         .collect()
 }
 
 /// What one practices report says of each unit of `concern` in `place`, as
 /// [`Probation::update`] takes it: `judge` says whether a row the map knows follows the
 /// practice (the promoted practice's own reading; [`super::promote`] has it). A row the
-/// map does not know is unknown whatever `judge` says. A handler mounted more than once
-/// is one unit: the worst of its rows decides (one that breaks, else one unknown).
-/// Sorted by unit.
+/// map does not know is unknown whatever `judge` says, and so is a row in a route place
+/// only as a route Drift did not read to the end. A handler mounted more than once is
+/// one unit: the worst of its rows decides (one that breaks, else one unknown). The
+/// units are those of [`units_of`], the check's own membership. Sorted by unit.
 pub fn observe(
     report: &PracticesReport,
     concern: &str,
     place: &Place,
     judge: impl Fn(&UnitRow) -> Observed,
 ) -> Vec<(String, Observed)> {
-    let mut by: BTreeMap<String, Observed> = BTreeMap::new();
-    for c in report.concerns.iter().filter(|c| c.id == concern) {
-        for u in c.units.iter().filter(|u| place.holds(&u.package, &u.path)) {
-            let obs = if u.assignment == "unknown" {
-                Observed::Unknown
-            } else {
-                judge(u)
-            };
-            let e = by.entry(format!("{}#{}", u.path, u.symbol)).or_insert(obs);
-            if obs > *e {
-                *e = obs;
-            }
+    let mut out: Vec<(String, Observed)> = Vec::new();
+    for (unit, rows) in super::promote::place_units(report, concern, place) {
+        let worst = rows
+            .iter()
+            .map(|(u, not_read)| {
+                if *not_read || u.assignment == "unknown" {
+                    Observed::Unknown
+                } else {
+                    judge(*u)
+                }
+            })
+            .max();
+        if let Some(obs) = worst {
+            out.push((unit, obs));
         }
     }
-    by.into_iter().collect()
+    out
 }
 
 #[cfg(test)]
@@ -315,5 +318,54 @@ mod tests {
             ]
         );
         assert_eq!(units_of(&report, "authn", &place).len(), 3);
+    }
+
+    /// Pins review item 8 (area 2): a route place's units are the ones `drift check`
+    /// and the replay read there, not every file of its package. Before, probation
+    /// read `Place::holds`, which is every file of the package for a route place: the
+    /// job, the server action and the route served elsewhere were all its units.
+    #[test]
+    fn a_route_place_holds_what_the_check_reads_there() {
+        let row = |path: &str, kind: &str, route: Option<&str>| UnitRow {
+            path: path.into(),
+            symbol: "GET".into(),
+            line: 1,
+            assignment: "known".into(),
+            kind: Some(kind.into()),
+            route: route.map(str::to_string),
+            ..UnitRow::default()
+        };
+        let report = PracticesReport {
+            concerns: vec![ConcernReport {
+                id: "authn".into(),
+                unit: "entry_point".into(),
+                units: vec![
+                    row("app/api/a/route.ts", "http", Some("/api/a")),
+                    row("app/other/route.ts", "http", Some("/other")),
+                    // A route Drift could not read: it could be under /api, not read.
+                    row("app/x/route.ts", "http", None),
+                    row("app/actions.ts", "server_action", None),
+                    row("jobs/nightly.ts", "job", None),
+                ],
+                ..ConcernReport::default()
+            }],
+            ..PracticesReport::default()
+        };
+        let place = Place::parse(".:/api", &report).unwrap();
+        assert_eq!(
+            units_of(&report, "authn", &place),
+            ["app/api/a/route.ts#GET", "app/x/route.ts#GET"]
+                .into_iter()
+                .map(str::to_string)
+                .collect::<BTreeSet<_>>()
+        );
+        let obs = observe(&report, "authn", &place, |_| Observed::Follows);
+        assert_eq!(
+            obs,
+            vec![
+                ("app/api/a/route.ts#GET".to_string(), Observed::Follows),
+                ("app/x/route.ts#GET".to_string(), Observed::Unknown),
+            ]
+        );
     }
 }

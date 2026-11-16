@@ -51,7 +51,9 @@ A place qualifies with at least 8 units of the concern, the accepted ways holdin
 the units Drift could read, and at most 20% it could not read. Units Drift cannot read are
 never reported. --concern is needed when no variant is named (`drift practices --json`
 lists the concern ids, `concerns[].id`, and each unit's uses, whose part before the `:` is
-its mechanism). Promoting again in the same place updates the same convention. Run
+its mechanism). Promoting again in the same place updates the same convention; promoting
+another form there (a way where a mechanism is accepted whole, or the other way round)
+replaces it, and says which units that followed it are recorded as differing. Run
 `drift init` first; commit .drift/conventions.yaml and drift.lock afterwards.";
 
 /// The arguments of `drift practices promote`.
@@ -189,11 +191,20 @@ pub fn run(
         Ok(c) => c,
         Err(r) => return refused_in(args.json, &report, &r),
     };
+    // The practice of this concern in this very place, of another form (a named way
+    // where a mechanism was accepted whole, or the other way round): this one replaces
+    // it, and says so, with the units that followed it and do not follow this one.
+    let replaced: Vec<Convention> = replaced_by(&policy, &cand).into_iter().cloned().collect();
+    let mut conv = written(&policy, &cand);
     // Another practice of the concern whose place holds this one, or that this one
     // holds: both would report the same units, so the second is refused, as the review
-    // leaves it out. The same id is this practice promoted again.
-    let new_id = promote::convention_id(&cand.place, &cand.concern);
-    if let Some(x) = covering(&policy, &cand).filter(|x| x.id != new_id) {
+    // leaves it out. This practice promoted again (its id), and one it replaces, are
+    // not another. The test is inside the search, so a second practice that overlaps
+    // is found after the first that is this one.
+    let this_id = conv.id.clone();
+    if let Some(x) = covering_except(&policy, &cand, |x| {
+        x.id == this_id || replaced.iter().any(|r| r.id == x.id)
+    }) {
         return usage(
             args.json,
             "covered",
@@ -206,14 +217,17 @@ pub fn run(
             ),
         );
     }
-    let mut conv = written(&policy, &cand);
+    if !replaced.is_empty() {
+        // A new form is a new decision: it advises unless --block asks again.
+        conv.mode = Mode::Advise;
+    }
     let mut replay = None;
     // A practice that blocked before is promoted again on new evidence: it keeps
     // blocking only if the gate still lets it, else it advises (and says so).
     let kept_block = !args.block && conv.mode == Mode::Block;
     let mut block_dropped = None;
     if args.block || kept_block {
-        let gate = block_gate(&report, &conv, cand.forced, &first_added(root));
+        let gate = block_gate(root, &report, &conv, cand.forced, &first_added(root));
         replay = gate.replay;
         match gate.verdict {
             Err(why) if args.block => {
@@ -230,9 +244,16 @@ pub fn run(
     let new = new_entries(&lock, &conv.id, &cand);
     let preview = promote::preview(&cand, &conv);
     let same = same_way(&report, &policy, &cand);
+    let replaces: Vec<Replaced> = replaced
+        .iter()
+        .map(|old| Replaced::of(&report, old, &cand))
+        .collect();
     let write_it = !args.dry_run;
     if write_it {
         lock.entries.extend(new.iter().cloned());
+        for old in &replaced {
+            policy.conventions.retain(|x| x.id != old.id);
+        }
         insert(&mut policy, conv.clone());
         policy.save(root)?;
         lock.save(root)?;
@@ -248,6 +269,7 @@ pub fn run(
             "replay": replay,
             "block_dropped": block_dropped,
             "same_way": same,
+            "replaces": replaces.iter().map(Replaced::json).collect::<Vec<Value>>(),
             "preview": preview,
         });
         serde_json::to_writer_pretty(&mut stdout, &out)?;
@@ -255,6 +277,9 @@ pub fn run(
         return Ok(ExitCode::SUCCESS);
     }
     write!(stdout, "{preview}")?;
+    for r in &replaces {
+        writeln!(stdout, "{}", r.sentence(write_it))?;
+    }
     if !same.is_empty() {
         writeln!(
             stdout,
@@ -319,13 +344,20 @@ fn same_way(report: &PracticesReport, policy: &ConventionsFile, cand: &Candidate
 }
 
 /// The convention a promotion of `cand` writes: the engine's ([`promote::convention`]),
-/// accepted, with what a person decided about the one already there of the same id
-/// kept (its mode, the members they marked fine, the files they set apart, its agents
+/// accepted, with what a person decided about this practice promoted before kept (its
+/// id, its mode, the members they marked fine, the files they set apart, its agents
 /// choice). Its summary and evidence are always the new candidate's. A practice promoted
 /// below the share advises, whatever mode was there.
+///
+/// This practice promoted before is the one of the same concern, place and form
+/// ([`previous`]), whatever its id: a mechanism or any-enforcing practice written
+/// before the forms had ids of their own carries its place's id, and keeps it, so its
+/// lock lines still match. One of another form is no earlier version of this one,
+/// even under the same id: nothing of it is kept ([`replaced_by`]).
 fn written(policy: &ConventionsFile, cand: &Candidate) -> Convention {
     let mut c = promote::convention(cand);
-    if let Some(old) = policy.conventions.iter().find(|x| x.id == c.id) {
+    if let Some(old) = previous(policy, cand) {
+        c.id = old.id.clone();
         c.mode = old.mode;
         c.exceptions = old.exceptions.clone();
         c.different_kind = old.different_kind.clone();
@@ -338,6 +370,109 @@ fn written(policy: &ConventionsFile, cand: &Candidate) -> Convention {
     }
     c.status = Status::Accepted;
     c
+}
+
+/// The practice of `policy` that promoting `cand` promotes again: of its concern, its
+/// place and its form, the one of the candidate's id first, else any (one written
+/// before the forms had ids of their own has its place's id).
+fn previous<'a>(policy: &'a ConventionsFile, cand: &Candidate) -> Option<&'a Convention> {
+    let id = promote::candidate_id(cand);
+    let form = cand.form();
+    let same = |x: &&Convention| promote::is_practice_of(*x, &cand.place, &cand.concern, form);
+    policy
+        .conventions
+        .iter()
+        .filter(same)
+        .find(|x| x.id == id)
+        .or_else(|| policy.conventions.iter().find(same))
+}
+
+/// The accepted practices of `policy` that promoting `cand` replaces: of its concern,
+/// in exactly its place, of another form. Two forms in one place would report the
+/// same units, and only one is kept; the person who promotes the other is told what
+/// changes ([`Replaced`]), never left to find one rule narrowed under them.
+fn replaced_by<'a>(policy: &'a ConventionsFile, cand: &Candidate) -> Vec<&'a Convention> {
+    let form = cand.form();
+    policy
+        .conventions
+        .iter()
+        .filter(|x| {
+            x.status == Status::Accepted
+                && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == cand.concern)
+                && promote::form_of(x).is_some_and(|f| f != form)
+                && promote::place_of(x).as_ref() == Some(&cand.place)
+        })
+        .collect()
+}
+
+/// A practice of another form that a promotion replaces, and the units of its place
+/// that follow it as the code stands and break the new one: they are recorded in
+/// `drift.lock` as they are, as every unit that differs today is, and the person reads
+/// which before anything is written (a dry run says the same).
+struct Replaced {
+    id: String,
+    summary: String,
+    /// `path#symbol`, sorted.
+    narrowed: Vec<String>,
+}
+
+impl Replaced {
+    fn of(report: &PracticesReport, old: &Convention, cand: &Candidate) -> Replaced {
+        let followed = promote::followers(report, old);
+        let mut narrowed: Vec<String> = cand
+            .exceptions
+            .iter()
+            .filter(|e| followed.contains(&(e.path.clone(), e.symbol.clone())))
+            .map(|e| format!("{}#{}", e.path, e.symbol))
+            .collect();
+        narrowed.sort();
+        narrowed.dedup();
+        Replaced {
+            id: old.id.clone(),
+            summary: old.summary.clone(),
+            narrowed,
+        }
+    }
+
+    fn json(&self) -> Value {
+        json!({ "id": self.id, "summary": self.summary, "narrowed": self.narrowed })
+    }
+
+    /// The sentence a person reads: what is replaced, and the units that followed it
+    /// and are recorded as differing from the new one (at most three named).
+    fn sentence(&self, written: bool) -> String {
+        use drift_mine::report::sanitize;
+        let verb = if written { "replaces" } else { "would replace" };
+        let mut out = format!(
+            "This {verb} {} ({}), the practice of another form in the same place: two in one place would report the same units.",
+            sanitize(&self.id, 40),
+            sanitize(&self.summary, 240)
+        );
+        let n = self.narrowed.len();
+        if n == 0 {
+            out.push_str(" No unit that follows it breaks this one.");
+        } else {
+            let mut named: Vec<String> = self
+                .narrowed
+                .iter()
+                .take(3)
+                .map(|k| sanitize(k, 200))
+                .collect();
+            if n > 3 {
+                named.push(format!("and {} more", n - 3));
+            }
+            out.push_str(&format!(
+                " {n} {} that {} it {} not follow this one, and {} recorded in {LOCK_FILE} as {} ({}): this rule is narrower there.",
+                if n == 1 { "unit" } else { "units" },
+                if n == 1 { "follows" } else { "follow" },
+                if n == 1 { "does" } else { "do" },
+                if n == 1 { "is" } else { "are" },
+                if n == 1 { "it is" } else { "they are" },
+                named.join(", ")
+            ));
+        }
+        out
+    }
 }
 
 /// The lock lines promoting `cand` as `id` adds: one per unit that differs today, less
@@ -589,12 +724,13 @@ pub fn open_candidates(report: &PracticesReport, policy: Option<&ConventionsFile
             out.candidates.push(c);
             continue;
         };
-        let id = promote::convention_id(&c.place, &c.concern);
-        if policy
-            .conventions
-            .iter()
-            .any(|x| x.id == id && x.status == Status::Rejected)
-        {
+        // Declined is of this form: a "no" to the named way of a place is no "no" to
+        // accepting a mechanism whole there. Read from what the rejected practice is,
+        // not its id, so one rejected before the forms had ids is of its own form.
+        let form = c.form();
+        if policy.conventions.iter().any(|x| {
+            x.status == Status::Rejected && promote::is_practice_of(x, &c.place, &c.concern, form)
+        }) {
             out.declined += 1;
             continue;
         }
@@ -623,10 +759,12 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
             else {
                 continue;
             };
-            let id = promote::convention_id(&place, &c.id);
+            // A variant's offer is of the named-way form.
             let done = policy.conventions.iter().any(|x| match &x.rule {
                 Rule::Practice { concern, .. } if *concern == c.id => match x.status {
-                    Status::Rejected => x.id == id,
+                    Status::Rejected => {
+                        promote::is_practice_of(x, &place, &c.id, promote::Form::Ways)
+                    }
                     // Only proposed: nobody decided it.
                     Status::Proposed => false,
                     Status::Accepted => promote::place_of(x).is_some_and(|p| overlaps(&p, &place)),
@@ -647,10 +785,22 @@ pub fn drop_decided(report: &mut PracticesReport, policy: &ConventionsFile) {
 /// place overlaps the candidate's. One only proposed (`drift init`'s, from the map) is
 /// no decision: a person has not promoted it.
 pub(crate) fn covering<'a>(policy: &'a ConventionsFile, c: &Candidate) -> Option<&'a Convention> {
+    covering_except(policy, c, |_| false)
+}
+
+/// [`covering`], less the conventions `skip` says are not another practice (this one
+/// promoted again, one it replaces). The test is made inside the search: a filter on
+/// the first overlap found would miss a second one behind it.
+fn covering_except<'a>(
+    policy: &'a ConventionsFile,
+    c: &Candidate,
+    skip: impl Fn(&Convention) -> bool,
+) -> Option<&'a Convention> {
     policy.conventions.iter().find(|x| {
         x.status == Status::Accepted
             && matches!(&x.rule, Rule::Practice { concern, .. } if *concern == c.concern)
             && promote::place_of(x).is_some_and(|p| overlaps(&p, &c.place))
+            && !skip(*x)
     })
 }
 
@@ -665,38 +815,11 @@ fn overlaps(a: &Place, b: &Place) -> bool {
 /// `--concern` in place of a way when it names none (a mechanism or any-enforcing
 /// candidate). Each word is quoted for a shell where it needs to be (a place such as
 /// `app/(auth)/api`).
+///
+/// The engine's ([`promote::command`]): the preview's block hint is the same command,
+/// so the two never differ by a flag.
 pub fn command(c: &Candidate) -> String {
-    let mut s = String::from("drift practices promote");
-    match c.ways.first() {
-        Some(w) => {
-            s.push(' ');
-            s.push_str(&shell_word(&w.id));
-        }
-        None => {
-            s.push_str(" --concern ");
-            s.push_str(&shell_word(&c.concern));
-        }
-    }
-    // A place that starts with `-` would be read by the command line as a flag.
-    let place = c.place.shown();
-    s.push_str(if place.starts_with('-') {
-        " --in="
-    } else {
-        " --in "
-    });
-    s.push_str(&shell_word(&place));
-    for w in c.ways.iter().skip(1) {
-        s.push_str(" --with ");
-        s.push_str(&shell_word(&w.id));
-    }
-    for m in &c.mechanisms {
-        s.push_str(" --mechanism ");
-        s.push_str(&shell_word(m));
-    }
-    if c.any_enforcing {
-        s.push_str(" --any-enforcing");
-    }
-    s
+    promote::command(c)
 }
 
 /// `w` as one shell word: as it is when it holds only characters no shell reads
@@ -774,10 +897,12 @@ pub fn drop_decided_departures(
         let Some(place) = Place::parse(&shown, report) else {
             continue;
         };
-        let id = promote::convention_id(&place, &d.concern);
+        // A departure's command promotes a named way.
         let decided = policy.conventions.iter().any(|x| match &x.rule {
             Rule::Practice { concern, .. } if *concern == d.concern => match x.status {
-                Status::Rejected => x.id == id,
+                Status::Rejected => {
+                    promote::is_practice_of(x, &place, &d.concern, promote::Form::Ways)
+                }
                 // Only proposed: nobody decided it.
                 Status::Proposed => false,
                 Status::Accepted => promote::place_of(x).is_some_and(|p| overlaps(&p, &place)),
@@ -1123,6 +1248,46 @@ fn parse_added(text: &str) -> BTreeMap<String, i64> {
     out
 }
 
+/// When each line of the file at `rel` (from `root`) was last changed, as `git blame`
+/// of the working tree says (committer time, seconds since the epoch), by line number
+/// from 1. A line not committed yet is dated now by git, so it is the most recent.
+/// Empty when git cannot blame the file (not tracked, no history): nothing is dated.
+fn line_times(root: &Path, rel: &str) -> BTreeMap<u32, i64> {
+    let out = crate::history::run_bounded(
+        git_cmd(root, &["blame", "--line-porcelain", "--", rel]),
+        crate::history::GIT_TIMEOUT,
+        crate::history::MAX_LOG_BYTES,
+    );
+    match out {
+        Ok(bytes) => parse_blame(&String::from_utf8_lossy(&bytes)),
+        Err(_) => BTreeMap::new(),
+    }
+}
+
+/// `git blame --line-porcelain` as line number → committer time. Each line of the file
+/// is a header (`<40 hex> <line in the commit> <line now> [<lines in group>]`), its
+/// commit's fields (`committer-time <t>` among them) and the line itself after a tab.
+fn parse_blame(text: &str) -> BTreeMap<u32, i64> {
+    let mut out = BTreeMap::new();
+    let mut line: Option<u32> = None;
+    for l in text.split('\n') {
+        if l.starts_with('\t') {
+            line = None;
+            continue;
+        }
+        let mut words = l.split(' ');
+        let first = words.next().unwrap_or("");
+        if first.len() >= 40 && first.bytes().all(|b| b.is_ascii_hexdigit()) {
+            line = words.nth(1).and_then(|n| n.parse().ok());
+        } else if let (Some(n), Some(t)) = (line, l.strip_prefix("committer-time "))
+            && let Ok(t) = t.trim().parse::<i64>()
+        {
+            out.insert(n, t);
+        }
+    }
+    out
+}
+
 /// What the block gate says of a promoted practice: the replay, when one was run, and
 /// whether it may block (`Err`: why not, the sentence a person reads).
 pub struct Gate {
@@ -1153,7 +1318,13 @@ fn unit_of(report: &PracticesReport, c: &Convention) -> String {
 /// Whether the promoted practice `c` may block: never when it was promoted below the
 /// share (`forced`) or its place is Python (decision D7, read as for every convention:
 /// [`Convention::language`]); otherwise only when the replay over `added` allows it.
+///
+/// A file place is replayed by line ([`promote::replay_dated`]): every unit of one file
+/// shares the file's first commit, so each is dated by the last commit that changed the
+/// line that declares it, read with one `git blame` of that file at `root`. A unit
+/// whose line cannot be dated (the file not committed, git failing) is not read.
 pub fn block_gate(
+    root: &Path,
     report: &PracticesReport,
     c: &Convention,
     forced: bool,
@@ -1183,7 +1354,20 @@ pub fn block_gate(
             ));
         }
     };
-    let r = promote::replay(report, c, &|path: &str| added.get(path).copied());
+    let file = promote::place_of(c).and_then(|p| p.file);
+    let r = match file {
+        Some(f) => {
+            let lines = line_times(root, &f);
+            promote::replay_dated(report, c, &|path: &str, line: u32| {
+                if path == f {
+                    lines.get(&line).copied()
+                } else {
+                    None
+                }
+            })
+        }
+        None => promote::replay(report, c, &|path: &str| added.get(path).copied()),
+    };
     Gate {
         replay: Some(r),
         verdict: r.allows_block(),
@@ -1217,7 +1401,7 @@ pub fn review_block(
     let mut refusals = Vec::new();
     for c in wanted {
         let unit = unit_of(&report, c);
-        let gate = block_gate(&report, c, forced(c), &added);
+        let gate = block_gate(root, &report, c, forced(c), &added);
         let seen = gate
             .replay
             .map(|r| format!(" (replay: {})", r.sentence(&unit)))
@@ -1246,20 +1430,36 @@ pub fn review_block(
 /// Where a convention came from, for `drift review --list` and the cards: a promoted
 /// practice names the practice map, its variant and place, and the ways it holds to.
 /// `None` for a mined convention.
+///
+/// What it accepts is said whole: its ways, each mechanism it accepts whole ("by any
+/// membership guard") and any enforcing way ([`promote::accepts_beyond_ways`]). A
+/// practice of a mechanism or of any enforcing way names no way, and was read as
+/// written by hand and accepting nothing ("ways: "). One whose role is the one
+/// `drift practices promote` writes ([`promote::PRACTICE_FILE`]) is said to come from
+/// the practice map.
 pub fn origin(c: &Convention) -> Option<String> {
     let Rule::Practice { any_of, .. } = &c.rule else {
         return None;
     };
     let place = promote::place_of(c).map_or_else(String::new, |p| p.shown());
+    let mut accepts: Vec<String> = Vec::new();
+    if !any_of.is_empty() {
+        accepts.push(format!("ways: {}", any_of.join(", ")));
+    }
+    accepts.extend(promote::accepts_beyond_ways(c));
+    let accepts = if accepts.is_empty() {
+        "ways: none".to_string()
+    } else {
+        accepts.join("; ")
+    };
     Some(match &c.promoted_from_practice {
-        Some(from) => format!(
-            "promoted from the practice map, variant {from}, in {place} (ways: {})",
-            any_of.join(", ")
-        ),
-        None => format!(
-            "a practice rule in {place} written by hand (ways: {})",
-            any_of.join(", ")
-        ),
+        Some(from) => {
+            format!("promoted from the practice map, variant {from}, in {place} ({accepts})")
+        }
+        None if c.role.file == promote::PRACTICE_FILE => {
+            format!("promoted from the practice map in {place} ({accepts})")
+        }
+        None => format!("a practice rule in {place} written by hand ({accepts})"),
     })
 }
 
@@ -1327,12 +1527,12 @@ pub fn review_step(
         // A proposal from the map of this place and concern was just asked about in
         // the step before (`crate::from_map_cli::review_step`): skipped there, it is
         // not asked again here under another preview.
-        let cand_id = promote::convention_id(&cand.place, &cand.concern);
-        if policy
-            .conventions
-            .iter()
-            .any(|x| x.id == cand_id && crate::from_map_cli::undecided(x))
-        {
+        // Of this place and concern, whatever its form or id.
+        if policy.conventions.iter().any(|x| {
+            matches!(&x.rule, Rule::Practice { concern, .. } if *concern == cand.concern)
+                && promote::place_of(x).as_ref() == Some(&cand.place)
+                && crate::from_map_cli::undecided(x)
+        }) {
             continue;
         }
         let mut conv = written(policy, cand);
@@ -1353,7 +1553,7 @@ pub fn review_step(
             }
             "b" => {
                 let added = added.get_or_insert_with(|| first_added(root));
-                let gate = block_gate(report, &conv, cand.forced, added);
+                let gate = block_gate(root, report, &conv, cand.forced, added);
                 if let Some(r) = gate.replay {
                     println!("  replay: {}", r.sentence(&cand.unit));
                 }
@@ -1696,5 +1896,214 @@ mod tests {
             drop_decided_departures(&report(), &policy, &mut deps);
             assert_eq!(deps[0].promote.is_none(), decided);
         }
+    }
+
+    // ---------- review items of area 2: one id per form, what replaces what ----------
+
+    const WITH_A: &str = "wrap:lib/a.ts#a";
+    const WITH_B: &str = "wrap:lib/b.ts#b";
+
+    /// 40 sign-in routes in app/api: 32 wrapped in `a`, 4 in `b`, 4 with nothing. The
+    /// named way `a` holds 80%, the mechanism `wrap` 90%: both are offered.
+    fn two_forms() -> PracticesReport {
+        use drift_mine::practices::{ConcernReport, UnitRow, Variant, VariantKind};
+        let variant = |id: &str, key: &str, label: &str, kind: VariantKind| Variant {
+            id: id.into(),
+            key: key.into(),
+            label: label.into(),
+            kind,
+            ..Variant::default()
+        };
+        let units = (0..40)
+            .map(|i| {
+                let v = match i {
+                    0..32 => "P-a",
+                    32..36 => "P-b",
+                    _ => "P-none",
+                };
+                UnitRow {
+                    path: format!("app/api/r{i:02}/route.ts"),
+                    symbol: "GET".into(),
+                    line: 1,
+                    variant: v.into(),
+                    assignment: if v == "P-none" { "none" } else { "known" }.into(),
+                    ..UnitRow::default()
+                }
+            })
+            .collect();
+        PracticesReport {
+            concerns: vec![ConcernReport {
+                id: "authn".into(),
+                unit: "entry_point".into(),
+                variants: vec![
+                    variant("P-a", WITH_A, "wrap a", VariantKind::Known),
+                    variant("P-b", WITH_B, "wrap b", VariantKind::Known),
+                    variant("P-none", "none", "no guard found", VariantKind::None),
+                ],
+                units,
+                ..ConcernReport::default()
+            }],
+            ..PracticesReport::default()
+        }
+    }
+
+    fn policy_of(conventions: Vec<Convention>) -> ConventionsFile {
+        ConventionsFile {
+            version: drift_mine::policy::POLICY_VERSION_SINGLE,
+            engine: String::new(),
+            file_kinds: drift_mine::roles::FileKinds::default(),
+            suggestion_cap: None,
+            agents: Default::default(),
+            review_log: Default::default(),
+            packages: Vec::new(),
+            conventions,
+        }
+    }
+
+    fn named_and_mechanism(report: &PracticesReport) -> (Candidate, Candidate) {
+        let all = promote::candidates(report);
+        let named = all
+            .iter()
+            .find(|c| c.form() == promote::Form::Ways)
+            .cloned()
+            .unwrap_or_else(|| panic!("no named-way candidate: {all:?}"));
+        let mech = all
+            .iter()
+            .find(|c| c.form() == promote::Form::Mechanism)
+            .cloned()
+            .unwrap_or_else(|| panic!("no mechanism candidate: {all:?}"));
+        assert_eq!(named.place, mech.place);
+        (named, mech)
+    }
+
+    /// Pins review item 4 (area 2): a "no" to the named way of a place is no "no" to
+    /// the mechanism there. Before, the two shared the place's id, and one rejected
+    /// record declined both, so the mechanism was never offered again. A record
+    /// rejected under the old shared id is read by what it is (its form).
+    #[test]
+    fn one_form_declined_is_not_the_other_declined() {
+        let report = two_forms();
+        let (named, mech) = named_and_mechanism(&report);
+        let mut no = promote::convention(&named);
+        no.status = Status::Rejected;
+        let open = open_candidates(&report, Some(&policy_of(vec![no])));
+        assert_eq!(open.declined, 1);
+        assert!(
+            open.candidates
+                .iter()
+                .any(|c| c.form() == promote::Form::Mechanism && c.place == mech.place),
+            "{:?}",
+            open.candidates
+        );
+        assert!(open.candidates.iter().all(|c| c.form() != promote::Form::Ways));
+        // The mechanism declined under the old shared id: the named way is still open.
+        let mut old_no = promote::convention(&mech);
+        old_no.id = promote::convention_id(&mech.place, &mech.concern);
+        old_no.status = Status::Rejected;
+        let open = open_candidates(&report, Some(&policy_of(vec![old_no])));
+        assert_eq!(open.declined, 1);
+        assert!(open.candidates.iter().any(|c| c.form() == promote::Form::Ways));
+        assert!(open.candidates.iter().all(|c| c.form() != promote::Form::Mechanism));
+    }
+
+    /// Pins review item 2 (area 2): promoting the named way where the mechanism is
+    /// accepted replaces it and says which units that followed the wider rule are now
+    /// recorded as differing; it never overwrites it by id. Before, both had the place's
+    /// id, `insert` replaced the rule, and the 4 units wrapped in `b` were baselined as
+    /// breaks without a word. A mechanism practice written under the old shared id is
+    /// promoted again under that id (its lock lines match), and the named way that now
+    /// has that same id does not take over its block mode.
+    #[test]
+    fn another_form_in_the_same_place_replaces_it_and_says_so() {
+        let report = two_forms();
+        let (named, mech) = named_and_mechanism(&report);
+        let accepted = promote::convention(&mech);
+        let policy = policy_of(vec![accepted.clone()]);
+        let replaced = replaced_by(&policy, &named);
+        assert_eq!(replaced.len(), 1);
+        assert_eq!(replaced[0].id, accepted.id);
+        assert!(replaced_by(&policy, &mech).is_empty());
+        let r = Replaced::of(&report, replaced[0], &named);
+        assert_eq!(
+            r.narrowed,
+            (32..36)
+                .map(|i| format!("app/api/r{i}/route.ts#GET"))
+                .collect::<Vec<_>>()
+        );
+        let text = r.sentence(false);
+        assert!(text.contains(&format!("would replace {}", accepted.id)), "{text}");
+        assert!(text.contains("4 units that follow it do not follow this one"), "{text}");
+        assert!(text.contains("app/api/r32/route.ts#GET"), "{text}");
+        let conv = written(&policy, &named);
+        assert_ne!(conv.id, accepted.id);
+        // The old shared id.
+        let mut legacy = promote::convention(&mech);
+        legacy.id = promote::convention_id(&mech.place, &mech.concern);
+        legacy.mode = Mode::Block;
+        let policy = policy_of(vec![legacy.clone()]);
+        let again = written(&policy, &mech);
+        assert_eq!(again.id, legacy.id);
+        assert_eq!(again.mode, Mode::Block);
+        let narrower = written(&policy, &named);
+        assert_eq!(narrower.id, legacy.id);
+        assert_eq!(narrower.mode, Mode::Advise);
+        assert_eq!(replaced_by(&policy, &named).len(), 1);
+    }
+
+    /// Pins review item 6 (area 2): the overlap test skips this practice promoted again
+    /// inside the search, so a second overlapping practice behind it is found. Before,
+    /// `covering` returned the first overlap (this one) and the filter after it found
+    /// nothing.
+    #[test]
+    fn a_second_overlapping_practice_is_found_behind_this_one() {
+        let report = two_forms();
+        let (named, _) = named_and_mechanism(&report);
+        let this = promote::convention(&named);
+        let mut other = this.clone();
+        other.id = "D-000001".into();
+        let policy = policy_of(vec![this.clone(), other]);
+        let found = covering_except(&policy, &named, |x| x.id == this.id);
+        assert_eq!(found.map(|x| x.id.as_str()), Some("D-000001"));
+        assert!(covering_except(&policy_of(vec![this.clone()]), &named, |x| x.id == this.id).is_none());
+    }
+
+    /// Pins review item 7 (area 2): a promoted practice of a mechanism or of any
+    /// enforcing way says what it accepts where it is listed and on its card. Before,
+    /// both read "written by hand (ways: )".
+    #[test]
+    fn a_practice_of_a_mechanism_or_of_any_enforcing_way_says_what_it_accepts() {
+        let report = two_forms();
+        let (_, mech) = named_and_mechanism(&report);
+        let m = origin(&promote::convention(&mech)).unwrap();
+        assert!(m.contains("by any wrap"), "{m}");
+        assert!(!m.contains("written by hand") && !m.contains("ways: )"), "{m}");
+        let any = promote::candidate_for(
+            &report,
+            Some(&mech.place),
+            &Request {
+                concern: "authn".into(),
+                any_enforcing: true,
+                ..Request::default()
+            },
+        )
+        .unwrap();
+        let a = origin(&promote::convention(&any)).unwrap();
+        assert!(a.contains("any way that turns an unsigned caller away"), "{a}");
+        let line = listed(&policy_of(vec![promote::convention(&mech)])).join("\n");
+        assert!(line.contains("by any wrap"), "{line}");
+    }
+
+    /// The lines of `git blame --line-porcelain` dated by their commit, by line now.
+    #[test]
+    fn blame_dates_each_line() {
+        let sha_a = "a".repeat(40);
+        let sha_b = "b".repeat(40);
+        let text = format!(
+            "{sha_a} 1 1 2\nauthor x\ncommitter-time 100\nsummary s\nfilename f.ts\n\tline one\n\
+             {sha_a} 2 2\nauthor x\ncommitter-time 100\nfilename f.ts\n\tcommitter-time 5\n\
+             {sha_b} 9 3 1\nauthor y\ncommitter-time 300\nfilename f.ts\n\tline three\n"
+        );
+        let got = parse_blame(&text);
+        assert_eq!(got.into_iter().collect::<Vec<_>>(), [(1, 100), (2, 100), (3, 300)]);
     }
 }

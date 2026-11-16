@@ -160,6 +160,48 @@ fn route_segments(route: Option<&str>) -> (Vec<String>, bool) {
     (out, true)
 }
 
+/// The entry-point kinds of `c` (as the facts name them, [`UnitRow::kind`]) that are
+/// served at a path: those of which Drift read at least one unit's route as a path (it
+/// starts with `/`). Read from the units, never from a list of kinds: a kind none of
+/// whose units has a path (a server action, a GraphQL resolver whose route is
+/// `Class.method`, an RPC procedure named by its key, a job) has no route at all, so a
+/// unit of it is outside every route place. It is not unknown there: no config line
+/// could ever place it under a prefix. Only a unit of a kind served at a path whose own
+/// route Drift could not read is counted as not read under the prefixes it could be
+/// under. A unit with no kind recorded is read as one of a kind served at a path, so
+/// it is still counted as not read rather than left out.
+fn routed_kinds(c: &ConcernReport) -> BTreeSet<&str> {
+    c.units
+        .iter()
+        .filter(|u| {
+            u.route
+                .as_deref()
+                .is_some_and(|r| r.trim_start().starts_with('/'))
+        })
+        .filter_map(|u| u.kind.as_deref())
+        .collect()
+}
+
+/// The canonical form of a stored route prefix ([`Rule::Practice`] `under_route`), as
+/// [`Place::parse`] writes one: by segment, each parameter (`:id`, `{id}`, `<id>`,
+/// `[id]`) as [`drift_core::practice::ANY_SEGMENT`], no trailing slash, a leading
+/// slash added when it has none. Every read of a promoted practice's place goes
+/// through it ([`place_of`]), and so does the write ([`convention`]), so a value a
+/// person edited by hand (`/api/v2/`, `/api/:id`) holds the units its canonical form
+/// does. `None` for a value that is no literal prefix of at least one segment (`/`,
+/// `/api/*`, a catch-all): such a value is kept as written, holds no unit, and the
+/// practice is reported stale (it fires on nothing).
+pub fn canonical_route(prefix: &str) -> Option<String> {
+    let text = prefix.trim();
+    let text = if text.starts_with('/') {
+        text.to_string()
+    } else {
+        format!("/{text}")
+    };
+    let (segs, whole) = route_segments(Some(text.as_str()));
+    (whole && !segs.is_empty()).then(|| format!("/{}", segs.join("/")))
+}
+
 /// The segments of a stored route prefix.
 fn prefix_segments(prefix: &str) -> Vec<&str> {
     prefix.split('/').filter(|s| !s.is_empty()).collect()
@@ -413,6 +455,15 @@ pub struct Replay {
     /// Units read: the [`REPLAY_UNITS`] most recently added that the map can tell.
     pub recent: usize,
     pub followed: usize,
+    /// The units of the place the map can tell, dated or not: a place with fewer than
+    /// [`REPLAY_UNITS`] can never be replayed, and is told so.
+    #[serde(default)]
+    pub readable: usize,
+    /// Of a file place: each unit was dated by the last commit that changed the line
+    /// that declares it, not by the commit that first added the file (every unit of
+    /// one file would share that date).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub by_line: bool,
 }
 
 impl Place {
@@ -1165,11 +1216,18 @@ impl<'a> Reading<'a> {
         // Rows whose route was not read to the end, with what was read of it.
         let mut pending: Vec<(usize, Vec<String>)> = Vec::new();
         let entries = c.unit == "entry_point";
+        let routed = routed_kinds(c);
         for (i, u) in c.units.iter().enumerate() {
             let mut of = places_of(&u.package, &u.path);
             of.extend(Place::file_of(&u.package, &u.path));
-            // A background job is served at no route: it is in no route place.
-            if entries && counted[i] && u.kind.as_deref() != Some(JOB) {
+            // A background job is served at no route, and neither is an entry point of a
+            // kind Drift read no route for (a server action, a resolver, a procedure):
+            // it is in no route place, neither a member nor unread there.
+            if entries
+                && counted[i]
+                && u.kind.as_deref() != Some(JOB)
+                && u.kind.as_deref().is_none_or(|k| routed.contains(k))
+            {
                 let (segs, whole) = route_segments(u.route.as_deref());
                 if whole {
                     of.extend((1..=segs.len()).map(|k| Place::route_in(&u.package, &segs[..k])));
@@ -2021,6 +2079,34 @@ fn enforcing_words(concern: &str) -> &'static str {
     }
 }
 
+/// What the promoted practice `c` accepts besides its named ways, each in the words a
+/// preview says it with: every mechanism accepted whole ("by any membership guard") and
+/// any enforcing way ("any way that turns an unsigned caller away"). Empty for a
+/// practice of named ways only and for any other convention. A list or a card that
+/// names a practice's ways says these too: a practice of a mechanism or of any
+/// enforcing way names no way, and would otherwise read as accepting nothing.
+pub fn accepts_beyond_ways(c: &Convention) -> Vec<String> {
+    let Rule::Practice {
+        concern,
+        any_mechanism,
+        any_enforcing,
+        ..
+    } = &c.rule
+    else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = any_mechanism.iter().map(|m| mechanism_words(m)).collect();
+    if *any_enforcing {
+        out.push(enforcing_words(concern).to_string());
+    }
+    out
+}
+
+/// A mechanism accepted whole, in words: "by any membership guard".
+fn mechanism_words(m: &str) -> String {
+    format!("by any {}", sanitize(&m.replace('_', " "), 60))
+}
+
 /// What a candidate accepts, as a person reads it: its ways ([`labels`]), each
 /// mechanism whole ("by any dependency"), and any enforcing way, joined with ", or ".
 fn accepted_words(c: &Candidate) -> String {
@@ -2029,7 +2115,7 @@ fn accepted_words(c: &Candidate) -> String {
         parts.push(labels(&c.ways));
     }
     for m in &c.mechanisms {
-        parts.push(format!("by any {}", sanitize(&m.replace('_', " "), 60)));
+        parts.push(mechanism_words(m));
     }
     if c.any_enforcing {
         parts.push(enforcing_words(&c.concern).to_string());
@@ -2072,9 +2158,10 @@ fn role_of(place: &Place) -> RoleSelector {
 
 /// The convention promoting `c` writes: accepted by the person, advise mode, shown to
 /// agents on their word ([`crate::policy::AgentsChoice::Show`]),
-/// [`Convention::promoted_from_practice`] the first way's id. Its id is of the place and
-/// the concern only ([`convention_id`]), so adding a way later keeps the id and its
-/// lock entries. A mechanism accepted whole and any enforcing way are written as the
+/// [`Convention::promoted_from_practice`] the first way's id. Its id is of the place, the
+/// concern and the form ([`candidate_id`]), so adding a way later keeps the id and its
+/// lock entries, and a practice of another form in the same place never takes it over.
+/// A mechanism accepted whole and any enforcing way are written as the
 /// rule's `any_mechanism` and `any_enforcing`; the summary says them in words ("Sign-in
 /// in app/api: any way that turns an unsigned caller away").
 pub fn convention(c: &Candidate) -> Convention {
@@ -2087,7 +2174,7 @@ pub fn convention(c: &Candidate) -> Convention {
     let holders = c.follows;
     let total = c.follows + c.exceptions.len();
     Convention {
-        id: convention_id(&c.place, &c.concern),
+        id: candidate_id(c),
         status: Status::Accepted,
         mode: Mode::Advise,
         summary: format!(
@@ -2103,7 +2190,11 @@ pub fn convention(c: &Candidate) -> Convention {
             any_mechanism,
             any_enforcing: c.any_enforcing,
             in_file: c.place.file.clone(),
-            under_route: c.place.route.clone(),
+            under_route: c
+                .place
+                .route
+                .as_deref()
+                .map(|r| canonical_route(r).unwrap_or_else(|| r.to_string())),
         },
         evidence: Evidence {
             holders,
@@ -2146,6 +2237,150 @@ pub fn convention_id(place: &Place, concern: &str) -> String {
     format!("D-{}", &h.to_hex()[..6])
 }
 
+/// What a promoted practice accepts, as a kind: named ways, a mechanism whole, or any
+/// way that enforces the concern. Ordered from the most specific: a practice that
+/// names ways and a mechanism is of the mechanism form, one that also accepts any
+/// enforcing way of the enforcing form ([`breadth`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Form {
+    Ways,
+    Mechanism,
+    Enforcing,
+}
+
+impl Form {
+    fn of(mechanisms: bool, enforcing: bool) -> Form {
+        if enforcing {
+            Form::Enforcing
+        } else if mechanisms {
+            Form::Mechanism
+        } else {
+            Form::Ways
+        }
+    }
+}
+
+impl Candidate {
+    /// What it accepts, as a kind ([`Form`]).
+    pub fn form(&self) -> Form {
+        Form::of(!self.mechanisms.is_empty(), self.any_enforcing)
+    }
+}
+
+/// The form of the promoted practice `c` ([`Form`]); `None` for any other convention.
+pub fn form_of(c: &Convention) -> Option<Form> {
+    match &c.rule {
+        Rule::Practice {
+            any_mechanism,
+            any_enforcing,
+            ..
+        } => Some(Form::of(!any_mechanism.is_empty(), *any_enforcing)),
+        _ => None,
+    }
+}
+
+/// The id of the promoted practice of `concern` in `place` of the form `form`. Named
+/// ways keep the id of the place and the concern ([`convention_id`]), the one every
+/// practice was written with before forms had ids of their own, so the ids already in
+/// `conventions.yaml` and `drift.lock` stay what they are; a mechanism and any
+/// enforcing way add their form, so the three candidates of one place never share an
+/// id (one declined is not the others declined, one promoted never overwrites another
+/// by id). Adding a way, or a mechanism, keeps the id: the form is what changes it.
+pub fn practice_id(place: &Place, concern: &str, form: Form) -> String {
+    let tag = match form {
+        Form::Ways => return convention_id(place, concern),
+        Form::Mechanism => "mechanism",
+        Form::Enforcing => "enforcing",
+    };
+    let mut text = format!("practice\0{}\0{}\0{concern}", place.package, place.dir);
+    if let Some(f) = &place.file {
+        text.push_str(&format!("\0file\0{f}"));
+    }
+    if let Some(r) = &place.route {
+        text.push_str(&format!("\0route\0{r}"));
+    }
+    text.push_str(&format!("\0form\0{tag}"));
+    let h = blake3::hash(text.as_bytes());
+    format!("D-{}", &h.to_hex()[..6])
+}
+
+/// The id promoting `c` writes ([`practice_id`] of its place, concern and form).
+pub fn candidate_id(c: &Candidate) -> String {
+    practice_id(&c.place, &c.concern, c.form())
+}
+
+/// Whether the convention `x` is a promoted practice of `concern` in `place` of the
+/// form `form`, whatever its id. A practice of the mechanism or the enforcing form
+/// written before the forms had ids of their own carries its place's id
+/// ([`convention_id`]); it is found by what it is, not by its id, and keeps that id
+/// and its lock lines.
+pub fn is_practice_of(x: &Convention, place: &Place, concern: &str, form: Form) -> bool {
+    matches!(&x.rule, Rule::Practice { concern: c, .. } if c == concern)
+        && form_of(x) == Some(form)
+        && place_of(x).as_ref() == Some(place)
+}
+
+/// The units (`path`, `symbol`) of its place that the promoted practice `c` holds to
+/// and that follow it as the code stands, read as [`check`] reads them. Empty for any
+/// other convention, or one of a concern `report` does not have.
+pub fn followers(report: &PracticesReport, c: &Convention) -> BTreeSet<(String, String)> {
+    let (
+        Rule::Practice {
+            concern,
+            any_of,
+            any_mechanism,
+            any_enforcing,
+            ..
+        },
+        Some(place),
+    ) = (&c.rule, place_of(c))
+    else {
+        return BTreeSet::new();
+    };
+    let Some(cr) = report.concerns.iter().find(|x| x.id == *concern) else {
+        return BTreeSet::new();
+    };
+    let r = Reading::new(cr);
+    let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
+    r.judged(&place, &r.verdicts(&accepted))
+        .iter()
+        .filter(|j| j.verdict == Verdict::Follows)
+        .map(|j| (j.path.to_string(), j.symbol.to_string()))
+        .collect()
+}
+
+/// The units of `concern` in `place` as [`check`] reads a place's membership
+/// ([`Reading`]): each unit once (`path#symbol`), with its rows in the report (its
+/// mounts), and whether it is there only as a route Drift did not read to the end, so
+/// whatever the map says of it, it cannot be told there. A background job of a concern
+/// about the caller, and an entry point of a kind served at no path in a route place,
+/// is none of them. Sorted by unit. What [`super::probation`] records.
+pub fn place_units<'r>(
+    report: &'r PracticesReport,
+    concern: &str,
+    place: &Place,
+) -> Vec<(String, Vec<(&'r UnitRow, bool)>)> {
+    let Some(cr) = report.concerns.iter().find(|x| x.id == concern) else {
+        return Vec::new();
+    };
+    let r = Reading::new(cr);
+    let rows = r.places.get(place).map_or(&[][..], Vec::as_slice);
+    let unread = r.unread.get(place).map_or(&[][..], Vec::as_slice);
+    let mut by: BTreeMap<String, Vec<(&'r UnitRow, bool)>> = BTreeMap::new();
+    for (i, not_read) in rows
+        .iter()
+        .map(|&i| (i, false))
+        .chain(unread.iter().map(|&i| (i, true)))
+    {
+        let u: &'r UnitRow = &cr.units[i];
+        by.entry(format!("{}#{}", u.path, u.symbol))
+            .or_default()
+            .push((u, not_read));
+    }
+    by.into_iter().collect()
+}
+
 /// The place a promoted practice holds in (its role's package and directory); `None`
 /// for any other convention.
 ///
@@ -2173,7 +2408,11 @@ pub fn place_of(c: &Convention) -> Option<Place> {
         } else {
             in_file.clone()
         },
-        route: under_route.clone(),
+        // The canonical form whatever the file says ([`canonical_route`]); a value
+        // that is no literal prefix is kept as written and holds nothing.
+        route: under_route
+            .as_deref()
+            .map(|r| canonical_route(r).unwrap_or_else(|| r.to_string())),
     })
 }
 
@@ -2321,12 +2560,52 @@ fn units_word(unit: &str, n: usize) -> String {
     if n == 1 { one } else { format!("{one}s") }
 }
 
+/// The command that promotes `c` as it is: its first way, `--in` its place, `--with`
+/// each other way, `--mechanism` each mechanism accepted whole and `--any-enforcing`;
+/// `--concern` in place of a way when it names none. Each word through
+/// [`crate::report::shell_word`]; a place that starts with `-` is written `--in=` so the
+/// command line never reads it as a flag. Every command that names a candidate (the
+/// list, the preview's block hint) is this one, so none drops a flag and promotes a
+/// narrower rule.
+pub fn command(c: &Candidate) -> String {
+    use crate::report::shell_word;
+    let mut s = String::from("drift practices promote");
+    match c.ways.first() {
+        Some(w) => {
+            s.push(' ');
+            s.push_str(&shell_word(&w.id));
+        }
+        None => {
+            s.push_str(" --concern ");
+            s.push_str(&shell_word(&c.concern));
+        }
+    }
+    let place = c.place.shown();
+    s.push_str(if place.starts_with('-') {
+        " --in="
+    } else {
+        " --in "
+    });
+    s.push_str(&shell_word(&place));
+    for w in c.ways.iter().skip(1) {
+        s.push_str(" --with ");
+        s.push_str(&shell_word(&w.id));
+    }
+    for m in &c.mechanisms {
+        s.push_str(" --mechanism ");
+        s.push_str(&shell_word(m));
+    }
+    if c.any_enforcing {
+        s.push_str(" --any-enforcing");
+    }
+    s
+}
+
 /// What a person reads before the practice is written (and what the command prints):
 /// how many follow, the exceptions recorded as they are (at most 3 named), what could
 /// not be read, what `drift check` reports from now on, the mode and how to change it,
 /// and the other ways that could be added. Ends with a newline.
 pub fn preview(c: &Candidate, convention: &Convention) -> String {
-    let place = sanitize(&c.place.command_arg(), 160);
     let mut out = format!(
         "{} in {}: {} in {} of {} {}.\n",
         concern_heading(&c.concern),
@@ -2397,19 +2676,27 @@ pub fn preview(c: &Candidate, convention: &Convention) -> String {
     if c.passive {
         out.push_str("This is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\n");
     }
-    let block = match c.ways.first() {
-        Some(w) => format!(
-            "`drift practices promote {} --in {place} --block` makes it fail one, when the {} {} added here most recently follow it",
-            sanitize(&w.id, 40),
-            REPLAY_UNITS,
+    // The command that promotes this very candidate, every flag of it, and `--block`:
+    // one that left out a way, a mechanism or any enforcing way would write a narrower
+    // rule over this one.
+    let readable = c.follows + n;
+    let block = if readable < REPLAY_UNITS {
+        format!(
+            "It cannot block: blocking needs a replay of the {REPLAY_UNITS} {} added here most recently, and Drift can read only {readable} here",
             units_word(&c.unit, REPLAY_UNITS)
-        ),
-        None => format!(
-            "`drift review --block {}` makes it fail one, when the {} {} added here most recently follow it",
-            sanitize(&convention.id, 40),
+        )
+    } else {
+        format!(
+            "`{} --block` makes it fail one, when the {} {} {} here most recently follow it",
+            sanitize(&command(c), 480),
             REPLAY_UNITS,
-            units_word(&c.unit, REPLAY_UNITS)
-        ),
+            units_word(&c.unit, REPLAY_UNITS),
+            if c.place.kind() == Kind::File {
+                "added or changed"
+            } else {
+                "added"
+            }
+        )
     };
     let mode = if c.forced {
         format!(
@@ -2655,10 +2942,32 @@ pub fn any(policy: &ConventionsFile, scope: Scope) -> bool {
 /// practice `c` that the map can tell, how many follow it as they stand. `added`: when
 /// the file at a repo-relative path was first committed (seconds since the epoch;
 /// `None` when unknown, and such a unit is not read). Ties are broken by path, line.
+///
+/// Not for a file place: every unit of one file has the file's date, so the tie-break
+/// would pick its first lines, not its recent ones. A file place reads no unit here
+/// (so it is never allowed to block on the file's date); [`replay_dated`] dates each
+/// unit by its own line.
 pub fn replay(
     report: &PracticesReport,
     c: &Convention,
     added: &dyn Fn(&str) -> Option<i64>,
+) -> Replay {
+    let by_file = place_of(c).is_some_and(|p| p.kind() == Kind::File);
+    replay_dated(report, c, &|path: &str, _line: u32| {
+        if by_file { None } else { added(path) }
+    })
+}
+
+/// [`replay`] with each unit dated by `added(path, line)`, `line` the line that
+/// declares it. For a file place, `added` must say when that line last changed (the
+/// commit `git blame` names for it): what is recent in one file is what was added or
+/// changed there lately. A unit it cannot date is not read, never dated by its file.
+/// Elsewhere `added` may say when the file was first committed. Ties are broken by
+/// path, line.
+pub fn replay_dated(
+    report: &PracticesReport,
+    c: &Convention,
+    added: &dyn Fn(&str, u32) -> Option<i64>,
 ) -> Replay {
     let (
         Rule::Practice {
@@ -2679,10 +2988,15 @@ pub fn replay(
     let r = Reading::new(cr);
     let accepted = Accepts::of_rule(any_of, any_mechanism, *any_enforcing).with_folds(&cr.variants);
     let judged = r.judged(&place, &r.verdicts(&accepted));
+    let readable = judged
+        .iter()
+        .filter(|j| j.verdict != Verdict::Unknown)
+        .count();
+    let by_line = place.kind() == Kind::File;
     let mut dated: Vec<(i64, &Judged<'_>)> = judged
         .iter()
         .filter(|j| j.verdict != Verdict::Unknown)
-        .filter_map(|j| added(j.path).map(|t| (t, j)))
+        .filter_map(|j| added(j.path, j.line).map(|t| (t, j)))
         .collect();
     dated.sort_by(|a, b| {
         b.0.cmp(&a.0)
@@ -2697,6 +3011,8 @@ pub fn replay(
             .iter()
             .filter(|(_, j)| j.verdict == Verdict::Follows)
             .count(),
+        readable,
+        by_line,
     }
 }
 
@@ -2704,14 +3020,37 @@ impl Replay {
     /// Whether the replay lets the practice block: [`REPLAY_UNITS`] units were read and
     /// at least [`PLACE_SHARE`] of them follow. `Err` is the sentence a person reads.
     pub fn allows_block(&self) -> Result<(), String> {
+        // A place that holds fewer units Drift can read than the replay reads can never
+        // be replayed, however much history there is: said as it is, not as a shortage
+        // of dates.
+        if self.readable < REPLAY_UNITS {
+            return Err(format!(
+                "its place holds only {} that Drift can read, and block mode needs the {REPLAY_UNITS} most recently added there, so it cannot block until the place holds {REPLAY_UNITS}; it advises until then",
+                self.readable
+            ));
+        }
         if self.recent < REPLAY_UNITS {
-            let why = if self.recent == 0 {
-                " (no git history, or no unit whose file's first commit is known)".to_string()
+            let (dated, why) = if self.by_line {
+                (
+                    "dated by the last commit that changed the line that declares each",
+                    if self.recent == 0 {
+                        " (no git history, or the file's lines could not be dated)"
+                    } else {
+                        ""
+                    },
+                )
             } else {
-                String::new()
+                (
+                    "dated by the commit that first added their file",
+                    if self.recent == 0 {
+                        " (no git history, or no unit whose file's first commit is known)"
+                    } else {
+                        ""
+                    },
+                )
             };
             return Err(format!(
-                "block mode needs the {REPLAY_UNITS} most recently added to the place that Drift can read, dated by the commit that first added their file; it found {}{why}",
+                "block mode needs the {REPLAY_UNITS} most recently added to the place that Drift can read, {dated}; it found {}{why}",
                 self.recent
             ));
         }
@@ -2731,9 +3070,14 @@ impl Replay {
     /// follow it as they stand".
     pub fn sentence(&self, unit: &str) -> String {
         format!(
-            "of the last {} {} added here, {} follow it as they stand",
+            "of the last {} {} {} here, {} follow it as they stand",
             self.recent,
             units_word(unit, self.recent),
+            if self.by_line {
+                "added or changed"
+            } else {
+                "added"
+            },
             self.followed
         )
     }
@@ -3358,7 +3702,9 @@ mod tests {
             r,
             Replay {
                 recent: 15,
-                followed: 13
+                followed: 13,
+                readable: 40,
+                ..Replay::default()
             }
         );
         assert_eq!(
@@ -3373,7 +3719,9 @@ mod tests {
             same,
             Replay {
                 recent: 15,
-                followed: 15
+                followed: 15,
+                readable: 40,
+                ..Replay::default()
             }
         );
         assert!(same.allows_block().is_ok());
@@ -3393,7 +3741,9 @@ mod tests {
         assert!(
             Replay {
                 recent: 15,
-                followed: 12
+                followed: 12,
+                readable: 40,
+                ..Replay::default()
             }
             .allows_block()
             .is_ok()
@@ -3401,7 +3751,9 @@ mod tests {
         assert!(
             Replay {
                 recent: 15,
-                followed: 11
+                followed: 11,
+                readable: 40,
+                ..Replay::default()
             }
             .allows_block()
             .is_err()
@@ -3751,7 +4103,14 @@ mod tests {
         );
         assert_eq!(conv.summary, "Sign-in in the root package: by any wrap");
         assert_eq!(conv.promoted_from_practice, None);
-        assert!(preview(&c, &conv).contains(&format!("`drift review --block {}`", conv.id)));
+        // 11 units Drift can read: fewer than a replay reads, so it is told it cannot
+        // block, never handed a command that could not.
+        let text = preview(&c, &conv);
+        assert!(
+            text.contains("It cannot block: blocking needs a replay of the 15 entry points added here most recently, and Drift can read only 11 here."),
+            "{text}"
+        );
+        assert!(!text.contains("--block"), "{text}");
         // Offered by the list: no way holds 80% alone. Any enforcing way holds 11,
         // only one more than the mechanism: not offered beside it.
         let all = candidates(&r);
@@ -4129,5 +4488,306 @@ mod tests {
         assert!(now.stale.is_empty(), "{:?}", now.stale);
         assert_eq!(violating(&now), ["svc/r00/route.ts"]);
         assert_eq!(replay(&r, &old, &|_| Some(1)).followed, 10);
+    }
+
+    /// An entry point of `kind` at `path`, served at `route`, of `variant`.
+    fn served(path: &str, symbol: &str, kind: &str, route: Option<&str>, variant: &str) -> UnitRow {
+        UnitRow {
+            kind: Some(kind.into()),
+            route: route.map(str::to_string),
+            ..row(path, symbol, 1, variant)
+        }
+    }
+
+    /// The reviewer's scenario: 40 `/api/...` handlers signed in with `withAuth`, and
+    /// 11 server actions beside them (a server action is served at no path).
+    fn api_and_actions() -> PracticesReport {
+        let mut units: Vec<UnitRow> = (0..40)
+            .map(|i| {
+                served(
+                    &format!("app/api/r{i:02}/route.ts"),
+                    "GET",
+                    "http",
+                    Some(format!("/api/r{i:02}").as_str()),
+                    "P-auth",
+                )
+            })
+            .collect();
+        units.extend((0..11).map(|i| {
+            served(
+                &format!("app/api/actions/a{i:02}.ts"),
+                &format!("save{i}"),
+                "server_action",
+                None,
+                "P-none",
+            )
+        }));
+        report(units)
+    }
+
+    /// Pins review item 1 (area 2): an entry point of a kind Drift read no route for
+    /// (a server action, a resolver, a procedure) is in no route place, neither a
+    /// member nor "not read" there. Before, its empty route was compatible with every
+    /// prefix: 11 server actions beside 40 `/api` handlers made `.:/api` 11 of 51
+    /// unknown, refused, never offered, and once accepted reported the actions as not
+    /// checked, which no config line could settle. A handler of a kind served at a path
+    /// whose route was not read is still not read there.
+    #[test]
+    fn an_entry_point_of_a_kind_served_at_no_path_is_in_no_route_place() {
+        let r = api_and_actions();
+        let api = Place::parse(".:/api", &r).unwrap();
+        let c = candidate(&r, "P-auth", Some(&api), &[], false).unwrap();
+        assert_eq!(
+            (c.follows, c.exceptions.len(), c.unknown, c.total, c.unread_routes),
+            (40, 0, 0, 40, 0)
+        );
+        // Offered: the directories hold the actions too (40 of 51, below the share).
+        let all = candidates(&r);
+        assert!(
+            all.iter()
+                .any(|x| x.place == api && x.ways.first().is_some_and(|w| w.id == "P-auth")),
+            "{all:?}"
+        );
+        let conv = convention(&c);
+        let now = checked(&r, &conv);
+        assert!(now.not_checked.is_empty(), "{:?}", now.not_checked);
+        assert!(now.violations.is_empty() && now.stale.is_empty());
+        // An http handler whose route Drift could not read could be under /api.
+        let mut units = r.concerns[0].units.clone();
+        units.push(served("app/x/route.ts", "GET", "http", None, "P-none"));
+        let r2 = report(units);
+        let c2 = candidate(&r2, "P-auth", Some(&api), &[], false).unwrap();
+        assert_eq!((c2.unknown, c2.unread_routes, c2.total), (1, 1, 41));
+        assert_eq!(checked(&r2, &conv).not_checked[0].units, 1);
+    }
+
+    /// 36 routes in app/api wrapped in withAuth, 2 signed in by getUser, 2 with nothing.
+    fn mixed_api() -> PracticesReport {
+        let mut units = routes("app/api", 0, 36, "P-auth");
+        units.extend(routes("app/api", 36, 2, "P-user"));
+        units.extend(routes("app/api", 38, 2, "P-none"));
+        report(units)
+    }
+
+    /// Pins review items 2 and 4 (area 2): the named-way, mechanism and any-enforcing
+    /// practices of one place have ids of their own (the named way keeps the id every
+    /// practice had, so files already written keep working), and the preview's block
+    /// hint is the command of the candidate it previews, every flag of it. Before, all
+    /// three shared the place's id, and the hint of a candidate of named ways dropped
+    /// `--with`: run as printed, it wrote a narrower rule over the wider one.
+    #[test]
+    fn each_form_in_one_place_has_its_own_id_and_its_own_command() {
+        let r = mixed_api();
+        let place = at("", "app/api");
+        let named = candidate(&r, "P-auth", Some(&place), &["P-user".to_string()], false).unwrap();
+        let mech = candidate_for(
+            &r,
+            Some(&place),
+            &Request {
+                concern: AUTHN.into(),
+                mechanisms: vec!["wrap".into()],
+                ..Request::default()
+            },
+        )
+        .unwrap();
+        let any = candidate_for(
+            &r,
+            Some(&place),
+            &Request {
+                concern: AUTHN.into(),
+                any_enforcing: true,
+                ..Request::default()
+            },
+        )
+        .unwrap();
+        let (n, m, a) = (convention(&named), convention(&mech), convention(&any));
+        assert_eq!(n.id, convention_id(&place, AUTHN));
+        assert_eq!(m.id, practice_id(&place, AUTHN, Form::Mechanism));
+        assert_eq!(a.id, practice_id(&place, AUTHN, Form::Enforcing));
+        assert!(n.id != m.id && m.id != a.id && n.id != a.id);
+        assert!(m.id.starts_with("D-") && m.id.len() == 8);
+        // Adding a mechanism keeps the id: the form is what changes it.
+        let both = candidate_for(
+            &r,
+            Some(&place),
+            &Request {
+                concern: AUTHN.into(),
+                mechanisms: vec!["wrap".into(), "dependency".into()],
+                ..Request::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(convention(&both).id, m.id);
+        assert_eq!(form_of(&n), Some(Form::Ways));
+        assert_eq!(form_of(&a), Some(Form::Enforcing));
+        assert!(is_practice_of(&m, &place, AUTHN, Form::Mechanism));
+        assert!(!is_practice_of(&m, &place, AUTHN, Form::Ways));
+        // Each hint is the candidate's own command, with --block.
+        for (c, conv, want) in [
+            (
+                &named,
+                &n,
+                "`drift practices promote P-auth --in app/api --with P-user --block`",
+            ),
+            (
+                &mech,
+                &m,
+                "`drift practices promote --concern authn --in app/api --mechanism wrap --block`",
+            ),
+            (
+                &any,
+                &a,
+                "`drift practices promote --concern authn --in app/api --any-enforcing --block`",
+            ),
+        ] {
+            let text = preview(c, conv);
+            assert!(text.contains(want), "{text}");
+            assert_eq!(command(c) + " --block", want.trim_matches('`'));
+        }
+    }
+
+    /// Pins that a mechanism practice written before the forms had ids of their own,
+    /// under its place's id, still loads as what it is and matches its lock lines: its
+    /// id is read from the file, never recomputed, and its rule from the rule.
+    #[test]
+    fn a_mechanism_practice_under_the_old_shared_id_keeps_its_lock_lines() {
+        let r = mixed_api();
+        let place = at("", "app/api");
+        let mech = candidate_for(
+            &r,
+            Some(&place),
+            &Request {
+                concern: AUTHN.into(),
+                mechanisms: vec!["wrap".into()],
+                ..Request::default()
+            },
+        )
+        .unwrap();
+        let mut old = convention(&mech);
+        old.id = convention_id(&place, AUTHN);
+        let lock = Lock {
+            entries: mech
+                .exceptions
+                .iter()
+                .map(|e| (old.id.clone(), format!("{}#{}", e.path, e.symbol)))
+                .collect(),
+        };
+        let now = check(
+            &RepoFacts::default(),
+            &r,
+            &policy(vec![old.clone()]),
+            &lock,
+            Scope::Accepted,
+            None,
+        );
+        assert_eq!(now.violations.len(), 4);
+        assert!(now.violations.iter().all(|v| v.baselined && v.id == old.id));
+        assert!(now.fixed.is_empty());
+        assert!(is_practice_of(&old, &place, AUTHN, Form::Mechanism));
+    }
+
+    /// 20 entry points of one router file, `h00` at line 1 to `h19` at line 20: the
+    /// first 16 wrapped in withAuth, the last 4 (added last) with nothing.
+    fn router(n: usize, breaking: usize) -> PracticesReport {
+        let units = (0..n)
+            .map(|i| {
+                row(
+                    "app/api/router.ts",
+                    &format!("h{i:02}"),
+                    i as u32 + 1,
+                    if i + breaking >= n { "P-none" } else { "P-auth" },
+                )
+            })
+            .collect();
+        report(units)
+    }
+
+    /// Pins review item 3 (area 2): the replay of a file place reads the units most
+    /// recently added or changed in the file, each dated by its own line, never the
+    /// file's first commit (which every unit of the file shares, so the tie-break read
+    /// its first lines: the four handlers added last, at the bottom, were never read).
+    /// A file place with fewer units than the replay reads says it cannot block.
+    #[test]
+    fn a_file_place_is_replayed_by_line() {
+        let r = router(20, 4);
+        let file = Place::file_of("", "app/api/router.ts").unwrap();
+        let c = candidate(&r, "P-auth", Some(&file), &[], false).unwrap();
+        assert_eq!((c.follows, c.exceptions.len()), (16, 4));
+        let conv = convention(&c);
+        // By the file's date alone, nothing is read.
+        let by_file = replay(&r, &conv, &|_| Some(7));
+        assert_eq!((by_file.recent, by_file.readable), (0, 20));
+        assert!(by_file.allows_block().is_err());
+        // By line: lines 6 to 20 are the 15 most recent, and 4 of them break.
+        let by_line = replay_dated(&r, &conv, &|_, line| Some(i64::from(line)));
+        assert_eq!(
+            by_line,
+            Replay {
+                recent: 15,
+                followed: 11,
+                readable: 20,
+                by_line: true,
+            }
+        );
+        assert!(by_line.allows_block().is_err());
+        assert_eq!(
+            by_line.sentence("entry_point"),
+            "of the last 15 entry points added or changed here, 11 follow it as they stand"
+        );
+        // A file of 10: it qualifies, and can never be replayed; it says so.
+        let small = router(10, 0);
+        let c = candidate(&small, "P-auth", Some(&file), &[], false).unwrap();
+        let conv = convention(&c);
+        let why = replay_dated(&small, &conv, &|_, line| Some(i64::from(line)))
+            .allows_block()
+            .unwrap_err();
+        assert!(why.contains("its place holds only 10"), "{why}");
+        assert!(why.contains("cannot block until the place holds 15"), "{why}");
+        let text = preview(&c, &conv);
+        assert!(text.contains("It cannot block"), "{text}");
+        assert!(text.contains("Drift can read only 10 here"), "{text}");
+    }
+
+    /// Pins review item 5 (area 2): a route prefix is read in its canonical form,
+    /// whatever the file says, so a hand-edited `/api/v2/` or `/api/:id` holds the
+    /// units `/api/v2` and `/api/[*]` do. Before, it was used verbatim as the place key:
+    /// it held nothing and the practice was stale for good.
+    #[test]
+    fn a_route_prefix_is_read_in_its_canonical_form() {
+        assert_eq!(canonical_route("/api/v2/").as_deref(), Some("/api/v2"));
+        assert_eq!(canonical_route("/api/:id").as_deref(), Some("/api/[*]"));
+        assert_eq!(canonical_route("api/{id}/x").as_deref(), Some("/api/[*]/x"));
+        assert_eq!(canonical_route("/api/<int:id>").as_deref(), Some("/api/[*]"));
+        assert_eq!(canonical_route("/api/*"), None);
+        assert_eq!(canonical_route("/"), None);
+        let units: Vec<UnitRow> = (0..10)
+            .map(|i| {
+                served(
+                    &format!("app/api/[id]/r{i}/route.ts"),
+                    "GET",
+                    "http",
+                    Some(format!("/api/[id]/r{i}").as_str()),
+                    "P-auth",
+                )
+            })
+            .collect();
+        let r = report(units);
+        let place = Place::parse(".:/api/[id]", &r).unwrap();
+        let c = candidate(&r, "P-auth", Some(&place), &[], false).unwrap();
+        for edited in ["/api/:id", "/api/{id}/", "api/[id]"] {
+            let mut conv = convention(&c);
+            if let Rule::Practice { under_route, .. } = &mut conv.rule {
+                *under_route = Some(edited.into());
+            }
+            assert_eq!(place_of(&conv), Some(place.clone()), "{edited}");
+            let now = checked(&r, &conv);
+            assert!(now.stale.is_empty(), "{edited}: {:?}", now.stale);
+        }
+        // One that is no literal prefix holds nothing: stale, it fires on nothing.
+        let mut conv = convention(&c);
+        if let Rule::Practice { under_route, .. } = &mut conv.rule {
+            *under_route = Some("/api/*".into());
+        }
+        assert_eq!(checked(&r, &conv).stale.len(), 1);
     }
 }

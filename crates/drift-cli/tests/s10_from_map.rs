@@ -209,7 +209,7 @@ fn a_passive_candidate_is_never_proposed() {
         if !cand.passive {
             continue;
         }
-        let id = promote::convention_id(&cand.place, &cand.concern);
+        let id = promote::candidate_id(&cand);
         let rule = promote::convention(&cand).rule;
         assert!(
             from_map(r).iter().all(|c| c.rule != rule),
