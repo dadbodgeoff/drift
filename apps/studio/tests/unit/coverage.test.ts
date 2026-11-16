@@ -187,7 +187,7 @@ describe("the Studio handles every Drift surface", () => {
 
   it("what PostToolUse says an edit introduced (agent.rs `edit_facts`) is its own message, after any advice and practice departures", () => {
     const rs = src("crates/drift-cli/src/agent.rs");
-    expect(rs).toContain('"drift: {shown} now does what it did not at session start (facts, not rules; nothing is blocked):\\n{}\\nIf that is intended, carry on and say so; `drift security {shown}` has the rest.\\n"');
+    expect(rs).toContain('"drift: {shown} now does what it did not at session start (facts, not rules; nothing is blocked):\\n{}\\nIf that is intended, carry on and say so; `drift security {}` has the rest.\\n"');
     // The lines are Drift's (crates/drift-mine/src/introduced.rs): an entry point with its guard and what it reaches, an operation alone.
     const mine = src("crates/drift-mine/src/introduced.rs");
     for (const part of ['"has {found}"', '"now has {found}"', '"is guarded by {}"', '"and {now}reaches {}, which {}{}"', '"runs a shell command"']) expect(mine, part).toContain(part);
@@ -238,7 +238,7 @@ describe("the Studio handles every Drift surface", () => {
 
   it("the practice departures PostToolUse reports (agent.rs `edit_facts`) are their own message, after any advice", () => {
     const rs = src("crates/drift-cli/src/agent.rs");
-    expect(rs).toContain('"drift: {shown} departs from the practices around it (facts, not rules; nothing is blocked):\\n{}\\nIf that is intended, carry on and say so; `drift card {shown}` has the rest.\\n"');
+    expect(rs).toContain('"drift: {shown} departs from the practices around it (facts, not rules; nothing is blocked):\\n{}\\nIf that is intended, carry on and say so; `drift card {}` has the rest.\\n"');
     const departs =
       "drift: svc/app/api/widgets.py departs from the practices around it (facts, not rules; nothing is blocked):\n- authn: 22 of the 24 other entry points in svc/app/api use dependency get_current_user [P-f654cf]; here list_widgets:6, drop_widgets:11 do: none (no guard, nothing opens it) (copy svc/app/api/r00.py:7 list_things)\nIf that is intended, carry on and say so; `drift card svc/app/api/widgets.py` has the rest.\n";
     expect(splitDriftMessages(departs)).toHaveLength(1);

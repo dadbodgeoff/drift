@@ -60,8 +60,8 @@ fn sanitize_summary(s: &str) -> String {
 /// `w` as one POSIX shell word, for a command a person is told to paste: bare when it
 /// holds only characters no shell reads specially (and does not start with `-`, so it
 /// is never read as an option), else in single quotes, where nothing is special except
-/// the quote itself (written `'\''`). [`sanitize`] is for prose and leaves `$`, `"`,
-/// `\` and `;` alone, so it never quotes a command. The same rule as the commands
+/// the quote itself (written `'\''`). [`sanitize`] is for prose and leaves `$`, `\`,
+/// `;` and the double quote alone, so it never quotes a command. The same rule as the commands
 /// `drift practices promote` prints.
 pub fn shell_word(w: &str) -> String {
     let plain = !w.is_empty()
