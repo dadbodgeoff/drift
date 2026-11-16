@@ -176,7 +176,7 @@ One screen on standard output, in this order:
 
 `--explain` prints the same screen and then, under `Explained`, the long account: which default-tier proposals wait for a person before agents see them, which mined cards the show policy withheld and why, a line per package in a monorepo, what the practice map offers agents, and the steps to promote a withheld card.
 
-On a re-run, decisions already in the file (accepted, rejected, mode, `agents: show`, exceptions) are kept. Only a convention new to the policy has its current violations baselined. An existing convention is never baselined again, even once all its old violations are fixed, so a violation of it added since is reported, not recorded. Existing lock entries are kept and gain their fingerprint line (see [Files Drift Writes](Files-Drift-Writes#driftlock)). When a rule gained an alternative and so its id changed, the decision moves to the new id, and so do its lock entries.
+On a re-run, decisions already in the file (accepted, rejected, mode, `agents: show`, exceptions) are kept. Only a convention new to the policy has its current violations baselined. An existing convention is never baselined again, even once all its old violations are fixed, so a violation of it added since is reported, not recorded. Existing lock entries are kept and gain their fingerprint line (see [Files Drift Writes](Files-Drift-Writes#driftlock)). When a rule gained an alternative and so its id changed, the new id comes in as a proposal with the old one's exceptions and a copy of its lock entries; the old card keeps its decision until you decide the new one.
 
 **Exit codes**
 

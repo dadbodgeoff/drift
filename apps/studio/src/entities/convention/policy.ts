@@ -85,7 +85,10 @@ export interface LockEntry {
   key: string;
 }
 
-/** Parse `drift.lock`: `<id> <path#symbol>` per line, `#` comments. */
+/**
+ * Parse `drift.lock`: `<id> <path#symbol>` per line, `#` comments. A member's fingerprint
+ * line, `#~ <id> <fingerprint> <path#symbol>`, is a comment and is skipped with them.
+ */
 export function parseLock(text: string): LockEntry[] {
   const out: LockEntry[] = [];
   for (const line of text.split("\n")) {
@@ -94,7 +97,8 @@ export function parseLock(text: string): LockEntry[] {
     const i = t.indexOf(" ");
     if (i < 0) continue;
     const key = t.slice(i + 1).trim();
-    // `<id> ~<fingerprint> <path#symbol>`: the second key of a member line, not another entry.
+    // `<id> ~<fingerprint> <path#symbol>`, the form a fingerprint line was first written
+    // in: the second key of a member line, not another entry.
     if (/^~[0-9a-f]+ /.test(key)) continue;
     out.push({ id: t.slice(0, i), key });
   }

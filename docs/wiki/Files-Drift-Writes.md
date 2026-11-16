@@ -142,18 +142,18 @@ Written only with `agents.verify: on` in `.drift/conventions.yaml` (experimental
 
 Written by `drift init`, by promoting a withheld card in `drift review`, and by promoting a practice (`drift practices promote`, or the practices step of `drift review`). Never by agents: the hooks deny writes to it, and `drift check` only reads it. Entries that no longer apply are listed as `fixed` in `drift check --format json` and can be removed by hand. See [Configuration Reference](Configuration-Reference) for the format.
 
-It opens with `# drift.lock: legacy violations that never block. Fix code to remove lines.` Each entry has two lines, and the lines are sorted, so a convention's fingerprint lines come after its member lines:
+It opens with `# drift.lock: legacy violations that never block. Fix code to remove lines.` Each entry is a member line, sorted, with its fingerprint line right below it:
 
 ```text
 D-37416b app/api/r38/route.ts#GET
-D-37416b ~<16 hex digits> app/api/r38/route.ts#GET
+#~ D-37416b <16 hex digits> app/api/r38/route.ts#GET
 ```
 
-The first is the member. The second, which starts with `~`, is a fingerprint of the member's code: 16 hex digits of a BLAKE3 hash of what Drift read of it, with its name, line and own file path left out. For a function or method, that is its kind and what it does (wrappers, calls, rendered components, keys passed, control flow, thrown classes, environment reads, risky operations, the order of its calls, decorator arguments, how many string literals). For a file it is its exported names, its directives and the import a layering rule is about; for a model, its source and fields; for a package, its name and scripts.
+The first is the member. The second, which starts with `#~`, is a fingerprint of the member's code: 16 hex digits of a BLAKE3 hash of what Drift read of it, with its name, line and own file path left out. For a function or method, that is its kind and what it does (wrappers, calls, rendered components, keys passed, control flow, thrown classes, environment reads, risky operations, the order of its calls, decorator arguments, how many string literals). For a file it is its exported names, the names of the symbols it declares, the packages it imports, its directives and the import a layering rule is about; for a model, its source and fields; for a package, its name and scripts. It is written as a comment so that an older Drift, which skips comments, does not read it as a second entry. A fingerprint line written as `D-37416b ~<16 hex digits> app/api/r38/route.ts#GET` is read the same way.
 
-The fingerprint is what lets old debt move. When a member moves to another file, or it or its file is renamed, and Drift reads the same of it, `drift check` baselines its violation by the fingerprint line, as long as the member the line names is gone from the code. One line covers one violation, so a copy next to the original is new. Two members collide only when Drift read the same of both (identical handlers); the rule that a line's own member must be gone takes care of that.
+The fingerprint is what lets old debt move. When a member moves to another file (a function keeps its name; a file keeps its file name), `drift check` baselines its violation by the fingerprint line, but only where Drift read both ends: on a check of the whole repository, with the old member gone from a file Drift read (or its file gone), and with exactly one gone member and exactly one new violation of the same convention, fingerprint and name. Anything else is new: a copy next to the original, two identical handlers where one was deleted, a deletion of one legacy file beside a new file that reads the same, a renamed function or file, and every violation on a check of one file (the hook's check after an edit; the end of the turn checks the whole repository). Removing a member line ends its baseline, even if its fingerprint line is left behind.
 
-A lock without fingerprint lines works as before, and an older Drift reads the plain lines as before. `drift init` adds the fingerprint lines to existing entries. Counts of legacy entries count the plain lines only.
+A lock without fingerprint lines works as before. `drift init` adds the fingerprint lines to existing entries. Counts of legacy entries count the member lines only.
 
 ## `.drift/security.lock`
 

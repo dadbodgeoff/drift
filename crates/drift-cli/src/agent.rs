@@ -29,12 +29,33 @@ const MAX_PRIMED: usize = 4;
 /// Of those, most suggestion-tier rules: default-tier rules come first.
 const MAX_PRIMED_SUGGESTIONS: usize = 2;
 
+/// What [`pick_primed`] chooses by, strongest first: whether the rule blocks, how
+/// strong its evidence is (the lower bound), then its id, so the choice never depends
+/// on the order the policy file lists rules in (decided ones are listed by id).
+trait PrimeStrength {
+    fn strength(&self) -> (bool, f64, &str);
+}
+
+impl PrimeStrength for (Option<String>, &Convention) {
+    fn strength(&self) -> (bool, f64, &str) {
+        (blocks(self.1), self.1.evidence.lower_bound, self.1.id.as_str())
+    }
+}
+
 /// The rules to prime with, in tier order (default first, then suggestions, each
-/// in the order given): at most [`MAX_PRIMED`] in all, of which at most
-/// [`MAX_PRIMED_SUGGESTIONS`] suggestions. Returns the chosen items and how many were left out.
-fn pick_primed<T>(mut items: Vec<(bool, T)>) -> (Vec<T>, usize) {
-    // `false` (not a suggestion) sorts first; the sort is stable.
-    items.sort_by_key(|(sugg, _)| *sugg);
+/// strongest first, [`PrimeStrength`]: what blocks, then by its evidence): at most
+/// [`MAX_PRIMED`] in all, of which at most [`MAX_PRIMED_SUGGESTIONS`] suggestions.
+/// Returns the chosen items and how many were left out.
+fn pick_primed<T: PrimeStrength>(mut items: Vec<(bool, T)>) -> (Vec<T>, usize) {
+    // `false` (not a suggestion) sorts first.
+    items.sort_by(|(sa, a), (sb, b)| {
+        let (ba, la, ia) = a.strength();
+        let (bb, lb, ib) = b.strength();
+        sa.cmp(sb)
+            .then(bb.cmp(&ba))
+            .then(lb.total_cmp(&la))
+            .then(ia.cmp(ib))
+    });
     let total = items.len();
     let mut suggestions = 0;
     let mut out = Vec::new();
@@ -4057,15 +4078,58 @@ mod tests {
         }
     }
 
+    /// A rule as [`pick_primed`] reads it: (blocks, lower bound, id).
+    #[derive(Debug, PartialEq)]
+    struct Primed(bool, f64, &'static str);
+
+    impl PrimeStrength for Primed {
+        fn strength(&self) -> (bool, f64, &str) {
+            (self.0, self.1, self.2)
+        }
+    }
+
+    fn ids(picked: (Vec<Primed>, usize)) -> (Vec<&'static str>, usize) {
+        (picked.0.iter().map(|p| p.2).collect(), picked.1)
+    }
+
     #[test]
     fn priming_lists_default_tier_first_and_caps_suggestions() {
-        let items = vec![(true, "s1"), (false, "d1"), (true, "s2"), (true, "s3")];
-        assert_eq!(pick_primed(items), (vec!["d1", "s1", "s2"], 1));
-        let many: Vec<_> = (0..6).map(|i| (i >= 5, i)).collect();
-        assert_eq!(pick_primed(many), (vec![0, 1, 2, 3], 2));
+        let items = vec![
+            (true, Primed(false, 0.8, "s1")),
+            (false, Primed(false, 0.8, "d1")),
+            (true, Primed(false, 0.8, "s2")),
+            (true, Primed(false, 0.8, "s3")),
+        ];
+        assert_eq!(ids(pick_primed(items)), (vec!["d1", "s1", "s2"], 1));
+        let many: Vec<_> = ["d0", "d1", "d2", "d3", "d4", "s5"]
+            .into_iter()
+            .map(|id| (id.starts_with('s'), Primed(false, 0.8, id)))
+            .collect();
+        assert_eq!(ids(pick_primed(many)), (vec!["d0", "d1", "d2", "d3"], 2));
+        let suggestions: Vec<_> = ["s1", "s2", "s3"]
+            .into_iter()
+            .map(|id| (true, Primed(false, 0.8, id)))
+            .collect();
+        assert_eq!(ids(pick_primed(suggestions)), (vec!["s1", "s2"], 1));
+    }
+
+    /// Pins (F2, review R2): priming chose the first four rules in the order given,
+    /// which is id order since decided conventions are listed by id, so the lowest ids
+    /// were primed whatever they were. Now what blocks comes first, then the strongest
+    /// evidence, whatever the order given.
+    #[test]
+    fn priming_chooses_by_strength_not_by_order() {
+        let items = vec![
+            (false, Primed(false, 0.70, "D-000001")),
+            (false, Primed(false, 0.75, "D-000002")),
+            (false, Primed(false, 0.80, "D-000003")),
+            (false, Primed(false, 0.85, "D-000004")),
+            (false, Primed(true, 0.76, "D-ffffff")),
+            (false, Primed(false, 0.95, "D-eeeeee")),
+        ];
         assert_eq!(
-            pick_primed(vec![(true, 1), (true, 2), (true, 3)]),
-            (vec![1, 2], 1)
+            ids(pick_primed(items)),
+            (vec!["D-ffffff", "D-eeeeee", "D-000004", "D-000003"], 2)
         );
     }
 }
