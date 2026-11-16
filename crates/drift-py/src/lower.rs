@@ -20,7 +20,7 @@ use crate::raw::*;
 use crate::stdlib;
 
 /// Bumped whenever lowering output changes for the same input text.
-pub const LOWERING_VERSION: u32 = 73;
+pub const LOWERING_VERSION: u32 = 74;
 
 /// Functions of libraries, by their last name, whose call in a body is a guard or
 /// not by its arguments (`verify_jwt_in_request(optional=True)`): each call of a
@@ -4160,7 +4160,10 @@ impl Collector<'_, '_> {
             return;
         }
         let kind = signals::kind::PATH;
-        self.since_sinks.insert(kind.to_string());
+        // Marked: a sink read after the build `a0779066`, which its listed reading
+        // never had, and no term of its test of which files to link again
+        // (`Linker::links_differently`, `Linker::sinks_read`).
+        self.since_sinks.insert(format!("{SINCE}{kind}"));
         if self.input_reaches(path, 0) {
             self.fed_sinks.insert(format!("{SINCE}{kind}"));
         }
