@@ -16,6 +16,7 @@ mod project;
 mod promote;
 mod review_log;
 mod scan;
+mod sec_diff;
 mod setup;
 mod wiring;
 mod workspace;
@@ -567,24 +568,34 @@ enum Command {
         #[arg(long)]
         json: bool,
         /// Report only what the change since the merge base with this ref introduces:
-        /// entry points lacking a guard their siblings share, unguarded entry points
-        /// reaching a risky operation, risky operations and client leaks added, and
-        /// entry points made internet-facing. Facts for a pull request; exit 0.
+        /// every finding the security baseline holds that the merge base did not
+        /// have, by the same key (`added`, by kind; entry points lacking a guard their
+        /// siblings share, unguarded entry points reaching a risky operation, risky
+        /// operations and client leaks are explained with what their siblings do),
+        /// and entry points made internet-facing. A kind that could not be compared is
+        /// said so. Facts for a pull request; exit 0.
         #[arg(long, value_name = "REF")]
         diff_base: Option<String>,
         /// With --diff-base: GitHub Actions output (notice annotations, and a job
         /// summary when GITHUB_STEP_SUMMARY is set).
         #[arg(long, requires = "diff_base")]
         github: bool,
+        /// Output format: `sarif` (SARIF 2.1.0: every finding of the inventory, or with
+        /// --diff-base what the change adds, or with --ratchet what the baseline does
+        /// not hold, a result each under the rule `drift-security/<kind>` that `drift
+        /// check --format sarif` uses), `json` (as --json), `github` (as --github) or
+        /// `text`.
+        #[arg(long, value_enum, conflicts_with_all = ["json", "github", "write_baseline", "top"])]
+        format: Option<Format>,
         /// With --diff-base: exit 1 when the change introduces any of these, by
-        /// name, separated by commas: `unguarded-reaching` (an entry point where
-        /// no guard was found reaching a risky operation), `no-guard` (a new entry
-        /// point where no guard was found; one whose guard cannot be read is listed
-        /// apart as guard unknown and never counted), `guard-gap` (an
-        /// entry point lacking a guard its siblings share), `risky` (a risky
-        /// operation), `leak` (a client leak), `public` (an entry point made
-        /// internet-facing), or `any`. Off unless given: without it the run is
-        /// facts for review and exits 0.
+        /// name, separated by commas: any kind the security baseline holds
+        /// (`unguarded-reaching`, `no-guard` (an entry point the change leaves where
+        /// no guard was found; one whose guard cannot be read is listed apart as
+        /// guard unknown and never counted), `guard-gap`, `scope-gap`,
+        /// `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`,
+        /// `dependency`, `kubernetes`, `leak`), `public` (an entry point made
+        /// internet-facing), or `any`; a kind named that could not be compared fails
+        /// too. Off unless given: without it the run is facts for review and exits 0.
         #[arg(long, value_delimiter = ',', value_name = "KINDS")]
         fail_on: Vec<String>,
         /// Write the security baseline (`.drift/security.lock`): every finding of
@@ -2329,7 +2340,15 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             write_baseline,
             ratchet,
             top,
+            format,
         } => {
+            // `--format json` and `--format github` are `--json` and `--github`.
+            let json = &(*json || matches!(format, Some(Format::Json)));
+            let github = &(*github || matches!(format, Some(Format::Github)));
+            let sarif = matches!(format, Some(Format::Sarif));
+            if *github && diff_base.is_none() {
+                anyhow::bail!("--format github needs --diff-base");
+            }
             const FAIL_ON: &[&str] = &[
                 "unguarded-reaching",
                 "no-guard",
@@ -2346,7 +2365,11 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 "public",
                 "any",
             ];
-            if let Some(unknown) = fail_on.iter().find(|k| !FAIL_ON.contains(&k.as_str())) {
+            // A kind the baseline holds is one, whatever reading added it.
+            if let Some(unknown) = fail_on.iter().find(|k| {
+                !FAIL_ON.contains(&k.as_str())
+                    && !drift_mine::ratchet::KINDS.iter().any(|(x, _)| x == k)
+            }) {
                 anyhow::bail!("--fail-on: `{unknown}` is none of {}", FAIL_ON.join(", "));
             }
             if !fail_on.is_empty() && diff_base.is_none() && !*ratchet && !*write_baseline {
@@ -2355,24 +2378,6 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             if *write_baseline && fail_on.iter().any(|k| k == "public") {
                 anyhow::bail!(
                     "--fail-on public is read against a commit (--diff-base), not against the baseline"
-                );
-            }
-            if diff_base.is_some()
-                && let Some(k) = fail_on.iter().find(|k| {
-                    matches!(
-                        k.as_str(),
-                        "scope-gap"
-                            | "no-authorization"
-                            | "unscoped-key"
-                            | "whole-row"
-                            | "workflow"
-                            | "dependency"
-                            | "kubernetes"
-                    )
-                })
-            {
-                anyhow::bail!(
-                    "--fail-on {k} is read against the baseline (--ratchet), not against a commit"
                 );
             }
             if *ratchet && fail_on.iter().any(|k| k == "public") {
@@ -2418,104 +2423,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 ));
             }
             if let Some(base) = diff_base {
-                let scope = pr::DiffScope::from_git(root, base)?;
-                let before = scope.base_inventory(root)?;
-                let regs =
-                    drift_mine::security::regressions(&before, &inv, &|p| scope.touches(p), &|p| {
-                        scope.old_path(p).to_string()
-                    });
-                let files = scope.added() + scope.changed();
-                if !*json {
-                    for w in &inv.warnings {
-                        eprintln!("drift security: {w}");
-                    }
-                }
-                if *json {
-                    let mut v = serde_json::to_value(&regs)?;
-                    v["diff"] = serde_json::json!({
-                        "base": base,
-                        "merge_base": scope.merge_base,
-                        "files": files,
-                    });
-                    if !inv.warnings.is_empty() {
-                        v["warnings"] = serde_json::json!(inv.warnings);
-                    }
-                    println!("{}", serde_json::to_string_pretty(&v)?);
-                } else if *github {
-                    let mut stdout = std::io::stdout().lock();
-                    stdout.write_all(
-                        drift_mine::security::github_regression_annotations(&regs).as_bytes(),
-                    )?;
-                    writeln!(
-                        stdout,
-                        "drift security: {} entry point(s) lacking a shared guard, {} where Drift found no guard in what it read reaching a risky operation, {} new entry point(s) where Drift found no guard ({} more whose guard is unknown), {} risky operation(s) added, {} new client leak(s), {} now internet-facing; facts for review, nothing fails",
-                        regs.guard_gaps.len(),
-                        regs.unguarded_reaching.len(),
-                        regs.added_without_guard.len(),
-                        regs.guard_unknown.len(),
-                        regs.sinks.len(),
-                        regs.leaks.len(),
-                        regs.now_public.len()
-                    )?;
-                    if let Some(path) =
-                        std::env::var_os("GITHUB_STEP_SUMMARY").filter(|p| !p.is_empty())
-                    {
-                        let md = drift_mine::security::regressions_summary(
-                            &regs,
-                            base,
-                            &scope.merge_base,
-                            files,
-                        );
-                        let mut f = std::fs::OpenOptions::new()
-                            .create(true)
-                            .append(true)
-                            .open(&path)
-                            .with_context(|| {
-                                format!(
-                                    "opening GITHUB_STEP_SUMMARY {}",
-                                    Path::new(&path).display()
-                                )
-                            })?;
-                        f.write_all(md.as_bytes())?;
-                        f.write_all(b"\n")?;
-                    }
-                } else {
-                    print!(
-                        "{}",
-                        drift_mine::security::render_regressions(
-                            &regs,
-                            base,
-                            &scope.merge_base,
-                            files,
-                            Some(&cli.root)
-                        )
-                    );
-                }
-                // A person asked for the run to fail on what the change introduces
-                // (`--fail-on`): counted by kind, said on stderr, exit 1.
-                let on = |k: &str| fail_on.iter().any(|f| f == k || f == "any");
-                let failing: Vec<(&str, usize)> = [
-                    ("unguarded-reaching", regs.unguarded_reaching.len()),
-                    ("no-guard", regs.added_without_guard.len()),
-                    ("guard-gap", regs.guard_gaps.len()),
-                    ("risky", regs.sinks.len()),
-                    ("leak", regs.leaks.len()),
-                    ("public", regs.now_public.len()),
-                ]
-                .into_iter()
-                .filter(|(k, n)| on(k) && *n > 0)
-                .collect();
-                if !failing.is_empty() {
-                    let said: Vec<String> =
-                        failing.iter().map(|(k, n)| format!("{n} {k}")).collect();
-                    eprintln!(
-                        "drift security: failing as asked (--fail-on {}): this change introduces {}",
-                        fail_on.join(","),
-                        said.join(", ")
-                    );
-                    return Ok(ExitCode::from(1));
-                }
-                return Ok(ExitCode::SUCCESS);
+                let out = match (*json, *github, sarif) {
+                    (true, _, _) => sec_diff::Out::Json,
+                    (_, true, _) => sec_diff::Out::Github,
+                    (_, _, true) => sec_diff::Out::Sarif,
+                    _ => sec_diff::Out::Text,
+                };
+                return sec_diff::run(cli, root, &facts, &inv, base, out, fail_on, *max);
             }
             if *write_baseline {
                 let found = baseline_findings(root, &facts, &inv)?;
@@ -2588,9 +2502,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 let found = baseline_findings(root, &facts, &inv)?;
                 // What is held apart as new in this Drift is what the commit that
                 // last wrote the baseline shows to be old code ([`security_compare`]).
-                let mut result = security_compare(root, &inv, &found, &baseline, None);
+                let mut result =
+                    security_compare(root, &inv, &found, &baseline, None, &BTreeSet::new());
                 result.header = header;
-                if *json {
+                if sarif {
+                    sec_diff::ratchet_sarif(root, &result)?;
+                } else if *json {
                     println!("{}", serde_json::to_string_pretty(&result)?);
                 } else {
                     for w in &inv.warnings {
@@ -2640,7 +2557,9 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 }
                 return Ok(ExitCode::SUCCESS);
             }
-            if *json {
+            if sarif {
+                sec_diff::inventory(root, &facts, &inv)?;
+            } else if *json {
                 println!("{}", serde_json::to_string_pretty(&inv)?);
             } else {
                 let only: Option<BTreeSet<String>> = (!files.is_empty()).then(|| {
@@ -4611,49 +4530,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "message": { "text": line.trim_start_matches("drift: ") },
                         }));
                     }
-                    // Findings of readings newer than the baseline: said once, never
-                    // results ([`drift_mine::ratchet::Ratchet::new_in_drift`]).
-                    if let Some(line) = security
-                        .as_ref()
-                        .and_then(drift_mine::ratchet::newer_readings_line)
-                    {
-                        notes.push(serde_json::json!({
-                            "level": "note",
-                            "message": { "text": line },
-                        }));
-                    }
-                    for line in security.iter().flat_map(security_said) {
-                        notes.push(serde_json::json!({
-                            "level": "warning",
-                            "message": { "text": line },
-                        }));
-                    }
-                    // What the security baseline does not hold fails the check: a
-                    // result, so that code scanning shows why, under a rule per kind.
-                    for (kind, rows) in security.iter().flat_map(|s| &s.added) {
-                        let rule = format!("drift-security/{kind}");
-                        if let Some(rules) =
-                            log["runs"][0]["tool"]["driver"]["rules"].as_array_mut()
-                            && !rules.iter().any(|r| r["id"] == rule.as_str())
-                        {
-                            rules.push(serde_json::json!({
-                                "id": rule,
-                                "shortDescription": { "text": format!("Security finding not in the baseline ({kind})") },
-                                "defaultConfiguration": { "level": "error" },
-                            }));
-                        }
-                        for a in rows {
-                            let (path, line) =
-                                a.at.rsplit_once(':').unwrap_or((a.at.as_str(), "1"));
-                            if let Some(results) = log["runs"][0]["results"].as_array_mut() {
-                                results.push(serde_json::json!({
-                                    "ruleId": rule,
-                                    "level": "error",
-                                    "message": { "text": format!("Security [{kind}]: {} is not in the security baseline ({}).", drift_mine::report::sanitize(&a.key, 300), drift_mine::ratchet::SECURITY_LOCK) },
-                                    "locations": at(&format!("{prefix}{path}"), line.parse().unwrap_or(1)),
-                                }));
-                            }
-                        }
+                    // The security baseline's comparison: one writer for this and
+                    // `drift security --format sarif` ([`sec_diff::sarif_ratchet`]).
+                    if let Some(sec) = &security {
+                        sec_diff::sarif_ratchet(&mut log, &mut notes, sec, &prefix);
                     }
                     if !notes.is_empty() {
                         log["runs"][0]["invocations"] = serde_json::json!([{
@@ -4740,6 +4620,10 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 ))
                             );
                         }
+                    }
+                    // What the change adds and baselines itself: a notice each.
+                    if let Some(sec) = &security {
+                        print!("{}", sec_diff::github_baselined(sec, &prefix));
                     }
                     // Findings of readings newer than the baseline fail nothing and
                     // are no annotations: said once, in the log.
@@ -4867,8 +4751,15 @@ fn check_security(
     };
     let inv = security_inventory(cli, root, facts);
     let found = baseline_findings(root, facts, &inv)?;
-    let mut r = security_compare(root, &inv, &found, &baseline, scope);
-    r.header = header;
+    // The lines the change writes into the baseline itself: what of them it also adds
+    // to the code is said ([`drift_mine::ratchet::Ratchet::baselined_by_change`]).
+    let lock_added = scope
+        .map(|s| sec_diff::lock_lines_added(root, s))
+        .unwrap_or_default();
+    let mut r = security_compare(root, &inv, &found, &baseline, scope, &lock_added);
+    let mut said = header;
+    said.append(&mut r.header);
+    r.header = said;
     Ok(Some(r))
 }
 
@@ -4960,13 +4851,16 @@ fn security_baseline_checked(
 /// apart, and the run says why ([`drift_mine::ratchet::Ratchet::unshown_why`]).
 ///
 /// Against a diff, the entry points the change adds whose guard cannot be read are
-/// listed too ([`drift_mine::ratchet::Ratchet::guard_unknown`]).
+/// listed too ([`drift_mine::ratchet::Ratchet::guard_unknown`]), and of the lines the
+/// change writes into the baseline (`lock_added`), the findings it also adds to the
+/// code ([`drift_mine::ratchet::Ratchet::baselined_by_change`]).
 fn security_compare(
     root: &Path,
     inv: &drift_mine::security::Inventory,
     found: &drift_mine::ratchet::Findings,
     baseline: &drift_mine::ratchet::Baseline,
     scope: Option<&pr::DiffScope>,
+    lock_added: &BTreeSet<(String, String)>,
 ) -> drift_mine::ratchet::Ratchet {
     use drift_mine::ratchet::{self, SECURITY_LOCK, Since};
     let diff = scope.is_some();
@@ -4976,7 +4870,25 @@ fn security_compare(
             .iter()
             .any(|e| s.touches(&e.path) && e.guards.is_empty() && !e.opaque.is_empty())
     });
-    if !unknown_added && !ratchet::needs_since(found, baseline, diff, &touched) {
+    // Lines the change writes into the baseline for findings found now: whether it also
+    // adds them to the code is read at the merge base.
+    let written: BTreeSet<(String, String)> = lock_added
+        .iter()
+        .filter(|k| diff && found.contains_key(*k))
+        .cloned()
+        .collect();
+    let unread_written = |r: &mut ratchet::Ratchet, why: &str| {
+        if !written.is_empty() {
+            r.header.push(format!(
+                "this change writes {} finding(s) found now into {SECURITY_LOCK}; whether it also adds them to the code is unknown: {why}",
+                written.len()
+            ));
+        }
+    };
+    if written.is_empty()
+        && !unknown_added
+        && !ratchet::needs_since(found, baseline, diff, &touched)
+    {
         return ratchet::compare_with(found, baseline, None);
     }
     // With no diff: the change is everything since the commit that last wrote the
@@ -5001,29 +4913,19 @@ fn security_compare(
             Err(why) => (None, Some(why)),
         },
     };
-    let base = scope.map(|s| {
-        let read = s.with_base(root, |base_root, base_facts| {
-            let mut base_inv = drift_mine::security::inventory_with(
-                base_facts,
-                drift_mine::security::Boundaries::load(base_root),
-            );
-            base_inv.workflows = drift_mine::workflows::read(base_root);
-            base_inv.dependencies = drift_mine::dependencies::read(base_root);
-            base_inv.cluster = drift_mine::kubernetes::read(base_root);
-            baseline_findings(base_root, base_facts, &base_inv).map(|f| (f, base_inv))
-        });
-        match read {
-            Ok(Ok(read)) => Ok((s, read)),
-            Ok(Err(_)) | Err(_) => Err(format!(
-                "commit {} could not be read",
-                &s.merge_base[..s.merge_base.len().min(12)]
-            )),
-        }
+    // The merge base's findings as the baseline's are read, the practice map's too.
+    let base = scope.map(|s| match sec_diff::read_base(s, root) {
+        Ok(b) if b.authz_error.is_none() => Ok((s, b)),
+        _ => Err(format!(
+            "commit {} could not be read",
+            &s.merge_base[..s.merge_base.len().min(12)]
+        )),
     });
-    let (s, (base_found, base_inv)) = match base {
+    let (s, base) = match base {
         Some(Ok(read)) => read,
         Some(Err(why_not)) => {
             let mut r = ratchet::compare_with(found, baseline, None);
+            unread_written(&mut r, &why_not);
             r.unshown_why = Some(why_not);
             return r;
         }
@@ -5033,7 +4935,8 @@ fn security_compare(
             return r;
         }
     };
-    let base_found: BTreeSet<(String, String)> = base_found.into_keys().collect();
+    let base_inv = &base.inv;
+    let base_found: BTreeSet<(String, String)> = base.found.keys().cloned().collect();
     let since = Since {
         commit: s.merge_base.clone(),
         touched: found
@@ -5043,7 +4946,7 @@ fn security_compare(
             .map(str::to_string)
             .collect(),
         outside: if diff {
-            ratchet::not_the_changes_gaps(&base_inv, inv, &base_found, &|p| s.touches(p))
+            ratchet::not_the_changes_gaps(base_inv, inv, &base_found, &|p| s.touches(p))
         } else {
             BTreeSet::new()
         },
@@ -5051,10 +4954,24 @@ fn security_compare(
     };
     let mut r = ratchet::compare_with(found, baseline, Some(&since));
     if diff {
-        let regs = drift_mine::security::regressions(&base_inv, inv, &|p| s.touches(p), &|p| {
+        let regs = drift_mine::security::regressions(base_inv, inv, &|p| s.touches(p), &|p| {
             s.old_path(p).to_string()
         });
         r.guard_unknown = ratchet::guard_unknown(&regs.guard_unknown);
+        if !written.is_empty() {
+            // Keyed as now, so a finding that moved with its file is not the change's;
+            // one in a file the merge base could not parse may have been there.
+            let now = drift_mine::security_diff::as_now(&base.found, base_inv, inv, s.renamed());
+            let mut by = drift_mine::security_diff::baselined_by_change(found, &written, &now);
+            for rows in by.values_mut() {
+                rows.retain(|a| {
+                    let path = a.at.rsplit_once(':').map_or(a.at.as_str(), |(p, _)| p);
+                    !base.unparsed.contains(s.old_path(path))
+                });
+            }
+            by.retain(|_, rows| !rows.is_empty());
+            r.baselined_by_change = by;
+        }
     }
     r
 }

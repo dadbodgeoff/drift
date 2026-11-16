@@ -1617,6 +1617,13 @@ export interface SecurityRatchet {
   gone: { kind: string; key: string }[];
   /** How many findings of the baseline are still found. */
   kept: number;
+  /**
+   * `drift check --diff-base` only: findings the change adds to the code (not found at the merge base, keyed as now)
+   * and also writes into `.drift/security.lock` itself (lines the merge base's lock did not have), by kind. They are in
+   * the baseline, so they fail nothing: a notice for the reviewer. A lock written again for code that was there, or
+   * lines that only moved with a renamed file, are not listed. Newer drift; absent when empty.
+   */
+  baselined_by_change?: Record<string, { key: string; at: string }[]>;
 }
 
 // ---------- drift card <path> --json (crates/drift-mine/src/card.rs `Card`, schema 1) ----------
@@ -1794,6 +1801,18 @@ export interface SecurityDiff {
   added_without_guard?: EntryRow[];
   /** The entry points the change adds, counted as `added_without_guard` counts them, whose guard Drift cannot read (`opaque`): unknown, never a finding, listed apart (newer drift; absent when empty). */
   guard_unknown?: EntryRow[];
+  /**
+   * Every finding the change adds, of every kind the security baseline holds (`unguarded-reaching`, `no-guard`,
+   * `guard-gap`, `scope-gap`, `no-authorization`, `unscoped-key`, `risky`, `whole-row`, `workflow`, `dependency`,
+   * `kubernetes`, `leak`, and any kind a newer reading adds), keyed as `.drift/security.lock` keys it: found now and not
+   * at the merge base (a finding that only moved with a renamed file is not one). The sections above explain the rows
+   * they can and list only rows found here. `--fail-on` counts these. Newer drift (absent from older drift).
+   */
+  added?: Record<string, { key: string; at: string }[]>;
+  /** Gap exceptions found now in files the change did not touch, that other entry points made (they lacked the guard or scope before). Not the change's. Absent when empty. */
+  outside_change?: Record<string, { key: string; at: string }[]>;
+  /** Kinds, or findings, that could not be compared with the merge base, and why (the practice map unread on one side; a file the merge base could not parse, with its `rows`). Never counted as added; `--fail-on` naming the kind fails. Absent when everything was compared. */
+  not_compared?: { kind: string; why: string; rows?: { key: string; at: string }[] }[];
   diff: SecurityDiffInfo;
 }
 

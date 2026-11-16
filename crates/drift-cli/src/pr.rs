@@ -476,6 +476,11 @@ impl DiffScope {
         self.renamed_from.get(path).map_or(path, String::as_str)
     }
 
+    /// The renamed files: new path -> old path.
+    pub fn renamed(&self) -> &BTreeMap<String, String> {
+        &self.renamed_from
+    }
+
     /// The security inventory of the merge base, scanned in a temporary checkout with
     /// its own fact cache ([`BaseTree`]); its compose files and `.drift/config.yaml`
     /// are read there, so a boundary the change moved is seen moving.

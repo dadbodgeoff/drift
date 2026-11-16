@@ -52,6 +52,10 @@ Where the repository commits `.drift/security.lock` (`drift security --write-bas
 
 A finding of a kind newer than the Drift that wrote the baseline is listed apart, as new in this version of Drift, and fails nothing until the baseline is written again. With `--diff-base`, an entry point lacking a shared guard in a file the change did not touch (because other entry points gained the guard) is listed apart too, and fails nothing.
 
+In pull-request mode (`--diff-base`), a finding the change adds to the code and also writes into `.drift/security.lock` itself is listed as a notice, in every format (text, `security.baselined_by_change` in JSON, a `::notice` annotation, a SARIF result at level `note`): it is in the baseline, so it fails nothing, and a reviewer accepts it by approving the lock's diff. A lock written again for code that was there, or lines that only moved, are not listed.
+
+`drift security --format sarif` writes the same results without a check: every finding of the inventory, or with `--diff-base` each one the change adds, or with `--ratchet` each one not in the baseline, under the same rules `drift-security/<kind>` and locations as `drift check --format sarif`.
+
 With no baseline, `drift check --diff-base` lists what the change adds that a baseline would hold, under `Security advice: what this change adds (no security baseline; this does not fail the check)` (JSON `security_advice`). See [Security Inventory](Security-Inventory#the-baseline-what-is-there-is-accepted-what-is-added-is-seen).
 
 Upgrade the Drift that CI runs before anyone promotes a practice: a Drift from before promotion cannot read a `.drift/conventions.yaml` that holds one, and stops with exit 2 (see [Versioning and Upgrades](Versioning-and-Upgrades#promoted-practices-and-older-drift)).
