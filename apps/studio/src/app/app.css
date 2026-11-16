@@ -3542,10 +3542,13 @@ button.ss-tick.is-exempt {
   align-items: center;
 }
 .pr-promote__preview {
-  transition: opacity 120ms ease;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
 }
+/* The last answer kept on screen while a choice is refused or running: marked by a dashed rule, not faded, so its
+   text keeps its contrast. */
 .pr-promote__preview.is-stale {
-  opacity: 0.6;
+  border-left: 2px dashed var(--color-border);
 }
 .pr-promote__place {
   display: flex;
@@ -3562,6 +3565,28 @@ button.ss-tick.is-exempt {
 }
 .pr-promote .st-raw pre {
   white-space: pre-wrap;
+}
+.pr-promote__accepts,
+.pr-promote__placefield {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.pr-promote__placeinputs {
+  gap: 8px;
+}
+.pr-promote__placeinputs .dui-input {
+  flex: 1 1 16rem;
+}
+.pr-promote__replaces .dui-icon,
+.pr-promote__note .dui-icon {
+  color: var(--color-info, var(--color-accent));
+  margin-top: 2px;
+}
+.pr-cand__action {
+  gap: 10px;
+  align-items: center;
 }
 
 /* ---------- What mining dropped (drift census --why) ---------- */

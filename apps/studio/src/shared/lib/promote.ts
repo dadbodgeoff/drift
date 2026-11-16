@@ -1,24 +1,37 @@
 // A practice made a convention (`drift practices promote`, docs/v2/PROMOTE-A-PRACTICE.md), where the view or the
-// fixture API needs it. The main process builds the real argv (electron/ops.ts `promoteFlags`); a unit test keeps the
-// two equal. In the desktop app every count comes from Drift; only fixture mode, which has no binary, makes a stand-in
-// result (`fixturePromote`), from the fixture's own practice map and never by reading code.
+// fixture API needs it. The command is built from typed choices in `promote-args.ts`; the main process builds the real
+// argv again (electron/ops.ts `promoteFlags`) and a unit test keeps the two equal. In the desktop app every answer
+// comes from Drift. Fixture mode, which has no binary, serves what the real binary answered when the fixtures were
+// made (`promote-runs.json`, scripts/make-promote-fixtures.mjs) and, for a request none was recorded for, a stand-in
+// worked out from the fixture's own practice map (`fixturePromote`), never by reading code.
 import type { Convention, PracticeConcern, PracticeExample, PracticeVariant, PracticesReport, PromoteCandidate, PromoteList, PromoteOutcome, PromotePlace, PromoteRefused, PromoteResult, PromoteWay } from "@/shared/contract/drift";
 import type { PromoteRequest } from "@/shared/ipc/contract";
+import { namedWays } from "./promote-args";
 
-/** `drift practices promote` arguments after the subcommand, as electron/ops.ts `promoteFlags` builds them. */
-export function promoteFlags(req: PromoteRequest, dryRun: boolean): string[] {
-  const others = [...new Set(req.with)].filter((w) => w !== req.id);
-  return [req.id, "--in", req.place, ...others.flatMap((w) => ["--with", w]), ...(req.block ? ["--block"] : []), ...(dryRun ? ["--dry-run"] : []), "--json"];
-}
-
-/** The command a promotion runs, as the Studio shows it. */
-export function promoteCommand(root: string, req: PromoteRequest, dryRun: boolean): string {
-  return `drift --root ${root} practices promote ${promoteFlags(req, dryRun).join(" ")}`;
-}
+export { BLOCK_FORCED, cannotBlock, cliRefusal, ENFORCING_CONCERNS, noEnforcingMessage, placeArg, placeChoiceFromArg, placeChoiceOf, placeProblem, plainConcern, promoteCommand, promoteFlags, shellWord } from "./promote-args";
+export type { CliRefusal, PlaceChoice, PlaceKind } from "./promote-args";
 
 /** A refusal (`drift practices promote` exit 2): nothing was written, and `message` says why. */
 export function isRefused(o: PromoteOutcome): o is PromoteRefused {
   return "refused" in o;
+}
+
+// ---------- fixture mode: what the real binary answered ----------
+
+/** One run `promote-runs.json` holds: the writes made before it (each an argv after `promote`), its argv, and what Drift printed. */
+export interface RecordedRun {
+  after: string[][];
+  args: string[];
+  exit: number;
+  out: unknown;
+}
+
+const sameArgs = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+/** What Drift answered for `args` after exactly the writes `after`, as recorded; null when that run was not recorded. */
+export function recordedRun(runs: readonly RecordedRun[], after: readonly (readonly string[])[], args: readonly string[]): unknown {
+  const hit = runs.find((r) => r.after.length === after.length && r.after.every((w, i) => sameArgs(w, after[i]!)) && sameArgs(r.args, args));
+  return hit ? hit.out : null;
 }
 
 // ---------- fixture mode: a stand-in for the binary ----------
@@ -83,12 +96,18 @@ function previewText(c: PracticeConcern, cand: PromoteCandidate, shown: string, 
  * exceptions. Block mode is refused: it needs a replay of git history, which fixture mode does not have.
  */
 export function fixturePromote(r: PracticesReport, req: PromoteRequest, written: boolean): PromoteOutcome {
+  // The stand-in counts named ways in a directory from the map's listed places; any other form or place needs Drift.
+  if (!req.id || req.mechanisms?.length || req.any_enforcing || req.force || req.place.includes(":/"))
+    return refused(
+      { code: "not_recorded" },
+      `Fixture mode has no drift binary, and this promotion was not run when the fixtures were made (scripts/make-promote-fixtures.mjs records the runs fixture mode serves); the desktop app runs it.`,
+    );
   const c = r.concerns.find((x) => x.variants.some((v) => v.id === req.id));
   const v = c?.variants.find((x) => x.id === req.id);
   if (!c || !v) return refused({ code: "unknown_variant", id: req.id }, `No variant of the practice map has the id ${req.id}.`);
   if (v.kind !== "known") return refused({ code: "not_a_way", id: req.id, why: v.label }, `${req.id} (${v.label}) is not a way to hold new code to.`);
   const extra: PracticeVariant[] = [];
-  for (const w of [...new Set(req.with)].filter((x) => x !== req.id)) {
+  for (const w of namedWays(req).slice(1)) {
     const other = r.concerns.find((x) => x.variants.some((y) => y.id === w));
     if (other && other.id !== c.id) return refused({ code: "other_concern", id: w, concern: other.id }, `${w} is a way of ${other.title}, not of ${c.title}: only ways of one concern are accepted together.`);
     const ov = c.variants.find((y) => y.id === w);
@@ -141,7 +160,7 @@ export function fixturePromote(r: PracticesReport, req: PromoteRequest, written:
   return result;
 }
 
-/** The convention a fixture promotion records in this tab (as conventions.yaml holds a promoted practice). */
+/** The convention a fixture promotion records in this tab, as conventions.yaml holds a promoted practice of any form and place. */
 export function fixtureConvention(res: PromoteResult): Convention {
   const c = res.candidate;
   const read = c.follows + c.exceptions.length;
@@ -151,11 +170,19 @@ export function fixtureConvention(res: PromoteResult): Convention {
     mode: res.convention.mode,
     summary: res.convention.summary,
     role: { package: c.place.package, dir: c.place.dir || "**", file: "*", entry: "-", kind: "function" },
-    rule: { type: "practice", concern: c.concern, any_of: c.ways.map((w) => w.key) },
+    rule: {
+      type: "practice",
+      concern: c.concern,
+      any_of: c.ways.map((w) => w.key),
+      ...(c.mechanisms?.length ? { any_mechanism: c.mechanisms } : {}),
+      ...(c.any_enforcing ? { any_enforcing: true } : {}),
+      ...(c.place.file ? { in_file: c.place.file } : {}),
+      ...(c.place.route ? { under_route: c.place.route } : {}),
+    },
     evidence: { holders: c.follows, total: read, lower_bound: read ? c.follows / read : 0, lift: 1 },
     example: c.example ? `${c.example.path}#${c.example.symbol}` : "",
     agents: "show",
-    promoted_from_practice: res.convention.promoted_from_practice,
+    ...(res.convention.promoted_from_practice ? { promoted_from_practice: res.convention.promoted_from_practice } : {}),
   };
 }
 

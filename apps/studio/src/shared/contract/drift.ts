@@ -2246,7 +2246,8 @@ export interface PromoteResult {
   written: boolean;
   /** The place as Drift names it (`app/api`, `.` the root package). */
   place: string;
-  convention: { id: string; summary: string; status: Status; mode: Mode; promoted_from_practice: string };
+  /** `promoted_from_practice`: the first way named; null for a practice of a mechanism or of any enforcing way, which names none. */
+  convention: { id: string; summary: string; status: Status; mode: Mode; promoted_from_practice: string | null };
   candidate: PromoteCandidate;
   /** drift.lock entries added (with `--dry-run`: that would be added), one per exception. */
   baselined: number;
@@ -2255,8 +2256,28 @@ export interface PromoteResult {
   replay: { recent: number; followed: number; readable?: number; by_line?: boolean } | null;
   /** The mined conventions (proposed or accepted) whose rule requires the same of code in the same package: with both accepted, new code that breaks them is reported under each. Absent from an older Drift. */
   same_way?: string[];
+  /**
+   * The practice blocked before and is promoted again on new evidence the block gate no longer allows: why it
+   * advises now (the gate's sentence). Null when it does not apply; absent from an older Drift.
+   */
+  block_dropped?: string | null;
+  /**
+   * The accepted practices of the same concern in exactly this place, of another form (a named way where a mechanism
+   * was accepted whole, or the other way round), that this promotion replaces (with `--dry-run`: would replace).
+   * Empty when none; absent from an older Drift.
+   */
+  replaces?: PromoteReplaced[];
   /** The text `drift practices promote` prints before it writes. */
   preview: string;
+}
+
+/** A practice of another form a promotion replaces (drift-cli promote.rs `Replaced::json`). */
+export interface PromoteReplaced {
+  /** The replaced convention's id (`D-…`). */
+  id: string;
+  summary: string;
+  /** The units of its place that follow it and break the new one (`path#symbol`, sorted): recorded in drift.lock as they are. */
+  narrowed: string[];
 }
 
 /** Why a practice cannot be promoted (`promote::Refusal`, serde-tagged by `code`). */
@@ -2274,10 +2295,25 @@ export type PromoteRefusal =
   | { code: "not_a_mechanism"; concern: string; mechanism: string }
   | { code: "no_enforcing"; concern: string };
 
+/**
+ * The command line's own refusals (drift-cli promote.rs `usage`, `block_refused`), before or after the engine's: no
+ * variant and no concern (`no_variant`), a mechanism or any enforcing way with neither (`no_concern`), `--block` with
+ * `--force` (`block_forced`), no conventions file (`no_policy`), another accepted practice of the concern in a place
+ * that overlaps (`covered`: the message names it), and block mode the gate refuses (`block_refused`: the convention
+ * it would be and the replay, when one ran).
+ */
+export type PromoteUsageRefusal =
+  | { code: "no_variant" }
+  | { code: "no_concern" }
+  | { code: "block_forced" }
+  | { code: "no_policy" }
+  | { code: "covered" }
+  | { code: "block_refused"; id: string; replay: NonNullable<PromoteResult["replay"]> | null };
+
 /** `drift practices promote --json` when it refuses (exit 2, nothing written): the refusal and the sentence a person reads. */
 export interface PromoteRefused {
-  /** Typed by the codes this Studio knows; another code (block refused for want of a replay, ...) still has its `message`. */
-  refused: PromoteRefusal | { code: string };
+  /** Typed by the codes this Studio knows; another code still has its `message`. */
+  refused: PromoteRefusal | PromoteUsageRefusal | { code: string };
   message: string;
 }
 
@@ -2658,6 +2694,8 @@ export interface CensusWhy {
   reached: Partial<Record<FunnelStage, number>>;
   gates: FunnelGate[];
   dropped: FunnelDropped[];
+  /** When mining's caps cut default-tier drafts, how many (less those a person rejected), as a sentence; null otherwise (main.rs `census_why`; absent from an older Drift). */
+  cap_note?: string | null;
 }
 
 /** The funnel's stages, in order (funnel.rs `REACHED`). */

@@ -1727,7 +1727,7 @@ await test("conventions: a proposal from Drift's map of the code says so, and a 
   await plain.context().close();
 });
 
-await test("practices: what may be promoted, worded by kind, passive candidates apart and last, unread units not checked with their shared cause; read-only", async () => {
+await test("practices: what may be promoted, passive candidates apart and last, unread units not checked with their shared cause; each one opens the promote dialog on its form and place", async () => {
   const list = JSON.parse(readFileSync(join(app, "fixtures", "acme", "promote-list.json"), "utf8"));
   for (const scheme of ["dark", "light"]) {
     const page = await newPage({ colorScheme: scheme });
@@ -1735,29 +1735,38 @@ await test("practices: what may be promoted, worded by kind, passive candidates 
     await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
     await open(page, "practices/candidates");
     await page.waitForSelector(".pr-cand");
-    // A newer Drift lists the passive candidates apart (`passive`); the view shows them after the others.
+    // Drift lists the passive candidates apart (`passive`); the view shows them after the others.
     const listed = [...list.candidates, ...(list.passive ?? [])];
     expect((await page.locator(".pr-cand").count()) === listed.length, "every candidate Drift listed");
     const titles = await page.locator(".pr-cand__title").allTextContents();
-    expect(titles[0] === "Authentication in apps/api" && titles[titles.length - 1] === "Error handling in apps/api", `order, passive last: ${titles}`);
-    expect((await page.locator("[data-testid='candidates-passive'] .pr-cand").count()) === 1, "the passive one apart");
+    expect(titles[0] === "Authentication in apps/web" && titles[titles.length - 1] === "Error handling in apps/api", `order, passive last: ${titles}`);
+    expect((await page.locator("[data-testid='candidates-passive'] .pr-cand").count()) === list.passive.length, "the passive ones apart");
     expect((await page.textContent("[data-testid='candidates-passive']")).includes("Followed by doing nothing"), "and said why");
-    const mech = await page.textContent(".pr-cand[data-kind='mechanism']");
-    expect(mech.includes("Accepts mechanism wrap whole") && mech.includes("whichever instrument it names") && mech.includes("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap"), `mechanism: ${mech}`);
-    const enf = await page.textContent(".pr-cand[data-kind='enforcing']");
-    expect(enf.includes("Accepts any way that enforces it") && enf.includes("70 of the 74 entry points in apps/web/app/api/workspaces/[id] follow it"), `any enforcing: ${enf}`);
-    const data = await page.textContent(".pr-cand:has-text('Data access in apps/web')");
-    expect(data.includes("2 symbols not checked: Drift could not read them, so they are never reported") && data.includes("All 2 not checked share one cause outside them: a call whose body Drift cannot read (pkg:@acme/edge-db#connect)"), `not checked and the cause: ${data}`);
-    expect((await page.textContent(".pr-cand:has-text('Data access in apps/web') [data-testid='cause-hint']")).trim() === listed.find((x) => x.candidate.unknown_cause).candidate.unknown_cause.hint, "the config line as Drift wrote it");
-    expect((await page.textContent(".pr-cand >> nth=0")).includes("3 background jobs not counted"), "jobs");
-    expect((await page.textContent(".pr-cand >> nth=1")).includes("drift practices promote P-1587e5 --in apps/web/app/api/admin"), "the command Drift prints");
-    expect((await page.textContent(".pr-candidates__declined")).includes("1 declined earlier in drift review"), "declined");
-    // Read-only: no dialog, and no write channel runs from here.
-    expect((await page.locator(".dui-dialog").count()) === 0, "no promotion dialog open");
+    const first = await page.textContent(".pr-cand >> nth=0");
+    expect(first.includes("drift practices promote P-9ece30 --in apps/web") && first.includes("18 entry points not checked"), `the command Drift prints, and what it could not read: ${first}`);
+    expect((await page.textContent(".pr-cand >> nth=0 >> [data-testid='cause-hint']")).trim() === list.candidates[0].candidate.unknown_cause.hint, "the config line as Drift wrote it");
+    // Every candidate Drift printed a command for can be promoted from here.
+    expect((await page.locator(".pr-cand .pr-cand__action button").count()) === listed.length, "a Promote button on each");
+    expect((await page.locator(".dui-dialog").count()) === 0, "no dialog until one is chosen");
     await axe(page, `practices candidates ${scheme}`);
+    // A candidate opens the dialog on its form and place: the dry run Drift answered for its own command.
+    await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    const d = await page.textContent(".dui-dialog");
+    expect(d.includes("89 of the 116 entry points in apps/web use wrap withWorkspace, or wrap getSession") && d.includes("practices promote P-9ece30 --in apps/web --json"), `pre-filled: ${d.slice(0, 600)}`);
+    expect((await page.inputValue(".dui-dialog input[aria-label='Directory']")) === "apps/web", "the place");
+    await axe(page, `promote dialog from a candidate ${scheme}`);
+    await page.click(".dui-dialog button:has-text('Cancel')");
+    // A passive one says why it is listed apart, and any enforcing way is not offered for errors, in Drift's words.
+    await page.click("[data-testid='candidates-passive'] .pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    expect((await page.textContent(".dui-dialog .pr-promote__note")).includes("Listed apart: what this accepts is what code here does by doing nothing"), "the passive note");
+    expect(await page.locator(".dui-dialog .pr-promote__enforcing input").isDisabled(), "no reading of what enforces errors");
+    expect((await page.textContent(".dui-dialog .pr-promote__enforcing")).includes("Drift has no reading of which ways enforce errors: name its ways instead."), "the command's sentence");
+    await page.click(".dui-dialog button:has-text('Cancel')");
     // One package narrows the list.
     await page.selectOption("select[aria-label='Package']", "pkg:apps/api");
-    await page.waitForFunction(() => document.querySelectorAll(".pr-cand").length === 2);
+    await page.waitForFunction((n) => document.querySelectorAll(".pr-cand").length === n, listed.filter((x) => x.candidate.place.package === "apps/api").length);
     expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
     await page.context().close();
   }
@@ -1776,6 +1785,129 @@ await test("practices: what may be promoted, worded by kind, passive candidates 
   await broken.context().close();
 });
 
+// The real answer of `drift practices promote P-6123b9 --in apps/api --block --dry-run --json` on a shallow clone:
+// no acme run is refused for block (every replay there can run), so this one is injected as Drift printed it elsewhere.
+const BLOCK_REFUSED = {
+  refused: { code: "block_refused", id: "D-97d7a2", replay: null },
+  message:
+    "D-97d7a2: not set to block: blocking needs a replay of the last 15 entry points added to its place, by the commit that first added each file, and Drift could not read when they were added: this is a shallow clone, so the commits that added most files are missing (`git fetch --unshallow` reads them). Nothing was written. Advise mode needs no history: run it again without --block.",
+};
+
+await test("practices: the promote dialog offers every form (ways, mechanism, any enforcing way; directory, route prefix; block; --force after a refusal for the share), says what the command refuses and what Drift answered, then writes; axe in both themes", async () => {
+  for (const scheme of ["dark", "light"]) {
+    const page = await newPage({ colorScheme: scheme });
+    await page.route("**/acme/promote-runs.json", async (r) => {
+      const doc = await (await r.fetch()).json();
+      for (const run of doc.runs) if (run.after.length === 0 && run.args.join(" ") === "P-6123b9 --in apps/api --block --dry-run --json") Object.assign(run, { exit: 2, out: BLOCK_REFUSED });
+      await r.fulfill({ json: doc });
+    });
+    await page.goto(`${url}?delay=0#/attention`);
+    await page.evaluate((s) => localStorage.setItem("drift-studio:theme", s), scheme);
+    await open(page, "practices/candidates");
+    await page.waitForSelector(".pr-cand");
+    const dialog = () => page.textContent(".dui-dialog");
+    const cmd = () => page.textContent(".dui-dialog .pr-promote__cmd");
+    const settled = () => page.waitForFunction(() => !document.querySelector(".dui-dialog .pr-promote__preview.is-stale"));
+    // Block refused (the replay could not run), in Drift's words.
+    await page.click("[data-testid='candidates-passive'] .pr-cand >> nth=1 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+    await page.click(".dui-dialog .dui-radio:has-text('Block')");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='block_refused']");
+    expect((await page.textContent(".dui-dialog .pr-promote__refused[data-code='block_refused']")).includes("this is a shallow clone, so the commits that added most files are missing"), "why it cannot block");
+    await axe(page, `promote dialog block refused ${scheme}`);
+    await page.click(".dui-dialog button:has-text('Cancel')");
+    await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+    await page.waitForSelector(".dui-dialog .pr-promote__preview");
+
+    // Block: the replay Drift ran, shown as it answered.
+    await page.click(".dui-dialog .dui-radio:has-text('Block')");
+    await page.waitForSelector(".dui-dialog .pr-promote__replay");
+    expect((await page.textContent(".dui-dialog .pr-promote__replay")).includes("Of the 15 entry points most recently added here, 14 follow it as they stand."), "the replay");
+    expect((await cmd()).endsWith("P-9ece30 --in apps/web --block --json"), `block command: ${await cmd()}`);
+    expect((await page.locator(".dui-dialog button:has-text('Make it a blocking convention')").count()) === 1, "the button says what it writes");
+    await page.click(".dui-dialog .dui-radio:has-text('Advise')");
+
+    // A route prefix of the package: `--in apps/web:/api`.
+    await page.click(".dui-dialog .dui-segmented button:has-text('Route prefix')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.includes("--in apps/web:/api --json"));
+    await page.waitForSelector(".dui-dialog .pr-promote__place:has-text('apps/web:/api')");
+    await settled();
+    // A prefix --in cannot take is not run, and says why.
+    await page.fill(".dui-dialog input[aria-label='Route prefix']", "api");
+    await page.waitForSelector(".dui-dialog .pr-promote__placeproblem:has-text('A route prefix starts with')");
+    await page.click(".dui-dialog .dui-segmented button:has-text('Directory')");
+
+    // Another package: Drift refuses below the share, and only then is --force offered, saying what it overrides.
+    await page.fill(".dui-dialog input[aria-label='Directory']", "apps/api");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='below_share']");
+    const force = await page.textContent(".dui-dialog .pr-promote__force");
+    expect(force.includes("In apps/api, 0 of the 49 entry points Drift could read do it the accepted ways (0%), below the 80% a practice needs") && force.includes("it advises only, and never blocks"), `force: ${force}`);
+    expect(await page.locator(".dui-dialog button:has-text('Make it a convention')").isDisabled(), "nothing to write while refused");
+    await axe(page, `promote dialog refused below the share ${scheme}`);
+    await page.click(".dui-dialog .pr-promote__force label");
+    await page.waitForFunction(() => !document.querySelector(".dui-dialog .pr-promote__refused") && document.querySelector(".dui-dialog [data-testid='promote-answer']"));
+    expect((await cmd()).endsWith("P-9ece30 --in apps/api --force --json"), `force command: ${await cmd()}`);
+    expect((await dialog()).includes("Below the 80% share on a person's word: advise only."), "Drift's answer says it was forced");
+    expect(await page.locator(".dui-dialog input[type=radio][value='block']").isDisabled(), "block is not offered with --force");
+    expect((await dialog()).includes("--block and --force do not go together"), "and says the command's sentence");
+    await page.click(".dui-dialog .pr-promote__force label");
+    await page.fill(".dui-dialog input[aria-label='Directory']", "apps/web");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("P-9ece30 --in apps/web --json"));
+    await settled();
+
+    // No way ticked: the command line refuses before reading anything, in its words, and nothing is run.
+    await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withWorkspace, or wrap getSession')");
+    await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='nothing_accepted']");
+    expect((await page.textContent(".dui-dialog .pr-promote__refused[data-code='nothing_accepted']")).includes("Drift refuses this before reading anything: Nothing to promote: name a way (a variant id), a mechanism, or any way that enforces the concern."), "nothing accepted");
+    // Any enforcing way, by concern.
+    await page.click(".dui-dialog .pr-promote__enforcing");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("--concern authn --in apps/web --any-enforcing --json"));
+    await page.waitForSelector(".dui-dialog [data-testid='promote-answer']:has-text('any way that turns an unsigned caller away')");
+    await page.click(".dui-dialog .pr-promote__enforcing");
+    // A mechanism whole.
+    await page.click(".dui-dialog .pr-promote__mechanisms label:has-text('--mechanism wrap')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("--concern authn --in apps/web --mechanism wrap --json"));
+    await page.waitForSelector(".dui-dialog .pr-promote__preview:not(.is-stale)");
+    await page.click(".dui-dialog .pr-promote__mechanisms label:has-text('--mechanism wrap')");
+    await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withWorkspace, or wrap getSession')");
+    await page.waitForFunction(() => document.querySelector(".dui-dialog .pr-promote__cmd")?.textContent?.endsWith("P-9ece30 --in apps/web --json"));
+    await settled();
+    await axe(page, `promote dialog forms ${scheme}`);
+
+    // Written, then what Drift answers after it: another form in the same place replaces it.
+    await page.click(".dui-dialog button:has-text('Make it a convention')");
+    await page.waitForSelector(".dui-toast:has-text('Convention D-234880')");
+    expect((await page.locator(".dui-dialog").count()) === 0, "the dialog closes once written");
+    await page.waitForFunction(() => !document.querySelector(".pr-cand .pr-cand__title")?.textContent?.includes("Authentication in apps/web"));
+    expect((await page.locator(".pr-cand").count()) === 7, "the list Drift prints after the write");
+    expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+    await page.context().close();
+  }
+  // What it replaces: from the map's Authentication, any enforcing way in apps/web after D-234880 was written.
+  const page = await newPage();
+  await open(page, "practices/candidates");
+  await page.click(".pr-cand >> nth=0 >> .pr-cand__action button");
+  await page.waitForSelector(".dui-dialog .pr-promote__preview");
+  await page.click(".dui-dialog button:has-text('Make it a convention')");
+  await page.waitForSelector(".dui-toast:has-text('Convention D-234880')");
+  await page.click("[role=tab]:has-text('All concerns')");
+  await page.click(".pr-concern:has-text('Authentication')");
+  await page.click(".dui-segmented button:has-text('Every variant')");
+  await page.click(".pr-stack .pr-variant:not(.pr-group__head):has-text('wrap withAdmin')");
+  await page.click(".pr-detail button:has-text('Make this a convention')");
+  // This variant of the hand-written map was not run after the write: fixture mode says so rather than make it up.
+  await page.waitForSelector(".dui-dialog .pr-promote__refused[data-code='not_recorded']");
+  await page.fill(".dui-dialog input[aria-label='Directory']", "apps/web");
+  await page.click(".dui-dialog .pr-promote__ways label:has-text('wrap withAdmin')");
+  await page.click(".dui-dialog .pr-promote__enforcing");
+  await page.waitForSelector(".dui-dialog .pr-promote__replaces");
+  const rep = await page.textContent(".dui-dialog .pr-promote__replaces");
+  expect(rep.includes("Would replace D-234880 (Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession), the practice of another form in the same place"), `replaces: ${rep}`);
+  // Fixture mode recorded the dry run of this form after the write, not a second write.
+  expect(page.problems.length === 0, `console problems:\n${page.problems.join("\n")}`);
+  await page.context().close();
+});
+
 await test("funnel: what mining dropped, gate by gate, with each gate's origin and the dropped candidates of the gate chosen; loading, empty and error; read-only", async () => {
   const doc = JSON.parse(readFileSync(join(app, "fixtures", "acme", "funnel.json"), "utf8"));
   const slow = await newPage();
@@ -1791,17 +1923,17 @@ await test("funnel: what mining dropped, gate by gate, with each gate's origin a
     await page.waitForSelector(".fn-gates");
     expect((await page.textContent(".fn-head")).includes("Observation only: nothing listed here is proposed, checked or shown to agents"), "observation only");
     const stages = await page.locator(".fn-stages__list li").allTextContents();
-    expect(stages.length === 6 && stages[0].includes("42") && stages[5].includes(String(doc.reached.proposed)), `stages: ${stages}`);
+    expect(stages.length === 6 && stages[0].includes(String(doc.reached.roles)) && stages[5].includes(String(doc.reached.proposed)), `stages: ${stages}`);
     const gates = await page.locator(".fn-gates tbody tr").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-gate")));
     expect(JSON.stringify(gates) === JSON.stringify(doc.gates.filter((g) => g.dropped > 0).map((g) => g.name)), `gates that dropped, in Drift's order: ${gates}`);
     expect((await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("not from the study") && (await page.textContent(".fn-gates tr[data-gate='wilson']")).includes("engineering choice, no study"), "the origin");
     // The first gate that dropped is chosen; another one by click (the address keeps it).
-    expect((await page.textContent(".fn-detail")).includes("Dropped at universal (2)"), "universal first");
+    expect((await page.textContent(".fn-detail")).includes("Dropped at universal (10)"), "universal first");
     await page.click(".fn-gates button:has-text('wilson')");
-    await page.waitForSelector(".fn-detail:has-text('Dropped at wilson (2)')");
+    await page.waitForSelector(".fn-detail:has-text('Dropped at wilson (274)')");
     expect(page.url().endsWith("#/funnel/wilson"), `address: ${page.url()}`);
     const d = await page.textContent(".fn-detail");
-    expect(d.includes("9 of 10 apps/api: functions in src/jobs/**: are wrapped in withRetry()") && d.includes("lower bound 0.60 under 0.75") && d.includes("default tier") && d.includes("MIN_LOWER_BOUND = 0.75"), `wilson: ${d}`);
+    expect(d.includes("12 of 13") && d.includes("apps/web: components in components/**: call useState()") && d.includes("lower bound 0.67 under 0.75") && d.includes("MIN_LOWER_BOUND = 0.75"), `wilson: ${d}`);
     expect((await page.getAttribute(".fn-gates button:has-text('wilson')", "aria-pressed")) === "true", "pressed");
     await page.click(".fn-quiet summary");
     expect((await page.textContent(".fn-quiet")).includes("python_family_hidden") && (await page.textContent(".fn-quiet tr[data-gate='python_family_hidden']")).includes("from the study"), "a gate from the study");

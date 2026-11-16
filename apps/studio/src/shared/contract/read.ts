@@ -64,6 +64,8 @@ export function readCensusWhy(raw: unknown): CensusWhy {
     reached,
     gates: (Array.isArray(d.gates) ? d.gates : []).map(readGate).filter((g): g is FunnelGate => g !== null),
     dropped: (Array.isArray(d.dropped) ? d.dropped : []).map(readDropped).filter((x): x is FunnelDropped => x !== null),
+    // How many default-tier drafts mining's caps cut, said by Drift (newer drift): kept only when it is a sentence.
+    ...(str(d.cap_note) ? { cap_note: str(d.cap_note) } : {}),
   };
 }
 

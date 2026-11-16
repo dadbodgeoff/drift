@@ -360,7 +360,7 @@ A place whose units are Python advises only, as every Python convention does (de
 ### Other places to do it
 
 - **`drift review`** offers each practice that qualifies, after the mined proposals: `y` promote (advise), `b` promote in block mode, `n` no, `s` skip, `q` quit. See [Conventions and Review](Conventions-and-Review#practices-that-may-be-promoted).
-- **The Studio** has the same step in its Practices view, with the same preview.
+- **The Studio** has the same step in its Practices view, with the same preview. Its dialog offers every form the command has (a variant, other ways, a mechanism, any enforcing way, added together; a directory, a file or a route prefix; advise or block) and shows the exact command it runs. A choice the command refuses before reading anything is disabled with the command's own reason. Promoting below the share (`--force`) is offered only after Drift refuses for that reason, with what it overrides. Each practice on its **May be promoted** tab opens the dialog with its form and place filled in.
 - **`drift init`** proposes the strongest practices that qualify, as proposals from the map: written `proposed`, in advise mode, labelled as coming from the map, not baselined and shown to no agent until a person accepts one in `drift review`. Accepting one writes it as `drift practices promote` would. See [Proposals from the map](Conventions-and-Review#proposals-from-the-map).
 - **`drift check`** ends a practice departure with the promote command for its place, where the command would take it as the code stands (`; to make it the rule for new code there: `drift practices promote <id> --in <place>``). Agents are not given it.
 

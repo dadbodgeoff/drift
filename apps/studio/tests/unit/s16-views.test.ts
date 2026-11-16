@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { FromMapBadge, FromMapNote, fromMapText } from "@/features/conventions";
 import { CandidateList, acceptsText, candidateKind, causeReason, commandShown, jobsLine, notCheckedLine, refusalCause, splitPassive, unknownCauseText } from "@/features/practices";
 import { Funnel, droppedFacts, fromStudy, originKind, originText, selectedGate, splitGates, stageRows, targetText } from "@/features/funnel";
-import type { CensusWhy, PromoteList } from "@/shared/contract/drift";
+import type { CensusWhy, PromoteList, PromoteListItem } from "@/shared/contract/drift";
 import { readCensusWhy, readPromoteList } from "@/shared/contract/read";
 import { json } from "./helpers";
 
@@ -25,7 +25,7 @@ const plain = (html: string) =>
 
 const list = (): PromoteList => readPromoteList(json("acme/promote-list.json"));
 const funnel = (): CensusWhy => readCensusWhy(json("acme/funnel.json"));
-const TITLES: Record<string, string> = { authn: "Authentication", errors: "Error handling", data_access: "Data access" };
+const TITLES: Record<string, string> = { authn: "Authentication", errors: "Error handling", data_access: "Data access", api: "API design", validation: "Input validation" };
 const titleOf = (id: string) => TITLES[id] ?? id;
 
 describe("a convention proposed from Drift's map of the code", () => {
@@ -43,28 +43,31 @@ describe("a convention proposed from Drift's map of the code", () => {
 });
 
 describe("the practices that may be promoted", () => {
+  // acme's list as the real binary printed it names ways only; a mechanism and any enforcing way are worded from the
+  // same candidate with Drift's fields for those forms set (promote.rs `Candidate`), not from a hand-written fixture.
+  const first = () => list().candidates[0]!;
+  const mechanism = (): PromoteListItem => ({ ...first(), command: "drift practices promote --concern authn --in apps/web --mechanism wrap", candidate: { ...first().candidate, ways: [], mechanisms: ["wrap"] } });
+  const enforcing = (): PromoteListItem => ({ ...first(), command: "drift practices promote --concern authn --in 'apps/web/app/api/workspaces/[id]' --any-enforcing", candidate: { ...first().candidate, ways: [], any_enforcing: true } });
+
   it("words each kind of candidate on its own", () => {
     const xs = list().candidates;
-    const [api, admin] = xs;
-    const mech = xs.find((x) => x.candidate.mechanisms?.length);
-    const ws = xs.find((x) => x.candidate.any_enforcing);
-    expect(candidateKind(api!.candidate)).toBe("ways");
-    expect(acceptsText(admin!.candidate)).toBe("Accepts wrap withAdmin.");
-    expect(candidateKind(mech!.candidate)).toBe("mechanism");
-    expect(acceptsText(mech!.candidate)).toBe("Accepts mechanism wrap whole: any entry point here that does it by wrap follows, whichever instrument it names.");
-    expect(candidateKind(ws!.candidate)).toBe("enforcing");
-    expect(acceptsText(ws!.candidate)).toMatch(/^Accepts any way that enforces it: any entry point here that enforces it follows, however it does\. A way that opens a route on purpose is accepted only when a person names it\.$/);
+    expect(candidateKind(xs[1]!.candidate)).toBe("ways");
+    expect(acceptsText(xs[1]!.candidate)).toBe("Accepts decorator AuthGuard.");
+    expect(candidateKind(mechanism().candidate)).toBe("mechanism");
+    expect(acceptsText(mechanism().candidate)).toBe("Accepts mechanism wrap whole: any entry point here that does it by wrap follows, whichever instrument it names.");
+    expect(candidateKind(enforcing().candidate)).toBe("enforcing");
+    expect(acceptsText(enforcing().candidate)).toMatch(/^Accepts any way that enforces it: any entry point here that enforces it follows, however it does\. A way that opens a route on purpose is accepted only when a person names it\.$/);
   });
 
   it("calls what Drift could not read not checked, never a departure, and names the shared cause with its config line", () => {
-    const data = list().candidates.find((x) => x.candidate.concern === "data_access")!.candidate;
-    expect(notCheckedLine(data)).toBe("2 symbols not checked: Drift could not read them, so they are never reported.");
+    const c = first().candidate;
+    expect(notCheckedLine(c)).toBe("18 entry points not checked: Drift could not read them, so they are never reported.");
     expect(notCheckedLine({ unit: "entry_point", unknown: 0 })).toBe("Drift could read every entry point here.");
     expect(notCheckedLine({ unit: "entry_point", unknown: 1 })).toBe("1 entry point not checked: Drift could not read it, so it is never reported.");
-    const cause = unknownCauseText(data.unknown_cause!);
-    expect(cause.what).toBe("All 2 not checked share one cause outside them: a call whose body Drift cannot read (pkg:@acme/edge-db#connect).");
+    const cause = unknownCauseText(c.unknown_cause!);
+    expect(cause.what).toBe(`All 18 not checked share one cause outside them: ${causeReason("unresolved")} (apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action).`);
     expect(cause.after).toBe("This line in .drift/config.yaml would let Drift read it:");
-    expect(cause.hint).toBe('practices: {data_access: {"pkg:@acme/edge-db#connect": "connect"}}');
+    expect(cause.hint).toBe('practices: {authn: {"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action": "authActionClient.inputSchema().action"}}');
     expect(unknownCauseText({ reason: "opaque_wrapper", instrument: "withX", units: 3 })).toEqual({ what: "All 3 not checked share one cause outside them: a wrapper Drift cannot see into (withX).", hint: null, after: "No .drift/config.yaml line names it: once Drift reads that call, they can be told." });
     expect(causeReason("dynamic")).toBe("code Drift could not read");
     expect(jobsLine({ jobs: 3 })).toBe("3 background jobs not counted: they take no request.");
@@ -82,34 +85,45 @@ describe("the practices that may be promoted", () => {
 
   it("shows the command Drift prints, and none where an older Drift printed one with no id", () => {
     const xs = list().candidates;
-    expect(commandShown(xs[1]!)).toBe("drift practices promote P-1587e5 --in apps/web/app/api/admin");
+    expect(commandShown(xs[1]!)).toBe("drift practices promote P-5c347c --in apps/api");
     // A candidate of no named way: `--concern` in place of a variant id (drift-cli promote.rs `command`).
-    expect(commandShown(xs.find((x) => x.candidate.any_enforcing)!)).toBe("drift practices promote --concern authn --in 'apps/web/app/api/workspaces/[id]' --any-enforcing");
-    expect(commandShown(xs.find((x) => x.candidate.mechanisms?.length)!)).toBe("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap");
+    expect(commandShown(enforcing())).toBe("drift practices promote --concern authn --in 'apps/web/app/api/workspaces/[id]' --any-enforcing");
+    expect(commandShown(mechanism())).toBe("drift practices promote --concern authn --in apps/web --mechanism wrap");
     expect(commandShown({ command: "drift practices promote  --in apps/web" })).toBeNull();
     expect(commandShown({ command: "" })).toBeNull();
   });
 
   it("lists passive candidates apart and after the others, and says so", () => {
     const { active, passive } = splitPassive(list().candidates);
-    expect(passive.map((x) => x.candidate.concern)).toEqual(["errors"]);
+    expect(passive.map((x) => `${x.candidate.concern} ${x.place}`)).toEqual(["errors apps/web", "errors apps/api"]);
     expect(active).toHaveLength(6);
     const html = renderToStaticMarkup(createElement(CandidateList, { list: list(), pkg: null, titleOf }));
     const text = plain(html);
     expect(html.indexOf('data-testid="candidates-active"')).toBeLessThan(html.indexOf('data-testid="candidates-passive"'));
     expect(text.indexOf("Error handling in apps/api")).toBeGreaterThan(text.indexOf("Followed by doing nothing"));
     expect(text.indexOf("Authentication in apps/api")).toBeLessThan(text.indexOf("Followed by doing nothing"));
-    expect(text).toContain("19 of the 20 entry points in apps/web/app/api/admin follow it.");
-    expect(text).toContain("2 symbols not checked");
-    expect(text).toContain("3 background jobs not counted");
-    expect(text).toContain("drift practices promote --concern authn --in apps/web/lib/actions --mechanism wrap");
+    expect(text).toContain("47 of the 49 entry points in apps/api follow it.");
+    expect(text).toContain("18 entry points not checked");
+    expect(text).toContain("drift practices promote P-9ece30 --in apps/web");
     expect(text).not.toContain("prints no command for this one");
-    expect(text).toContain("1 declined earlier in drift review");
-    expect(text).toContain("Nothing is written from this list.");
-    expect(html.match(/data-kind="mechanism"/g)).toHaveLength(1);
-    expect(html.match(/data-kind="enforcing"/g)).toHaveLength(1);
-    // No button: nothing here writes (opening an example needs onOpen, which the tab passes).
+    expect(text).not.toContain("declined earlier in drift review");
+    const declined = plain(renderToStaticMarkup(createElement(CandidateList, { list: { ...list(), declined: 1 }, pkg: null, titleOf })));
+    expect(declined).toContain("1 declined earlier in drift review");
+    expect(html.match(/data-kind="ways"/g)).toHaveLength(8);
+    const kinds = renderToStaticMarkup(createElement(CandidateList, { list: { ...list(), candidates: [mechanism(), enforcing()] }, pkg: null, titleOf }));
+    expect(kinds.match(/data-kind="mechanism"/g)).toHaveLength(1);
+    expect(kinds.match(/data-kind="enforcing"/g)).toHaveLength(1);
+    // No button without onPromote (the tab passes it); opening an example needs onOpen.
     expect(html).not.toContain("<button");
+  });
+
+  it("offers each candidate Drift printed a command for to the promote dialog, a passive one too, and none printed with no id", () => {
+    const onPromote = () => {};
+    const html = renderToStaticMarkup(createElement(CandidateList, { list: list(), pkg: null, titleOf, onPromote }));
+    expect(html.match(/class="[^"]*pr-cand__action[^"]*"/g)).toHaveLength(8);
+    expect(html).toContain('aria-label="Promote… Authentication in apps/web"');
+    const old = renderToStaticMarkup(createElement(CandidateList, { list: { ...list(), candidates: [{ ...first(), command: "drift practices promote  --in apps/web" }] }, pkg: null, titleOf, onPromote }));
+    expect(old).not.toContain("pr-cand__action");
   });
 
   it("narrows to one package, says when nothing may be promoted, and never puts a passive one first", () => {
@@ -138,17 +152,17 @@ describe("what mining dropped (the Funnel view)", () => {
     expect(fromStudy("a hunch")).toBe(false);
     expect(targetText("built_in")).toBe("target is a built-in");
     expect(targetText("none")).toBe("");
-    const d = funnel().dropped.find((x) => x.id === "D-c4d7a9")!;
-    expect(droppedFacts(d)).toEqual(["lower bound 0.60 under 0.75", "target defined in the repository", "default tier"]);
+    const d = funnel().dropped.find((x) => x.id === "D-a85cd1")!;
+    expect(droppedFacts(d)).toEqual(["lower bound 0.63 under 0.75", "target defined in the repository", "default tier"]);
     expect(droppedFacts({ ...d, lang: "py", default_tier: false, target: "none", detail: "" })).toEqual(["Python"]);
   });
 
   it("orders stages and gates as Drift does, and selects the gate asked for or the first that dropped", () => {
     const doc = funnel();
-    expect(stageRows(doc).map((s) => `${s.n} ${s.label}`)).toEqual(["42 roles", "17 roles with enough members to mine", "214 candidate rules observed", "61 drafted", "21 mined", "14 proposed"]);
+    expect(stageRows(doc).map((s) => `${s.n} ${s.label}`)).toEqual(["368 roles", "48 roles with enough members to mine", "321 candidate rules observed", "45 drafted", "14 mined", "12 proposed"]);
     expect(stageRows({ reached: {} })).toEqual([]);
-    expect(splitGates(doc.gates).dropping.map((g) => g.name)).toEqual(["universal", "wilson", "lift"]);
-    expect(splitGates(doc.gates).quiet).toHaveLength(29);
+    expect(splitGates(doc.gates).dropping.map((g) => g.name)).toEqual(["universal", "wilson", "lift", "mandated", "tautology", "call_family_hidden", "duplicate", "not_admitted"]);
+    expect(splitGates(doc.gates).quiet).toHaveLength(24);
     expect(selectedGate(doc, null)?.name).toBe("universal");
     expect(selectedGate(doc, "lift")?.name).toBe("lift");
     expect(selectedGate(doc, "no_such_gate")?.name).toBe("universal");
@@ -159,14 +173,14 @@ describe("what mining dropped (the Funnel view)", () => {
     const html = renderToStaticMarkup(createElement(Funnel, { doc: funnel(), gate: "wilson" }));
     const text = plain(html);
     expect(text).toContain("Observation only: nothing listed here is proposed, checked or shown to agents, and the proposals are exactly those of drift census.");
-    expect(text).toContain("42 roles");
-    expect(text).toContain("Dropped at wilson (2)");
-    expect(text).toContain("9 of 10 apps/api: functions in src/jobs/**: are wrapped in withRetry()");
-    expect(text).toContain("15 of 19 apps/web: functions in lib/**: are named `get*`");
-    expect(text).not.toContain("holds for all 20 of 20");
+    expect(text).toContain("368 roles");
+    expect(text).toContain("Dropped at wilson (274)");
+    expect(text).toContain("12 of 13 apps/web: components in components/**: call useState()");
+    expect(text).toContain("70 of 97 apps/web: HTTP handlers in app/** (route files): are wrapped in withWorkspace()");
+    expect(text).not.toContain("holds for all 74 of 74");
     expect(text).toContain("MIN_LOWER_BOUND = 0.75");
     expect(text).toContain("not from the study");
-    expect(text).toContain("Gates that dropped nothing (29)");
+    expect(text).toContain("Gates that dropped nothing (24)");
     expect(html.match(/class="is-selected" data-gate="wilson"/g)).toHaveLength(1);
     expect(html.match(/class="is-selected"/g)).toHaveLength(1);
     // Without a handler (a static render) the gates are names, not buttons.

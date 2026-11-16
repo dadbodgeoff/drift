@@ -151,19 +151,46 @@ export type AuditDecision = z.infer<typeof AuditDecision>;
 /** A practice-map variant id (`drift practices --json` `concerns[].variants[].id`): `P-` and 6 hex digits. */
 export const PracticeId = z.string().regex(/^P-[0-9a-f]{6}$/);
 
+const repoPath = (p: string) => !p.startsWith("/") && !p.startsWith("-") && !p.includes("\\") && !/\p{Cc}/u.test(p) && !p.split("/").some((s) => s === ".." || s === "." || s === "");
+
 /**
- * A place for `drift practices promote --in`: `.` (the root package) or a directory from the repository root, as
- * `promotable.place` names it. No `..`, `.` or empty segment, no leading `/` or `-` (it is passed as its own argument),
- * no backslash or control character (validated again in the main process).
+ * A place for `drift practices promote --in`: `.` (the root package), a directory or one file from the repository root,
+ * or a route place `<package>:/<prefix>` (`.:/api/workspaces`, `apps/api:/v2`). No `..`, `.` or empty segment, no
+ * leading `/` or `-` (it is passed as its own argument), no backslash or control character (validated again in the
+ * main process).
  */
 export const PromotePlacePath = z
   .string()
   .min(1)
   .max(1024)
-  .refine((p) => p === "." || (!p.startsWith("/") && !p.startsWith("-") && !p.includes("\\") && !/\p{Cc}/u.test(p) && !p.split("/").some((s) => s === ".." || s === "." || s === "")), "`.` or a repo-relative directory");
+  .refine((p) => {
+    const at = p.indexOf(":/");
+    if (at < 0) return p === "." || repoPath(p);
+    const [pkg, prefix] = [p.slice(0, at), p.slice(at + 1)];
+    return (pkg === "." || repoPath(pkg)) && prefix.length > 1 && !/\p{Cc}|\s|\\/u.test(prefix) && !prefix.slice(1).split("/").some((s) => s === "" || s === ".." || s === ".");
+  }, "`.`, a repo-relative directory or file, or `<package>:/<route prefix>`");
 
-/** What a person asks to promote: a variant, the place, the other ways accepted with it (`--with`), and block mode (`--block`). */
-export const PromoteRequest = z.object({ id: PracticeId, place: PromotePlacePath, with: z.array(PracticeId).max(50), block: z.boolean() });
+/** A concern of the practice map (`concerns[].id`: `authn`, `data_access`, ...). */
+export const ConcernId = z.string().regex(/^[a-z][a-z0-9_]{0,39}$/);
+/** A mechanism in the map's own words (the part before the `:` of a variant key: `wrap`, `membership_guard`, ...). */
+export const MechanismName = z.string().regex(/^[a-z][a-z0-9_]{0,59}$/);
+
+/**
+ * What a person asks to promote, every form `drift practices promote` has: the first way (`id`, a variant) or, with
+ * none, the concern (`--concern`); the place (`--in`); more ways (`--with`), mechanisms accepted whole
+ * (`--mechanism`) and any enforcing way (`--any-enforcing`), which add up; block mode (`--block`) and a promotion
+ * below the share (`--force`, advise only). The optional fields are absent from an older Studio's request.
+ */
+export const PromoteRequest = z.object({
+  id: PracticeId.optional(),
+  concern: ConcernId.optional(),
+  place: PromotePlacePath,
+  with: z.array(PracticeId).max(50),
+  mechanisms: z.array(MechanismName).max(20).optional(),
+  any_enforcing: z.boolean().optional(),
+  block: z.boolean(),
+  force: z.boolean().optional(),
+});
 export type PromoteRequest = z.infer<typeof PromoteRequest>;
 
 /** A member as conventions.yaml `exceptions` name it: `path#symbol` with a repo-relative path (validated again in the main process). */

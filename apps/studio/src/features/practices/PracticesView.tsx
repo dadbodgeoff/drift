@@ -44,7 +44,7 @@ import {
   variantLabel,
   variantName,
 } from "./model/practices";
-import { promotablePlace } from "./model/promote";
+import { choiceFromVariant, promotablePlace } from "./model/promote";
 import { PromoteDialog } from "./PromoteDialog";
 import { CandidatesTab } from "./Candidates";
 import { t } from "@/shared/i18n";
@@ -106,7 +106,7 @@ function Practices({ report, tab, concernParam, pkg: pkgState, setPkg }: { repor
         {tab === "recipe" && <Recipes report={report} recipes={recipes} pkg={pkg} />}
         {tab === "findings" && <Findings report={report} findings={findings} pkg={pkg} />}
         {tab === "concerns" && <Concerns report={report} rows={rows} pkg={pkg} concernParam={concernParam} />}
-        {tab === "candidates" && <CandidatesTab pkg={pkg} titleOf={(id) => concernTitle(report, id)} />}
+        {tab === "candidates" && <CandidatesTab report={report} pkg={pkg} titleOf={(id) => concernTitle(report, id)} />}
       </TabPanel>
     </div>
   );
@@ -739,6 +739,11 @@ function Unknown({ c, scope }: { c: PracticeConcern; scope: ConcernScope }) {
   );
 }
 
+/** Where a variant has the most units: its first listed directory, else its first package (`.` the root package). */
+function biggestPlace(v: PracticeVariant): string {
+  return v.where.dirs[0]?.dir ?? (v.where.packages[0] ? v.where.packages[0].package || "." : ".");
+}
+
 function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; pkg: string | null }) {
   const d = dominantOf(c);
   const ex = examplesIn(v.examples, pkg);
@@ -779,7 +784,15 @@ function VariantDetail({ c, v, pkg }: { c: PracticeConcern; v: PracticeVariant; 
           </div>
         </Panel>
       )}
-      {place !== null && promoting === v.id && <PromoteDialog c={c} v={v} place={place} onClose={() => setPromoting(null)} />}
+      {v.kind === "known" && place === null && (
+        <div className="st-row st-wrap pr-promote__action">
+          <Button variant="secondary" size="sm" onClick={() => setPromoting(v.id)}>
+            Try it as a convention
+          </Button>
+          <span className="t-caption t-muted">Drift names no place where this way qualifies as the code stands; choose a place, a file or a route prefix and Drift says what it would record, or why not.</span>
+        </div>
+      )}
+      {promoting === v.id && <PromoteDialog concern={c} initial={choiceFromVariant(c, v, place ?? biggestPlace(v))} onClose={() => setPromoting(null)} />}
       {v.alternatives?.length ? (
         <Panel title="A split policy" subtitle="Any of these, counted as one way; each alternative's own share">
           <ul className="st-plainlist t-body-sm">
