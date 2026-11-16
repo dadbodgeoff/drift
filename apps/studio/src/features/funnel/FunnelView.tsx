@@ -49,6 +49,11 @@ export function Funnel({ doc, gate, onSelect }: { doc: CensusWhy; gate: string |
           ) : (
             <p className="t-muted t-body-sm">{t("funnel.noStages")}</p>
           )}
+          {doc.cap_note && (
+            <p className="t-caption t-secondary fn-capnote" role="note">
+              {doc.cap_note}
+            </p>
+          )}
         </Panel>
         {dropping.length === 0 ? (
           <EmptyState icon="ok" title={t("funnel.empty")}>

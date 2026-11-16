@@ -122,6 +122,7 @@ Fixtures (`fixtures/`) are produced by the real binary:
 node scripts/make-fixtures.mjs --drift <drift> --work <scratch>          # acme: committed (step 1 from scripts/acme-seed)
 node scripts/make-round11-fixtures.mjs --drift <drift> --work <scratch>  # beacon, quiet, broken: committed
 node scripts/make-harbor-fixtures.mjs --drift <drift> --work <scratch>    # harbor: committed (standing, advice, --top, unreached, guard unknown, the baseline)
+node scripts/make-promote-fixtures.mjs --drift <drift> --work <scratch>  # acme and quiet funnel, acme promote list and runs: committed (after the two above)
 node scripts/make-study-fixtures.mjs [--drift <drift> --eval-repos <dir> --work <scratch>]
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <dir> --work <scratch>  # twenty, dub: git-ignored
 node scripts/make-local-fixtures.mjs --drift <drift> --repos <scratch copies> --work <scratch> --policy <names>  # also policy and check
@@ -130,7 +131,9 @@ node scripts/make-screens-fixtures.mjs --drift <drift> --work <scratch>  # fixtu
 
 `fixtures/acme/practices.json` is the exception for now: hand-written in the shape the engine prints
 (`drift practices --json` version 1 with `recipes` and `findings`) from acme's own security inventory and
-sources (variant ids are placeholders), until a release build of the engine regenerates it. `acme` is a synthetic monorepo written by `scripts/synth-repo.mjs` (ours,
+sources (variant ids are placeholders), until a release build of the engine regenerates it; so is
+`fixtures/quiet/practices.json`. Their variant ids are not those of `acme/promote-runs.json`, which the real binary
+wrote: the recorded promotions are reached from the May be promoted tab. `acme` is a synthetic monorepo written by `scripts/synth-repo.mjs` (ours,
 Apache-2.0) plus Drift's own parser fixtures; its sessions are synthetic
 transcripts whose hook messages and session state come from running
 `drift hook claude` as the agent works. No third-party code or real

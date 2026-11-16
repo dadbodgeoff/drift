@@ -146,48 +146,88 @@ export function answerFlags(id: string, answer: unknown, setApart: unknown, conf
   return [`--answer=${cid}=${a}`, `--set-apart=${files.join(",")}`, ...(confirm.length ? [`--confirm-entry=${confirm.join(",")}`] : [])];
 }
 
-/** What a person asks to promote (the `promotePreview` and `promote` channels' request). */
+/** What a person asks to promote (the `promotePreview` and `promote` channels' request; src/shared/ipc/contract.ts `PromoteRequest`). */
 export interface PromoteArgs {
-  /** The variant (`P-…`). */
-  id: string;
-  /** `.` or a directory from the repository root (`promotable.place`). */
+  /** The first way (`P-…`); absent: no way is named and `concern` says which units Drift reads. */
+  id?: string;
+  /** The concern (`--concern`): passed only when no way is named, as Drift prints such a command. */
+  concern?: string;
+  /** `.`, a directory or one file from the repository root, or `<package>:/<route prefix>`. */
   place: string;
   /** Other variants of the same concern accepted with it (`--with`). */
   with: string[];
+  /** Mechanisms accepted whole (`--mechanism`). */
+  mechanisms?: string[];
+  /** Any way Drift reads as enforcing the concern (`--any-enforcing`). */
+  any_enforcing?: boolean;
   block: boolean;
+  /** Promote below the share, advise only (`--force`): sent only after a person confirmed it in the dialog. */
+  force?: boolean;
 }
 
 const PRACTICE_ID = /^P-[0-9a-f]{6}$/;
+const CONCERN_ID = /^[a-z][a-z0-9_]{0,39}$/;
+const MECHANISM = /^[a-z][a-z0-9_]{0,59}$/;
 
 export function assertPracticeId(id: unknown): string {
   if (typeof id !== "string" || !PRACTICE_ID.test(id)) throw new InvalidArgument(`not a practice variant id: ${String(id).slice(0, 20)}`);
   return id;
 }
 
+const repoRelative = (p: string) => !(p.startsWith("/") || p.startsWith("-") || p.includes("\\") || /^[A-Za-z]:/.test(p) || p.split("/").some((s) => s === ".." || s === "." || s === ""));
+
 /**
- * A place for `--in`: `.` (the root package) or a directory from the repository root. No `..`, `.` or empty segment,
- * not absolute, never starting with `-` (it is its own argument, so it must not read as a flag), no backslash or
- * control character, at most 1024 characters.
+ * A place for `--in`: `.` (the root package), a directory or one file from the repository root, or a route place
+ * `<package>:/<prefix>` (the package `.` or a repo-relative path, the prefix literal segments from `/`). No `..`, `.`
+ * or empty segment, not absolute, never starting with `-` (it is its own argument, so it must not read as a flag), no
+ * backslash, whitespace in a prefix or control character, at most 1024 characters.
  */
 export function assertPlace(p: unknown): string {
-  if (typeof p !== "string" || !p || p.length > 1024 || /\p{Cc}/u.test(p)) throw new InvalidArgument("expected a place: `.` or a repo-relative directory");
+  const bad = () => new InvalidArgument("expected a place: `.`, a repo-relative directory or file, or `<package>:/<route prefix>`");
+  if (typeof p !== "string" || !p || p.length > 1024 || /\p{Cc}/u.test(p)) throw bad();
   if (p === ".") return p;
-  if (p.startsWith("/") || p.startsWith("-") || p.includes("\\") || /^[A-Za-z]:/.test(p) || p.split("/").some((s) => s === ".." || s === "." || s === ""))
-    throw new InvalidArgument("expected a place: `.` or a repo-relative directory");
+  const at = p.indexOf(":/");
+  if (at < 0) {
+    if (!repoRelative(p)) throw bad();
+    return p;
+  }
+  const pkg = p.slice(0, at);
+  const prefix = p.slice(at + 1);
+  if (!(pkg === "." || repoRelative(pkg)) || prefix.length < 2 || /\s|\\/.test(prefix) || prefix.slice(1).split("/").some((s) => s === "" || s === ".." || s === ".")) throw bad();
   return p;
 }
 
 /**
- * `drift practices promote` arguments after the subcommand: the variant, `--in <place>`, `--with <id>` for each other
- * way (in the person's order, once each, never the variant itself), `--block` when asked, `--dry-run` for a preview,
- * and `--json` always. A preview is always `--dry-run`: only the `promote` op writes.
+ * `drift practices promote` arguments after the subcommand, in the order Drift prints a candidate's command: the
+ * first way (or `--concern <id>` when no way is named), `--in <place>`, `--with <id>` for each other way (in the
+ * person's order, once each, never the first itself), `--mechanism` for each mechanism, `--any-enforcing`; then
+ * `--block`, `--force` (each only when asked), `--dry-run` for a preview, and `--json` always. A preview is always
+ * `--dry-run`: only the `promote` op writes. A request that names nothing to accept is refused here.
  */
 export function promoteFlags(a: PromoteArgs, dryRun: boolean): string[] {
   if (!a || typeof a !== "object" || !Array.isArray(a.with) || a.with.length > 50) throw new InvalidArgument("expected a promotion request");
-  const id = assertPracticeId(a.id);
+  const mechanisms = a.mechanisms ?? [];
+  if (!Array.isArray(mechanisms) || mechanisms.length > 20) throw new InvalidArgument("expected at most 20 mechanisms");
+  const ways = [...new Set([...(a.id === undefined ? [] : [assertPracticeId(a.id)]), ...a.with.map(assertPracticeId)])];
+  const concern = a.concern === undefined ? null : a.concern;
+  if (concern !== null && (typeof concern !== "string" || !CONCERN_ID.test(concern))) throw new InvalidArgument(`not a concern id: ${String(concern).slice(0, 20)}`);
+  for (const m of mechanisms) if (typeof m !== "string" || !MECHANISM.test(m)) throw new InvalidArgument(`not a mechanism: ${String(m).slice(0, 20)}`);
   const place = assertPlace(a.place);
-  const others = [...new Set(a.with.map(assertPracticeId))].filter((w) => w !== id);
-  return [id, "--in", place, ...others.flatMap((w) => ["--with", w]), ...(assertBool(a.block, "block") ? ["--block"] : []), ...(dryRun ? ["--dry-run"] : []), "--json"];
+  const [first, ...rest] = ways;
+  if (!first && concern === null) throw new InvalidArgument("a promotion names a variant or a concern");
+  const head = first ? [first] : ["--concern", concern as string];
+  return [
+    ...head,
+    "--in",
+    place,
+    ...rest.flatMap((w) => ["--with", w]),
+    ...[...new Set(mechanisms)].flatMap((m) => ["--mechanism", m]),
+    ...(a.any_enforcing !== undefined && assertBool(a.any_enforcing, "any_enforcing") ? ["--any-enforcing"] : []),
+    ...(assertBool(a.block, "block") ? ["--block"] : []),
+    ...(a.force !== undefined && assertBool(a.force, "force") ? ["--force"] : []),
+    ...(dryRun ? ["--dry-run"] : []),
+    "--json",
+  ];
 }
 
 /**

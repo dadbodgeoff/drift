@@ -7,7 +7,8 @@
    "practices": true,
    "map": true,
    "funnel": true,
-   "promoteList": true
+   "promoteList": true,
+   "promoteRuns": true
   },
   {
    "id": "beacon",

@@ -1,0 +1,6923 @@
+{
+ "//": "drift practices promote ... --json as the real binary answered it on fixtures/acme/sources (scripts/make-promote-fixtures.mjs). `after`: the writes made before the run; `args`: the argv after `promote`, as the Studio builds it.",
+ "runs": [
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-234880",
+     "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-234880",
+     "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": {
+     "recent": 15,
+     "followed": 14,
+     "readable": 98
+    },
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-234880` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-5c347c",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6af153",
+     "summary": "Sign-in in apps/api: decorated with AuthGuard",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-5c347c"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "members": 47
+      }
+     ],
+     "other_ways": [],
+     "follows": 47,
+     "exceptions": [
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false
+    },
+    "baselined": 2,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/api: decorated with AuthGuard in 47 of 49 entry points.\n  2 do not, and are recorded as they are (apps/api/src/releases/releases.controller.ts:8 GET /releases/:id, apps/api/src/releases/releases.controller.ts:13 POST /releases).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-5c347c --in apps/api --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-5c347c",
+    "--in",
+    "apps/api",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6af153",
+     "summary": "Sign-in in apps/api: decorated with AuthGuard",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-5c347c"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "members": 47
+      }
+     ],
+     "other_ways": [],
+     "follows": 47,
+     "exceptions": [
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false
+    },
+    "baselined": 2,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 49
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/api: decorated with AuthGuard in 47 of 49 entry points.\n  2 do not, and are recorded as they are (apps/api/src/releases/releases.controller.ts:8 GET /releases/:id, apps/api/src/releases/releases.controller.ts:13 POST /releases).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-6af153` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-cd2572",
+    "--in",
+    "apps/web/lib",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web/lib",
+    "convention": {
+     "id": "D-630b35",
+     "summary": "Validation in apps/web/lib: checked against a zod schema",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-cd2572"
+    },
+    "candidate": {
+     "concern": "validation",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "lib"
+     },
+     "ways": [
+      {
+       "id": "P-cd2572",
+       "key": "schema:zod",
+       "label": "schema zod",
+       "members": 18
+      }
+     ],
+     "other_ways": [],
+     "follows": 18,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 19,
+     "example": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "forced": false
+    },
+    "baselined": 1,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Validation in apps/web/lib: checked against a zod schema in 18 of 19 entry points.\n  1 does not, and is recorded as it is (apps/web/lib/actions/ban-customer.ts:5 banCustomer).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-cd2572 --in apps/web/lib --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-cd2572",
+    "--in",
+    "apps/web/lib",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web/lib",
+    "convention": {
+     "id": "D-630b35",
+     "summary": "Validation in apps/web/lib: checked against a zod schema",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-cd2572"
+    },
+    "candidate": {
+     "concern": "validation",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "lib"
+     },
+     "ways": [
+      {
+       "id": "P-cd2572",
+       "key": "schema:zod",
+       "label": "schema zod",
+       "members": 18
+      }
+     ],
+     "other_ways": [],
+     "follows": 18,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 19,
+     "example": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "forced": false
+    },
+    "baselined": 1,
+    "replay": {
+     "recent": 15,
+     "followed": 14,
+     "readable": 19
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Validation in apps/web/lib: checked against a zod schema in 18 of 19 entry points.\n  1 does not, and is recorded as it is (apps/web/lib/actions/ban-customer.ts:5 banCustomer).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-630b35` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-ec0957",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-d6d11f",
+     "summary": "Responses in apps/web: built with NextResponse.json",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-ec0957"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-ec0957",
+       "key": "builder:pkg:next#NextResponse.json",
+       "label": "builder NextResponse.json",
+       "members": 96
+      }
+     ],
+     "other_ways": [],
+     "follows": 96,
+     "exceptions": [],
+     "unknown": 1,
+     "total": 97,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/web: built with NextResponse.json in 96 of 97 entry points.\n  None does it another way.\n  1 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-ec0957 --in apps/web --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-ec0957",
+    "--in",
+    "apps/web",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-d6d11f",
+     "summary": "Responses in apps/web: built with NextResponse.json",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-ec0957"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-ec0957",
+       "key": "builder:pkg:next#NextResponse.json",
+       "label": "builder NextResponse.json",
+       "members": 96
+      }
+     ],
+     "other_ways": [],
+     "follows": 96,
+     "exceptions": [],
+     "unknown": 1,
+     "total": 97,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 0,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 96
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/web: built with NextResponse.json in 96 of 97 entry points.\n  None does it another way.\n  1 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-d6d11f` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-d65fba",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-925b83",
+     "summary": "Data access in apps/web: the handler queries @prisma/client itself",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-d65fba"
+    },
+    "candidate": {
+     "concern": "data_access",
+     "unit": "symbol",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-d65fba",
+       "key": "entry_direct:@prisma/client",
+       "label": "entry direct @prisma/client",
+       "members": 92
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-288461",
+       "key": "service:@prisma/client",
+       "label": "service @prisma/client",
+       "members": 1
+      }
+     ],
+     "follows": 92,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3
+      },
+      {
+       "path": "apps/web/lib/auth.ts",
+       "symbol": "withWorkspace",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 94,
+     "example": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "forced": false
+    },
+    "baselined": 2,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Data access in apps/web: the handler queries @prisma/client itself in 92 of 94 symbols.\n  2 do not, and are recorded as they are (apps/web/lib/analytics.ts:3 eventsFor, apps/web/lib/auth.ts:5 withWorkspace).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new symbol here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-d65fba --in apps/web --block` makes it fail one, when the 15 symbols added here most recently follow it.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-288461 through a service with @prisma/client: 1 symbol\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-d65fba",
+    "--in",
+    "apps/web",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-925b83",
+     "summary": "Data access in apps/web: the handler queries @prisma/client itself",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-d65fba"
+    },
+    "candidate": {
+     "concern": "data_access",
+     "unit": "symbol",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-d65fba",
+       "key": "entry_direct:@prisma/client",
+       "label": "entry direct @prisma/client",
+       "members": 92
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-288461",
+       "key": "service:@prisma/client",
+       "label": "service @prisma/client",
+       "members": 1
+      }
+     ],
+     "follows": 92,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3
+      },
+      {
+       "path": "apps/web/lib/auth.ts",
+       "symbol": "withWorkspace",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 94,
+     "example": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "forced": false
+    },
+    "baselined": 2,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 94
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Data access in apps/web: the handler queries @prisma/client itself in 92 of 94 symbols.\n  2 do not, and are recorded as they are (apps/web/lib/analytics.ts:3 eventsFor, apps/web/lib/auth.ts:5 withWorkspace).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new symbol here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-925b83` makes it advise.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-288461 through a service with @prisma/client: 1 symbol\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-7ed24a",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6cb078",
+     "summary": "Responses in apps/api: the value returned",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-7ed24a"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-7ed24a",
+       "key": "builder:return_value",
+       "label": "builder return_value",
+       "members": 49
+      }
+     ],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/api: the value returned in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-7ed24a --in apps/api --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-7ed24a",
+    "--in",
+    "apps/api",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6cb078",
+     "summary": "Responses in apps/api: the value returned",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-7ed24a"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-7ed24a",
+       "key": "builder:return_value",
+       "label": "builder return_value",
+       "members": 49
+      }
+     ],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false
+    },
+    "baselined": 0,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 49
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/api: the value returned in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-6cb078` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-6123b9",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-b9bfc0",
+     "summary": "Errors in apps/web: left to the framework",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-6123b9"
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-6123b9",
+       "key": "bubble:framework_default",
+       "label": "bubble framework_default",
+       "members": 116
+      }
+     ],
+     "other_ways": [],
+     "follows": 116,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/web: left to the framework in 116 of 116 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: advise (it never fails a check). `drift practices promote P-6123b9 --in apps/web --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-6123b9",
+    "--in",
+    "apps/web",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-b9bfc0",
+     "summary": "Errors in apps/web: left to the framework",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-6123b9"
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-6123b9",
+       "key": "bubble:framework_default",
+       "label": "bubble framework_default",
+       "members": 116
+      }
+     ],
+     "other_ways": [],
+     "follows": 116,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 116
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/web: left to the framework in 116 of 116 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: block (a new one fails the check). `drift review --advise D-b9bfc0` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-6123b9",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-97d7a2",
+     "summary": "Errors in apps/api: left to the framework",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-6123b9"
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-6123b9",
+       "key": "bubble:framework_default",
+       "label": "bubble framework_default",
+       "members": 49
+      }
+     ],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/api: left to the framework in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: advise (it never fails a check). `drift practices promote P-6123b9 --in apps/api --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-6123b9",
+    "--in",
+    "apps/api",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-97d7a2",
+     "summary": "Errors in apps/api: left to the framework",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-6123b9"
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-6123b9",
+       "key": "bubble:framework_default",
+       "label": "bubble framework_default",
+       "members": 49
+      }
+     ],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": {
+     "recent": 15,
+     "followed": 15,
+     "readable": 49
+    },
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/api: left to the framework in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: block (a new one fails the check). `drift review --advise D-97d7a2` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/api",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6af153",
+     "summary": "Sign-in in apps/api: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 0,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "members": 47
+      }
+     ],
+     "follows": 0,
+     "exceptions": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "POST /alerts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "POST /artifacts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "POST /audits",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "GET /billing/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "POST /billing",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "GET /comments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "POST /comments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "GET /deployments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "POST /deployments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "GET /environments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "POST /environments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "GET /files/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "POST /files",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "GET /invoices/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "POST /invoices",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "GET /labels/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "POST /labels",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "GET /milestones/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "POST /milestones",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "GET /notifications/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "POST /notifications",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "GET /pipelines/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "POST /pipelines",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "GET /projects/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "POST /projects",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "GET /quotas/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "POST /quotas",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/refunds/refunds.controller.ts",
+       "symbol": "GET /refunds/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "GET /regions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "POST /regions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "GET /reports/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "POST /reports",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "GET /secrets/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "POST /secrets",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "GET /sessions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "POST /sessions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "GET /teams/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "POST /teams",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "GET /tokens/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "POST /tokens",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "GET /users/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "POST /users",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "GET /webhooks/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "POST /webhooks",
+       "line": 15
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": null,
+     "forced": true
+    },
+    "baselined": 49,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/api: wrapped in withWorkspace, or wrapped in getSession in 0 of 49 entry points.\n  49 do not, and are recorded as they are (apps/api/src/alerts/alerts.controller.ts:10 GET /alerts/:id, apps/api/src/alerts/alerts.controller.ts:15 POST /alerts, apps/api/src/artifacts/artifacts.controller.ts:10 GET /artifacts/:id, and 46 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (0% of what Drift could read, where 80% is needed), so it never blocks.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-5c347c decorated with AuthGuard: 47 entry points\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-a94bf4",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-a94bf4",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-a94bf4 cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "decorator",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-b48938",
+     "summary": "Sign-in in apps/api: by any decorator",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 47,
+     "exceptions": [
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "mechanisms": [
+      "decorator"
+     ]
+    },
+    "baselined": 2,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/api: by any decorator in 47 of 49 entry points.\n  2 do not, and are recorded as they are (apps/api/src/releases/releases.controller.ts:8 GET /releases/:id, apps/api/src/releases/releases.controller.ts:13 POST /releases).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/api --mechanism decorator --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "opens",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "wrap",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-768619",
+     "summary": "Sign-in in apps/api: any way that turns an unsigned caller away",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 47,
+     "exceptions": [
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "any_enforcing": true
+    },
+    "baselined": 2,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/api: any way that turns an unsigned caller away in 47 of 49 entry points.\n  2 do not, and are recorded as they are (apps/api/src/releases/releases.controller.ts:8 GET /releases/:id, apps/api/src/releases/releases.controller.ts:13 POST /releases).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/api --any-enforcing --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-5c347c",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 0,
+     "read": 98
+    },
+    "message": "In apps/web, 0 of the 98 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-5c347c",
+    "--in",
+    "apps/web",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-234880",
+     "summary": "Sign-in in apps/web: decorated with AuthGuard",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-5c347c"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-5c347c",
+       "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+       "label": "decorator AuthGuard",
+       "members": 0
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-a64de4",
+       "key": "wrap:apps/web/lib/auth.ts#withWorkspace",
+       "label": "wrap withWorkspace",
+       "members": 70
+      },
+      {
+       "id": "P-9e1530",
+       "key": "wrap:apps/web/lib/auth.ts#getSession",
+       "label": "wrap getSession",
+       "members": 19
+      }
+     ],
+     "follows": 0,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/domains/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/emails/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/exports/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/flags/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/admin/impersonate/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/invoices/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/jobs/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/metrics/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/admin/payouts/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/plans/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/queues/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/refunds/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/sso/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/users/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/workspaces/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/export-all/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/link-count/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": null,
+     "forced": true,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 98,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: decorated with AuthGuard in 0 of 116 entry points.\n  98 do not, and are recorded as they are (apps/web/app/api/admin/abuse/route.ts:4 GET, apps/web/app/api/admin/audit/route.ts:4 GET, apps/web/app/api/admin/cache/route.ts:4 GET, and 95 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (0% of what Drift could read, where 80% is needed), so it never blocks.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-a64de4 wrapped in withWorkspace: 70 entry points\n  P-9e1530 wrapped in getSession: 19 entry points\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-a94bf4",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-a94bf4",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-a94bf4 cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "decorator",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 0,
+     "read": 98
+    },
+    "message": "In apps/web, 0 of the 98 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "opens",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 1,
+     "read": 98
+    },
+    "message": "In apps/web, 1 of the 98 Drift could read do it this way (1%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "wrap",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-d69bb8",
+     "summary": "Sign-in in apps/web: by any wrap",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "mechanisms": [
+      "wrap"
+     ],
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: by any wrap in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/web --mechanism wrap --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-c3740d",
+     "summary": "Sign-in in apps/web: any way that turns an unsigned caller away",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "any_enforcing": true,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: any way that turns an unsigned caller away in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/web --any-enforcing --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authz",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_unknown",
+     "place": "apps/api",
+     "unknown": 24,
+     "total": 47
+    },
+    "message": "In apps/api, Drift cannot tell how 24 of the 47 do it (51%, more than 20%): it cannot hold code to what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them. Drift read how the other 23 do it; --force does not lift this."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "authz",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_unknown",
+     "place": "apps/web",
+     "unknown": 107,
+     "total": 107
+    },
+    "message": "In apps/web, Drift cannot tell how 107 of the 107 do it (100%, more than 20%): it cannot hold code to what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them. Drift read how the other 0 do it; --force does not lift this."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "errors",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "bubble",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-2b2aa6",
+     "summary": "Errors in apps/api: by any bubble",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "mechanisms": [
+      "bubble"
+     ],
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/api: by any bubble in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: advise (it never fails a check). `drift practices promote --concern errors --in apps/api --mechanism bubble --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "errors",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "errors"
+    },
+    "message": "Drift has no reading of which ways enforce errors: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern errors --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "errors",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "bubble",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-badb35",
+     "summary": "Errors in apps/web: by any bubble",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "errors",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 116,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "mechanisms": [
+      "bubble"
+     ],
+     "passive": true
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Errors in apps/web: by any bubble in 116 of 116 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nThis is what code here does by doing nothing: new code follows it without trying, so the rule reports only code that does something else.\nMode: advise (it never fails a check). `drift practices promote --concern errors --in apps/web --mechanism bubble --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "errors",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "errors"
+    },
+    "message": "Drift has no reading of which ways enforce errors: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern errors --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-e8a7e2",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-e8a7e2",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-e8a7e2 cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "logging",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "message",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "logging",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "logging"
+    },
+    "message": "Drift has no reading of which ways enforce logging: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern logging --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-ec0957",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-ec0957",
+    "--in",
+    "apps/api",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-6cb078",
+     "summary": "Responses in apps/api: built with NextResponse.json",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-ec0957"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-ec0957",
+       "key": "builder:pkg:next#NextResponse.json",
+       "label": "builder NextResponse.json",
+       "members": 0
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-7ed24a",
+       "key": "builder:return_value",
+       "label": "builder return_value",
+       "members": 49
+      }
+     ],
+     "follows": 0,
+     "exceptions": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "POST /alerts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "POST /artifacts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "POST /audits",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "GET /billing/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "POST /billing",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "GET /comments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "POST /comments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "GET /deployments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "POST /deployments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "GET /environments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "POST /environments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "GET /files/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "POST /files",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "GET /invoices/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "POST /invoices",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "GET /labels/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "POST /labels",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "GET /milestones/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "POST /milestones",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "GET /notifications/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "POST /notifications",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "GET /pipelines/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "POST /pipelines",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "GET /projects/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "POST /projects",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "GET /quotas/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "POST /quotas",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/refunds/refunds.controller.ts",
+       "symbol": "GET /refunds/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "GET /regions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "POST /regions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "GET /reports/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "POST /reports",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "GET /secrets/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "POST /secrets",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "GET /sessions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "POST /sessions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "GET /teams/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "POST /teams",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "GET /tokens/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "POST /tokens",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "GET /users/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "POST /users",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "GET /webhooks/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "POST /webhooks",
+       "line": 15
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": null,
+     "forced": true
+    },
+    "baselined": 49,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/api: built with NextResponse.json in 0 of 49 entry points.\n  49 do not, and are recorded as they are (apps/api/src/alerts/alerts.controller.ts:10 GET /alerts/:id, apps/api/src/alerts/alerts.controller.ts:15 POST /alerts, apps/api/src/artifacts/artifacts.controller.ts:10 GET /artifacts/:id, and 46 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (0% of what Drift could read, where 80% is needed), so it never blocks.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-7ed24a the value returned: 49 entry points\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "api",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "builder",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-e75941",
+     "summary": "Responses in apps/api: by any builder",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 49,
+     "exceptions": [],
+     "unknown": 0,
+     "total": 49,
+     "example": {
+      "path": "apps/api/src/alerts/alerts.controller.ts",
+      "symbol": "GET /alerts/:id",
+      "line": 10
+     },
+     "forced": false,
+     "mechanisms": [
+      "builder"
+     ]
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/api: by any builder in 49 of 49 entry points.\n  None does it another way.\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern api --in apps/api --mechanism builder --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "api",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "api"
+    },
+    "message": "Drift has no reading of which ways enforce responses: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern api --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-7ed24a",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 0,
+     "read": 96
+    },
+    "message": "In apps/web, 0 of the 96 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-7ed24a",
+    "--in",
+    "apps/web",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-d6d11f",
+     "summary": "Responses in apps/web: the value returned",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-7ed24a"
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-7ed24a",
+       "key": "builder:return_value",
+       "label": "builder return_value",
+       "members": 0
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-ec0957",
+       "key": "builder:pkg:next#NextResponse.json",
+       "label": "builder NextResponse.json",
+       "members": 96
+      }
+     ],
+     "follows": 0,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/abuse/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/audit/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/cache/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/domains/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/emails/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/exports/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/flags/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/admin/impersonate/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/invoices/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/jobs/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/metrics/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/admin/payouts/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/plans/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/queues/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/refunds/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/sso/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/users/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/admin/workspaces/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/export-all/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/link-count/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "POST",
+       "line": 10
+      }
+     ],
+     "unknown": 1,
+     "total": 97,
+     "example": null,
+     "forced": true
+    },
+    "baselined": 96,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/web: the value returned in 0 of 97 entry points.\n  96 do not, and are recorded as they are (apps/web/app/api/admin/abuse/route.ts:4 GET, apps/web/app/api/admin/audit/route.ts:4 GET, apps/web/app/api/admin/cache/route.ts:4 GET, and 93 more).\n  1 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (0% of what Drift could read, where 80% is needed), so it never blocks.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-ec0957 built with NextResponse.json: 96 entry points\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "api",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "builder",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-b437d0",
+     "summary": "Responses in apps/web: by any builder",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "api",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 96,
+     "exceptions": [],
+     "unknown": 1,
+     "total": 97,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "mechanisms": [
+      "builder"
+     ]
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Responses in apps/web: by any builder in 96 of 97 entry points.\n  None does it another way.\n  1 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern api --in apps/web --mechanism builder --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "api",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "api"
+    },
+    "message": "Drift has no reading of which ways enforce responses: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern api --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-cd2572",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-cd2572",
+    "--in",
+    "apps/api",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/api",
+    "convention": {
+     "id": "D-c4dd35",
+     "summary": "Validation in apps/api: checked against a zod schema",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-cd2572"
+    },
+    "candidate": {
+     "concern": "validation",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/api",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-cd2572",
+       "key": "schema:zod",
+       "label": "schema zod",
+       "members": 0
+      }
+     ],
+     "other_ways": [],
+     "follows": 0,
+     "exceptions": [
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "GET /alerts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/alerts/alerts.controller.ts",
+       "symbol": "POST /alerts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "GET /artifacts/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/artifacts/artifacts.controller.ts",
+       "symbol": "POST /artifacts",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "GET /audits/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/audits/audits.controller.ts",
+       "symbol": "POST /audits",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "GET /billing/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/billing/billing.controller.ts",
+       "symbol": "POST /billing",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "GET /comments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/comments/comments.controller.ts",
+       "symbol": "POST /comments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "GET /deployments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/deployments/deployments.controller.ts",
+       "symbol": "POST /deployments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "GET /environments/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/environments/environments.controller.ts",
+       "symbol": "POST /environments",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "GET /files/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/files/files.controller.ts",
+       "symbol": "POST /files",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "GET /invoices/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/invoices/invoices.controller.ts",
+       "symbol": "POST /invoices",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "GET /labels/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/labels/labels.controller.ts",
+       "symbol": "POST /labels",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "GET /milestones/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/milestones/milestones.controller.ts",
+       "symbol": "POST /milestones",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "GET /notifications/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/notifications/notifications.controller.ts",
+       "symbol": "POST /notifications",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "GET /pipelines/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/pipelines/pipelines.controller.ts",
+       "symbol": "POST /pipelines",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "GET /projects/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/projects/projects.controller.ts",
+       "symbol": "POST /projects",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "GET /quotas/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/quotas/quotas.controller.ts",
+       "symbol": "POST /quotas",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/refunds/refunds.controller.ts",
+       "symbol": "GET /refunds/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "GET /regions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/regions/regions.controller.ts",
+       "symbol": "POST /regions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "GET /releases/:id",
+       "line": 8
+      },
+      {
+       "path": "apps/api/src/releases/releases.controller.ts",
+       "symbol": "POST /releases",
+       "line": 13
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "GET /reports/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/reports/reports.controller.ts",
+       "symbol": "POST /reports",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "GET /secrets/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/secrets/secrets.controller.ts",
+       "symbol": "POST /secrets",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "GET /sessions/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/sessions/sessions.controller.ts",
+       "symbol": "POST /sessions",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "GET /teams/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/teams/teams.controller.ts",
+       "symbol": "POST /teams",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "GET /tokens/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/tokens/tokens.controller.ts",
+       "symbol": "POST /tokens",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "GET /users/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/users/users.controller.ts",
+       "symbol": "POST /users",
+       "line": 15
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "GET /webhooks/:id",
+       "line": 10
+      },
+      {
+       "path": "apps/api/src/webhooks/webhooks.controller.ts",
+       "symbol": "POST /webhooks",
+       "line": 15
+      }
+     ],
+     "unknown": 0,
+     "total": 49,
+     "example": null,
+     "forced": true
+    },
+    "baselined": 49,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Validation in apps/api: checked against a zod schema in 0 of 49 entry points.\n  49 do not, and are recorded as they are (apps/api/src/alerts/alerts.controller.ts:10 GET /alerts/:id, apps/api/src/alerts/alerts.controller.ts:15 POST /alerts, apps/api/src/artifacts/artifacts.controller.ts:10 GET /artifacts/:id, and 46 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (0% of what Drift could read, where 80% is needed), so it never blocks.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "schema",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/api",
+     "follows": 0,
+     "read": 49
+    },
+    "message": "In apps/api, 0 of the 49 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "validation"
+    },
+    "message": "Drift has no reading of which ways enforce validation: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern validation --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-cd2572",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_unknown",
+     "place": "apps/web",
+     "unknown": 88,
+     "total": 113
+    },
+    "message": "In apps/web, Drift cannot tell how 88 of the 113 do it (77%, more than 20%): it cannot hold code to what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them. Drift read how the other 25 do it; --force does not lift this."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "schema",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_unknown",
+     "place": "apps/web",
+     "unknown": 88,
+     "total": 113
+    },
+    "message": "In apps/web, Drift cannot tell how 88 of the 113 do it (77%, more than 20%): it cannot hold code to what it cannot read. `drift practices --hints` prints the .drift/config.yaml lines that would let Drift read them. Drift read how the other 25 do it; --force does not lift this."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "validation"
+    },
+    "message": "Drift has no reading of which ways enforce validation: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern validation --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/web/lib",
+    "--mechanism",
+    "schema",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web/lib",
+    "convention": {
+     "id": "D-7b4e91",
+     "summary": "Validation in apps/web/lib: by any schema",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "validation",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "lib"
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 18,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 19,
+     "example": {
+      "path": "apps/web/lib/actions/archive-link.ts",
+      "symbol": "archiveLinkAction",
+      "line": 7
+     },
+     "forced": false,
+     "mechanisms": [
+      "schema"
+     ]
+    },
+    "baselined": 1,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Validation in apps/web/lib: by any schema in 18 of 19 entry points.\n  1 does not, and is recorded as it is (apps/web/lib/actions/ban-customer.ts:5 banCustomer).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern validation --in apps/web/lib --mechanism schema --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "validation",
+    "--in",
+    "apps/web/lib",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "validation"
+    },
+    "message": "Drift has no reading of which ways enforce validation: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern validation --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-4514b9",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-4514b9",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-4514b9 cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "config",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "in_place",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/web",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/web, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "config",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "secret_client",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/web",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/web, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "config",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "config"
+    },
+    "message": "Drift has no reading of which ways enforce configuration: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern config --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-d65fba",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-288461",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-e2533f",
+    "--in",
+    "apps/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-e2533f",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-e2533f cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "entry_direct",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "repository",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/api",
+    "--mechanism",
+    "service",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/api",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/api, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "data_access"
+    },
+    "message": "Drift has no reading of which ways enforce data access: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern data_access --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-288461",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 1,
+     "read": 94
+    },
+    "message": "In apps/web, 1 of the 94 Drift could read do it this way (1%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-288461",
+    "--in",
+    "apps/web",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-925b83",
+     "summary": "Data access in apps/web: through a service with @prisma/client",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-288461"
+    },
+    "candidate": {
+     "concern": "data_access",
+     "unit": "symbol",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-288461",
+       "key": "service:@prisma/client",
+       "label": "service @prisma/client",
+       "members": 1
+      }
+     ],
+     "other_ways": [
+      {
+       "id": "P-d65fba",
+       "key": "entry_direct:@prisma/client",
+       "label": "entry direct @prisma/client",
+       "members": 92
+      }
+     ],
+     "follows": 1,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/audit/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/billing/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/branding/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/budgets/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/campaigns/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/channels/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/customers/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/devices/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/domains/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/events/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/export-all/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/exports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/files/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/folders/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/imports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/integrations/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/keys/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/limits/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/link-count/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/links/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/members/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/notes/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/projects/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/quotas/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/reports/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/roles/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/rules/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/segments/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/sessions/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/settings/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tags/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/teams/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/tokens/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/usage/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/webhooks/route.ts",
+       "symbol": "POST",
+       "line": 10
+      },
+      {
+       "path": "apps/web/lib/actions/archive-link.ts",
+       "symbol": "archiveLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      },
+      {
+       "path": "apps/web/lib/actions/cancel-plan.ts",
+       "symbol": "cancelPlanAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-campaign.ts",
+       "symbol": "createCampaignAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-folder.ts",
+       "symbol": "createFolderAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-link.ts",
+       "symbol": "createLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-tag.ts",
+       "symbol": "createTagAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/create-webhook.ts",
+       "symbol": "createWebhookAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/delete-link.ts",
+       "symbol": "deleteLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/export-events.ts",
+       "symbol": "exportEventsAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/invite-member.ts",
+       "symbol": "inviteMemberAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/move-folder.ts",
+       "symbol": "moveFolderAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/pause-campaign.ts",
+       "symbol": "pauseCampaignAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/remove-member.ts",
+       "symbol": "removeMemberAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/rename-tag.ts",
+       "symbol": "renameTagAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/rotate-token.ts",
+       "symbol": "rotateTokenAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/update-billing.ts",
+       "symbol": "updateBillingAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/update-branding.ts",
+       "symbol": "updateBrandingAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/actions/update-link.ts",
+       "symbol": "updateLinkAction",
+       "line": 7
+      },
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3
+      }
+     ],
+     "unknown": 0,
+     "total": 94,
+     "example": {
+      "path": "apps/web/lib/auth.ts",
+      "symbol": "withWorkspace",
+      "line": 5
+     },
+     "forced": true
+    },
+    "baselined": 93,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Data access in apps/web: through a service with @prisma/client in 1 of 94 symbols.\n  93 do not, and are recorded as they are (apps/web/app/api/workspaces/[id]/alerts/route.ts:5 GET, apps/web/app/api/workspaces/[id]/alerts/route.ts:10 POST, apps/web/app/api/workspaces/[id]/archive-all/route.ts:4 GET, and 90 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new symbol here that does it another way, or not at all.\nMode: advise (it never fails a check). It is promoted below the usual share on your word (1% of what Drift could read, where 80% is needed), so it never blocks.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-d65fba the handler queries @prisma/client itself: 92 symbols\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-e2533f",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-e2533f",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-e2533f cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "entry_direct",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-ccaf07",
+     "summary": "Data access in apps/web: by any entry direct",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "data_access",
+     "unit": "symbol",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [
+      {
+       "id": "P-288461",
+       "key": "service:@prisma/client",
+       "label": "service @prisma/client",
+       "members": 1
+      }
+     ],
+     "follows": 92,
+     "exceptions": [
+      {
+       "path": "apps/web/lib/analytics.ts",
+       "symbol": "eventsFor",
+       "line": 3
+      },
+      {
+       "path": "apps/web/lib/auth.ts",
+       "symbol": "withWorkspace",
+       "line": 5
+      }
+     ],
+     "unknown": 0,
+     "total": 94,
+     "example": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "forced": false,
+     "mechanisms": [
+      "entry_direct"
+     ]
+    },
+    "baselined": 2,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [],
+    "preview": "Data access in apps/web: by any entry direct in 92 of 94 symbols.\n  2 do not, and are recorded as they are (apps/web/lib/analytics.ts:3 eventsFor, apps/web/lib/auth.ts:5 withWorkspace).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new symbol here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern data_access --in apps/web --mechanism entry_direct --block` makes it fail one, when the 15 symbols added here most recently follow it.\nOther ways code here uses, none of them accepted unless you name it with `--with <id>`:\n  P-288461 through a service with @prisma/client: 1 symbol\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "repository",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 0,
+     "read": 94
+    },
+    "message": "In apps/web, 0 of the 94 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "service",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 2,
+     "read": 94
+    },
+    "message": "In apps/web, 2 of the 94 Drift could read do it this way (2%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "data_access"
+    },
+    "message": "Drift has no reading of which ways enforce data access: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern data_access --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-d65fba",
+    "--in",
+    "packages/db",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "packages/db",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In packages/db, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-288461",
+    "--in",
+    "packages/db",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "packages/db",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In packages/db, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-e2533f",
+    "--in",
+    "packages/db",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "not_a_way",
+     "id": "P-e2533f",
+     "why": "it stands for the ways one unit each uses, not for one way"
+    },
+    "message": "P-e2533f cannot be promoted: it stands for the ways one unit each uses, not for one way."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "packages/db",
+    "--mechanism",
+    "entry_direct",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "packages/db",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In packages/db, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "packages/db",
+    "--mechanism",
+    "repository",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "packages/db",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In packages/db, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "packages/db",
+    "--mechanism",
+    "service",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "packages/db",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In packages/db, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "data_access",
+    "--in",
+    "packages/db",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "data_access"
+    },
+    "message": "Drift has no reading of which ways enforce data access: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern data_access --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "testing",
+    "--in",
+    "apps/api",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "testing"
+    },
+    "message": "Drift has no reading of which ways enforce testing: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern testing --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "--concern",
+    "testing",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "no_enforcing",
+     "concern": "testing"
+    },
+    "message": "Drift has no reading of which ways enforce testing: name its ways instead. Drift has that reading for authn, authz (`--concern <id> --any-enforcing`). For this one, name its ways (`drift practices --concern testing --all` lists them) or a mechanism (`--mechanism <name>`)."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web/app/api/admin/abuse/route.ts",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_small",
+     "place": "apps/web/app/api/admin/abuse/route.ts",
+     "units": 1,
+     "min": 8
+    },
+    "message": "In apps/web/app/api/admin/abuse/route.ts, Drift could read how this is done once; a practice is promoted only where it could at least 8 times."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api",
+    "convention": {
+     "id": "D-fa3700",
+     "summary": "Sign-in in the routes under /api of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "unknown": 0,
+     "total": 97,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 8,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api of apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 97 entry points.\n  8 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 5 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web:/api --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api",
+    "convention": {
+     "id": "D-fa3700",
+     "summary": "Sign-in in the routes under /api of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "unknown": 0,
+     "total": 97,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 8,
+    "replay": {
+     "recent": 15,
+     "followed": 14,
+     "readable": 97
+    },
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api of apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 97 entry points.\n  8 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 5 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-fa3700` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/workspaces",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api/workspaces",
+    "convention": {
+     "id": "D-b72f03",
+     "summary": "Sign-in in the routes under /api/workspaces of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api/workspaces"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 70,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 70,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "unknown": 0,
+     "total": 74,
+     "example": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "forced": false
+    },
+    "baselined": 4,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api/workspaces of apps/web: wrapped in withWorkspace, or wrapped in getSession in 70 of 74 entry points.\n  4 do not, and are recorded as they are (apps/web/app/api/workspaces/[id]/archive-all/route.ts:4 GET, apps/web/app/api/workspaces/[id]/invites/route.ts:4 GET, apps/web/app/api/workspaces/[id]/ping/route.ts:5 GET, and 1 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web:/api/workspaces --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/workspaces",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api/workspaces",
+    "convention": {
+     "id": "D-b72f03",
+     "summary": "Sign-in in the routes under /api/workspaces of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api/workspaces"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 70,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 70,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      }
+     ],
+     "unknown": 0,
+     "total": 74,
+     "example": {
+      "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+      "symbol": "GET",
+      "line": 5
+     },
+     "forced": false
+    },
+    "baselined": 4,
+    "replay": {
+     "recent": 15,
+     "followed": 14,
+     "readable": 74
+    },
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api/workspaces of apps/web: wrapped in withWorkspace, or wrapped in getSession in 70 of 74 entry points.\n  4 do not, and are recorded as they are (apps/web/app/api/workspaces/[id]/archive-all/route.ts:4 GET, apps/web/app/api/workspaces/[id]/invites/route.ts:4 GET, apps/web/app/api/workspaces/[id]/ping/route.ts:5 GET, and 1 more).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-b72f03` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/admin",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api/admin",
+    "convention": {
+     "id": "D-b7841b",
+     "summary": "Sign-in in the routes under /api/admin of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api/admin"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 19,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 19,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      }
+     ],
+     "unknown": 0,
+     "total": 20,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 1,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api/admin of apps/web: wrapped in withWorkspace, or wrapped in getSession in 19 of 20 entry points.\n  1 does not, and is recorded as it is (apps/web/app/api/admin/health/route.ts:3 GET).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web:/api/admin --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/admin",
+    "--block",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web:/api/admin",
+    "convention": {
+     "id": "D-b7841b",
+     "summary": "Sign-in in the routes under /api/admin of apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "block",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": "",
+      "route": "/api/admin"
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 19,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 19,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      }
+     ],
+     "unknown": 0,
+     "total": 20,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false
+    },
+    "baselined": 1,
+    "replay": {
+     "recent": 15,
+     "followed": 14,
+     "readable": 20
+    },
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in the routes under /api/admin of apps/web: wrapped in withWorkspace, or wrapped in getSession in 19 of 20 entry points.\n  1 does not, and is recorded as it is (apps/web/app/api/admin/health/route.ts:3 GET).\n  0 could not be read; those are never reported.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: block (a new one fails the check). `drift review --advise D-b7841b` makes it advise.\n"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--block",
+    "--force",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "block_forced"
+    },
+    "message": "--block and --force do not go together: a practice promoted below the share (--force) advises only and never blocks; nothing was written"
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--with",
+    "P-6123b9",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "other_concern",
+     "id": "P-6123b9",
+     "concern": "errors"
+    },
+    "message": "P-6123b9 is a way of errors, not of the practice being promoted: `--with` adds a way of the same concern."
+   }
+  },
+  {
+   "after": [],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": true,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-234880",
+     "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "--list",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "candidates": [
+     {
+      "place": "apps/api",
+      "command": "drift practices promote P-5c347c --in apps/api",
+      "departures": 2,
+      "candidate": {
+       "concern": "authn",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/api",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-5c347c",
+         "key": "decorator:apps/api/src/common/auth.guard.ts#AuthGuard",
+         "label": "decorator AuthGuard",
+         "members": 47
+        }
+       ],
+       "other_ways": [],
+       "follows": 47,
+       "exceptions": [
+        {
+         "path": "apps/api/src/releases/releases.controller.ts",
+         "symbol": "GET /releases/:id",
+         "line": 8
+        },
+        {
+         "path": "apps/api/src/releases/releases.controller.ts",
+         "symbol": "POST /releases",
+         "line": 13
+        }
+       ],
+       "unknown": 0,
+       "total": 49,
+       "example": {
+        "path": "apps/api/src/alerts/alerts.controller.ts",
+        "symbol": "GET /alerts/:id",
+        "line": 10
+       },
+       "forced": false
+      }
+     },
+     {
+      "place": "apps/web/lib",
+      "command": "drift practices promote P-cd2572 --in apps/web/lib",
+      "departures": 1,
+      "candidate": {
+       "concern": "validation",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/web",
+        "dir": "lib"
+       },
+       "ways": [
+        {
+         "id": "P-cd2572",
+         "key": "schema:zod",
+         "label": "schema zod",
+         "members": 18
+        }
+       ],
+       "other_ways": [],
+       "follows": 18,
+       "exceptions": [
+        {
+         "path": "apps/web/lib/actions/ban-customer.ts",
+         "symbol": "banCustomer",
+         "line": 5
+        }
+       ],
+       "unknown": 0,
+       "total": 19,
+       "example": {
+        "path": "apps/web/lib/actions/archive-link.ts",
+        "symbol": "archiveLinkAction",
+        "line": 7
+       },
+       "forced": false
+      }
+     },
+     {
+      "place": "apps/web",
+      "command": "drift practices promote P-ec0957 --in apps/web",
+      "departures": 0,
+      "candidate": {
+       "concern": "api",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/web",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-ec0957",
+         "key": "builder:pkg:next#NextResponse.json",
+         "label": "builder NextResponse.json",
+         "members": 96
+        }
+       ],
+       "other_ways": [],
+       "follows": 96,
+       "exceptions": [],
+       "unknown": 1,
+       "total": 97,
+       "example": {
+        "path": "apps/web/app/api/admin/abuse/route.ts",
+        "symbol": "GET",
+        "line": 4
+       },
+       "forced": false
+      }
+     },
+     {
+      "place": "apps/web",
+      "command": "drift practices promote P-d65fba --in apps/web",
+      "departures": 0,
+      "candidate": {
+       "concern": "data_access",
+       "unit": "symbol",
+       "place": {
+        "package": "apps/web",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-d65fba",
+         "key": "entry_direct:@prisma/client",
+         "label": "entry direct @prisma/client",
+         "members": 92
+        }
+       ],
+       "other_ways": [
+        {
+         "id": "P-288461",
+         "key": "service:@prisma/client",
+         "label": "service @prisma/client",
+         "members": 1
+        }
+       ],
+       "follows": 92,
+       "exceptions": [
+        {
+         "path": "apps/web/lib/analytics.ts",
+         "symbol": "eventsFor",
+         "line": 3
+        },
+        {
+         "path": "apps/web/lib/auth.ts",
+         "symbol": "withWorkspace",
+         "line": 5
+        }
+       ],
+       "unknown": 0,
+       "total": 94,
+       "example": {
+        "path": "apps/web/app/api/workspaces/[id]/alerts/route.ts",
+        "symbol": "GET",
+        "line": 5
+       },
+       "forced": false
+      }
+     },
+     {
+      "place": "apps/api",
+      "command": "drift practices promote P-7ed24a --in apps/api",
+      "departures": 0,
+      "candidate": {
+       "concern": "api",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/api",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-7ed24a",
+         "key": "builder:return_value",
+         "label": "builder return_value",
+         "members": 49
+        }
+       ],
+       "other_ways": [],
+       "follows": 49,
+       "exceptions": [],
+       "unknown": 0,
+       "total": 49,
+       "example": {
+        "path": "apps/api/src/alerts/alerts.controller.ts",
+        "symbol": "GET /alerts/:id",
+        "line": 10
+       },
+       "forced": false
+      }
+     }
+    ],
+    "passive": [
+     {
+      "place": "apps/web",
+      "command": "drift practices promote P-6123b9 --in apps/web",
+      "departures": 0,
+      "candidate": {
+       "concern": "errors",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/web",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-6123b9",
+         "key": "bubble:framework_default",
+         "label": "bubble framework_default",
+         "members": 116
+        }
+       ],
+       "other_ways": [],
+       "follows": 116,
+       "exceptions": [],
+       "unknown": 0,
+       "total": 116,
+       "example": {
+        "path": "apps/web/app/api/admin/abuse/route.ts",
+        "symbol": "GET",
+        "line": 4
+       },
+       "forced": false,
+       "passive": true
+      }
+     },
+     {
+      "place": "apps/api",
+      "command": "drift practices promote P-6123b9 --in apps/api",
+      "departures": 0,
+      "candidate": {
+       "concern": "errors",
+       "unit": "entry_point",
+       "place": {
+        "package": "apps/api",
+        "dir": ""
+       },
+       "ways": [
+        {
+         "id": "P-6123b9",
+         "key": "bubble:framework_default",
+         "label": "bubble framework_default",
+         "members": 49
+        }
+       ],
+       "other_ways": [],
+       "follows": 49,
+       "exceptions": [],
+       "unknown": 0,
+       "total": 49,
+       "example": {
+        "path": "apps/api/src/alerts/alerts.controller.ts",
+        "symbol": "GET /alerts/:id",
+        "line": 10
+       },
+       "forced": false,
+       "passive": true
+      }
+     }
+    ],
+    "declined": 0,
+    "promoted": [
+     "D-234880"
+    ]
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-234880",
+     "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": "P-9ece30"
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [
+      {
+       "id": "P-9ece30",
+       "key": "any_of(wrap:apps/web/lib/auth.ts#getSession|wrap:apps/web/lib/auth.ts#withWorkspace)",
+       "label": "wrap withWorkspace, or wrap getSession",
+       "members": 89,
+       "alternatives": [
+        "wrap:apps/web/lib/auth.ts#getSession",
+        "wrap:apps/web/lib/auth.ts#withWorkspace"
+       ]
+      }
+     ],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 0,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [
+     "D-b0d245",
+     "D-ed1ec0"
+    ],
+    "replaces": [],
+    "preview": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote P-9ece30 --in apps/web --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "decorator",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 0,
+     "read": 98
+    },
+    "message": "In apps/web, 0 of the 98 Drift could read do it this way (0%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "opens",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "below_share",
+     "place": "apps/web",
+     "follows": 1,
+     "read": 98
+    },
+    "message": "In apps/web, 1 of the 98 Drift could read do it this way (1%), below the 80% a practice needs. `--force` promotes it all the same, in advise mode only (it never blocks)."
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--mechanism",
+    "wrap",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-d69bb8",
+     "summary": "Sign-in in apps/web: by any wrap",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "mechanisms": [
+      "wrap"
+     ],
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [
+     {
+      "id": "D-234880",
+      "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+      "narrowed": []
+     }
+    ],
+    "preview": "Sign-in in apps/web: by any wrap in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/web --mechanism wrap --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "--concern",
+    "authn",
+    "--in",
+    "apps/web",
+    "--any-enforcing",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 0,
+   "out": {
+    "written": false,
+    "place": "apps/web",
+    "convention": {
+     "id": "D-c3740d",
+     "summary": "Sign-in in apps/web: any way that turns an unsigned caller away",
+     "status": "accepted",
+     "mode": "advise",
+     "promoted_from_practice": null
+    },
+    "candidate": {
+     "concern": "authn",
+     "unit": "entry_point",
+     "place": {
+      "package": "apps/web",
+      "dir": ""
+     },
+     "ways": [],
+     "other_ways": [],
+     "follows": 89,
+     "exceptions": [
+      {
+       "path": "apps/web/app/api/admin/health/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/oauth/callback/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/public/preview/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/public/status/route.ts",
+       "symbol": "GET",
+       "line": 3
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/archive-all/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/invites/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/ping/route.ts",
+       "symbol": "GET",
+       "line": 5
+      },
+      {
+       "path": "apps/web/app/api/workspaces/[id]/regions/route.ts",
+       "symbol": "GET",
+       "line": 4
+      },
+      {
+       "path": "apps/web/lib/actions/ban-customer.ts",
+       "symbol": "banCustomer",
+       "line": 5
+      }
+     ],
+     "unknown": 18,
+     "total": 116,
+     "example": {
+      "path": "apps/web/app/api/admin/abuse/route.ts",
+      "symbol": "GET",
+      "line": 4
+     },
+     "forced": false,
+     "any_enforcing": true,
+     "unknown_cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "baselined": 9,
+    "replay": null,
+    "block_dropped": null,
+    "same_way": [],
+    "replaces": [
+     {
+      "id": "D-234880",
+      "summary": "Sign-in in apps/web: wrapped in withWorkspace, or wrapped in getSession",
+      "narrowed": []
+     }
+    ],
+    "preview": "Sign-in in apps/web: any way that turns an unsigned caller away in 89 of 116 entry points.\n  9 do not, and are recorded as they are (apps/web/app/api/admin/health/route.ts:3 GET, apps/web/app/api/oauth/callback/route.ts:3 GET, apps/web/app/api/public/preview/route.ts:4 GET, and 6 more).\n  18 could not be read; those are never reported.\n  All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`.\nFrom now on `drift check` reports a new entry point here that does it another way, or not at all.\nMode: advise (it never fails a check). `drift practices promote --concern authn --in apps/web --any-enforcing --block` makes it fail one, when the 15 entry points added here most recently follow it.\n"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "covered"
+    },
+    "message": "D-234880 already holds sign-in to a practice in a place that overlaps apps/web:/api: `drift review --reject D-234880` drops it first; nothing was written"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/workspaces",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "covered"
+    },
+    "message": "D-234880 already holds sign-in to a practice in a place that overlaps apps/web:/api/workspaces: `drift review --reject D-234880` drops it first; nothing was written"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "P-9ece30",
+    "--in",
+    "apps/web:/api/admin",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "covered"
+    },
+    "message": "D-234880 already holds sign-in to a practice in a place that overlaps apps/web:/api/admin: `drift review --reject D-234880` drops it first; nothing was written"
+   }
+  },
+  {
+   "after": [
+    [
+     "P-9ece30",
+     "--in",
+     "apps/web",
+     "--json"
+    ]
+   ],
+   "args": [
+    "P-5c347c",
+    "--in",
+    "apps/web/lib",
+    "--dry-run",
+    "--json"
+   ],
+   "exit": 2,
+   "out": {
+    "refused": {
+     "code": "too_unknown",
+     "place": "apps/web/lib",
+     "unknown": 18,
+     "total": 19,
+     "cause": {
+      "reason": "unresolved",
+      "instrument": "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action",
+      "units": 18,
+      "hint": "practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}"
+     }
+    },
+    "message": "In apps/web/lib, Drift cannot tell how 18 of the 19 do it (94%, more than 20%): it cannot hold code to what it cannot read. All 18 are unknown for one cause outside them: a name that does not resolve (`apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action`). This line in .drift/config.yaml would let Drift read it: `practices: {authn: {\"apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action\": \"authActionClient.inputSchema().action\"}}`. Drift read how the other 1 do it; --force does not lift this."
+   }
+  }
+ ]
+}

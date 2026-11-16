@@ -6,7 +6,7 @@
 import { parseDocument } from "yaml";
 import type { AbRow, Census, CensusWhy, CheckReport, Convention, Inventory, MapPackage, PracticesReport, PromoteList, PromoteOutcome, RepoFacts, ReviewQuestion, ReviewQuestions, SecurityDiff, SessionState } from "@/shared/contract/drift";
 import type { History, LogEntry, PromoteRequest, RepoRef, SessionSummary, Snapshot } from "@/shared/ipc/contract";
-import { fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand } from "@/shared/lib/promote";
+import { type RecordedRun, fixtureConvention, fixtureListOpen, fixturePromote, isRefused, promoteCommand, promoteFlags, recordedRun } from "@/shared/lib/promote";
 import { answerCommand, exemptCommand, reviewCommand } from "@/shared/lib/review";
 import { baselineCommand } from "@/shared/lib/baseline";
 import { answerPlan } from "@/shared/lib/questions";
@@ -21,8 +21,9 @@ interface Index {
    * `funnel`: funnel.json (`drift census --why --json`); `promoteList`: promote-list.json (`drift practices promote --list --json`).
    * `securityTop`: security-top.json (`drift security --top 0 --json`); `baseline`: security-baseline.json (what
    * `drift security --write-baseline` printed and wrote on a copy of the repository, make-harbor-fixtures.mjs).
+   * `promoteRuns`: promote-runs.json, what `drift practices promote ... --json` answered run after run (make-promote-fixtures.mjs).
    */
-  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean; securityTop?: boolean; baseline?: boolean }[];
+  repos: { id: string; path: string; name: string; local?: boolean; errors?: boolean; practices?: boolean; map?: boolean; funnel?: boolean; promoteList?: boolean; securityTop?: boolean; baseline?: boolean; promoteRuns?: boolean }[];
   sessions: { id: string; project: string; title: string; bytes: number; modified: number; hasState: boolean }[];
   studies: { census: string[]; ab: string[]; runs?: string[]; variants?: { path: string; variant: string }[] };
 }
@@ -48,6 +49,8 @@ export class FixtureApi implements StudioApi {
   private promoted = new Map<string, Map<string, Convention>>();
   /** This tab's security baseline per repo: the `.drift/security.lock` text `drift security --write-baseline` wrote. */
   private baselines = new Map<string, string>();
+  /** This tab's promotions per repo that the real binary was recorded making: each one's argv, in order (`promote-runs.json` `after`). */
+  private writes = new Map<string, string[][]>();
   private idx: Promise<Index> | null = null;
   private logBuf: LogEntry[] = [];
 
@@ -246,6 +249,10 @@ export class FixtureApi implements StudioApi {
   async promoteList(repo: RepoRef): Promise<Loaded<PromoteList>> {
     const r = (await this.index()).repos.find((x) => x.path === repo.path);
     if (!r?.promoteList) throw new Error(`drift practices promote --list failed: fixture mode has no promote-list.json for ${repo.name}`);
+    // After a promotion the real binary was recorded making, the list it printed then.
+    const after = this.writes.get(repo.path) ?? [];
+    const recorded = after.length ? recordedRun(await this.runs(repo), after, ["--list", "--json"]) : null;
+    if (recorded) return this.wait(this.loaded(recorded as PromoteList, false));
     const list = await this.json<PromoteList>(`${await this.dir(repo)}/promote-list.json`);
     return this.wait(this.loaded(fixtureListOpen(list, [...(this.promoted.get(repo.path)?.keys() ?? [])]), false));
   }
@@ -322,6 +329,30 @@ export class FixtureApi implements StudioApi {
       return 0;
     });
     return this.wait({ schema: file?.schema ?? "drift-feedback-marks", version: file?.version ?? 1, marks });
+  }
+
+  /** The promotion runs recorded for this fixture (promote-runs.json); none when it has no such file. */
+  private async runs(repo: RepoRef): Promise<RecordedRun[]> {
+    const r = (await this.index()).repos.find((x) => x.path === repo.path);
+    if (!r?.promoteRuns) return [];
+    return (await this.json<{ runs: RecordedRun[] }>(`${await this.dir(repo)}/promote-runs.json`)).runs;
+  }
+
+  /**
+   * What `drift practices promote` answers for `req`: the real binary's recorded answer for this run after this tab's
+   * recorded writes, else the stand-in from the fixture's practice map (named ways in a directory, with no recorded
+   * write before it), else a refusal that says the run was not recorded.
+   */
+  private async promoteOutcome(repo: RepoRef, req: PromoteRequest, written: boolean): Promise<{ out: PromoteOutcome; recorded: boolean }> {
+    const after = this.writes.get(repo.path) ?? [];
+    const hit = recordedRun(await this.runs(repo), after, promoteFlags(req, !written));
+    if (hit) return { out: hit as PromoteOutcome, recorded: true };
+    if (after.length)
+      return {
+        out: { refused: { code: "not_recorded" }, message: "Fixture mode has no drift binary, and this promotion was not run after the one made in this tab when the fixtures were made (scripts/make-promote-fixtures.mjs); the desktop app runs it." },
+        recorded: false,
+      };
+    return { out: fixturePromote((await this.practices(repo)).data, req, written), recorded: false };
   }
 
   async policy(repo: RepoRef) {
@@ -493,18 +524,19 @@ export class FixtureApi implements StudioApi {
     return this.wait("fixture mode: the fixture repository is already initialised");
   }
 
-  /** What promoting would record, worked out from this fixture's practice map (`practices.json`): nothing is written. */
+  /** What promoting would record, as the real binary answered it (or worked out from this fixture's practice map): nothing is written. */
   async promotePreview(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
-    const report = (await this.practices(repo)).data;
-    return this.wait(fixturePromote(report, req, false));
+    return this.wait((await this.promoteOutcome(repo, req, false)).out);
   }
 
   /** The same, recorded in this tab only (the Conventions view shows the convention); no file is written. */
   async promote(repo: RepoRef, req: PromoteRequest): Promise<PromoteOutcome> {
-    const report = (await this.practices(repo)).data;
-    const out = fixturePromote(report, req, true);
+    const { out, recorded } = await this.promoteOutcome(repo, req, true);
     if (isRefused(out)) return this.wait(out);
+    if (recorded) this.writes.set(repo.path, [...(this.writes.get(repo.path) ?? []), promoteFlags(req, false)]);
     const byId = this.promoted.get(repo.path) ?? new Map<string, Convention>();
+    // A promotion of another form in the same place replaces that practice, as Drift says (`replaces`).
+    for (const old of out.replaces ?? []) byId.delete(old.id);
     byId.set(out.convention.id, fixtureConvention(out));
     this.promoted.set(repo.path, byId);
     this.count(repo, 1);

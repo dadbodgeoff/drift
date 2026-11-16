@@ -108,27 +108,24 @@ describe("drift practices promote --list --json (promote.rs Candidate)", () => {
 
   it("reads every candidate of the fixture, in Drift's order, with the fields a newer Drift adds", () => {
     expect(PromoteListEnvelope.safeParse(raw).success).toBe(true);
-    // Ranked by the departures each would settle, then by the units it reads; the passive one (listed apart) last.
+    // Ranked by the departures each would settle, then by the units it reads; the passive ones (listed apart) last.
     expect(list.candidates.map((x) => `${x.candidate.concern} ${x.place}`)).toEqual([
+      "authn apps/web",
       "authn apps/api",
-      "authn apps/web/app/api/admin",
-      "authn apps/web/lib/actions",
-      "authn apps/web/lib/actions",
+      "validation apps/web/lib",
+      "api apps/web",
       "data_access apps/web",
-      "authn apps/web/app/api/workspaces/[id]",
+      "api apps/api",
+      "errors apps/web",
       "errors apps/api",
     ]);
-    expect(list.candidates.map((x) => x.departures)).toEqual([2, 1, 1, 1, 0, 0, 0]);
-    const [api, , , mech, data, ws, errors] = list.candidates.map((x) => x.candidate);
-    expect(api!.jobs).toBe(3);
+    expect(list.candidates.map((x) => x.departures)).toEqual((raw as { candidates: { departures: number }[]; passive: { departures: number }[] }).candidates.concat((raw as { passive: { departures: number }[] }).passive).map((x) => x.departures));
+    const [web, , , , , , errors] = list.candidates.map((x) => x.candidate);
     // A folded policy's way names its alternatives (`Way.alternatives`).
-    expect(api!.ways[0]!.alternatives).toEqual(["decorator:apps/api/src/common/auth.guard.ts#AuthGuard", "wrap:apps/web/lib/auth.ts#withWorkspace"]);
-    expect(ws!.any_enforcing).toBe(true);
-    expect(ws!.ways).toEqual([]);
-    expect(mech!.mechanisms).toEqual(["wrap"]);
+    expect(web!.ways[0]!.alternatives).toEqual(["wrap:apps/web/lib/auth.ts#getSession", "wrap:apps/web/lib/auth.ts#withWorkspace"]);
     expect(errors!.passive).toBe(true);
-    expect(data!.unknown_cause).toEqual({ reason: "body_unreadable", instrument: "pkg:@acme/edge-db#connect", units: 2, hint: 'practices: {data_access: {"pkg:@acme/edge-db#connect": "connect"}}' });
-    expect(list.declined).toBe(1);
+    expect(web!.unknown_cause).toMatchObject({ reason: "unresolved", instrument: "apps/web/lib/actions/safe-action.ts#authActionClient.inputSchema().action", units: 18 });
+    expect(list.declined).toBe(0);
     expect(list.promoted).toEqual([]);
     // total = follows + exceptions + unknown, as Drift counts it.
     for (const { candidate: c } of list.candidates) expect(c.total).toBe(c.follows + c.exceptions.length + c.unknown);
@@ -167,10 +164,10 @@ describe("drift practices promote --list --json (promote.rs Candidate)", () => {
 
   it("leaves out, in fixture mode, what this tab promoted, and names the convention that covers it", () => {
     expect(fixtureListOpen(list, [])).toEqual(list);
-    const out = fixturePromote(json<PracticesReport>("acme/practices.json"), { id: "P-1587e5", place: "apps/web/app/api/admin", with: [], block: false }, true);
+    const out = fixturePromote(json<PracticesReport>("acme/practices.json"), { id: "P-1e83ce", place: "apps/api", with: [], block: false }, true);
     if (isRefused(out)) throw new Error(out.message);
     const open = fixtureListOpen(list, [out.convention.id]);
-    expect(open.candidates.map((x) => x.place)).not.toContain("apps/web/app/api/admin");
+    expect(open.candidates.map((x) => `${x.candidate.concern} ${x.place}`)).not.toContain("authn apps/api");
     expect(open.candidates).toHaveLength(list.candidates.length - 1);
     expect(open.promoted).toEqual([out.convention.id]);
   });
@@ -185,15 +182,15 @@ describe("drift census --why --json (funnel.rs why_json)", () => {
     expect(doc.schema).toBe(1);
     expect(doc.observation_only).toBe(true);
     expect(doc.gate).toBeNull();
-    expect(doc.reached).toEqual({ roles: 42, role_mined: 17, observed: 214, drafted: 61, mined: 21, proposed: 14 });
+    expect(doc.reached).toEqual({ roles: 368, role_mined: 48, observed: 321, drafted: 45, mined: 14, proposed: 12 });
     expect(doc.gates.map((g) => g.name).slice(0, 6)).toEqual(["indirect_base", "refines_base", "optional_key", "universal", "wilson", "lift"]);
     expect(doc.gates).toHaveLength(32);
     expect(doc.gates.find((g) => g.name === "python_family_hidden")!.origin).toBe("study");
     expect(doc.gates.find((g) => g.name === "wilson")!.origin).toBe("engineering, no study");
     // Each gate's count is how many rows it dropped.
     for (const g of doc.gates) expect(g.dropped, g.name).toBe(doc.dropped.filter((d) => d.gate === g.name).length);
-    const w = doc.dropped.find((d) => d.id === "D-c4d7a9")!;
-    expect(w).toMatchObject({ gate: "wilson", holders: 9, members: 10, value: 0.596, threshold: 0.75, target: "repository", default_tier: true, lang: "ts" });
+    const w = doc.dropped.find((d) => d.id === "D-a85cd1")!;
+    expect(w).toMatchObject({ gate: "wilson", holders: 70, members: 97, value: 0.625, threshold: 0.75, target: "repository", default_tier: true, lang: "ts" });
     expect(checkFunnel(doc, null)).toBe(doc);
   });
 
@@ -255,10 +252,10 @@ describe("the two read-only channels", () => {
     globalThis.fetch = (async (u: string) => new Response(files.get(String(u)) ?? "", { status: files.has(String(u)) ? 200 : 404, headers: { "content-type": "application/json" } })) as typeof fetch;
     try {
       const acme = { path: "/work/acme", name: "acme" };
-      expect(readCensusWhy((await api.funnel(acme)).data).dropped).toHaveLength(5);
+      expect(readCensusWhy((await api.funnel(acme)).data).dropped).toHaveLength(320);
       const served = (await api.promoteList(acme)).data;
-      expect([served.candidates.length, served.passive?.length]).toEqual([6, 1]);
-      expect(readPromoteList(served).candidates).toHaveLength(7);
+      expect([served.candidates.length, served.passive?.length]).toEqual([6, 2]);
+      expect(readPromoteList(served).candidates).toHaveLength(8);
       expect(readCensusWhy((await api.funnel({ path: "/work/quiet", name: "quiet" })).data).dropped).toEqual([]);
       await expect(api.funnel({ path: "/work/beacon", name: "beacon" })).rejects.toThrow("drift census --why failed: fixture mode has no funnel.json for beacon");
       await expect(api.promoteList({ path: "/work/quiet", name: "quiet" })).rejects.toThrow("drift practices promote --list failed");

@@ -76,6 +76,13 @@ main branch.
   --diff-base` lists each finding the change adds to the code and also writes
   into `.drift/security.lock` (text, `security.baselined_by_change`, a GitHub
   notice, a SARIF note). It fails nothing.
+- **Studio, promote every form:** the promote dialog offers every form of
+  `drift practices promote` (ways, mechanisms, any enforcing way; a directory, a
+  file or a route prefix; advise, block, and `--force` after Drift refuses below
+  the share), shows the exact command, disables what the command refuses with its
+  own reason, and shows what a promotion replaces. Each practice on the May be
+  promoted tab opens it pre-filled. The funnel and promotion fixtures are now
+  written by the real binary (`apps/studio/scripts/make-promote-fixtures.mjs`).
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

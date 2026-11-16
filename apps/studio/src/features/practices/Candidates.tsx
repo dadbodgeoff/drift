@@ -1,31 +1,55 @@
 // "May be promoted": every practice Drift says may be made a convention now (`drift practices promote --list --json`),
 // each with what it accepts (named ways, a mechanism whole, any way that enforces it), its counts and the command
-// that promotes it. Read-only: nothing is written from this list. Candidates followed by doing nothing (`passive`) are
-// listed apart, after the others. Units Drift could not read are "not checked", never departures.
-import { EmptyState, ErrorState, Icon, Tag } from "@drift/ui";
+// that promotes it. Each candidate opens the promote dialog on its own form and place (the dry run first; nothing is
+// written until a person confirms there). Candidates followed by doing nothing (`passive`) are listed apart, after the
+// others, and say so in the dialog too. A candidate whose command an older Drift printed with no id has no action, and
+// says why. Units Drift could not read are "not checked", never departures.
+import { useState } from "react";
+import { Button, EmptyState, ErrorState, Icon, Tag } from "@drift/ui";
 import { useRepo } from "@/entities/repo";
 import { usePromoteList } from "@/entities/drift";
-import type { PracticeExample, PromoteList, PromoteListItem } from "@/shared/contract/drift";
+import type { PracticeExample, PracticesReport, PromoteList, PromoteListItem } from "@/shared/contract/drift";
 import { t } from "@/shared/i18n";
 import { useOpenCode } from "@/shared/ui/code";
 import { Loading } from "@/shared/ui/QueryState";
 import { acceptsText, candidateKey, candidateKind, candidatesIn, commandShown, exceptionsLine, followsLine, jobsLine, kindText, notCheckedLine, splitPassive, unknownCauseText } from "./model/candidates";
-import { EXCEPTIONS_SHOWN, unitAt } from "./model/promote";
+import { EXCEPTIONS_SHOWN, choiceFromCandidate, unitAt } from "./model/promote";
+import { PromoteDialog } from "./PromoteDialog";
 import { pkgLabel } from "./model/practices";
 
-/** The tab: runs `drift practices promote --list --json` only while it is open. */
-export function CandidatesTab({ pkg, titleOf }: { pkg: string | null; titleOf(concern: string): string }) {
+/** The tab: runs `drift practices promote --list --json` only while it is open; a candidate's Promote opens the dialog. */
+export function CandidatesTab({ report, pkg, titleOf }: { report: PracticesReport; pkg: string | null; titleOf(concern: string): string }) {
   const { repo } = useRepo();
   const q = usePromoteList(repo, true);
   const openCode = useOpenCode();
+  const [promoting, setPromoting] = useState<PromoteListItem | null>(null);
   if (q.isLoading) return <Loading label={t("practices.candidates.loading")} />;
   if (q.error) return <ErrorState title={t("practices.candidates.failed")} error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return null;
-  return <CandidateList list={q.data.data} pkg={pkg} titleOf={titleOf} onOpen={(e) => openCode({ path: e.path, line: e.line, context: { title: t("practices.candidates.example"), tone: "accent" } })} />;
+  return (
+    <>
+      <CandidateList
+        list={q.data.data}
+        pkg={pkg}
+        titleOf={titleOf}
+        onOpen={(e) => openCode({ path: e.path, line: e.line, context: { title: t("practices.candidates.example"), tone: "accent" } })}
+        onPromote={setPromoting}
+      />
+      {promoting && (
+        <PromoteDialog
+          concern={report.concerns.find((c) => c.id === promoting.candidate.concern) ?? null}
+          initial={choiceFromCandidate(promoting)}
+          labels={Object.fromEntries([...promoting.candidate.ways, ...promoting.candidate.other_ways].map((w) => [w.id, w.label]))}
+          note={promoting.candidate.passive ? t("practices.candidates.passiveNote") : undefined}
+          onClose={() => setPromoting(null)}
+        />
+      )}
+    </>
+  );
 }
 
-/** The list itself, from props only. */
-export function CandidateList({ list, pkg, titleOf, onOpen }: { list: PromoteList; pkg: string | null; titleOf(concern: string): string; onOpen?(e: PracticeExample): void }) {
+/** The list itself, from props only. `onPromote`: a candidate's Promote action (absent: the list is shown without one). */
+export function CandidateList({ list, pkg, titleOf, onOpen, onPromote }: { list: PromoteList; pkg: string | null; titleOf(concern: string): string; onOpen?(e: PracticeExample): void; onPromote?(item: PromoteListItem): void }) {
   const items = candidatesIn(list, pkg);
   const { active, passive } = splitPassive(items);
   return (
@@ -40,7 +64,7 @@ export function CandidateList({ list, pkg, titleOf, onOpen }: { list: PromoteLis
           {active.length ? (
             <ul className="st-plainlist st-stack pr-candidates__list" data-testid="candidates-active">
               {active.map((x) => (
-                <Candidate key={candidateKey(x)} item={x} titleOf={titleOf} onOpen={onOpen} />
+                <Candidate key={candidateKey(x)} item={x} titleOf={titleOf} onOpen={onOpen} onPromote={onPromote} />
               ))}
             </ul>
           ) : (
@@ -52,7 +76,7 @@ export function CandidateList({ list, pkg, titleOf, onOpen }: { list: PromoteLis
               <p className="t-caption t-muted">{t("practices.candidates.passiveBody")}</p>
               <ul className="st-plainlist st-stack pr-candidates__list">
                 {passive.map((x) => (
-                  <Candidate key={candidateKey(x)} item={x} titleOf={titleOf} onOpen={onOpen} />
+                  <Candidate key={candidateKey(x)} item={x} titleOf={titleOf} onOpen={onOpen} onPromote={onPromote} />
                 ))}
               </ul>
             </section>
@@ -65,7 +89,7 @@ export function CandidateList({ list, pkg, titleOf, onOpen }: { list: PromoteLis
   );
 }
 
-function Candidate({ item, titleOf, onOpen }: { item: PromoteListItem; titleOf(concern: string): string; onOpen?(e: PracticeExample): void }) {
+function Candidate({ item, titleOf, onOpen, onPromote }: { item: PromoteListItem; titleOf(concern: string): string; onOpen?(e: PracticeExample): void; onPromote?(item: PromoteListItem): void }) {
   const c = item.candidate;
   const cause = c.unknown_cause ? unknownCauseText(c.unknown_cause) : null;
   const jobs = jobsLine(c);
@@ -120,6 +144,14 @@ function Candidate({ item, titleOf, onOpen }: { item: PromoteListItem; titleOf(c
         </p>
       )}
       {cmd ? <code className="st-cmd pr-cand__cmd">{cmd}</code> : <p className="t-caption t-muted pr-cand__nocmd">{t("practices.candidates.noCommand")}</p>}
+      {cmd && onPromote && (
+        <div className="st-row st-wrap pr-cand__action">
+          <Button variant={c.passive ? "secondary" : "primary"} size="sm" icon="check" onClick={() => onPromote(item)} aria-label={`${t("practices.candidates.promote")} ${t("practices.candidates.title", { concern: titleOf(c.concern), place: item.place })}`}>
+            {t("practices.candidates.promote")}
+          </Button>
+          <span className="t-caption t-muted">{t("practices.candidates.promoteHint")}</span>
+        </div>
+      )}
     </li>
   );
 }
