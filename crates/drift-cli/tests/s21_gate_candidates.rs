@@ -446,6 +446,12 @@ fn steady() -> tempfile::TempDir {
 /// With no switch, and with each switch where it has nothing to change, census prints
 /// byte for byte the same text and JSON; and the flag is hidden from the help, unknown to
 /// `init`, and writes nothing.
+///
+/// It compares this binary with itself, switch against no switch, so it cannot show that
+/// the path with every switch off is what the binary before the switches mined; each
+/// census runs in a process of its own, so it says nothing of state left in one either.
+/// That proof is the old-against-new byte diff of `drift --no-cache census --json` (and
+/// the text census) at integration.
 #[test]
 fn every_switch_is_inert_where_it_has_nothing_to_change() {
     let dir = steady();

@@ -106,7 +106,9 @@ const studyCensus = json(a.study, ["census", "--json", "--all", "--max", "1000"]
 census.study = { commit: studyCensus.commit, cards: compactCards(studyCensus) };
 
 log("init (study, unshown, --max 1000 --all)");
-drift(a.study, ["init", "--max", "1000", "--all"], { DRIFT_STUDY_UNSHOWN: "1" });
+// DRIFT_NO_FROM_MAP: the walk records mined proposals only; a binary that writes
+// "from the map" ones honours it, an older one ignores it.
+drift(a.study, ["init", "--max", "1000", "--all"], { DRIFT_STUDY_UNSHOWN: "1", DRIFT_NO_FROM_MAP: "1" });
 const yaml = readFileSync(join(repo, ".drift", "conventions.yaml"), "utf8");
 const ids = [...new Set([...yaml.matchAll(/^\s*-?\s*id:\s*([A-Z]-[0-9a-f]+)\s*$/gm)].map((m) => m[1]))];
 if (ids.length) drift(a.study, ["review", "--accept", ids.join(",")], { DRIFT_STUDY_UNSHOWN: "1" });

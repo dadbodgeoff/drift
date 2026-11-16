@@ -144,7 +144,9 @@ enum Command {
         #[arg(long)]
         explain: bool,
         /// Write no proposals from the map (the practices and layering the map shows,
-        /// which did not go through the miner's measured gates).
+        /// which did not go through the miner's measured gates). Setting the
+        /// environment variable DRIFT_NO_FROM_MAP to anything but empty or 0 does the
+        /// same.
         #[arg(long)]
         no_from_map: bool,
         #[command(flatten)]
@@ -2994,8 +2996,12 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             }
             // After the first run read the file: the proposals from the map, written as
             // proposals (advise, shown to no agent, not in the lock until accepted).
+            // `DRIFT_NO_FROM_MAP` does what `--no-from-map` does, for scripts that also
+            // run a binary from before the flag (which ignores the variable).
+            let no_from_map = *no_from_map
+                || std::env::var("DRIFT_NO_FROM_MAP").is_ok_and(|v| !v.is_empty() && v != "0");
             let from_map =
-                from_map_cli::for_init(root, &facts, &mut policy, python.on(), *no_from_map);
+                from_map_cli::for_init(root, &facts, &mut policy, python.on(), no_from_map);
             policy.save(root)?;
             // The few security findings to look at first, from the inventory: facts, not
             // conventions, and nothing checks them ([`drift_mine::security_summary`]).
