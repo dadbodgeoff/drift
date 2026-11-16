@@ -293,3 +293,86 @@ fn arq_worker_settings_functions_and_cron_jobs() {
         ]
     );
 }
+
+/// Pins: `app.router.add_routes([...])` (aiohttp 3.14.5 `UrlDispatcher.add_routes`)
+/// registers its route definitions as `app.add_routes` does; it was dropped.
+#[test]
+fn aiohttp_router_add_routes_is_read_as_add_routes() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    project(r);
+    write(
+        r,
+        "app/main.py",
+        "from aiohttp import web\n\n\nasync def items(request):\n    return web.json_response([])\n\n\ndef make_app():\n    app = web.Application()\n    app.router.add_routes([web.get(\"/items\", items)])\n    return app\n",
+    );
+    assert_eq!(
+        entries(r, "aiohttp", true),
+        [r#"app/main.py http GET /items items []"#]
+    );
+}
+
+/// Pins: Falcon's ASGI middleware methods `process_request_async` and
+/// `process_resource_async` (Falcon 4.4.0 `app_helpers.prepare_middleware`) run
+/// before every responder, as `process_request` does.
+#[test]
+fn falcon_asgi_middleware_async_methods_run_before_responders() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    project(r);
+    write(
+        r,
+        "app/middleware.py",
+        "import falcon\n\n\nclass RequireToken:\n    async def process_request_async(self, req, resp):\n        if req.get_header(\"Authorization\") is None:\n            raise falcon.HTTPUnauthorized()\n",
+    );
+    write(
+        r,
+        "app/main.py",
+        "import falcon\nimport falcon.asgi\n\nfrom app.middleware import RequireToken\n\n\nclass Things:\n    async def on_get(self, req, resp):\n        resp.media = []\n\n\napp = falcon.asgi.App(middleware=[RequireToken()])\nthings = Things()\napp.add_route(\"/things\", things)\n",
+    );
+    assert_eq!(
+        entries(r, "falcon", true),
+        [
+            r#"app/main.py http GET /things Things.on_get [app/middleware.py#RequireToken.process_request_async]"#
+        ]
+    );
+}
+
+/// Pins: Huey's `context_task` (huey 3.5.4 `api.py`) and Django-Huey's
+/// `on_commit_task` register tasks too.
+#[test]
+fn huey_context_and_on_commit_tasks() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    project(r);
+    write(
+        r,
+        "app/tasks.py",
+        "from huey import RedisHuey\nfrom huey.contrib.djhuey import on_commit_task\n\nhuey = RedisHuey(\"fx\")\nconn = object()\n\n\n@huey.context_task(conn)\ndef with_conn(n):\n    return n\n\n\n@on_commit_task()\ndef after_commit(n):\n    return n\n",
+    );
+    assert_eq!(
+        entries(r, "huey", true),
+        [
+            r#"app/tasks.py job - - after_commit []"#,
+            r#"app/tasks.py job - - with_conn []"#,
+        ]
+    );
+}
+
+/// Pins: `Worker([...])` takes its functions first (arq 0.28.0 `Worker.__init__`):
+/// given by position they are `job`s as given by keyword.
+#[test]
+fn arq_worker_functions_given_by_position() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = dir.path();
+    project(r);
+    write(
+        r,
+        "app/worker.py",
+        "from arq.worker import Worker\n\n\nasync def download(ctx, url):\n    return url\n\n\nworker = Worker([download])\n",
+    );
+    assert_eq!(
+        entries(r, "arq", true),
+        [r#"app/worker.py job - download download []"#]
+    );
+}

@@ -4,13 +4,18 @@
 //! `.guard(hook, app => ...)`, with the instances and functions `.use(...)` adds.
 //!
 //! What runs before a route's handler: the lifecycle events registered on the
-//! instance before the route (`onRequest`, `onTransform`, `derive`, `resolve`,
-//! `onBeforeHandle`, a `.guard(hook)` without a callback) and the route's own hook
-//! (`beforeHandle`, `transform`), in that order. A hook registered on an instance
-//! runs for the instances it uses after it. A hook an instance registers with
-//! `{ as: "scoped" }` or `{ as: "global" }` also runs for the instance that uses
-//! it: read where that instance is of the same file, and unread where it is
-//! another file's, or a package's plugin that is on no plain list.
+//! instance before the route (`onRequest`, `onTransform`, `derive`, `mapDerive`,
+//! `resolve`, `mapResolve`, `onBeforeHandle`, a `.guard(hook)` without a callback)
+//! and the route's own hook (`beforeHandle`, `transform`), in that order. A hook
+//! registered on an instance runs for the instances it uses after it. A hook an
+//! instance registers with `{ as: "scoped" }` or `{ as: "global" }`, or before
+//! `.as("scoped")` / `.as("global")`, also runs for the instance that uses it: read
+//! where that instance is of the same file, and unread where it is another
+//! file's, or a package's plugin that is on no plain list. A websocket route's
+//! options are its handlers and socket settings, and its `upgrade` function a hook.
+//!
+//! Checked against the published `elysia` 1.4.32 (`dist/index.js`, `dist/types.d.ts`,
+//! `dist/ws/types.d.ts`).
 //!
 //! A route schema (`body`, `query`, `params`, `headers`, `cookie`) validates the
 //! request. A route option Elysia does not document may be a macro's, which can
@@ -22,11 +27,15 @@ pub(super) const PACKAGE: &str = "elysia";
 
 /// The lifecycle events an instance registers that run before the handler and may
 /// answer in its place.
+/// `mapDerive` and `mapResolve` are `derive` and `resolve` whose value replaces
+/// the context's: registered as a transform and a before-handle hook.
 const BEFORE_EVENTS: &[&str] = &[
     "onRequest",
     "onTransform",
     "derive",
+    "mapDerive",
     "resolve",
+    "mapResolve",
     "onBeforeHandle",
 ];
 
@@ -50,6 +59,29 @@ const OTHER_KEYS: &[&str] = &[
     "tags",
     "config",
     "as",
+    // A guard's: how its schemas merge, and the hook of its websocket routes.
+    "schema",
+    "websocket",
+];
+
+/// The options of a websocket route (`.ws(path, options)`) that are its handlers
+/// or settings of the socket: none runs before the upgrade. `upgrade` does when it
+/// is a function, and is read as a hook then.
+const WS_KEYS: &[&str] = &[
+    "open",
+    "message",
+    "drain",
+    "close",
+    "ping",
+    "pong",
+    "upgrade",
+    "maxPayloadLength",
+    "backpressureLimit",
+    "closeOnBackpressureLimit",
+    "idleTimeout",
+    "publishToSelf",
+    "sendPings",
+    "perMessageDeflate",
 ];
 
 /// Plugins of packages documented to add no hook that turns callers away: they
@@ -470,6 +502,16 @@ impl Lowerer<'_> {
                     self.elysia_use(router, x, scope, st, listed);
                 }
             }
+            // `.as("scoped")`, `.as("global")`: every hook the instance registered
+            // so far reaches the instance that uses it, as if registered with
+            // `{ as }`.
+            "as" if args
+                .first()
+                .and_then(|x| text_of(x))
+                .is_some_and(|a| a == "scoped" || a == "global") =>
+            {
+                shared.add(&scope.before);
+            }
             _ => {}
         }
         true
@@ -491,6 +533,19 @@ impl Lowerer<'_> {
         out: &mut Before,
         schemas: &mut Vec<Option<RawRef>>,
     ) {
+        self.elysia_hook_of(router, e, out, schemas, false);
+    }
+
+    /// [`Lowerer::elysia_hook`] of a route, the options of a websocket route
+    /// (`ws`) taking [`WS_KEYS`] as well.
+    fn elysia_hook_of(
+        &mut self,
+        router: &str,
+        e: &Expression,
+        out: &mut Before,
+        schemas: &mut Vec<Option<RawRef>>,
+        ws: bool,
+    ) {
         let Expression::ObjectExpression(o) = unwrap_expr(e) else {
             out.unread("route options that are not written in place");
             return;
@@ -506,6 +561,12 @@ impl Lowerer<'_> {
             };
             if HOOK_KEYS.contains(&key.as_str()) {
                 self.before_of(router_name(router), &key, &p.value, out);
+            } else if ws && WS_KEYS.contains(&key.as_str()) {
+                if key == "upgrade"
+                    && !matches!(unwrap_expr(&p.value), Expression::ObjectExpression(_))
+                {
+                    self.before_of(router_name(router), &key, &p.value, out);
+                }
             } else if SCHEMA_KEYS.contains(&key.as_str()) {
                 schemas.push(self.canon(&p.value).filter(|r| {
                     !matches!(r.base, RawBase::Global(_)) && !r.member.ends_with("()")
@@ -532,7 +593,7 @@ impl Lowerer<'_> {
         let mut before = scope.before.clone();
         let mut schemas = scope.schemas.clone();
         if let Some(h) = hook {
-            self.elysia_hook(router, h, &mut before, &mut schemas);
+            self.elysia_hook_of(router, h, &mut before, &mut schemas, method == "WS");
         }
         self.server_route(
             ServerRoute {

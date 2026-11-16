@@ -128,22 +128,30 @@ impl Linker<'_> {
             }],
             RawServerHook::Unread(words) => vec![unresolved(words)],
             // Falcon runs `process_request` before routing and `process_resource`
-            // after it: the first class of the chain that defines each.
+            // after it: the first class of the chain that defines each. An ASGI
+            // application runs `process_request_async` in place of
+            // `process_request` where it is defined (`prepare_middleware`, Falcon
+            // 4.4.0 `app_helpers.py`): either is read.
             RawServerHook::Instance(r) => {
                 let class = self.canon(fi, r);
                 if class.starts_with("pkg:") || self.symbol_at(&class).is_none() {
                     return vec![hook(class)];
                 }
                 let mut out = Vec::new();
-                for method in ["process_request", "process_resource"] {
-                    for c in self.class_chain(&class) {
-                        let m = format!("{c}.{method}");
-                        if self.symbol_at(&m).is_some() {
-                            if let Some((module, name)) = m.split_once('#') {
-                                keep.push((module.to_string(), name.to_string()));
+                for methods in [
+                    ["process_request_async", "process_request"],
+                    ["process_resource_async", "process_resource"],
+                ] {
+                    'found: for c in self.class_chain(&class) {
+                        for method in methods {
+                            let m = format!("{c}.{method}");
+                            if self.symbol_at(&m).is_some() {
+                                if let Some((module, name)) = m.split_once('#') {
+                                    keep.push((module.to_string(), name.to_string()));
+                                }
+                                out.push(hook(m));
+                                break 'found;
                             }
-                            out.push(hook(m));
-                            break;
                         }
                     }
                 }

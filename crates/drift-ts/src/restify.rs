@@ -1,11 +1,15 @@
 //! Restify 7 and later: `restify.createServer()`, its routes
 //! (`server.get/post/put/patch/del/head/opts(path | { path, version }, ...handlers)`),
 //! and what `server.pre(...)` and `server.use(...)` add, which Restify runs for every
-//! route of the server, before its own handlers, wherever they are added.
+//! route of the server, before its own handlers, wherever they are added. A
+//! `server.param(name, fn)` is a `use` handler that runs `fn` for the routes whose
+//! path has the parameter `name`. Checked against the published `restify` 12.1.0
+//! (`lib/server.js`: there is no `server.delete`, only `del`).
 //!
-//! The plugins Restify ships (`restify.plugins.bodyParser()`, `queryParser()`, ...)
-//! parse, log, throttle or serve files, and turn no one away for who they are: they
-//! are nothing. `conditionalHandler` runs the handlers it is given, and is unread.
+//! The plugins Restify ships (`restify.plugins.bodyParser()`, `queryParser()`, ...,
+//! and the `restify.pre` / `restify.plugins.pre` ones) parse, log, throttle or serve
+//! files, and turn no one away for who they are: they are nothing.
+//! `conditionalHandler` runs the handlers it is given, and is unread.
 
 use super::*;
 
@@ -17,7 +21,6 @@ const VERBS: &[(&str, &str)] = &[
     ("put", "PUT"),
     ("patch", "PATCH"),
     ("del", "DELETE"),
-    ("delete", "DELETE"),
     ("head", "HEAD"),
     ("opts", "OPTIONS"),
 ];
@@ -27,6 +30,8 @@ struct RestifyWalk<'l, 's> {
     servers: BTreeSet<String>,
     /// What `pre` and `use` add on each server, gathered first.
     before: BTreeMap<String, Before>,
+    /// What `param(name, fn)` adds on each server, by the parameter, gathered first.
+    params: BTreeMap<String, Vec<(String, Before)>>,
     collecting: bool,
     listed: Vec<u32>,
 }
@@ -40,16 +45,19 @@ impl Lowerer<'_> {
     ) {
         let _ = unlisted;
         let mut before = BTreeMap::new();
+        let mut params = BTreeMap::new();
         for collecting in [true, false] {
             let mut w = RestifyWalk {
                 l: self,
                 servers: BTreeSet::new(),
                 before,
+                params,
                 collecting,
                 listed: Vec::new(),
             };
             w.visit_program(program);
             before = w.before;
+            params = w.params;
             listed.extend(w.listed);
         }
     }
@@ -83,8 +91,11 @@ impl Lowerer<'_> {
             return None;
         }
         let plugin = match name.as_str() {
-            "default" | "*" => r.member.strip_prefix(".plugins.")?,
-            "plugins" => r.member.strip_prefix('.')?,
+            "default" | "*" => r
+                .member
+                .strip_prefix(".plugins.")
+                .or_else(|| r.member.strip_prefix(".pre."))?,
+            "plugins" | "pre" => r.member.strip_prefix('.')?,
             _ => return None,
         };
         Some(plugin != "conditionalHandler")
@@ -129,6 +140,19 @@ impl RestifyWalk<'_, '_> {
         self.before.insert(server.to_string(), b);
     }
 
+    /// `server.param(name, fn)`: `fn` runs before the routes with the parameter
+    /// `name`. A name that is not written out is read for every route.
+    fn note_param(&mut self, server: &str, args: &[&Expression]) {
+        let Some(f) = args.get(1) else { return };
+        let name = args.first().and_then(|x| text_of(x)).unwrap_or_default();
+        let mut b = Before::default();
+        self.l.before_of(server, "param", f, &mut b);
+        self.params
+            .entry(server.to_string())
+            .or_default()
+            .push((name, b));
+    }
+
     fn route(&mut self, server: &str, method: &str, c: &CallExpression, line: u32) {
         let args = arg_exprs(&c.arguments);
         let Some((first, rest)) = args.split_first() else {
@@ -140,6 +164,18 @@ impl RestifyWalk<'_, '_> {
         }
         .unwrap_or_else(|| "?".to_string());
         let mut before = self.before.get(server).cloned().unwrap_or_default();
+        for (name, b) in self.params.get(server).into_iter().flatten() {
+            let has = |seg: &str| {
+                seg.strip_prefix(':').is_some_and(|p| {
+                    p == name
+                        || p.strip_prefix(name.as_str())
+                            .is_some_and(|r| r.starts_with('('))
+                })
+            };
+            if name.is_empty() || path == "?" || path.split('/').any(has) {
+                before.add(b);
+            }
+        }
         for a in &c.arguments {
             if let Argument::SpreadElement(s) = a {
                 before.unread(format!("handlers spread from {}", spread_name(&s.argument)));
@@ -191,6 +227,9 @@ impl<'a> Visit<'a> for RestifyWalk<'_, '_> {
                 if matches!(name, "use" | "pre") {
                     let args = arg_exprs(&it.arguments);
                     self.note_use(&server, &args);
+                } else if name == "param" {
+                    let args = arg_exprs(&it.arguments);
+                    self.note_param(&server, &args);
                 }
             } else if let Some((_, method)) = VERBS.iter().find(|(v, _)| *v == name) {
                 let line = self.l.line_of(m.property.span.start);

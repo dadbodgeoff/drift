@@ -14,13 +14,19 @@
 //!   `add_route`, hooks by `on_request` and `middleware("request")`.
 //! - django-ninja's `NinjaAPI` and `Router` follow FastAPI's model (prefixes join;
 //!   typed parameters are parsed), served where Django's URLconf mounts
-//!   `api.urls`. Its guard is `auth=`, of the operation, else of the router, else
-//!   of the API: the nearest one given, not all of them. A callable that turns a
+//!   `api.urls`. Its guard is `auth=`, of the operation, else the one given where
+//!   its router is added (`add_router(..., auth=)`), else of the router, else of
+//!   the layers above, else of the API: the nearest one given, not all of them. A callable that turns a
 //!   caller away by returning a false value is not one either reading of a guard
 //!   knows, so what stands there is named and unknown (`drift_mine::py_guards`).
 //! - Litestar's `Litestar`, `Router` and `Controller` follow FastAPI's model:
 //!   `guards=` of every layer run before the handler, and a guard refuses by
-//!   raising. Handlers are registered by `route_handlers=[...]`.
+//!   raising. Handlers are registered by `route_handlers=[...]` (the first
+//!   argument of `Litestar(...)`); a router's path is its first argument.
+//!
+//! Each API named here was checked against the published packages' source:
+//! Quart 0.23.1 (on Flask 3.1.3's `sansio`), django-ninja 1.8.0, Litestar 2.25.0
+//! and Sanic 25.12.1.
 //!
 //! Every reading here is one the build `a0779066` did not make: asked through
 //! [`Linker::since_frozen`], so neither what mining reads nor the compat link
@@ -176,7 +182,17 @@ const READS: &[(&str, &[&str])] = &[
             "ctx",
         ],
     ),
-    ("quart", &["before_serving", "after_serving", "run_task"]),
+    (
+        "quart",
+        &[
+            "before_serving",
+            "after_serving",
+            "while_serving",
+            "run_task",
+            "before_websocket",
+            "before_app_websocket",
+        ],
+    ),
 ];
 
 /// What the readings here add to the linker's tables.
@@ -188,6 +204,8 @@ pub(super) struct Tables {
     /// Routers whose every use that hands them on is a mount read here, or a
     /// method or attribute their framework reads ([`READS`]).
     explained: BTreeSet<String>,
+    /// Quart's websocket hooks, by the blueprint or application they run for.
+    websocket_hooks: BTreeMap<String, Vec<String>>,
 }
 
 impl Linker<'_> {
@@ -222,11 +240,13 @@ impl Linker<'_> {
     }
 
     /// The prefix a router of a framework is built with: Flask's model's
-    /// `url_prefix=`; Litestar's `path=`; none for django-ninja's, whose prefix is
-    /// given where it is added.
+    /// `url_prefix=`; Litestar's `path`, given by keyword or first
+    /// (`Router("/admin", route_handlers=[...])`: `Router.__init__(self, path, *,
+    /// ...)`); none for django-ninja's, whose prefix is given where it is added.
     pub(super) fn framework_prefix(&self, f: &Framework, r: &RawRouter) -> Option<String> {
         match (f.model, f.name) {
             ("flask", _) => r.url_prefix.clone(),
+            (_, "litestar") if !f.app => r.path.clone().or_else(|| r.first.clone()),
             (_, "litestar") => r.path.clone(),
             _ => None,
         }
@@ -264,6 +284,15 @@ impl Linker<'_> {
     /// The framework of a router node, where it is one of these.
     fn node_framework(&self, node: &str) -> Option<&'static Framework> {
         self.routers.get(node).and_then(|i| i.framework)
+    }
+
+    /// A Sanic blueprint group: mounted under a prefix, its own prefix is joined
+    /// to it rather than replaced (`Sanic.blueprint` merges the mount's, the
+    /// group's and each blueprint's `url_prefix`, Sanic 25.12.1 `app.py`), unlike
+    /// a blueprint mounted on its own.
+    pub(super) fn framework_joins_mount(&self, node: &str) -> bool {
+        self.node_framework(node)
+            .is_some_and(|f| std::ptr::eq(f, &GROUP))
     }
 
     /// Whether the use of a router `node` that reads `attr` of it (empty: the router
@@ -450,6 +479,31 @@ impl Linker<'_> {
             }
             list.extend(hook);
         }
+        // Quart: a websocket hook runs for the websockets of what it is on, or of
+        // the applications its blueprint is registered on.
+        let mut ws: Vec<(String, String)> = Vec::new();
+        for fi in 0..self.files.len() {
+            for h in &self.files[fi].raw.frameworks.websocket_hooks {
+                let hook = self.canon(fi, &h.hook);
+                for node in self.nodes_of(fi, &h.router) {
+                    if self.node_framework(&node).is_none_or(|f| f.name != "quart") {
+                        continue;
+                    }
+                    let on = if h.app_wide {
+                        self.mount_roots(&node)
+                    } else {
+                        vec![node]
+                    };
+                    ws.extend(on.into_iter().map(|n| (n, hook.clone())));
+                }
+            }
+        }
+        for (node, hook) in ws {
+            let list = self.frameworks.websocket_hooks.entry(node).or_default();
+            if !list.contains(&hook) {
+                list.push(hook);
+            }
+        }
         self.frameworks.explained = self.explained();
     }
 
@@ -488,6 +542,33 @@ impl Linker<'_> {
         seen.into_iter().filter(|n| !open.contains(n)).collect()
     }
 
+    /// What runs before a Quart websocket route on `node`, in place of the hooks a
+    /// request runs: the websocket hooks of the node and of the applications it is
+    /// served under. None for a route of any other framework, or of another kind.
+    pub(super) fn framework_websocket_guards(&self, node: &str, kind: &str) -> Option<Vec<Dep>> {
+        if kind != "websocket" || self.node_framework(node).is_none_or(|f| f.name != "quart") {
+            return None;
+        }
+        let mut on = vec![node.to_string()];
+        on.extend(self.mount_roots(node).into_iter().filter(|r| r != node));
+        let mut out: Vec<Dep> = Vec::new();
+        for n in on {
+            for h in self
+                .frameworks
+                .websocket_hooks
+                .get(&n)
+                .into_iter()
+                .flatten()
+            {
+                let d = Dep::plain(h.clone());
+                if !out.contains(&d) {
+                    out.push(d);
+                }
+            }
+        }
+        Some(out)
+    }
+
     /// The guard of a django-ninja operation: its own `auth=`, else the nearest
     /// layer's ([`Linker::ninja_layer_auth`]). Nothing for any other framework.
     pub(super) fn framework_route_guards(&self, fi: usize, rt: &RawRoute, node: &str) -> Vec<Dep> {
@@ -506,22 +587,23 @@ impl Linker<'_> {
         }
     }
 
-    /// The `auth=` of the router or API `node`, else the one given where it is
-    /// added, else its parent's; none where no layer gives one. Two mounts that give
-    /// it different ones: which one a request takes is not read.
+    /// The `auth=` given where the router `node` is added, else its own (of the
+    /// router or API), else its parent's; none where no layer gives one. Two mounts
+    /// that give it different ones: which one a request takes is not read. The
+    /// mount's beats the router's own (`BoundRouter.__init__` and
+    /// `Router.build_routers` of `ninja/router.py`, django-ninja 1.8.0).
     fn ninja_layer_auth(&self, node: &str, depth: usize) -> Option<Vec<Dep>> {
         if depth > 8 {
             return None;
         }
-        if let Some((module, name)) = node.split_once('#')
-            && let Some(fi) = self.file(module)
-            && let Some(auth) = self
-                .options_in(fi, name, false)
-                .and_then(|o| o.auth.as_ref())
-        {
-            return Some(self.given_deps(fi, auth));
-        }
-        let parents = self.parents.get(node)?;
+        let own = node.split_once('#').and_then(|(module, name)| {
+            let fi = self.file(module)?;
+            let auth = self.options_in(fi, name, false)?.auth.as_ref()?;
+            Some(self.given_deps(fi, auth))
+        });
+        let Some(parents) = self.parents.get(node).filter(|p| !p.is_empty()) else {
+            return own;
+        };
         let mut found: Vec<Option<Vec<Dep>>> = Vec::new();
         for (parent, ..) in parents {
             let auth = match self
@@ -530,6 +612,7 @@ impl Linker<'_> {
                 .get(&(node.to_string(), parent.clone()))
             {
                 Some(deps) => Some(deps.clone()),
+                None if own.is_some() => own.clone(),
                 None if self
                     .node_framework(parent)
                     .is_some_and(|f| f.name == "ninja") =>
@@ -641,12 +724,23 @@ impl Linker<'_> {
                 if self.node_framework(&node).is_none_or(|f| f.name != "sanic") {
                     continue;
                 }
+                // `add_route(handler, uri, methods=frozenset({"GET"}))`: a function
+                // serves GET unless told otherwise; an `HTTPMethodView` serves the
+                // methods it defines, whatever it is given (`RouteMixin.add_route`,
+                // Sanic 25.12.1).
+                let methods = if sym.kind == drift_core::SymbolKind::Class {
+                    vec![]
+                } else if r.methods.is_empty() {
+                    vec!["GET".to_string()]
+                } else {
+                    r.methods.clone()
+                };
                 let g = RawRegistration {
                     target: r.target.clone(),
                     router: Some(r.router.clone()),
                     adapter: "sanic".into(),
                     route: r.path.clone(),
-                    methods: r.methods.clone(),
+                    methods,
                     guards: vec![],
                     unmeasured: true,
                     candidate: false,

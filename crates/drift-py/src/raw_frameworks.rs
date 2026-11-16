@@ -1,6 +1,6 @@
 //! Raw facts of the frameworks read since the build `a0779066`: django-ninja,
-//! Litestar and Sanic ([`super::RawFile::frameworks`]). Quart needs none: it is Flask's
-//! API on another package, read by the Flask adapter's facts.
+//! Litestar and Sanic ([`super::RawFile::frameworks`]). Quart is Flask's API on
+//! another package, read by the Flask adapter's facts, but for its websocket hooks.
 //!
 //! They are a field of their own, read by the listed link only
 //! (`Linker::since_frozen`): no fact the measured build wrote changes, so what
@@ -146,6 +146,20 @@ pub struct RawFrameworkRoute {
     pub line: u32,
 }
 
+/// A Quart websocket hook: `@app.before_websocket`, `@bp.before_websocket`,
+/// `@bp.before_app_websocket`. Quart runs these before a websocket, and its
+/// `before_request` hooks before a request only (`Quart.preprocess_websocket`,
+/// Quart 0.23.1).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RawWebsocketHook {
+    pub router: RawRef,
+    pub hook: RawRef,
+    /// `before_app_websocket`: for every websocket of the application the
+    /// blueprint is registered on.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub app_wide: bool,
+}
+
 /// Everything above, for one file.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawFrameworks {
@@ -163,6 +177,8 @@ pub struct RawFrameworks {
     pub hooks: Vec<RawFrameworkHook>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<RawFrameworkRoute>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub websocket_hooks: Vec<RawWebsocketHook>,
     /// The names the calls above read as an argument, with their line: a router
     /// handed to a mount that is read, not to one that is not
     /// ([`super::RawFile::router_uses`] keeps them, as the measured build did).
