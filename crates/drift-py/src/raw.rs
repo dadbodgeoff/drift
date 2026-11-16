@@ -229,6 +229,12 @@ pub struct RawSymbol {
     pub string_literals: u32,
     pub suppressions: Vec<String>,
     pub reads: Vec<String>,
+    /// Env reads the measured build did not read, beside [`Self::reads`] (Python
+    /// lowering 75): through python-decouple, environs, django-environ or a
+    /// pydantic settings class (`decouple.SECRET_KEY`). Linked into the listed
+    /// reading only ([`drift_core::Listed`]), after the build `a0779066`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub since_reads: Vec<String>,
     pub throws: Vec<RawRef>,
     pub sinks: Vec<String>,
     /// Sinks the measured build did not read, beside [`Self::sinks`] (Python
@@ -1482,6 +1488,7 @@ impl RawSymbol {
             string_literals: 0,
             suppressions: vec![],
             reads: vec![],
+            since_reads: vec![],
             throws: vec![],
             sinks: vec![],
             since_sinks: vec![],

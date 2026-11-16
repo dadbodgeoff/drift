@@ -48,6 +48,12 @@ fn in_population(s: &Symbol) -> bool {
         || libraries(s).any(|c| config_library(c).is_some() || flag_library(c).is_some())
 }
 
+/// The forms of a read of the environment itself, where the value is used. A read
+/// written under another form went through a configuration library
+/// (`decouple.SECRET_KEY`, `pydantic_settings.DATABASE_URL`, Python lowering 75): it
+/// is that library's env schema, not a read in place.
+const IN_PLACE_FORMS: &[&str] = &["process.env", "import.meta.env", "os.environ", "env"];
+
 /// `process.env.X` -> (`process.env`, `X`).
 fn split_read(r: &str) -> (&str, &str) {
     r.rsplit_once('.').unwrap_or(("env", r))
@@ -102,7 +108,16 @@ impl Concern for Config {
                 uses.push(use_of("config_module", &file.path));
             } else {
                 for r in &symbol.reads {
-                    uses.push(use_of("in_place", split_read(r).0));
+                    let form = split_read(r).0;
+                    if IN_PLACE_FORMS.contains(&form) {
+                        uses.push(use_of("in_place", form));
+                    }
+                }
+            }
+            for r in &symbol.reads {
+                let form = split_read(r).0;
+                if !IN_PLACE_FORMS.contains(&form) {
+                    uses.push(use_of("env_schema", form));
                 }
             }
         }

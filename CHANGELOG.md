@@ -292,6 +292,15 @@ main branch.
   `upload-sarif: file` writes the SARIF without uploading it. The logic is in
   `scripts/action/`, tested by `scripts/action/test.sh`, and CI runs `uses: ./`
   on a fixture repository. See [Drift in CI](docs/wiki/Drift-in-CI.md#the-github-action).
+- **Python: env reads through python-decouple, environs, django-environ and
+  pydantic settings classes** (Python lowering 75). `drift security` lists them
+  under environment reads (`decouple.SECRET_KEY`, `environs.PORT`,
+  `environ.DATABASE_URL`, `pydantic_settings.APP_DATABASE_URL`, with environs'
+  `prefixed` blocks and pydantic's `env_prefix` applied), and the practice map's
+  `config` concern counts each such read as that library's env schema
+  (`env_schema:environ`), never as a read of `os.environ` in place. A module
+  constant read this way is a value from the environment where a check compares
+  with it. Mining is unchanged.
 
 ### Changed: the files Drift writes
 
