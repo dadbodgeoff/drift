@@ -315,6 +315,15 @@ pub struct Question {
 }
 
 impl Question {
+    /// The compose file a deployment question is about (`None` for any other kind):
+    /// what the guided flow names in its own question (`crate::guided`).
+    pub(crate) fn deployment_file(&self) -> Option<&str> {
+        match &self.subject {
+            Subject::Deployment { file, .. } => Some(file.as_str()),
+            _ => None,
+        }
+    }
+
     /// The config its counts start from (the check questions start from the file as
     /// it is).
     fn base_or_text(&self, text: &str) -> String {
@@ -796,8 +805,8 @@ fn row_key(e: &drift_mine::security::EntryRow) -> RowKey {
     )
 }
 
-/// An exposure in words.
-fn reach(e: Exposure) -> &'static str {
+/// An exposure in words (the guided flow says the same, `crate::guided`).
+pub(crate) fn reach(e: Exposure) -> &'static str {
     match e {
         Exposure::Public => "reachable from the internet",
         Exposure::Unknown => "unknown",
@@ -2921,6 +2930,58 @@ Every answer is something Drift cannot prove, and you can be wrong in the same w
    Several at once, in one run (each answer otherwise reads the whole repository again): `drift setup --answers answers.json`, a list of `{"id": "S-1a2b", "answer": "tests-only", "reason": "...", "evidence": ["path/to/file:12"]}`.
 4. When you are done, tell the person how many of your answers wait for them (`waiting` in `drift setup --json`; `drift setup --list` shows them first), and that `drift setup --review` shows each with your reason so they can confirm or reject it.
 "#;
+
+// ---------- what the guided flow records ----------
+
+/// The answer recorded for a person's "no" to a question of the guided flow
+/// (`crate::guided`) that writes nothing of its own when declined: the security baseline
+/// and each agent integration. A "no" to a proposal is recorded in the conventions file
+/// (rejected), and one to a compose file by its deployment question ("it deploys").
+pub const DECLINED: &str = "declined";
+
+/// The id under `setup:` of a person's "no" to the guided flow's question `key`
+/// (`baseline`, `agents-md`, `claude-settings`): `drift setup --forget <id>` takes it
+/// out, so the question is asked again.
+pub fn declined_id(key: &str) -> String {
+    id_of("guided", key)
+}
+
+impl Setup<'_> {
+    /// Whether a person said no to the guided flow's question `key` ([`declined_id`]).
+    pub fn declined(&self, key: &str) -> bool {
+        records(&self.text)
+            .get(&declined_id(key))
+            .is_some_and(|r| r.answer == DECLINED)
+    }
+
+    /// Record a person's "no" to the guided flow's question `key`, `asked` saying what
+    /// was asked ("whether to write the security baseline"): one line under `setup:`
+    /// with a comment above it, as every answer is written, so a later run does not ask
+    /// it again. Nothing else is written. Returns the id.
+    pub fn record_declined(&mut self, key: &str, asked: &str) -> anyhow::Result<String> {
+        self.refresh()?;
+        let id = declined_id(key);
+        if self.declined(key) {
+            return Ok(id);
+        }
+        let fields: Vec<(&str, Value)> = vec![("answer", json!(DECLINED)), ("seen", json!(key))];
+        let comment = format!(
+            "# drift setup {id} ({}), asked {}: no",
+            today(),
+            oneline(asked)
+        );
+        let text = yaml::insert(
+            &self.text,
+            &["setup"],
+            &comment,
+            &format!("{id}: {}", flow(&fields)),
+            &Entry::Pair(id.clone(), flow_value(&fields)),
+        )
+        .map_err(|e| anyhow::anyhow!("{CONFIG_FILE} cannot be edited safely ({e:#})"))?;
+        self.save(text)?;
+        Ok(id)
+    }
+}
 
 /// How many questions only a person can answer are open, for `drift init`.
 pub fn open_questions(root: &Path, facts: &RepoFacts) -> usize {
