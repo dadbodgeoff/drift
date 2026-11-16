@@ -833,8 +833,10 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
         .unwrap_or("startup");
     let dir = sessions_dir(&p.root);
     let mut note = None;
-    // The facts, when it scans ([`Project::repository_facts`]: one scan for everything).
+    // The facts, when it scans ([`Project::repository_facts`]: one scan for everything),
+    // and where the results derived from them are kept ([`derived`]).
     let mut scanned = None::<&drift_core::RepoFacts>;
+    let mut kept = None::<Derived>;
     // Without a session id every session shares one state file: a new one starts fresh.
     let anonymous = input.get("session_id").and_then(Value::as_str).is_none();
     let existing = load_state(state_path).filter(|_| !(anonymous && source == "startup"));
@@ -882,7 +884,7 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
                     scanned = Some(facts);
                     // The inventory and the conventions check beside the practice map:
                     // none of the three reads what another finds.
-                    let kept = derived(p, facts);
+                    kept = derived(p, facts);
                     let ((security, mut report), practices) = crate::card::beside(
                         || {
                             (
@@ -940,16 +942,23 @@ fn session_start(p: &Project, input: &Value, state_path: &Path) -> anyhow::Resul
     }
     // The index of the search hints and the brief: from this scan, else the last one
     // (a resumed session), else from a scan made for it.
-    let built = |facts: &drift_core::RepoFacts| {
-        let index = crate::lookup::HintIndex::build(facts);
+    // A function of the facts alone, and it reads the whole security inventory: read
+    // back from the results kept for these facts when a session before this one built
+    // it from the same code.
+    let built = |facts: &drift_core::RepoFacts, kept: Option<&Derived>| {
+        let index = crate::derived::get_or(kept, crate::derived::HINT_INDEX, &[], || {
+            crate::lookup::HintIndex::build(facts)
+        });
         write_json(&dir.join(crate::lookup::INDEX_FILE), &index);
         index
     };
     let index = match scanned {
-        Some(facts) => Some(built(facts)),
+        Some(facts) => Some(built(facts, kept.as_ref())),
         None => crate::lookup::HintIndex::load(&dir).or_else(|| {
             trace::took("full_scan:hint_index");
-            p.repository_facts().ok().map(built)
+            p.repository_facts()
+                .ok()
+                .map(|facts| built(facts, derived(p, facts).as_ref()))
         }),
     };
     // One brief, one cap (PLAN-R14 C2), both parts behind `agents.brief`: the practices

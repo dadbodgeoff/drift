@@ -1,6 +1,6 @@
 //! Results derived from the facts of the whole repository, kept on disk between
 //! processes: the practice map with every unit, the keys of the security inventory,
-//! the cards mining finds for `drift card`.
+//! the cards mining finds for `drift card`, the index of the search hints.
 //!
 //! Every hook is a process of its own, and a turn asks the same question of the same
 //! code more than once: the PostToolUse of a file with entry points builds the
@@ -43,7 +43,9 @@
 //! whatever state the directory is in.
 //!
 //! Before a value is written it is read back from its own bytes and compared: a value
-//! that does not come back equal (a float that does not survive JSON) is not kept.
+//! that does not come back equal (a float that does not survive JSON) is not kept. It
+//! is written whole, with the fields that are in process only and no output shows
+//! ([`drift_mine::in_process`]): what is read back stands in for the computation.
 //!
 //! The directory keeps the newest [`KEPT`] files of each kind; a write removes the
 //! others.
@@ -72,6 +74,10 @@ pub const PRACTICES: &str = "practices";
 pub const SECURITY_KEYS: &str = "security-keys";
 /// What mining finds for `drift card` ([`crate::card::regularities`]).
 pub const MINED: &str = "mined";
+/// The index of the search hints and the structure brief
+/// ([`crate::lookup::HintIndex::build`]), which SessionStart builds from the whole
+/// security inventory.
+pub const HINT_INDEX: &str = "hint-index";
 
 /// The kept results of one set of facts.
 pub struct Derived {
@@ -263,7 +269,11 @@ impl Derived {
     ) {
         let key = self.key(kind, more);
         let path = self.path(kind, &key);
-        let Ok(bytes) = serde_json::to_vec(&EntryRef { key: &key, value }) else {
+        // Whole: with the fields no output shows ([`drift_mine::in_process`]), or a
+        // value that has one would never read back equal, and never be kept.
+        let Ok(bytes) =
+            drift_mine::in_process::whole(|| serde_json::to_vec(&EntryRef { key: &key, value }))
+        else {
             return;
         };
         // What a reader will get must be what was computed.
