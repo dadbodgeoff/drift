@@ -35,7 +35,9 @@
 //!   `bash <(curl ...)`): what the remote server sends that day is what runs.
 //!
 //! Nothing is run and nothing outside the repository is read. A workflow that does
-//! not parse is skipped.
+//! not parse, or is too large to read, is listed as not read ([`crate::ci::NotRead`]):
+//! what its jobs run is unknown, never nothing. The pipelines of other CI systems are
+//! read beside these, into the same findings ([`crate::ci`]).
 //!
 //! The same finding written more than once in one job (two steps interpolating the
 //! same expression) is one finding each: from the second on, its detail ends in
@@ -46,9 +48,6 @@ use std::path::Path;
 
 use serde::Serialize;
 use serde_json::Value;
-
-/// The largest workflow file read.
-const MAX_BYTES: u64 = 512 * 1024;
 
 /// One thing a workflow does ([`read`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -90,9 +89,15 @@ const ASSIGNED: &[&str] = &["number", "id", "node_id", "sha", "run_id", "run_num
 
 /// The workflows of the repository at `root`, read.
 pub fn read(root: &Path) -> Vec<WorkflowFinding> {
+    read_all(root).0
+}
+
+/// [`read`], with the workflow files that were not read and why.
+pub(crate) fn read_all(root: &Path) -> (Vec<WorkflowFinding>, Vec<crate::ci::NotRead>) {
     let dir = root.join(".github/workflows");
+    let mut not_read = Vec::new();
     let Ok(entries) = std::fs::read_dir(&dir) else {
-        return Vec::new();
+        return (Vec::new(), not_read);
     };
     let mut files: Vec<_> = entries
         .flatten()
@@ -103,21 +108,25 @@ pub fn read(root: &Path) -> Vec<WorkflowFinding> {
     let owner = repository_owner(root);
     let mut out = Vec::new();
     for p in files {
-        if std::fs::metadata(&p).map_or(true, |m| m.len() > MAX_BYTES) {
-            continue;
-        }
-        let Ok(text) = std::fs::read_to_string(&p) else {
-            continue;
-        };
         let rel = format!(
             ".github/workflows/{}",
             p.file_name().and_then(|n| n.to_str()).unwrap_or_default()
         );
-        out.extend(read_text_of(&rel, &text, owner.as_deref()));
+        let Some(text) = crate::ci::load_file(&p, &rel, &mut not_read) else {
+            continue;
+        };
+        if text.trim().is_empty() {
+            continue;
+        }
+        let Ok(doc) = serde_saphyr::from_str::<Value>(&text) else {
+            not_read.push(crate::ci::NotRead::unparsed(&rel));
+            continue;
+        };
+        out.extend(findings_of(&rel, &text, &doc, owner.as_deref()));
     }
     out.sort();
     out.dedup();
-    out
+    (out, not_read)
 }
 
 /// The events a workflow runs on: a name, a list of names, or a map by name.
@@ -280,7 +289,7 @@ const DOWNLOADERS: &[&str] = &[
     "Invoke-WebRequest",
     "Invoke-RestMethod",
 ];
-const INTERPRETERS: &[&str] = &[
+pub(crate) const INTERPRETERS: &[&str] = &[
     "sh",
     "bash",
     "zsh",
@@ -299,7 +308,7 @@ const INTERPRETERS: &[&str] = &[
 
 /// The program a shell command starts: its first word, past `sudo`, `env` and
 /// assignments (`FOO=1 sudo -E bash -s`).
-fn program(command: &str) -> &str {
+pub(crate) fn program(command: &str) -> &str {
     command
         .split_whitespace()
         .find(|w| {
@@ -460,7 +469,7 @@ fn of_owner(uses: &str, owner: Option<&str>) -> bool {
 }
 
 /// The 1-based line of the first line of `text` that holds `needle`; 1 where none.
-fn line_of(text: &str, needle: &str) -> u32 {
+pub(crate) fn line_of(text: &str, needle: &str) -> u32 {
     let needle = needle.lines().next().unwrap_or(needle).trim();
     text.lines()
         .position(|l| !needle.is_empty() && l.contains(needle))
@@ -484,32 +493,7 @@ pub(crate) fn line_from(text: &str, from: usize, needle: &str) -> Option<usize> 
 /// The 0-based index of the line that opens the job `job` under `jobs:`: a key
 /// at the indentation of the first job. The `jobs:` line where it is not found.
 pub(crate) fn job_line(text: &str, job: &str) -> usize {
-    let lines: Vec<&str> = text.lines().collect();
-    let Some(jobs) = lines.iter().position(|l| l.starts_with("jobs:")) else {
-        return 0;
-    };
-    fn indent(l: &str) -> usize {
-        l.len() - l.trim_start().len()
-    }
-    let Some(first) = lines[jobs + 1..]
-        .iter()
-        .find(|l| !l.trim().is_empty() && !l.trim_start().starts_with('#'))
-        .map(|l| indent(l))
-        .filter(|i| *i > 0)
-    else {
-        return jobs;
-    };
-    let heads = [
-        format!("{job}:"),
-        format!("\"{job}\":"),
-        format!("'{job}':"),
-    ];
-    lines[jobs + 1..]
-        .iter()
-        .position(|l| {
-            indent(l) == first && heads.iter().any(|h| l.trim_start().starts_with(h.as_str()))
-        })
-        .map_or(jobs, |i| jobs + 1 + i)
+    crate::ci::key_under(text, "jobs", job)
 }
 
 /// What a step is found by in the text: what it uses, else the first line of its
@@ -535,7 +519,12 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
     let Ok(doc) = serde_saphyr::from_str::<Value>(text) else {
         return Vec::new();
     };
-    let events = events(&doc);
+    findings_of(rel, text, &doc, owner)
+}
+
+/// [`read_text_of`], of the workflow as parsed.
+fn findings_of(rel: &str, text: &str, doc: &Value, owner: Option<&str>) -> Vec<WorkflowFinding> {
+    let events = events(doc);
     let privileged = events
         .iter()
         .any(|e| PRIVILEGED_EVENTS.contains(&e.as_str()));
@@ -692,7 +681,7 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
 /// a baselined one passed. The first's detail is the one an older Drift wrote, so
 /// the keys a `security.lock` already holds still match. `out` is sorted (by
 /// kind, path, line).
-fn number_repeats(out: &mut [WorkflowFinding]) {
+pub(crate) fn number_repeats(out: &mut [WorkflowFinding]) {
     let mut seen: std::collections::BTreeMap<(String, String, String, String), usize> =
         std::collections::BTreeMap::new();
     for f in out.iter_mut() {

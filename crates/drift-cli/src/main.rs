@@ -2399,7 +2399,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 &facts,
                 drift_mine::security::Boundaries::load(&cli.root),
             );
-            inv.workflows = drift_mine::workflows::read(root);
+            drift_mine::ci::fill(&mut inv, root);
             inv.dependencies = drift_mine::dependencies::read(root);
             inv.cluster = drift_mine::kubernetes::read(root);
             drift_mine::hardening::fill(&mut inv, root);
@@ -4730,7 +4730,7 @@ fn security_inventory(
         facts,
         drift_mine::security::Boundaries::load(&cli.root),
     );
-    inv.workflows = drift_mine::workflows::read(root);
+    drift_mine::ci::fill(&mut inv, root);
     inv.dependencies = drift_mine::dependencies::read(root);
     inv.cluster = drift_mine::kubernetes::read(root);
     drift_mine::hardening::fill(&mut inv, root);

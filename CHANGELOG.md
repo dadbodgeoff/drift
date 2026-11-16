@@ -121,6 +121,18 @@ main branch.
   as the guard, read as unknown; Litestar `route_handlers=`, controllers and
   `guards=` of every layer; Sanic blueprints, groups, `add_route` and request
   hooks. Listed reading only: what mining reads does not change.
+- **CI other than GitHub Actions in the security inventory:** `drift security`
+  reads GitLab CI (`.gitlab-ci.yml` and the files it includes from the
+  repository), CircleCI, Azure Pipelines, Bitbucket Pipelines and the `sh` steps
+  of a `Jenkinsfile` for the risks it reads in a GitHub workflow: a download
+  piped into a shell, text a merge request's or a commit's author writes run as
+  code, and another owner's include, orb or pipe named by a tag. They are
+  `workflows` rows and baseline `workflow` findings. A CI file Drift cannot read
+  (it does not parse, it is too large, a `Jenkinsfile` beyond its `sh` steps),
+  a GitHub workflow included, is listed in the new `ci_not_read` of
+  `security --json` and said in the text. The security inventory is now version
+  3: a baseline stamped 2 does not fail on these findings where the pipeline did
+  not change (they are new in this Drift until the baseline is written again).
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

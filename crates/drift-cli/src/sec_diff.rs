@@ -70,7 +70,7 @@ pub fn read_base(s: &pr::DiffScope, root: &Path) -> anyhow::Result<BaseSecurity>
             base_facts,
             drift_mine::security::Boundaries::load(base_root),
         );
-        inv.workflows = drift_mine::workflows::read(base_root);
+        drift_mine::ci::fill(&mut inv, base_root);
         inv.dependencies = drift_mine::dependencies::read(base_root);
         inv.cluster = drift_mine::kubernetes::read(base_root);
         drift_mine::hardening::fill(&mut inv, base_root);
