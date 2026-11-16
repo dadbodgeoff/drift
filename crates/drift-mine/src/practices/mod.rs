@@ -178,6 +178,10 @@ pub struct Cx<'a> {
     /// The keys this repository's own queries scope rows to the caller by
     /// (`authz::scope_keys`), learned once for the run.
     scope_keys: OnceLock<BTreeSet<String>>,
+    /// How each entry unit authenticates ([`authn::read`]), by the unit's file, entry
+    /// point and symbol: authentication, authorization and testing each ask it of the
+    /// same units, side by side.
+    readings: crate::memo::Shared<(usize, usize, usize), authn::Reading>,
 }
 
 impl<'a> Cx<'a> {
@@ -191,7 +195,29 @@ impl<'a> Cx<'a> {
             serving: OnceLock::new(),
             rivals: OnceLock::new(),
             scope_keys: OnceLock::new(),
+            readings: crate::memo::Shared::default(),
         }
+    }
+
+    /// The reading of the entry unit of `file`, `entry` and `symbol` that `read` makes,
+    /// made once for the run. The unit is known by where its parts are: they are
+    /// borrowed from the facts for as long as this context lives.
+    pub(super) fn authn_reading(
+        &self,
+        unit: (
+            &'a FileFacts,
+            &'a drift_core::EntryPoint,
+            Option<&'a Symbol>,
+        ),
+        read: impl FnOnce() -> authn::Reading,
+    ) -> authn::Reading {
+        let (file, entry, symbol) = unit;
+        let key = (
+            std::ptr::from_ref(file).addr(),
+            std::ptr::from_ref(entry).addr(),
+            symbol.map_or(0, |s| std::ptr::from_ref(s).addr()),
+        );
+        self.readings.get_or(key, read)
     }
 
     /// The keys this repository scopes rows to the caller by, as `learn` finds them

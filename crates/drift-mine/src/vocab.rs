@@ -1031,14 +1031,18 @@ mod tests {
         ("mine.rs", "sibling_of", "rank siblings"),
         // A wrapper is a guard: by a definitionless name, by a thrown error class; an
         // opening name vetoes it.
-        ("security.rs", "authenticating_root", "a guard by name"),
+        ("security.rs", "authenticating_root_read", "a guard by name"),
         // What `authenticating_root` asks of each definition, by a thrown error
         // class: asked again where a refusal is found and not proven.
         ("security.rs", "rejects", "a body that rejects"),
         // A callee whose name opens access is no in-body guard (#51, #62): the one
         // opening veto on a refusal. Its name still refuses through
         // `refuse::names_access_control` at every caller.
-        ("security.rs", "callee_is_guard", "veto an opening callee"),
+        (
+            "security.rs",
+            "callee_is_guard_read",
+            "veto an opening callee",
+        ),
         // Building an in-repo class is a guard only when its constructor throws a
         // rejection class: what its other methods throw says nothing about the call.
         (

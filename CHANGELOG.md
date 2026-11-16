@@ -496,6 +496,13 @@ main branch.
 
 ### Changed: behaviour an existing user will notice
 
+- **Hooks that scan the whole repository, `drift security` and `drift practices`
+  are faster on large repositories, with the same output.** A guard is read once
+  per run instead of once for every entry point that names it, each entry point's
+  authentication once instead of once per concern, and a compose service's code
+  once for every service it may send to. On a 3,900-file repository a
+  `PostToolUse` after an edit that changes what the repository lists went from
+  about 5 s to about 2.4 s, and `drift practices --json --units` from 5.3 to 2.9 s.
 - **Breaking: the GitHub Action runs the Drift of its own ref, and installs a
   release binary when there is one.** `drift-ref` now defaults to empty, which
   runs the Drift of the ref the Action is used at (`uses: dadbodgeoff/drift@<ref>`)

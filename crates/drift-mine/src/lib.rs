@@ -26,6 +26,7 @@ pub mod introduced;
 pub mod keytypes;
 pub mod kubernetes;
 pub mod map;
+mod memo;
 pub mod mine;
 pub mod neighbour;
 pub mod opt_out;

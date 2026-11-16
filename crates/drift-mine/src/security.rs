@@ -18,6 +18,7 @@ use crate::vocab::refuse::names_access_control;
 
 /// The Kubernetes manifests, read as a deployment of the repository's code.
 mod cluster;
+mod named;
 pub mod platforms;
 pub use cluster::{PATH_ANNOTATIONS, Workload};
 
@@ -2587,6 +2588,9 @@ impl Boundaries {
         }
         self.cluster_relays(repo);
         let callers = std::mem::take(&mut self.callers);
+        // The clients built from one directory ask its files of each service they
+        // send to: looked through once ([`named::Walked`]).
+        let mut walked: BTreeMap<(&Path, &str), named::Walked> = BTreeMap::new();
         for c in &callers {
             let under = |path: &str| {
                 c.from.is_empty()
@@ -2608,7 +2612,13 @@ impl Boundaries {
             let Some((file, request)) = sent else {
                 continue;
             };
-            if !c.named && named_in_files(&c.root, &c.from, &c.names).is_none() {
+            if !c.named
+                && walked
+                    .entry((c.root.as_path(), c.from.as_str()))
+                    .or_insert_with(|| named::Walked::new(&c.root, &c.from))
+                    .named(&c.root, &c.from, &c.names)
+                    .is_none()
+            {
                 continue;
             }
             let by = match request.within.as_str() {
@@ -2883,7 +2893,11 @@ fn called_by(clients: &[String]) -> String {
 
 /// Whether `text` names one of `names` as a host: after `://`, or before a port.
 fn names_host(text: &str, names: &[String]) -> bool {
-    let text = text.to_lowercase();
+    names_host_lowered(&text.to_lowercase(), names)
+}
+
+/// [`names_host`] of a text already in lower case.
+fn names_host_lowered(text: &str, names: &[String]) -> bool {
     let word = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.';
     names.iter().filter(|n| !n.is_empty()).any(|n| {
         text.match_indices(n.as_str()).any(|(i, _)| {
@@ -3018,48 +3032,7 @@ fn relay(root: &Path, p: &Svc, to: &Svc) -> Option<String> {
 /// that `dir` has more files than are looked through (at most 3000, 256 KiB each),
 /// which counts as naming it. None when no file does.
 fn named_in_files(root: &Path, dir: &str, names: &[String]) -> Option<String> {
-    const MAX_FILES: usize = 3000;
-    const TEXT: &[&str] = &[
-        "js", "mjs", "cjs", "ts", "tsx", "jsx", "json", "py", "toml", "yaml", "yml", "env", "conf",
-    ];
-    let walker = ignore::WalkBuilder::new(root.join(dir))
-        .follow_links(false)
-        .hidden(false)
-        .git_global(false)
-        .git_exclude(false)
-        .require_git(false)
-        .filter_entry(|e| e.file_name() != "node_modules" && e.file_name() != ".git")
-        .sort_by_file_path(|a, b| a.cmp(b))
-        .build();
-    let mut seen = 0;
-    for e in walker.filter_map(Result::ok) {
-        let path = e.path();
-        let text_file = path
-            .extension()
-            .and_then(|x| x.to_str())
-            .is_some_and(|x| TEXT.contains(&x))
-            || path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with(".env"));
-        if !text_file || !path.is_file() {
-            continue;
-        }
-        seen += 1;
-        if seen > MAX_FILES {
-            return Some(format!(
-                "{dir} has more files than Drift looks through for its name"
-            ));
-        }
-        if read_small(path).is_some_and(|text| names_host(&text, names)) {
-            let rel = path.strip_prefix(root).unwrap_or(path);
-            return Some(format!(
-                "{} names it",
-                rel.to_string_lossy().replace('\\', "/")
-            ));
-        }
-    }
-    None
+    named::Walked::new(root, dir).named(root, dir, names)
 }
 
 /// The first rewrite or proxy setting of a framework configuration file
@@ -4520,6 +4493,15 @@ impl EntryRow {
 ///
 /// [`RepoContext::called_as_guard`]: crate::context::RepoContext::called_as_guard
 pub fn callee_is_guard(ctx: &crate::context::RepoContext, callee: &str) -> bool {
+    // Asked of every call in every body that may guard: answered once per callee.
+    let c = crate::mine::norm_ref(callee);
+    ctx.asked()
+        .callee_is_guard
+        .get_or(&*c, || callee_is_guard_read(ctx, &c))
+}
+
+/// [`callee_is_guard`], read.
+fn callee_is_guard_read(ctx: &crate::context::RepoContext, callee: &str) -> bool {
     let c = crate::mine::norm_ref(callee);
     grant::auth_class(&c) != grant::AuthClass::Public
         && (names_access_control(&c)
@@ -4799,6 +4781,15 @@ pub fn authenticates(ctx: &crate::context::RepoContext, wrapper: &str) -> bool {
 /// dependency that only passes authentication through (`get_folder_service` depending on
 /// `resolve_principal`) is read as the guard it is built on.
 pub fn authenticating_root(ctx: &crate::context::RepoContext, wrapper: &str) -> Option<String> {
+    // Asked again for every unit that names the wrapper: answered once per wrapper.
+    let w = crate::mine::norm_ref(wrapper);
+    ctx.asked()
+        .authenticating_root
+        .get_or(&*w, || authenticating_root_read(ctx, &w))
+}
+
+/// [`authenticating_root`], read.
+fn authenticating_root_read(ctx: &crate::context::RepoContext, wrapper: &str) -> Option<String> {
     let w = crate::mine::norm_ref(wrapper).into_owned();
     // A name that opens access is no guard, whatever the body does: not for a
     // Python function under the reading made since the measured build, where a
@@ -4908,6 +4899,15 @@ fn rejects(s: &Symbol) -> bool {
 /// added since the measured build are
 /// ([`crate::context::RepoContext::since_measured`]).
 pub fn may_authenticate(ctx: &crate::context::RepoContext, wrapper: &str) -> bool {
+    // Asked again for every unit that calls the wrapper: answered once per wrapper.
+    let w = crate::mine::norm_ref(wrapper);
+    ctx.asked()
+        .may_authenticate
+        .get_or(&*w, || may_authenticate_read(ctx, &w))
+}
+
+/// [`may_authenticate`], read.
+fn may_authenticate_read(ctx: &crate::context::RepoContext, wrapper: &str) -> bool {
     let w = crate::mine::norm_ref(wrapper).into_owned();
     ctx.since_measured()
         && !external(&w)
@@ -4932,6 +4932,15 @@ pub fn may_authenticate(ctx: &crate::context::RepoContext, wrapper: &str) -> boo
 /// ([`crate::guard_position`]): there a name is never evidence, for a guard or
 /// against one.
 pub fn proving_root(ctx: &crate::context::RepoContext, wrapper: &str) -> Option<String> {
+    // Asked again for every unit that names the wrapper: answered once per wrapper.
+    let w = crate::mine::norm_ref(wrapper);
+    ctx.asked()
+        .proving_root
+        .get_or(&*w, || proving_root_read(ctx, &w))
+}
+
+/// [`proving_root`], read.
+fn proving_root_read(ctx: &crate::context::RepoContext, wrapper: &str) -> Option<String> {
     let w = crate::mine::norm_ref(wrapper).into_owned();
     if ctx.is_nest_guard(&w) && nest_guard_rejects(ctx, &w) {
         return Some(w);

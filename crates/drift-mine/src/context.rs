@@ -115,8 +115,9 @@ pub struct RepoContext<'a> {
     /// Every file the facts have, context files included.
     modules: BTreeSet<String>,
     /// Every symbol the facts define, context files included, by `path#name` and
-    /// `path#<exported name>` ([`RepoContext::definition`]).
-    symbols: BTreeMap<String, &'a drift_core::Symbol>,
+    /// `path#<exported name>` ([`RepoContext::definition`]). Hashed: looked up for
+    /// every hop of every guard question, and nothing reads it in order.
+    symbols: std::collections::HashMap<String, &'a drift_core::Symbol>,
     /// Functions and other non-class symbols (`path#name`) an entry point refers to by
     /// reference: the handler of `router.get("/x", handler)`, whose route is the routes
     /// file's own symbol ([`RepoContext::is_entry_unit`]).
@@ -142,6 +143,9 @@ pub struct RepoContext<'a> {
     /// The reader is `drift security` or the practice map
     /// ([`RepoContext::since_measured`]).
     since_measured: bool,
+    /// The guard questions asked of this context, answered once each
+    /// ([`crate::memo::Asked`]).
+    asked: crate::memo::Asked,
 }
 
 /// How many levels of in-repo functions a Python call rule's member may call its
@@ -631,7 +635,7 @@ impl<'a> RepoContext<'a> {
                             // it was: nothing of it runs with the route. What the class
                             // is built on still does (its `__init__`, its methods).
                             drift_core::WrapKind::Decorator
-                                if by_call && registry_function(&symbols, &r) => {}
+                                if by_call && registry_function(symbols.get(&r).copied(), &r) => {}
                             drift_core::WrapKind::Call | drift_core::WrapKind::Decorator
                                 if !crate::security::SCHEMA_ONLY.contains(&r.as_str()) =>
                             {
@@ -710,7 +714,8 @@ impl<'a> RepoContext<'a> {
             entry_classes,
             reached_only,
             one_file: repo.files.len() <= 1,
-            symbols,
+            symbols: symbols.into_iter().collect(),
+            asked: crate::memo::Asked::default(),
             ref_entries,
             entry_checks,
             profiles,
@@ -788,7 +793,14 @@ impl<'a> RepoContext<'a> {
     /// not, so what it reads as a guard is what the measured build read.
     pub fn reading_since_measured(mut self) -> Self {
         self.since_measured = true;
+        // What was answered for the other reading is not this one's.
+        self.asked = crate::memo::Asked::default();
         self
+    }
+
+    /// The guard questions this context has answered ([`crate::memo::Asked`]).
+    pub(crate) fn asked(&self) -> &crate::memo::Asked {
+        &self.asked
     }
 
     /// Whether the proofs added since the measured build are read
@@ -937,15 +949,17 @@ impl<'a> RepoContext<'a> {
     pub fn definition(&self, r: &str) -> Option<&'a drift_core::Symbol> {
         let r = crate::mine::norm_ref(r);
         let (module, rest) = r.split_once('#')?;
-        let segs: Vec<&str> = rest.split('.').collect();
-        (1..=segs.len()).rev().find_map(|k| {
-            if segs[..k].iter().any(|s| s.contains('(')) {
-                return None;
-            }
-            self.symbols
-                .get(&format!("{module}#{}", segs[..k].join(".")))
-                .copied()
-        })
+        // Each prefix of `rest` that ends where a segment does, longest first, is a
+        // slice of `r` itself: nothing is built to look one up.
+        let at = module.len() + 1;
+        std::iter::once(rest.len())
+            .chain(rest.rmatch_indices('.').map(|(i, _)| i))
+            .find_map(|end| {
+                if rest[..end].contains('(') {
+                    return None;
+                }
+                self.symbols.get(&r[..at + end]).copied()
+            })
     }
 
     /// `symbol` calls `callee` through an in-repo function it calls, to
@@ -1113,7 +1127,8 @@ impl<'a> RepoContext<'a> {
     /// `target` is a registry function of these facts ([`registry_function`]), and
     /// nothing in its name says access control.
     pub fn is_registry_function(&self, target: &str) -> bool {
-        registry_function(&self.symbols, &crate::mine::norm_ref(target))
+        let target = crate::mine::norm_ref(target);
+        registry_function(self.symbols.get(&*target).copied(), &target)
     }
 
     /// The facts hold at most one file, as a hook's single-file scan does (its base
@@ -1701,9 +1716,10 @@ const NO_KIND_DIRS: &[&str] = &[
 /// in a registry and hands it back unchanged ([`drift_core::controls::REGISTERS_ARG`]),
 /// and nothing in its name says who may pass (the refuse vocabulary:
 /// [`crate::vocab::refuse::guard_shaped`], [`crate::vocab::refuse::part_guard_shaped`]). A
-/// package decorator, whose definition the facts lack, never is one.
-fn registry_function(symbols: &BTreeMap<String, &drift_core::Symbol>, target: &str) -> bool {
-    symbols.get(target).is_some_and(|s| {
+/// package decorator, whose definition the facts lack, never is one. `symbol` is what
+/// the facts define at `target`.
+fn registry_function(symbol: Option<&drift_core::Symbol>, target: &str) -> bool {
+    symbol.is_some_and(|s| {
         s.kind == drift_core::SymbolKind::Function
             && s.controls
                 .iter()
