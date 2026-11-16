@@ -3333,6 +3333,8 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                 || *all
                 || *interactive
                 || *review
+                || !confirm.is_empty()
+                || !reject.is_empty()
                 || reason.is_some()
                 || evidence.is_some();
             let scripted = !yes_to.is_empty() || !no_to.is_empty();

@@ -110,7 +110,9 @@ impl ReviewLog {
             let mut proposed: Vec<&Convention> = policy
                 .conventions
                 .iter()
-                .filter(|c| c.status == Status::Proposed)
+                // As the review ranks them (`review_queue`): mined proposals only; a
+                // from-map proposal is not placed among them and has no rank.
+                .filter(|c| c.status == Status::Proposed && c.from_map.is_none())
                 .collect();
             tier::order_by_tier(&mut proposed, |c| c.tier());
             for p in rank::place(&proposed, cap) {

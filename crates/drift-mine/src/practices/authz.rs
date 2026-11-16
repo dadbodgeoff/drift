@@ -6770,6 +6770,10 @@ fn unscoped<'a>(
             return None;
         }
         if common::external(w) {
+            // A package's wrapper no list of Drift's knows may be the scope ([`closure`]).
+            if super::basis::unlisted_package(w) {
+                return None;
+            }
             continue;
         }
         match ctx.definition(w) {
@@ -6877,7 +6881,16 @@ fn closure<'a>(cx: &Cx<'a>, roots: Vec<Node<'a>>) -> Option<Vec<Node<'a>>> {
             if c.starts_with("unresolved:") || c.starts_with("param:") {
                 return None;
             }
-            if common::external(c) || logs.contains(&c) {
+            if logs.contains(&c) {
+                continue;
+            }
+            if common::external(c) {
+                // An export of a package no list of Drift's knows ([`super::basis::
+                // unlisted_package`]: what a none lists as not read) is code the facts
+                // do not define: it may check or scope the key. The reading ends.
+                if super::basis::unlisted_package(c) {
+                    return None;
+                }
                 continue;
             }
             let built = c.strip_suffix("(new)");
