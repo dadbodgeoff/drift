@@ -680,10 +680,13 @@ fn a_webhook_that_verifies_a_signature_is_not_without_a_guard() {
         .collect();
     from_check.sort();
     let diff = json(r, &["security", "--diff-base", "main", "--json"]);
+    // A route whose guard is unknown is listed apart (`guard_unknown`), never as one
+    // with no guard: the same routes, in the two lists together.
     let mut from_security: Vec<String> = diff["added_without_guard"]
         .as_array()
         .unwrap_or_else(|| panic!("{diff:#}"))
         .iter()
+        .chain(diff["guard_unknown"].as_array().into_iter().flatten())
         .map(|a| a["route"].as_str().unwrap().to_string())
         .collect();
     from_security.sort();
