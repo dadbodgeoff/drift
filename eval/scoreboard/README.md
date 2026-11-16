@@ -12,7 +12,7 @@ R=/tmp/claude-0/-home-user/3c181215-935f-5929-ad2f-066cd082e027/scratchpad/first
 O=/tmp/claude-0/-home-user-drift/3c181215-935f-5929-ad2f-066cd082e027/scratchpad/scoreboard/after
 
 python3 -I eval/scoreboard/scoreboard.py collect --bin $B --repos $R --out $O
-python3 -I eval/scoreboard/scoreboard.py score --data $O --out $O/score.json
+python3 -I eval/scoreboard/scoreboard.py score --data $O --out $O/score.json   # add --no-timing REASON for a debug build or a busy machine
 python3 -I eval/scoreboard/scoreboard.py diff eval/scoreboard/baseline/score.json $O/score.json
 ```
 
@@ -74,7 +74,17 @@ peak of 69 MiB. The two repositories' outputs total 0.9 MB. The audit outputs of
 ## score
 
 `score` computes every number from saved outputs alone, per repository and in total. A number
-that cannot be computed is `None` (`n/a`).
+that cannot be computed is `None` (`n/a`), never 0.
+
+Every `score.json` carries `harness_version` (`HARNESS_VERSION` in `scoreboard.py`; a score with
+no stamp is version 1). Bump it whenever a number is computed differently from the same raw
+outputs. Version 2 reads the map's proposals from `from_map`, unscoped keys from the authz
+rows, guard state from `opaque` only, keys findings as `ratchet.rs` does, and adds
+`sec.unreached*` and `entry.in_map_listed`.
+
+`--no-timing REASON` sets every `time.*` number to n/a and records REASON in
+`timing_not_comparable` and in each repository's notes. Use it when the binary is not a release
+build or the machine was busy: such timings measure the run, not Drift.
 
 ### The roadmap's eight scoreboard numbers
 
@@ -103,13 +113,15 @@ place, or "yes-ish"), `trivial`, `trivial_or_wrong` and `wrong`; census proposal
 | `entry.guard_known` | guarded + no guard | audit 4 §2 | 1,737 |
 | `entry.guarded` / `no_guard` / `guard_unknown` / `local` | classified in order: local, then non-empty `guards`, then `opaque`, otherwise no guard | audit 4 §2 | 1,290 / 447 / 172 / 5 |
 | `entry.reaching_sink` (`_no_guard`) | entries with a reach | audit 4 §2 | 153 (62) |
-| `entry.in_map` | entry points counted by `map --json` | audit 5 §2.5 | 952 |
-| `sec.findings` and `sec.findings.<kind>` | baseline findings, as `audit/4-count.py` counts them | audit 4 §2 | 892 |
+| `entry.in_map` | entry points counted by `map --json` (the measured listing, each package's `entry_points`) | audit 5 §2.5 | 952 |
+| `entry.in_map_listed` | `map --json` `entry_point_counts.listed`: every listing Drift makes | new build | n/a |
+| `sec.findings` and `sec.findings.<kind>` | baseline findings, keyed as `ratchet.rs` keys them; `no-authorization` and `unscoped-key` come from the authz rows (`assignment: none`, `unscoped`), as `drift security` adds them; `unscoped-key` is n/a for rows from before `kind`/`uses` | audit 4 §2 | 892 |
 | `sec.sinks` / `sinks_fed` | risky operations | audit 4 §2 | 419 / 229 |
 | `sec.unlisted` | handlers Drift did not list | audit 4 §2 | 207 |
 | `sec.guard_gaps` / `guard_gap_exceptions` | | audit 4 §2 | 5 / 8 |
 | `sec.reach.*` | reach kinds; `via_webhook_notify` is the juice-shop false SSRF | audit 4 §2 and unit 6 | 23 |
 | `sec.unlisted_snippets` / `sinks_snippets` | rows in juice-shop `data/static/codefixes` | audit 4 §2 | 18 / 8 |
+| `sec.unreached` / `unreached_sinks` / `unreached_snippets` | `security.json` `unreached`: production files nothing read reaches, listed apart (omitted when empty: 0 for a build whose rows carry `kind`/`uses`, n/a for an older one) | S6 | n/a |
 | `units.<concern>.{rows,known,identified,none,unknown}` | unit rows by assignment | audit 1 §2.2 | all: 12,677 / 9,022 / 0 / 2,267 / 1,388 |
 | `units.<concern>.distinct*` | deduplicated by (path, symbol, line) | audit 6 §2.2 (`6-units.py`) | 10,533: 7,548 variant, 1,705 none, 1,280 unknown |
 | `units.<concern>.in_candidate_place` | distinct units in a promotable place | audit 6 §2.2; audit 3 §2.1 | 3,352; api 241; errors 1,154 |
@@ -123,7 +135,7 @@ place, or "yes-ish"), `trivial`, `trivial_or_wrong` and `wrong`; census proposal
 | `cand.py_signin_exceptions` | scoreboard 4's denominator | audit 9 §3 | 58 |
 | `census.conventions` / `default` / `suggestion` / `withheld` | from `census.txt` | audit 6 §2.1 | 13 / 7 / 6 / 25 |
 | `census.outliers_unknown` | outliers whose sign-in row is unknown | audit 6 §2.4 | 15 |
-| `map.proposed`, `map.proposed.kind.<kind>` | `census --from-map --json` entries with `proposed: true` | S10/S11 (new build) | n/a |
+| `map.entries`, `map.proposed`, `map.proposed.{practice,layering,other}`, `map.proposed.kind.<kind>`, `map.same_as_mined` | the `from_map` list of `census --from-map --json` (each entry has `kind`: practice, layering, declared, wiring; and `proposed`); its `proposals` are the mined census, never counted here. No `from_map` list: n/a | S10/S11 (new build) | n/a |
 | `funnel.<stage>` | `DRIFT_FUNNEL` rows summed per stage | audit 7 §2.2 | observed 78,631; shown 13 |
 | `funnel.why.gate.<gate>` | dropped per gate, `census --why --json` | S12 (new build) | n/a |
 | `time.census_first_s`, `time.census_per_100k_s`, `time.peak_rss_mib` | | scoreboard 7 | |
@@ -146,6 +158,14 @@ gives each number's label, good direction (`up`, `down`, `same`, `info`), guard 
    `unknown` must be no more than the fall in `none` plus the fall in known (`known` plus
    `identified`).
 
+A repository scored on one side only is named (`NOT COMPARABLE: <repo>: scored before only`,
+and `not_comparable.one_side` in `--json`): none of its numbers or guards are compared, and it
+does not change the exit code. When the two sides carry different `harness_version`s, `diff`
+says so (`HARNESS VERSION:`, and `harness_version` in `--json`): re-score both from their data
+for a like-for-like diff. An unknown-guard trip gives the change in the concern's row count:
+units new to a concern (another concern now admits them) raise its unknown with no fall, so
+compare the units before reading it as a regression.
+
 When one side's promote list has a `passive` list and the other's has none (a build from before
 the split), the candidate numbers of that repository (`cand.*`, `units.*.in_candidate_place`) are
 marked `not comparable (older build)` (`?`), not judged better or worse, and a line names the
@@ -157,14 +177,16 @@ repositories.
 python3 -I -m unittest discover -s eval/scoreboard/tests
 ```
 
-## Baseline
+## Baseline and after
 
 `baseline/score.json` is `score` run on the audit outputs. Its promote lists have no `passive`
 list (`cand.passive: null`), so against a current build its candidate numbers are not comparable
 until it is regenerated. These are `audit/data/<repo>/` plus
 `audit/5-scratch/<repo>.census.json` and `<repo>.funnel.json`, all written by the audit binary.
 Timing comes from `collect` on NodeGoat and pygoat only. A fresh `collect` with the same binary
-on those two gives every number unchanged, including the census hash.
+on those two gives every number unchanged, including the census hash. It was re-scored with
+harness version 2 from the same data: only `sec.findings.unscoped-key` (now n/a) and the keys new
+in version 2 (n/a) changed.
 
 Where the baseline differs from an audit's text, the data supports these readings:
 - **juice-shop `codefixes` sinks:** there are 8, not 9 as audit 4 §2 says. The 2
@@ -182,3 +204,9 @@ Where the baseline differs from an audit's text, the data supports these reading
 - **Trivial enforceable TS rules:** audit 8 says 6 of its 15 enforceable rules are trivial, but
   it names 5 (E10, J7, J14, N7, N8), and its table marks N7 plain E. `rules.json` copies each
   table cell.
+
+`after/score.json` is `score --no-timing` on the outputs of the binary built from the head of
+`map-to-enforcement` (a debug build on a busy machine, so no timing). `RESULTS.md` gives the
+eight numbers before and after, what each needs before it can be filled, the numbers that
+moved, and the guard trips classified unit by unit. As for the baseline, the raw outputs are
+not committed.

@@ -182,6 +182,15 @@ main branch.
   exact tarballs that were install-tested. `node npm/set-version.mjs --check`
   lists every file whose version disagrees. Archive, checksum and package names
   are unchanged. For maintainers; nothing in the `drift` binary changed.
+- **`eval/scoreboard/` after score:** `after/score.json` scores this build
+  on the seven repositories, and `RESULTS.md` sets the eight scoreboard numbers
+  before against after, says what each still needs (labels, a replay, `drift
+  check` runs, a release-build timing), and classifies the two guard trips unit
+  by unit. Harness version 2 (`harness_version` in every score) reads the map's
+  proposals from `from_map` (version 1 counted none) and unscoped keys from the
+  authz rows. `score --no-timing` marks timings n/a. `diff` names a repository
+  scored on one side only, and says when the two sides were scored by different
+  harness versions.
 
 ### Changed: the files Drift writes
 
