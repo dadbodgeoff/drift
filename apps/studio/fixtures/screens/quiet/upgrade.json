@@ -1,0 +1,77 @@
+{
+ "schema": "drift-upgrade",
+ "version": 1,
+ "drift": "0.1.0-dev",
+ "apply": false,
+ "files": [
+  {
+   "path": ".drift/conventions.yaml",
+   "present": true,
+   "records": "`version:` (its format) and `engine:` (the Drift that last ran `drift init` here; `drift review` and `drift practices promote` keep it as it was); per convention `selector_version` (how its role is read; absent is 1) and, for an accepted one, `accepted_evidence` once a Drift that keeps it met it. It does not record which Drift made any later change.",
+   "written_by": "drift 0.1.0-dev",
+   "format": "1",
+   "this_drift": "reads formats up to 3; would write this file as format 1",
+   "notes": [
+    "the evidence a person accepted on is recorded for 0 of 0 accepted convention(s); Drift does not fill it in afterwards, since it would record what it reads today as what a person saw"
+   ]
+  },
+  {
+   "path": "drift.lock",
+   "present": true,
+   "records": "no Drift version and no format version: one line `<convention id> <path#symbol>` per baselined violation and, below each line written since fingerprints, a comment `#~ <id> <fingerprint> <path#symbol>` (the older form `<id> ~<fingerprint> <path#symbol>` is read too).",
+   "this_drift": "reads it as written",
+   "notes": [
+    "0 baselined violation(s), 0 with a fingerprint line"
+   ]
+  },
+  {
+   "path": ".drift/security.lock",
+   "present": false,
+   "records": "`# inventory:` (the version of the inventory that wrote it; a baseline without the line reads as 1) and `# fail:` (the kinds that fail `drift check`); no Drift version.",
+   "notes": []
+  },
+  {
+   "path": ".drift/config.yaml",
+   "present": false,
+   "records": "no Drift version and no format version; an answer `drift setup` recorded carries the day it was given.",
+   "notes": []
+  },
+  {
+   "path": ".drift/review-log/log.jsonl",
+   "present": false,
+   "records": "each event records the Drift that wrote it (`drift.version`) and the event's shape (`v`). Local, append-only; an upgrade never changes it.",
+   "notes": []
+  },
+  {
+   "path": ".drift/feedback/marks.json",
+   "present": false,
+   "records": "`schema` and `version` of its shape; no Drift version. Local; an upgrade never changes it.",
+   "notes": []
+  },
+  {
+   "path": ".drift/cache",
+   "present": true,
+   "records": "the facts schema in its directory name (`facts-v11`) and each parser's tag below it (`ts-l84-0.1.0-dev`: the lowering version and the Drift version). A new Drift reads none of an older one's entries and parses again.",
+   "this_drift": "facts-v11/ts-l86-0.1.0-dev, facts-v11/py-l74-0.1.0-dev",
+   "notes": []
+  }
+ ],
+ "conventions": [],
+ "violations": {
+  "reading_only": [],
+  "changed_code": [],
+  "cannot_tell": []
+ },
+ "security": {
+  "present": false,
+  "stamped": false,
+  "this_inventory": 2,
+  "new_in_drift": {},
+  "new_in_drift_total": 0,
+  "failing_not_in_baseline": 0
+ },
+ "integrations": [],
+ "done": [],
+ "left": [],
+ "pending": false
+}

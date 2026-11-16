@@ -18,6 +18,7 @@ import { mdCode, mdTable } from "@/shared/lib/markdown";
 import { navigate } from "@/shared/lib/router";
 import { useOpenCode } from "@/shared/ui/code";
 import { Loading } from "@/shared/ui/QueryState";
+import { MarkControl } from "@/entities/feedback";
 
 const PAGE = 100;
 const LEDGER: ViolationStatus[] = ["block", "advise", "held", "unsure", "suppressed", "baselined", "fixed"];
@@ -521,6 +522,7 @@ function ViolationDetail({ v, hold, conv, onOpen, onRegistry }: { v: Violation; 
           Open convention
         </Button>
       </div>
+      <MarkControl key={`${v.id} ${v.path}#${v.symbol}`} id={v.id} member={`${v.path}#${v.symbol}`} />
     </div>
   );
 }

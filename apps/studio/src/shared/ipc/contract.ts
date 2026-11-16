@@ -93,6 +93,24 @@ export const FunnelEnvelope = z
   .object({ schema: z.number(), observation_only: z.boolean(), gate: z.string().nullable(), reached: z.record(z.string(), z.number()), gates: z.array(z.any()), dropped: z.array(z.any()) })
   .passthrough();
 
+/** `drift census --from-map --json`: census with `from_map`, the proposals from Drift's map and what is not proposed (checked where read, features/from-map). */
+export const FromMapEnvelope = z.object({ schema: z.number(), from_map: z.array(z.any()) }).passthrough();
+/** `drift upgrade --json` (upgrade.rs, schema `drift-upgrade`): a report, or a refusal (`refused: true`); checked where read (features/upgrade). */
+export const UpgradeEnvelope = z.object({ schema: z.literal("drift-upgrade"), version: z.number() }).passthrough();
+/** `.drift/feedback/marks.json` (feedback.rs `MarksFile`); marks are checked where read (features/feedback). */
+export const MarksEnvelope = z.object({ schema: z.string(), version: z.number(), marks: z.array(z.any()) }).passthrough();
+/** A verdict on a report (`drift feedback mark --true|--wrong`). */
+export const Verdict = z.enum(["true", "wrong"]);
+export type Verdict = z.infer<typeof Verdict>;
+/** A mark's `--why`: 1 to 300 characters once whitespace is collapsed, no control characters (validated again in the main process). */
+export const MarkWhy = z
+  .string()
+  .max(4000)
+  .refine((r) => {
+    const t = r.trim().split(/\s+/).join(" ");
+    return t.length > 0 && [...t].length <= 300 && !hasControl(r);
+  }, "a reason of 1 to 300 characters");
+
 export const PolicyFiles = z.object({ conventions: z.string().nullable(), lock: z.string().nullable() });
 export type PolicyFiles = z.infer<typeof PolicyFiles>;
 
@@ -324,6 +342,16 @@ export const channels = {
   funnel: { req: z.tuple([RepoRef]), res: loaded(FunnelEnvelope) },
   /** `drift practices promote --list --json`: every practice that may be promoted now. Writes nothing. */
   promoteList: { req: z.tuple([RepoRef]), res: loaded(PromoteListEnvelope) },
+  /** `drift census --from-map --json`: the proposals from Drift's map, and what qualified and is not proposed, with why. Read-only. */
+  fromMap: { req: z.tuple([RepoRef]), res: loaded(FromMapEnvelope) },
+  /** `drift upgrade --json`: what this Drift reads differently in the files an older one wrote. Changes nothing. */
+  upgrade: { req: z.tuple([RepoRef]), res: loaded(UpgradeEnvelope) },
+  /** `drift upgrade --apply [--security-baseline] --json`: an explicit write of only what changes no decision a person made. */
+  upgradeApply: { req: z.tuple([RepoRef, z.object({ securityBaseline: z.boolean() })]), res: UpgradeEnvelope },
+  /** `drift feedback mark --true|--wrong [--why=<text>] -- <id> <path#symbol>`: a local mark, nothing sent; Drift's output. */
+  feedbackMark: { req: z.tuple([RepoRef, convId, MemberKey, Verdict, MarkWhy.nullable()]), res: z.string() },
+  /** `.drift/feedback/marks.json` as Drift wrote it; null when there is none. Read-only. */
+  feedbackMarks: { req: z.tuple([RepoRef]), res: MarksEnvelope.nullable() },
   policy: { req: z.tuple([RepoRef]), res: PolicyFiles },
   review: { req: z.tuple([RepoRef, Decision, z.array(convId).min(1).max(200)]), res: AuditEntry },
   /** `drift review --exempt <id> --member <m> --reason <r>`, or with a null reason `--unexempt <id> --member <m>`. */

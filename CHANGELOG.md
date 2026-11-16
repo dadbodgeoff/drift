@@ -33,6 +33,7 @@ main branch.
 
 ### Added
 
+- **Drift Studio: proposals from the map, upgrade and feedback.** Three new views. Proposals from the map is a read-only view of `census --from-map --json`, linked to Conventions. Upgrade reads `upgrade --json` and can run `upgrade --apply [--security-baseline] --json` after you confirm, only for the work Drift lists as its own. Feedback lists `.drift/feedback/marks.json`. Check gains Mark true and Mark wrong on a violation (`feedback mark`). Nothing is sent, and the export stays a command you run. Setup questions still have no screen.
 - **Make a practice the rule for new code:** `drift practices promote <P-id>`
   with `--in`, `--with`, `--block`, `--force`, `--dry-run`, `--json` and
   `--list`. It writes one accepted convention of rule kind `practice`, in advise

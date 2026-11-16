@@ -1,0 +1,21 @@
+/* ---------- Proposals from the map (drift census --from-map) ---------- */
+.fm {
+  max-width: 1180px;
+}
+.fm-head {
+  border-bottom: 1px solid var(--color-border);
+}
+.fm-prop__head {
+  gap: 8px;
+  align-items: baseline;
+}
+.fm-same,
+.fm-held__rows {
+  margin-top: 2px;
+}
+.fm-held__rows {
+  padding-left: 20px;
+}
+.fm-note {
+  overflow-wrap: anywhere;
+}

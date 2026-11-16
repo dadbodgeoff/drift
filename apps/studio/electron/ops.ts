@@ -5,6 +5,7 @@
 // from IPC_CHANNELS; the arguments it may pass are checked here, and the
 // `drift` argv is built here from fixed pieces.
 import { isAbsolute, normalize, posix, relative, sep } from "node:path";
+import { type Verdict, markFlags, upgradeFlags } from "./screens-ops";
 
 export class InvalidArgument extends Error {}
 
@@ -35,6 +36,14 @@ export type DriftOp =
   | { op: "funnel" }
   /** Every practice that may be promoted now (`drift practices promote --list --json`): writes nothing. */
   | { op: "promoteList" }
+  /** Proposals from Drift's map (`census --from-map --json`), and what qualified and is not proposed: read-only. */
+  | { op: "fromMap" }
+  /** What this Drift reads differently in the files an older one wrote (`upgrade --json`): changes nothing. */
+  | { op: "upgrade" }
+  /** `upgrade --apply --json`: only what changes no decision a person made; `--security-baseline` when asked. */
+  | { op: "upgradeApply"; securityBaseline: boolean }
+  /** A person's verdict on one violation (`feedback mark`), kept in .drift/feedback on this machine; nothing is sent. */
+  | { op: "feedbackMark"; id: string; member: string; verdict: Verdict; why: string | null }
   | { op: "version" }
   | { op: "censusHelp" };
 
@@ -179,10 +188,11 @@ export function promoteFlags(a: PromoteArgs, dryRun: boolean): string[] {
 
 /**
  * Whether an op writes to the repository. The only writes are `drift review` (decisions, exceptions, answers, the
- * review log setting), `drift init` and `drift practices promote` without `--dry-run`; every other op reads.
+ * review log setting), `drift init`, `drift practices promote` without `--dry-run`, `drift upgrade --apply` and
+ * `drift feedback mark` (a local, git-ignored file); every other op reads.
  */
 export function writesRepository(op: DriftOp["op"]): boolean {
-  return op === "review" || op === "exempt" || op === "setLog" || op === "answer" || op === "init" || op === "promote";
+  return op === "review" || op === "exempt" || op === "setLog" || op === "answer" || op === "init" || op === "promote" || op === "upgradeApply" || op === "feedbackMark";
 }
 
 /** argv for `drift`, never through a shell. `root` is an absolute repo path the person chose. */
@@ -228,15 +238,32 @@ export function driftArgs(root: string, op: DriftOp): string[] {
       return ["--root", root, "review", "--json"];
     case "answer":
       return ["--root", root, "review", ...answerFlags(op.id, op.answer, op.setApart, op.confirmEntry)];
+    case "fromMap":
+      return ["--root", root, "census", "--from-map", "--json"];
+    case "upgrade":
+      return ["--root", root, "upgrade", ...upgradeFlags(false, false)];
+    case "upgradeApply":
+      return ["--root", root, "upgrade", ...upgradeFlags(true, op.securityBaseline)];
+    case "feedbackMark":
+      return ["--root", root, "feedback", "mark", ...markFlags(op.id, op.member, op.verdict, op.why)];
   }
 }
 
 /**
  * Exit codes that still carry a valid JSON report: `drift check` exits 1 when something blocks; `drift practices
- * promote` exits 2 when it refuses, with the refusal as JSON on stdout (or, for bad arguments, nothing there).
+ * promote` exits 2 when it refuses, with the refusal as JSON on stdout (or, for bad arguments, nothing there);
+ * `drift upgrade` exits 3 when something is left and 2 when it refuses, and with `--apply` 1 when a write failed.
  */
 export function acceptableExit(op: DriftOp["op"], code: number): boolean {
-  return code === 0 || (op === "check" && code === 1) || ((op === "promote" || op === "promotePreview") && code === 2);
+  return (
+    code === 0 ||
+    (op === "check" && code === 1) ||
+    ((op === "promote" || op === "promotePreview") && code === 2) ||
+    // `drift upgrade`: 3 when something is left to do, 2 when it refused (both with the report on stdout); with
+    // `--apply`, 1 when a write failed (the report says what was written before it).
+    (op === "upgrade" && (code === 2 || code === 3)) ||
+    (op === "upgradeApply" && (code === 1 || code === 2 || code === 3))
+  );
 }
 
 /**
