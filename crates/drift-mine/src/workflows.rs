@@ -19,11 +19,13 @@
 //!   }}`, or under `permissions: contents: write`). A tag is whatever its owner
 //!   points it at next: the code that runs with the job's secrets is not the code
 //!   that was reviewed. An action named by a full commit, one of the repository
-//!   itself (`./`), one of the repository's own owner (`acme/actions/build@v1` in
-//!   a repository whose `origin` is `github.com/acme/app`: whoever moves its tag
-//!   can change the workflow itself) and the platform's own (`actions/`,
-//!   `github/`) are not listed. Where the repository's owner is not known (no
-//!   `origin` remote), every other owner's action is listed, as before.
+//!   itself (`./`) and the platform's own (`actions/`, `github/`) are not listed.
+//!   One of the repository's own owner (`acme/actions/build@v1` in a clone whose
+//!   `origin` is `github.com/acme/app`) is listed and said to be the owner's own
+//!   ([`WorkflowFinding::own_owner`]), never left out: the owner is read off the
+//!   clone's remote, which a fork, a mirror or a clone with no remote names
+//!   differently, and what the baseline holds and `drift check` fails must be the
+//!   same for one commit in every clone.
 //! - **A download handed to an interpreter in a shell step** (`curl ... | sh`,
 //!   `bash <(curl ...)`): what the remote server sends that day is what runs.
 //!
@@ -50,6 +52,17 @@ pub struct WorkflowFinding {
     /// What was read: the `ref` checked out, the expression interpolated, the
     /// action as it is named, or the command that downloads.
     pub detail: String,
+    /// `unpinned_action`: the action's owner is the repository's own, as this
+    /// clone's `origin` remote names it on GitHub ([`repository_owner`]). Said
+    /// beside the finding only: it is in no key a baseline holds, so it changes
+    /// nothing a check fails on. False where the owner is another or not known
+    /// (no such remote). Not serialised when false (additive).
+    #[serde(skip_serializing_if = "is_false")]
+    pub own_owner: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 /// Events whose workflow runs in the base repository, with its secrets, for
@@ -250,8 +263,10 @@ fn reads_secret(v: &Value) -> bool {
 
 /// The owner of the repository at `root`, as its `origin` remote names it on
 /// GitHub (`https://github.com/acme/app`, `git@github.com:acme/app.git`): what
-/// `github.repository_owner` is when its workflows run. None where the repository
-/// has no such remote, or its git directory is not read.
+/// `github.repository_owner` is when its workflows run from this clone. None where
+/// the repository has no such remote, or its git directory is not read. A fork's
+/// clone names the fork's owner: what this says only labels a finding
+/// ([`WorkflowFinding::own_owner`]).
 pub fn repository_owner(root: &Path) -> Option<String> {
     let dot = root.join(".git");
     // A worktree or a submodule: `.git` is a file naming the git directory.
@@ -288,22 +303,44 @@ fn origin_owner(config: &str) -> Option<String> {
         if key.trim() != "url" {
             continue;
         }
-        let url = value.trim();
-        let path = url
-            .split_once("github.com/")
-            .or_else(|| url.split_once("github.com:"))
-            .map(|(_, p)| p)?;
-        let owner = path.split('/').next().filter(|o| !o.is_empty())?;
-        return Some(owner.to_string());
+        return github_owner(value);
     }
     None
 }
 
+/// The owner a git remote URL names on GitHub: the first part of its path, where
+/// its host is `github.com` itself. A URL is read as git reads one: with a scheme
+/// (`https://github.com/acme/app`, `ssh://git@github.com:22/acme/app`), the host is
+/// what comes between `scheme://` (and a `user@`) and the first `/` (a `:port`
+/// apart); without one, the scp-like form `[user@]host:path`
+/// (`git@github.com:acme/app.git`), where no `/` comes before the `:` (else it is a
+/// local path). Any other host (`notgithub.com`, an enterprise host) is None.
+fn github_owner(url: &str) -> Option<String> {
+    let url = url.trim();
+    let (authority, path) = match url.split_once("://") {
+        Some((_, rest)) => rest.split_once('/').unwrap_or((rest, "")),
+        None => {
+            let (host, path) = url.split_once(':')?;
+            if host.contains('/') {
+                return None;
+            }
+            (host, path)
+        }
+    };
+    let host = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
+    let host = host.split(':').next().unwrap_or(host);
+    if !host.eq_ignore_ascii_case("github.com") {
+        return None;
+    }
+    let owner = path.trim_start_matches('/').split('/').next()?;
+    (!owner.is_empty()).then(|| owner.to_string())
+}
+
 /// An action as a step names it is another owner's, named by what that owner can
-/// move: not a path of the repository, not the platform's own, not one of the
-/// repository's own owner (`owner`, where it is known), not a full commit and not
-/// an image by its digest.
-fn unpinned(uses: &str, owner: Option<&str>) -> bool {
+/// move: not a path of the repository, not the platform's own, not a full commit and
+/// not an image by its digest. (Whether its owner is the repository's own is said
+/// beside it, [`of_owner`]: it depends on the clone.)
+fn unpinned(uses: &str) -> bool {
     if uses.is_empty() || uses.starts_with("./") || uses.starts_with("../") {
         return false;
     }
@@ -315,8 +352,13 @@ fn unpinned(uses: &str, owner: Option<&str>) -> bool {
     };
     let of = action.split('/').next().unwrap_or_default();
     let commit = version.len() == 40 && version.chars().all(|c| c.is_ascii_hexdigit());
-    let own = owner.is_some_and(|o| o.eq_ignore_ascii_case(of));
-    !commit && !own && !matches!(of, "actions" | "github")
+    !commit && !matches!(of, "actions" | "github")
+}
+
+/// The action `uses` names is of `owner` (the repository's own, where it is known).
+fn of_owner(uses: &str, owner: Option<&str>) -> bool {
+    let of = uses.split('@').next().unwrap_or_default().split('/').next();
+    owner.is_some_and(|o| of.is_some_and(|of| o.eq_ignore_ascii_case(of)))
 }
 
 /// The 1-based line of the first line of `text` that holds `needle`; 1 where none.
@@ -436,11 +478,12 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                     line: line_of(text, command),
                     job: job.clone(),
                     detail: command.chars().take(160).collect(),
+                    own_owner: false,
                 });
             }
             if holds
                 && let Some(uses) = step.get("uses").and_then(Value::as_str)
-                && unpinned(uses, owner)
+                && unpinned(uses)
             {
                 out.push(WorkflowFinding {
                     kind: "unpinned_action".into(),
@@ -448,6 +491,7 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                     line: line_of(text, uses),
                     job: job.clone(),
                     detail: uses.to_string(),
+                    own_owner: of_owner(uses, owner),
                 });
             }
             // A shell step's script, and the JavaScript `actions/github-script` runs:
@@ -468,6 +512,7 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                             line: line_of(text, written),
                             job: job.clone(),
                             detail: written.to_string(),
+                            own_owner: false,
                         });
                     }
                 }
@@ -490,6 +535,7 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                     line: line_of(text, r),
                     job: job.clone(),
                     detail: r.trim().to_string(),
+                    own_owner: false,
                 });
             }
             // A shell step that fetches the pull request's code itself
@@ -508,6 +554,7 @@ pub fn read_text_of(rel: &str, text: &str, owner: Option<&str>) -> Vec<WorkflowF
                     line: line_of(text, line),
                     job: job.clone(),
                     detail: line.chars().take(160).collect(),
+                    own_owner: false,
                 });
             }
         }
@@ -725,10 +772,13 @@ jobs:
         assert_eq!(lines, [("a".to_string(), 9), ("b".to_string(), 13)]);
     }
 
-    /// Pins audit 5's owner: before, `acme/actions/build@v1` in a repository of
-    /// `acme` was listed as another owner's action.
+    /// Pins the owner as a label (F3, review R3): before, an action of the owner the
+    /// clone's `origin` names was left out, so a baseline written in the upstream
+    /// clone did not hold it and a fork's clone (another `origin`) failed `drift
+    /// check` on the same commit. Now every clone finds the same findings; the
+    /// owner's own is said, never dropped.
     #[test]
-    fn an_action_of_the_repositorys_own_owner_is_not_another_owners() {
+    fn an_action_of_the_repositorys_own_owner_is_listed_and_said_to_be_its_own() {
         let text = "on: push
 jobs:
   deploy:
@@ -738,24 +788,50 @@ jobs:
           token: ${{ secrets.TOKEN }}
       - uses: someone/deploy@v2
 ";
-        let details = |owner: Option<&str>| -> Vec<String> {
+        let found = |owner: Option<&str>| -> Vec<(String, bool)> {
             read_text_of(".github/workflows/x.yml", text, owner)
                 .into_iter()
-                .map(|f| f.detail)
+                .map(|f| (f.detail, f.own_owner))
                 .collect()
         };
-        assert_eq!(details(Some("Acme")), ["someone/deploy@v2"]);
-        // Not known: every other owner's, as before.
-        assert_eq!(details(None), ["acme/actions/build@v1", "someone/deploy@v2"]);
+        let both = ["acme/actions/build@v1", "someone/deploy@v2"];
+        let details = |owner: Option<&str>| -> Vec<String> {
+            found(owner).into_iter().map(|(d, _)| d).collect()
+        };
+        // The same findings in the upstream clone, a fork's and one with no remote.
+        assert_eq!(details(Some("Acme")), both);
+        assert_eq!(details(Some("me")), both);
+        assert_eq!(details(None), both);
+        assert_eq!(
+            found(Some("Acme")),
+            [
+                ("acme/actions/build@v1".to_string(), true),
+                ("someone/deploy@v2".to_string(), false)
+            ]
+        );
+        assert!(found(None).iter().all(|(_, own)| !own));
+    }
+
+    /// Pins the remote's parse (F3, review R3): before, the host was matched as a
+    /// substring (`notgithub.com/x/y` read owner `x`).
+    #[test]
+    fn a_remote_names_an_owner_only_on_github_itself() {
+        let origin = |url: &str| origin_owner(&format!("[remote \"origin\"]\n\turl = {url}\n"));
+        assert_eq!(origin("git@github.com:acme/app.git"), Some("acme".to_string()));
+        assert_eq!(origin("https://github.com/makeplane/plane"), Some("makeplane".to_string()));
+        assert_eq!(origin("ssh://git@github.com/acme/app"), Some("acme".to_string()));
+        assert_eq!(origin("ssh://git@github.com:22/acme/app.git"), Some("acme".to_string()));
+        assert_eq!(origin("https://user@GitHub.com/acme/app"), Some("acme".to_string()));
+        assert_eq!(origin("https://notgithub.com/x/y"), None);
+        assert_eq!(origin("git@notgithub.com:x/y"), None);
+        assert_eq!(origin("https://github.example.com/x/y"), None);
+        assert_eq!(origin("/srv/git/github.com:x/y"), None);
+        assert_eq!(origin("../app"), None);
         assert_eq!(
             origin_owner(
                 "[core]\n\tbare = false\n[remote \"origin\"]\n\turl = git@github.com:acme/app.git\n"
             ),
             Some("acme".to_string())
-        );
-        assert_eq!(
-            origin_owner("[remote \"origin\"]\n\turl = https://github.com/makeplane/plane\n"),
-            Some("makeplane".to_string())
         );
         assert_eq!(
             origin_owner("[remote \"upstream\"]\n\turl = https://github.com/x/y\n"),

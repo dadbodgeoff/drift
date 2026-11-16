@@ -267,7 +267,9 @@ fn found(rows: &[(&str, &str)]) -> Findings {
 
 /// Pins: a baseline from before the stamp reads as inventory 1 with every kind of
 /// then failing; what it holds is kept; a kind added since (`unscoped-key`) is new in
-/// this Drift and fails nothing; a finding of an old kind a change added still fails.
+/// this Drift and fails nothing; so is a finding of an old kind whose reading was
+/// widened since (`no-guard`: F3, review R3, the upgrade must not fail CI); a finding
+/// of an old kind read as before (`workflow`) that a change added still fails.
 #[test]
 fn an_old_security_baseline_keeps_working() {
     let b = parse_baseline(OLD_BASELINE);
@@ -288,6 +290,10 @@ fn an_old_security_baseline_keeps_working() {
         ("risky", "raw_sql in lib/db.ts#query"),
         ("unscoped-key", "app/api/c/route.ts#GET GET /api/c takes orgId"),
         ("no-guard", "app/api/d/route.ts#GET GET /api/d"),
+        (
+            "workflow",
+            "unpinned_action in .github/workflows/ci.yml job deploy: someone/deploy@v2",
+        ),
     ]);
     let r = compare_with(&now, &b, None);
     assert_eq!(r.kept, 2);
@@ -295,9 +301,15 @@ fn an_old_security_baseline_keeps_working() {
     assert!(!r.added.contains_key("unscoped-key"), "{r:?}");
     assert!(!r.advised.contains_key("unscoped-key"), "{r:?}");
     assert_eq!(
-        r.added.get("no-guard").map(Vec::len),
+        r.new_in_drift.get("no-guard").map(Vec::len),
         Some(1),
-        "a change's unguarded route still fails: {r:?}"
+        "a wider reading's unguarded route fails nothing: {r:?}"
+    );
+    assert!(!r.added.contains_key("no-guard"), "{r:?}");
+    assert_eq!(
+        r.added.get("workflow").map(Vec::len),
+        Some(1),
+        "a change's finding of a kind read as before still fails: {r:?}"
     );
     assert!(r.gone.is_empty());
 

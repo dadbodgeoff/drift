@@ -1,0 +1,114 @@
+//! The security baseline against readings newer than it (F3, review R3 row 1).
+//!
+//! Pins: before, `found_since` knew only new kinds and new sink kinds, so a finding
+//! of an old kind that a widened reading found (a route behind a wrapper a call
+//! builds, a `$where` built in a helper, a guard gap from guards read since) failed
+//! `drift check` against a baseline the previous release wrote, with no change to
+//! the code; against a diff, only `guard-gap` outside the change was spared.
+
+use drift_mine::ratchet::{
+    Findings, INVENTORY_VERSION, compare_with, found_since, newer_readings_line, parse_baseline,
+    render, render_lock,
+};
+
+fn found(rows: &[(&str, &str, &str)]) -> Findings {
+    rows.iter()
+        .map(|(k, key, at)| ((k.to_string(), key.to_string()), at.to_string()))
+        .collect()
+}
+
+/// What the release before the stamp wrote: no `# inventory:`, no `# fail:`.
+const OLDER: &str = "# drift security baseline: what `drift security` found when this was written.\n\
+                     # `drift security --ratchet` reports what is found now and is not here.\n\
+                     # Written by `drift security --write-baseline`; do not edit by hand.\n\
+                     no-guard\tserver.ts#GET /a GET /a\n";
+
+#[test]
+fn every_kind_a_reading_widened_is_found_since_the_widening() {
+    for kind in [
+        "guard-gap",
+        "no-authorization",
+        "no-guard",
+        "risky",
+        "scope-gap",
+        "unguarded-reaching",
+        "whole-row",
+    ] {
+        assert_eq!(found_since(kind, "x"), 2, "{kind}");
+    }
+    // Read as before.
+    for kind in ["workflow", "dependency", "kubernetes", "leak"] {
+        assert_eq!(found_since(kind, "x"), 1, "{kind}");
+    }
+    assert!(INVENTORY_VERSION >= 2);
+}
+
+#[test]
+fn an_older_baseline_fails_nothing_a_wider_reading_finds_touched_or_not() {
+    let b = parse_baseline(OLDER);
+    assert_eq!(b.version, 1);
+    let now = found(&[
+        ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
+        (
+            "unguarded-reaching",
+            "server.ts#GET /s GET /s -> sql_string_interpolation",
+            "server.ts:9",
+        ),
+        ("risky", "nosql_injection in lib/dao.ts#byThreshold", "lib/dao.ts:2"),
+        ("guard-gap", "routes/x.ts#GET /x GET /x lacks auth", "routes/x.ts:4"),
+        (
+            "workflow",
+            "unpinned_action in .github/workflows/ci.yml job a: someone/x@v1",
+            ".github/workflows/ci.yml:7",
+        ),
+    ]);
+    // A whole-tree check, and one against a diff that touched every file: a touched
+    // file may hold what only the wider reading sees.
+    let all = |_: &str| true;
+    for touched in [None, Some(&all as &dyn Fn(&str) -> bool)] {
+        let r = compare_with(&now, &b, touched);
+        assert_eq!(r.kept, 1);
+        for kind in ["unguarded-reaching", "risky", "guard-gap"] {
+            assert_eq!(r.new_in_drift.get(kind).map(Vec::len), Some(1), "{kind}: {r:?}");
+            assert!(!r.added.contains_key(kind), "{kind}: {r:?}");
+        }
+        // A kind read as before still fails on what is not in the baseline.
+        assert_eq!(r.added.get("workflow").map(Vec::len), Some(1), "{r:?}");
+        let line = newer_readings_line(&r).unwrap();
+        assert!(line.starts_with("3 finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them"), "{line}");
+        let text = render(&r, 20);
+        assert_eq!(text.matches("readings newer than this baseline").count(), 1, "{text}");
+        assert!(text.contains("  server.ts#GET /s GET /s -> sql_string_interpolation  (server.ts:9)\n"), "{text}");
+    }
+}
+
+#[test]
+fn a_baseline_written_now_fails_on_a_new_finding() {
+    let before = found(&[("no-guard", "server.ts#GET /a GET /a", "server.ts:3")]);
+    let b = parse_baseline(&render_lock(&before));
+    assert_eq!(b.version, INVENTORY_VERSION);
+    let now = found(&[
+        ("no-guard", "server.ts#GET /a GET /a", "server.ts:3"),
+        ("no-guard", "server.ts#GET /b GET /b", "server.ts:8"),
+    ]);
+    let r = compare_with(&now, &b, None);
+    assert_eq!(r.added["no-guard"][0].key, "server.ts#GET /b GET /b");
+    assert!(r.new_in_drift.is_empty(), "{r:?}");
+    assert!(newer_readings_line(&r).is_none());
+}
+
+/// A scope gap is a share of siblings, as a guard gap is: an untouched entry point
+/// turns into an exception when others gain the scope. Before, only `guard-gap`
+/// went to `outside_change`.
+#[test]
+fn a_scope_gap_outside_the_change_fails_nothing() {
+    let b = parse_baseline(&render_lock(&Findings::new()));
+    let now = found(&[
+        ("scope-gap", "a.ts#f GET /a reads note without userId", "a.ts:3"),
+        ("scope-gap", "b.ts#g GET /b reads note without userId", "b.ts:4"),
+    ]);
+    let touched = |p: &str| p == "b.ts";
+    let r = compare_with(&now, &b, Some(&touched as &dyn Fn(&str) -> bool));
+    assert_eq!(r.added["scope-gap"][0].at, "b.ts:4");
+    assert_eq!(r.outside_change["scope-gap"][0].at, "a.ts:3");
+}

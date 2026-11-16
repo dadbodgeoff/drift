@@ -4178,10 +4178,18 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // in every format, after the exit code is decided, and never part of it.
             let base_entries = std::cell::OnceCell::new();
             // With no security baseline, the merge base's inventory is read once: for
-            // the security advice below, and for what the change adds.
+            // the security advice below, and for what the change adds. Only where a
+            // file the change touched lists an entry point: every row of the advice
+            // is one, so with none there is nothing to advise and the merge base is
+            // not scanned here (what the change adds reads it lazily, as before).
             let advice_base: Option<drift_mine::security::Inventory> =
                 match (&scope, &security) {
-                    (Some(s), None) if only.is_none() => match s.base_inventory(root) {
+                    (Some(s), None)
+                        if only.is_none()
+                            && facts.files.iter().any(|f| {
+                                s.touches(&f.path) && !f.listed_entry_points().is_empty()
+                            }) =>
+                    match s.base_inventory(root) {
                         Ok(inv) => Some(inv),
                         Err(e) => {
                             eprintln!(
@@ -4349,6 +4357,16 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                             "message": { "text": line.trim_start_matches("drift: ") },
                         }));
                     }
+                    // Findings of readings newer than the baseline: said once, never
+                    // results ([`drift_mine::ratchet::Ratchet::new_in_drift`]).
+                    if let Some(line) =
+                        security.as_ref().and_then(drift_mine::ratchet::newer_readings_line)
+                    {
+                        notes.push(serde_json::json!({
+                            "level": "note",
+                            "message": { "text": line },
+                        }));
+                    }
                     // What the security baseline does not hold fails the check: a
                     // result, so that code scanning shows why, under a rule per kind.
                     for (kind, rows) in security.iter().flat_map(|s| &s.added) {
@@ -4450,6 +4468,13 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
                                 ))
                             );
                         }
+                    }
+                    // Findings of readings newer than the baseline fail nothing and
+                    // are no annotations: said once, in the log.
+                    if let Some(line) =
+                        security.as_ref().and_then(drift_mine::ratchet::newer_readings_line)
+                    {
+                        println!("drift security: {line}");
                     }
                     // Advice is said in the log, not as annotations: the practice
                     // notices above already point at new entry points.

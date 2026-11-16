@@ -2,12 +2,15 @@
 //!
 //! - A route whose handler is what a call builds, handed to a wrapper
 //!   (`app.get(path, asyncHandler(searchProducts()))`), reaches what that call
-//!   makes; so does a factory's result given to `use` for a path that names a
-//!   parameter (`app.use("/ftp/:file", servePublicFiles())`), which is listed as
-//!   an `ALL` route. Neither handler stays in `unlisted`.
+//!   makes, and that handler is not in `unlisted`. A factory's result given to
+//!   `use` (`app.use("/ftp/:file", servePublicFiles())`) is a mount whatever its
+//!   path: no fact says whether what it makes is a router, a middleware or a
+//!   handler, so it is no route (review R3, F3), and a handler it makes stays in
+//!   `unlisted`, said not read.
 //! - `fed` follows the value: an operation is fed by the request only when the
 //!   parameter its operand is read off is the one each call on the way passes. A
-//!   parameter with a default the caller does not pass carries nothing.
+//!   parameter with a default the caller does not pass carries nothing, unless the
+//!   default is read off one it passes (`url = req.query.u`: F3).
 //! - A `$where` built in a function of the body and given to a query is the
 //!   query's, fed where the text is read off what the route passed.
 
@@ -106,8 +109,9 @@ export function servePublicFiles() {
 
 /// Pins gap 5 of the security audit: before, the route's only call was
 /// `lib/utils.ts#asyncHandler()(ref)`, so it reached nothing and
-/// `searchProducts` was in `unlisted`; the `use` with a parameterised path was no
-/// entry point at all and `servePublicFiles` was in `unlisted` too.
+/// `searchProducts` was in `unlisted`. The `use` with a parameterised path stays
+/// no entry point (F3: the `ALL` route S6 listed for it was a guess), and
+/// `servePublicFiles` stays in `unlisted`: not read, never an unguarded route.
 #[test]
 fn a_handler_a_call_builds_behind_a_wrapper_or_a_use_is_reached() {
     let (_, inv) = ts(&[
@@ -136,16 +140,14 @@ app.listen(3000);
         "{:?}",
         reaches(&inv, "GET /rest/products/search")
     );
-    let ftp = entry(&inv, "ALL /ftp/:file");
-    assert_eq!(ftp.method.as_deref(), Some("ALL"));
     assert!(
-        ftp.reaches.iter().any(|r| r.kind == "path_traversal"),
+        !inv.entry_points.iter().any(|e| e.symbol.starts_with("ALL /ftp")),
         "{:?}",
-        ftp.reaches
+        inv.entry_points.iter().map(|e| &e.symbol).collect::<Vec<_>>()
     );
     let left = unlisted(&inv);
     assert!(!left.contains(&"searchProducts".to_string()), "{left:?}");
-    assert!(!left.contains(&"servePublicFiles".to_string()), "{left:?}");
+    assert!(left.contains(&"servePublicFiles".to_string()), "{left:?}");
 }
 
 /// A `use` under a prefix with no parameter mounts, and is listed as no route: a

@@ -7056,6 +7056,10 @@ impl Collector<'_, '_> {
                         out.insert("*".to_string());
                     }
                 }
+                // Its default's ([`Collector::note_params`]).
+                if let Some(at) = self.own_local_at.get(&s) {
+                    out.extend(at.iter().cloned());
+                }
             } else if self.own_locals.contains(&s) {
                 match self.own_local_at.get(&s) {
                     Some(at) if !at.is_empty() => out.extend(at.iter().cloned()),
@@ -9038,6 +9042,29 @@ impl Collector<'_, '_> {
         }
         self.p.params.extend(found);
         self.flow_params(params);
+        // A parameter whose default is read off another (`url = req.query.u`) holds
+        // what that one holds where the caller leaves it out: its positions are
+        // that one's too ([`Collector::param_positions`]). A default read off no
+        // parameter (`hook = process.env.HOOK`) adds nothing.
+        if self.fn_depth == 1 {
+            for item in &params.items {
+                let Some(init) = &item.initializer else {
+                    continue;
+                };
+                let from = self.param_positions(init);
+                if from.is_empty() {
+                    continue;
+                }
+                let mut bound = Vec::new();
+                walk(&item.pattern, &mut bound);
+                for (s, _) in bound {
+                    self.own_local_at
+                        .entry(s)
+                        .or_default()
+                        .extend(from.iter().cloned());
+                }
+            }
+        }
     }
 
     /// A call through a parameter's members (`server.services.project.getProject()`,
@@ -13402,6 +13429,32 @@ fn hands_value_on(c: &CallExpression) -> bool {
     })
 }
 
+/// The sink kinds whose detector judges the call's first argument that is no number
+/// (`signals.rs` `call_sinks`): the code run, the query, the address, the path, the
+/// template, the markup. Any other kind is judged by what any argument holds
+/// (`mass_assignment` reads the arguments after the target of `Object.assign`,
+/// `nosql_injection` a `$where` in any of them), so its operand is every argument
+/// ([`drift_core::controls::SINK_FED_AT`]). Drift's own kind vocabulary.
+const OPERAND_KINDS: &[&str] = &[
+    signals::kind::EVAL,
+    signals::kind::EXEC,
+    signals::kind::SQL_RAW,
+    signals::kind::SQL_INTERP,
+    signals::kind::REDIRECT,
+    signals::kind::FETCH,
+    signals::kind::PATH,
+    signals::kind::TEMPLATE,
+    signals::kind::HTML,
+];
+
+/// The call runs a function through the language's own `call` / `apply`
+/// (`helper.call(this, req)`): the receiver comes first, so the arguments are not
+/// at the function's own positions ([`drift_core::controls::PASSES_AT`]).
+fn calls_through_receiver(callee: &Expression) -> bool {
+    matches!(unwrap_expr(callee), Expression::StaticMemberExpression(m)
+        if matches!(m.property.name.as_str(), "call" | "apply"))
+}
+
 impl<'a> Visit<'a> for Collector<'_, '_> {
     fn visit_decorator(&mut self, it: &Decorator<'a>) {
         if !self.skip_decorators {
@@ -13445,7 +13498,8 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             // follows what an entry point was sent through the parameter that
             // carries it, not through any parameter handed on.
             let callee = self.l.canon_callee(&it.callee);
-            let mut spread = false;
+            // Through `call` / `apply` no argument is at its own position.
+            let mut spread = calls_through_receiver(&it.callee);
             for (j, a) in it.arguments.iter().enumerate() {
                 spread |= matches!(a, Argument::SpreadElement(_));
                 let Some(e) = argument(a) else {
@@ -13465,20 +13519,46 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
                 }
             }
             if !kinds.is_empty() {
-                let operand = it
-                    .arguments
-                    .iter()
-                    .filter_map(argument)
-                    .find(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)));
-                let mut at = operand
-                    .map(|e| self.param_positions(e))
-                    .unwrap_or_default();
-                if at.is_empty() {
-                    at.insert("-".to_string());
-                }
+                // The operand a detector judges is the first argument that is no
+                // number for the kinds in [`OPERAND_KINDS`]; any other kind is
+                // judged by what any argument holds (`Object.assign({}, req.body)`,
+                // a `$where` anywhere in what a query is given), so every argument
+                // is its operand. `-` (fed by none of the parameters) is said only
+                // of an operand that was read; behind a spread, or where the
+                // function is called through `call` / `apply` (the arguments move
+                // by one), which argument it is is not known: `*`, as fed as the
+                // whole call was before positions were read.
+                let args: Vec<&Argument> = it.arguments.iter().collect();
+                let operand_at = args.iter().position(|a| {
+                    argument(a).is_some_and(|e| !matches!(unwrap_expr(e), Expression::NumericLiteral(_)))
+                });
+                let unplaced = calls_through_receiver(&it.callee)
+                    || operand_at.is_some_and(|i| {
+                        args[..=i].iter().any(|a| matches!(a, Argument::SpreadElement(_)))
+                    });
                 for k in &kinds {
-                    for p in &at {
-                        self.fed_sinks_at.insert((k.to_string(), p.clone()));
+                    let mut at: BTreeSet<String> = BTreeSet::new();
+                    if OPERAND_KINDS.contains(k) {
+                        if unplaced {
+                            at.insert("*".to_string());
+                        } else if let Some(e) = operand_at.and_then(|i| argument(args[i])) {
+                            at.extend(self.param_positions(e));
+                        }
+                    } else {
+                        for e in args.iter().filter_map(|a| argument(a)) {
+                            at.extend(self.param_positions(e));
+                        }
+                        if at.is_empty() || unplaced {
+                            // Some argument was read off a parameter
+                            // (`given_a_parameter`), by no position read here.
+                            at.insert("*".to_string());
+                        }
+                    }
+                    if at.is_empty() {
+                        at.insert("-".to_string());
+                    }
+                    for p in at {
+                        self.fed_sinks_at.insert((k.to_string(), p));
                     }
                 }
             }
@@ -13496,7 +13576,7 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
             if let Some(r) = self.l.canon_callee(&it.callee) {
                 self.made_passes.insert(r.clone());
                 // Which arguments carry what the function made was called with.
-                let mut spread = false;
+                let mut spread = calls_through_receiver(&it.callee);
                 for (j, a) in it.arguments.iter().enumerate() {
                     spread |= matches!(a, Argument::SpreadElement(_));
                     if argument(a).is_some_and(|e| self.reads_product_param(e)) {
@@ -14534,8 +14614,13 @@ impl<'a> Visit<'a> for Collector<'_, '_> {
         {
             self.sinks.insert(signals::kind::KEY_WRITE.into());
             self.fed_sinks.insert(signals::kind::KEY_WRITE.into());
-            // The key is the operand: the parameter it is read off.
-            for p in self.param_positions(&m.expression) {
+            // The key is the operand: the parameter it is read off; `*` where it
+            // reads one at no position read here (never "fed by none").
+            let mut at = self.param_positions(&m.expression);
+            if at.is_empty() {
+                at.insert("*".to_string());
+            }
+            for p in at {
                 self.fed_sinks_at
                     .insert((signals::kind::KEY_WRITE.to_string(), p));
             }

@@ -17,10 +17,13 @@
 //! baseline by writing it again.
 //!
 //! The baseline says which inventory wrote it ([`INVENTORY_VERSION`]) and which
-//! kinds fail `drift check` ([`Baseline::fail`]). A finding of a kind or a detector
-//! newer than the baseline is what a new Drift reads, not what a change did: it is
-//! reported apart and fails nothing until the baseline is written again. A kind
-//! added since ([`ADVISE_FIRST`]) advises until a person sets it to fail.
+//! kinds fail `drift check` ([`Baseline::fail`]). A finding may fail a check against
+//! a baseline only where the baseline was written by an inventory at least as new as
+//! the reading that finds it: a finding of a kind, a detector or a reading newer than
+//! the baseline ([`KIND_SINCE`], [`DETECTOR_SINCE`], [`READ_SINCE`]) may be what a new
+//! Drift reads, not what a change did, so it is reported apart and fails nothing
+//! until the baseline is written again. A kind added since ([`ADVISE_FIRST`])
+//! advises until a person sets it to fail.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -32,11 +35,14 @@ pub const SECURITY_LOCK: &str = ".drift/security.lock";
 
 /// The version of what the inventory finds, stamped in the baseline it writes.
 /// Raised whenever a kind of finding ([`KINDS`]) or a detector whose findings a
-/// baseline holds (a sink kind) is added, with the new one in [`KIND_SINCE`] or
-/// [`DETECTOR_SINCE`]: a baseline written before it does not hold what it finds,
-/// and that is no change's doing.
+/// baseline holds (a sink kind) is added, or a reading finds more of a kind that
+/// was there, with the kind in [`KIND_SINCE`], [`DETECTOR_SINCE`] or [`READ_SINCE`]:
+/// a baseline written before it does not hold what it finds, and that is no
+/// change's doing.
 ///
-/// 1: every kind and detector before the stamp. 2: `unscoped-key`.
+/// 1: every kind, detector and reading before the stamp. 2: `unscoped-key`, and the
+/// readings of [`READ_SINCE`]. (No build stamped 2 before those readings: the stamp
+/// and they ship together.)
 pub const INVENTORY_VERSION: u32 = 2;
 
 /// The version of a baseline written before baselines were stamped.
@@ -56,6 +62,38 @@ const KIND_SINCE: &[(&str, u32)] = &[("unscoped-key", 2)];
 /// `$where` a change adds through as "new in Drift". Telling them apart needs the
 /// reading that found a row to carry the version that added it.
 const DETECTOR_SINCE: &[(&str, u32)] = &[];
+
+/// Kinds of finding whose reading a version widened (it finds more of the kind, or
+/// keys some differently), with that version: a baseline written before it does
+/// not hold what the wider reading finds, and a finding of the kind cannot be told
+/// apart from one a change added, since both are keyed the same. So against an
+/// older baseline every finding of the kind it does not hold is new in Drift
+/// ([`Ratchet::new_in_drift`]), in the files a change touched too (a touched file
+/// may hold what only the wider reading sees), until the baseline is written again.
+///
+/// 2:
+/// - `no-guard`, `unguarded-reaching`: entry points read through a wrapper a call
+///   builds (`asyncHandler(searchProducts())`), Python permission classes read on
+///   any base, more of what the bodies reach, `fed` read by argument position;
+/// - `guard-gap`: more guards read (a role can cross the share, a guard be named
+///   anew), guards built on another, unknown guards set apart;
+/// - `scope-gap`, `no-authorization`: authorization read through module
+///   constructors and more sides of a filter;
+/// - `risky`: a `$where` built in a helper, a Python file path bound to a name
+///   first, a property written under a key read off a parameter;
+/// - `whole-row`: read for every entry point, so for those newly listed too.
+///
+/// `workflow`, `dependency`, `kubernetes` and `leak` read as before. Every later
+/// change to what a reading finds adds its kinds here with the new version.
+const READ_SINCE: &[(&str, u32)] = &[
+    ("guard-gap", 2),
+    ("no-authorization", 2),
+    ("no-guard", 2),
+    ("risky", 2),
+    ("scope-gap", 2),
+    ("unguarded-reaching", 2),
+    ("whole-row", 2),
+];
 
 /// Kinds that advise in `drift check` until a person sets them to fail
 /// (`drift security --write-baseline --fail-on <kind>`): new kinds of enforcement
@@ -432,8 +470,9 @@ pub fn load_baseline(root: &Path) -> std::io::Result<Option<Baseline>> {
     }
 }
 
-/// The inventory version that first finds a finding of `kind` keyed `key`: its
-/// kind's, or its detector's for a risky operation and what reaches one.
+/// The inventory version from which a finding of `kind` keyed `key` is found as it
+/// is now: the newest of its kind's, its detector's (for a risky operation and what
+/// reaches one) and its kind's reading's ([`READ_SINCE`]).
 pub fn found_since(kind: &str, key: &str) -> u32 {
     let of = |table: &[(&str, u32)], k: &str| {
         table
@@ -446,7 +485,9 @@ pub fn found_since(kind: &str, key: &str) -> u32 {
         "unguarded-reaching" => key.rsplit_once(" -> ").map(|(_, d)| d),
         _ => None,
     };
-    of(KIND_SINCE, kind).max(detector.map_or(UNSTAMPED, |d| of(DETECTOR_SINCE, d)))
+    of(KIND_SINCE, kind)
+        .max(detector.map_or(UNSTAMPED, |d| of(DETECTOR_SINCE, d)))
+        .max(of(READ_SINCE, kind))
 }
 
 /// What a run found against a baseline.
@@ -459,14 +500,17 @@ pub struct Ratchet {
     /// fail ([`ADVISE_FIRST`]): advice. Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub advised: BTreeMap<String, Vec<Added>>,
-    /// Found now and not in the baseline, of a kind or a detector newer than the
-    /// inventory that wrote it ([`found_since`]): new in this version of Drift, not
-    /// in this change. They fail nothing. Omitted when empty (additive).
+    /// Found now and not in the baseline, of a kind, a detector or a reading newer
+    /// than the inventory that wrote it ([`found_since`]): what this version of
+    /// Drift reads, which the baseline could not hold, whatever the change did.
+    /// They fail nothing until the baseline is written again. Omitted when empty
+    /// (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub new_in_drift: BTreeMap<String, Vec<Added>>,
-    /// Against a diff: entry points lacking a shared guard in files the change did
-    /// not touch (other entry points gained the guard): not the change's finding.
-    /// They fail nothing. Omitted when empty (additive).
+    /// Against a diff: entry points lacking a shared guard or scope in files the
+    /// change did not touch (other entry points gained it, so these turned into
+    /// exceptions without being changed): not the change's finding. They fail
+    /// nothing. Omitted when empty (additive).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub outside_change: BTreeMap<String, Vec<Added>>,
     /// In the baseline and no longer found: writing the baseline again drops them,
@@ -532,9 +576,12 @@ pub fn compare_with(
             continue;
         }
         let path = at.rsplit_once(':').map_or(at.as_str(), |(p, _)| p);
+        // A gap is a share of siblings: an untouched entry point turns into an
+        // exception when others gain what it lacks.
+        let relative = kind == "guard-gap" || kind == "scope-gap";
         let to = if found_since(kind, key) > baseline.version {
             &mut out.new_in_drift
-        } else if kind == "guard-gap" && touched.is_some_and(|t| !t(path)) {
+        } else if relative && touched.is_some_and(|t| !t(path)) {
             &mut out.outside_change
         } else if !baseline.fails(kind) {
             &mut out.advised
@@ -598,12 +645,15 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         ));
         rows_text(&mut out, rows, max);
     }
+    if let Some(line) = newer_readings_line(r) {
+        out.push_str(&format!("\n{line}\n"));
+    }
     for (kind, what) in KINDS {
         let Some(rows) = r.new_in_drift.get(*kind) else {
             continue;
         };
         out.push_str(&format!(
-            "\n{} {what} [{kind}]: new in this version of Drift, not in this change (the baseline was written by an older Drift, which did not look for them); they fail nothing until `drift security --write-baseline` records them\n",
+            "\n{} {what} [{kind}], from a reading newer than the baseline\n",
             rows.len()
         ));
         rows_text(&mut out, rows, max);
@@ -612,8 +662,9 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         let Some(rows) = r.outside_change.get(*kind) else {
             continue;
         };
+        let gained = if *kind == "scope-gap" { "the scope" } else { "the guard" };
         out.push_str(&format!(
-            "\n{} {what} [{kind}] in files this change did not touch: other entry points gained the guard, so these are not this change's; they fail nothing\n",
+            "\n{} {what} [{kind}] in files this change did not touch: other entry points gained {gained}, so these are not this change's; they fail nothing\n",
             rows.len()
         ));
         rows_text(&mut out, rows, max);
@@ -630,6 +681,18 @@ pub fn render(r: &Ratchet, max: usize) -> String {
         );
     }
     out
+}
+
+/// The one line that says what [`Ratchet::new_in_drift`] holds; None where it holds
+/// nothing. Said once, before those findings are listed, in every format that
+/// shows the baseline's comparison as text.
+pub fn newer_readings_line(r: &Ratchet) -> Option<String> {
+    let n: usize = r.new_in_drift.values().map(Vec::len).sum();
+    (n > 0).then(|| {
+        format!(
+            "{n} finding(s) come from readings newer than this baseline; they are listed and do not fail the check; write the baseline again to start checking them: `drift security --write-baseline`"
+        )
+    })
 }
 
 /// One thing a change adds that `drift check --diff-base` advises on where the
