@@ -3767,7 +3767,7 @@ impl<'r> Linker<'r> {
                 .collect(),
             truncated: vec![],
             unlisted_routes: f.raw.unlisted_routes.clone(),
-            unlisted_reasons: vec![],
+            unlisted_reasons: f.raw.unlisted_reasons.clone(),
             discovers,
             outgoing: f.raw.outgoing.clone(),
             test_requests: f

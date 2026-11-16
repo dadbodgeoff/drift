@@ -13,6 +13,9 @@ use super::*;
 #[path = "servers.rs"]
 mod servers;
 
+#[path = "consumers.rs"]
+mod consumers;
+
 const NEST_HTTP: &[(&str, &str)] = &[
     ("Get", "GET"),
     ("Post", "POST"),
@@ -4818,6 +4821,7 @@ impl<'s> Lowerer<'s> {
             }
             class_wraps.push(r);
         }
+        let worker_host = self.bullmq_worker_host(class);
         for el in &class.body.body {
             let ClassElement::MethodDefinition(m) = el else {
                 continue;
@@ -4849,6 +4853,10 @@ impl<'s> Lowerer<'s> {
                     }
                 }
                 sym.wraps.push((r, WrapKind::Decorator));
+            }
+            // `process` of a `WorkerHost` (`@nestjs/bullmq`): listed since.
+            if entry.is_none() && worker_host && consumers::worker_process(m) {
+                entry = Some(("job", "JOB"));
             }
             let Some((kind, label)) = entry else { continue };
             if let Some(body) = &m.value.body {

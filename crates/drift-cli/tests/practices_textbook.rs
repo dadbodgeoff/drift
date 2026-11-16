@@ -2964,8 +2964,9 @@ async def plain_rules(name: str, caller=Depends(get_caller)):
 }
 
 /// A service run as `python -m app.messaging.consumer` had no entry point: its
-/// consumer extends `BaseRabbitMQConsumer`, and the word split read `MQConsumer` as one
-/// word. It is an entry point of kind `consumer`: listed in `drift security` with its
+/// consumer extends `BaseRabbitMQConsumer`, whose body uses aio_pika (the listed
+/// reading decides by the library, never by the name: see `gap_consumers_cli.rs`).
+/// It is an entry point of kind `consumer`: listed in `drift security` with its
 /// kind and not counted as a route with no guard, listed in the practice map as a kind
 /// of its own, and in no population of authn or authz (no caller signs in to it).
 #[test]
@@ -2982,7 +2983,7 @@ fn a_message_consumer_is_an_entry_point_of_its_own_kind() {
     write(
         r,
         "svc/app/messaging/base.py",
-        "class BaseRabbitMQConsumer:\n    def __init__(self, url):\n        self.url = url\n\n    async def consume(self):\n        raise NotImplementedError\n",
+        "import aio_pika\n\n\nclass BaseRabbitMQConsumer:\n    def __init__(self, url):\n        self.url = url\n\n    async def consume(self):\n        return await aio_pika.connect_robust(self.url)\n",
     );
     write(
         r,
@@ -3025,7 +3026,7 @@ fn a_message_consumer_is_an_entry_point_of_its_own_kind() {
             &Value::from("svc/app/messaging/consumer.py"),
             &Value::from("AbConsumer"),
             &Value::from(6),
-            &Value::from("queue")
+            &Value::from("aio_pika")
         )
     );
     // No concern counts it: there is no caller to sign in, and it is no HTTP route.
@@ -3046,7 +3047,7 @@ fn a_message_consumer_is_an_entry_point_of_its_own_kind() {
     let map = drift(r, &["--no-cache", "practices"]);
     assert!(
         map.contains(
-            "Message consumers (1): fed by a queue, so no caller signs in and authn and authz do not apply; listed, not classified: svc/app/messaging/consumer.py:6 AbConsumer (queue)."
+            "Message consumers (1): fed by a queue, so no caller signs in and authn and authz do not apply; listed, not classified: svc/app/messaging/consumer.py:6 AbConsumer (aio_pika)."
         ),
         "{map}"
     );
@@ -3068,7 +3069,7 @@ fn a_card_says_of_sibling_consumers_that_a_queue_feeds_them() {
     write(
         r,
         "svc/app/messaging/base.py",
-        "class BaseRabbitMQConsumer:\n    def __init__(self, url):\n        self.url = url\n\n    async def consume(self):\n        raise NotImplementedError\n",
+        "import aio_pika\n\n\nclass BaseRabbitMQConsumer:\n    def __init__(self, url):\n        self.url = url\n\n    async def consume(self):\n        return await aio_pika.connect_robust(self.url)\n",
     );
     for name in ["A", "B", "C", "D", "E", "F", "G", "H", "I"] {
         write(

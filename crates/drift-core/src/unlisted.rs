@@ -10,9 +10,10 @@ use serde::{Deserialize, Serialize};
 use crate::FileFacts;
 
 /// Why a registration written as a route is not listed. One vocabulary for every
-/// reader: TypeScript reports [`UnlistedReason::ReceiverNotRead`] only; the others
-/// are what Python reports, where the registration names its handler, its path or
-/// what it mounts in a way Drift can tell it did not follow.
+/// reader: TypeScript reports [`UnlistedReason::ReceiverNotRead`] for a route and
+/// [`UnlistedReason::HandlerNotRead`] for a message consumer; the others are what
+/// Python reports, where the registration names its handler, its path or what it
+/// mounts in a way Drift can tell it did not follow.
 #[derive(
     Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]
@@ -51,6 +52,10 @@ pub enum UnlistedReason {
     /// they depend on is one Drift does not read, or the file does not parse. The
     /// place is in the deployment file, with what it says.
     DeploymentNotRead,
+    /// A class that only its name, or its base's, says is a message consumer
+    /// (`class Orders(BaseQueueConsumer)`): no messaging library Drift reads is
+    /// imported into what it or its base does, so what feeds it is not known.
+    NamedOnly,
 }
 
 impl UnlistedReason {
@@ -67,6 +72,7 @@ impl UnlistedReason {
             Self::TableNotRead => "table not read",
             Self::HandlerNotReached => "handler not reached",
             Self::DeploymentNotRead => "deployment not read",
+            Self::NamedOnly => "named as a consumer only",
         }
     }
 }

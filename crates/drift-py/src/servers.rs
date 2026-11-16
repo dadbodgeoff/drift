@@ -123,7 +123,7 @@ pub struct RawServerRoute {
     /// (`huey.contrib.djhuey.task`, an arq `WorkerSettings`).
     pub node: Option<RawNode>,
     pub adapter: String,
-    /// `http`, `websocket`, `job` or `cron`.
+    /// `http`, `websocket`, `job`, `cron` or `consumer` (`lower::consumers`).
     pub kind: String,
     /// As written; `None` for a job.
     pub path: Option<String>,

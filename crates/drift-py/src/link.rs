@@ -22,6 +22,8 @@ use crate::resolve::Resolver;
 
 #[path = "config.rs"]
 pub(crate) mod config;
+#[path = "consumers_link.rs"]
+mod consumers_link;
 #[path = "framework_links.rs"]
 mod framework_links;
 #[path = "graphql_link.rs"]
@@ -4694,7 +4696,8 @@ impl<'r> Linker<'r> {
             .map(|e| self.named_entry(fi, e))
             .collect();
         entry_points.extend(extra.entries.iter().cloned());
-        entry_points.extend(self.consumers(fi));
+        let consumers = self.consumers_read(fi, &entry_points);
+        entry_points.extend(consumers);
         // The resolvers of a GraphQL schema's root fields: the listed reading's.
         let gql = self.graphql_of(rel);
         entry_points.extend(gql.iter().flat_map(|g| g.entries.iter().cloned()));
