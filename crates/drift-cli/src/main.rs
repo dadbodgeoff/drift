@@ -21,6 +21,8 @@ mod wiring;
 mod workspace;
 // S23: `drift feedback`.
 mod feedback;
+// S32: `drift upgrade`.
+mod upgrade;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, IsTerminal, Write};
@@ -726,6 +728,11 @@ enum Command {
         #[command(subcommand)]
         action: feedback::FeedbackAction,
     },
+    /// After installing a newer Drift: what it reads differently in the files an older
+    /// one wrote (changes nothing; exit 3 when something needs doing), and with --apply
+    /// only what changes no decision a person made.
+    #[command(after_help = upgrade::HELP)]
+    Upgrade(upgrade::UpgradeArgs),
 }
 
 // Examples at the end of each command's --help.
@@ -4600,6 +4607,7 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             return Ok(ExitCode::from(code));
         }
         Command::Feedback { action } => return feedback::run(root, cli.no_cache, action),
+        Command::Upgrade(args) => return upgrade::run(cli, args),
     }
     Ok(ExitCode::SUCCESS)
 }

@@ -84,26 +84,74 @@ Upgrade the binary, then the repository, in this order:
 drift --version
 ```
 
-2. **Run a check on an up-to-date main branch.** Expect one slow run while the cache rebuilds. Read what changed against what you had.
+2. **Ask what the new Drift reads differently**, on an up-to-date main branch with the policy committed. It changes nothing (exit 0: nothing to do; exit 3: something is). Expect one slow run while the cache rebuilds.
 
 ```bash
-drift check
+drift upgrade
 ```
 
-3. **See what a re-learn would add**, without writing anything.
+3. **Let it do what changes no decision**, then read what is left: each item names its command.
+
+```bash
+drift upgrade --apply
+```
+
+4. **See what a re-learn would add**, without writing anything; re-run `init` only if you want the new proposals (it keeps every decision and id; new proposals get their current violations baselined). Then review them as you did the first time, and commit `.drift/conventions.yaml` and `drift.lock`.
 
 ```bash
 drift census
 ```
-
-4. **Re-run `init` only if you want the new proposals.** It keeps every decision and id and adds new proposals; new proposals get their current violations baselined. Then review them as you did the first time, and commit `.drift/conventions.yaml` and `drift.lock`.
 
 ```bash
 drift init
 ```
 
 5. **Move the team and CI together.** Pin the version everywhere: the same Drift version on every machine, and in CI a pinned Drift (the GitHub Action takes a `drift-ref` input, default `main`; pin a tag or a full commit SHA for reproducible CI). Machines on different versions can disagree about what `drift check` finds until all have upgraded.
-6. **Update the Claude Code plugin with the binary.** The plugin's hooks call `drift` from the `PATH`, and the plugin and the binary are released with the same version number.
+6. **Update the Claude Code plugin with the binary.** The plugin's hooks call `drift` from the `PATH`, and the plugin and the binary are released with the same version number. The plugin is installed outside the repository; `drift upgrade` does not read it.
+
+### What `drift upgrade` reports
+
+- **Each file Drift wrote**, with what it records of the Drift that wrote it, and its format against what this Drift reads and writes. Most files record no writer; the report says so and never guesses one:
+
+| File | Records of its writer | Records of its format |
+| --- | --- | --- |
+| `.drift/conventions.yaml` | `engine:`: the Drift that last ran `drift init` here (`drift review` and `drift practices promote` keep it as it was). No record of which Drift made any later change. | `version:` (1, 2 or 3); per convention `selector_version` (absent is 1); `accepted_evidence` once a Drift that keeps it met the convention accepted. |
+| `drift.lock` | Nothing. | Nothing: plain lines `<id> <path#symbol>`, and below those written since fingerprints a comment line `#~ <id> <fingerprint> <path#symbol>` (the older form `<id> ~<fingerprint> <path#symbol>` is read too). The report counts lines without one. |
+| `.drift/security.lock` | Nothing. | `# inventory:` (absent: read as 1) and `# fail:`. |
+| `.drift/config.yaml` | Nothing (an answer `drift setup` recorded carries its day). | Nothing. |
+| `.drift/review-log/log.jsonl` | Each event: `drift.version`. The report shows the last event's. | Each event: `v`. |
+| `.drift/feedback/marks.json` | Nothing. | `schema`, `version`. |
+| `.drift/cache/` | The parser tag of each directory (`ts-l84-0.1.0-dev`) holds the Drift version. | `facts-v11`. Generations this Drift does not read are listed; the cache is local and safe to delete. Nothing is deleted. |
+
+- **Every accepted convention**: its evidence when accepted (`accepted_evidence`; "not recorded" for one accepted before Drift kept it) against what this Drift reads now (members, those that follow it, those it cannot tell, its mode), and what changed class: `stale` (it advises until a person looks), `newly_violated_by_unchanged_code`, `no_longer_checkable` (Drift cannot tell any of its members), or `unchanged`.
+- **New violations, in three groups.** *Only because the reading changed*: the commit that first wrote the convention into `.drift/conventions.yaml` also wrote `drift.lock`; checked with this Drift at that commit (as `drift check --diff-base` checks a merge base), the violation was already there, in a declaration no line of which has changed since, and the lock written then did not hold it. *In code that changed*: `drift check` reports them as before. *Drift cannot tell*: no git history, a shallow clone, a policy never committed, a convention whose rule or role changed since, a file Drift could not parse at that commit, or a lock line taken out since; each with its reason, for a person.
+- **The security baseline**: its inventory version against this Drift's, and the findings of kinds or detectors added since, which fail nothing until the baseline records them. Findings of kinds the baseline knows that are not in it fail `drift check` as before; they are counted, for a person, because Drift cannot tell a change's from an old kind it now reads in more places.
+- **Agent integrations**, compared by content with what this Drift writes: the Drift block in `AGENTS.md`, `CLAUDE.md` or `.claude/CLAUDE.md`, and Drift's entries in `.claude/settings.json` or `.claude/settings.local.json`.
+
+### What `--apply` does, and never does
+
+In order, and only where a file would change (a file that needs none keeps its bytes and its modification time):
+
+1. Formats: no file needs a new format today. A `.drift/conventions.yaml` that holds a form of a newer format than its `version:` says is reported for a person, not raised: raising it makes every older Drift refuse the file.
+2. The violations that appear only because the reading changed are baselined in `drift.lock`, each as a member line and its fingerprint line, as `drift init` writes them.
+3. Drift's entries in `.claude/settings.json` are refreshed when they are exactly what an older Drift wrote (the project keeps each older list): the entries this Drift adds are merged in, nothing is removed. Entries that match no Drift's list were edited by a person and are left, with the command to refresh them. The `AGENTS.md` block is never rewritten: its older wording is not kept, so Drift cannot tell an older block from an edited one; the report names `drift export agents-md --write <file>`.
+4. `.drift/security.lock` only with `--security-baseline`: the findings new in this Drift are added and the stamp raised; every finding it held is kept, and the kinds that fail stay as they were.
+
+It never accepts, rejects, promotes or demotes a convention, never changes a mode, and never deletes a line. Running it twice is the same as once. An upgrade never makes a check fail that passed (it only adds lock lines), and never passes one that failed for a change (only violations in unchanged code that the lock written for their convention did not hold are baselined).
+
+### Exit codes and refusals
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | Nothing needs doing (after `--apply`: nothing is left). |
+| 3 | Something needs doing: by `--apply`, with `--security-baseline`, or by a person. Each item in "Left to do" names its command. |
+| 2 | Refused, nothing changed: `.drift/conventions.yaml` or `.drift/security.lock` was written by a newer Drift (upgrade Drift), or `.drift/conventions.yaml`, `drift.lock`, `.drift/security.lock` or `.drift/config.yaml` does not parse (the file and the line are named). |
+
+No hook and no `drift check` says an upgrade report is pending: the plan does not ask for it.
+
+### `--json`
+
+`drift upgrade --json` prints the same report as one object, deterministic (every list sorted, no time): `schema` `drift-upgrade`, `version` 1, `drift` (this Drift's version), `apply`, `files` (`path`, `present`, `records`, `written_by`, `format`, `this_drift`, `notes`), `conventions` (`id`, `summary`, `rule` `mined`, `practice` or `wiring`, `accepted`, `now` with `role`, `members`, `holders`, `not_checked`, `stale`, `mode`, `classes`, `reading_only`, `changed_code`, `cannot_tell`), `violations` (`reading_only`, `changed_code`, `cannot_tell`: each `id`, `member`, `line`, and `base` or `why`), `security` (`present`, `inventory`, `stamped`, `this_inventory`, `new_in_drift` by kind, `new_in_drift_total`, `failing_not_in_baseline`), `integrations` (`path`, `kind` `agents-md` or `claude-settings`, `state` `current`, `older`, `edited` or `differs`, `note`), `done`, `left` (`what`, `command`, `by` `apply`, `security_baseline` or `person`) and `pending`. A refusal is `{"schema", "version", "drift", "refused": true, "newer": [...], "unreadable": [...]}`, exit 2.
 
 To go back to an older Drift, reinstall the older binary; the cache rebuilds again. An older Drift refuses a `.drift/conventions.yaml` whose format version it does not know (see above), so a downgrade after `drift init` wrote version 2 needs that file restored from git; the same holds after a practice was promoted ([above](#promoted-practices-and-older-drift)). Downgrades are not tested by the project.
 
