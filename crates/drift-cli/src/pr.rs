@@ -76,6 +76,11 @@ pub struct DiffScope {
     /// The merge base's files not parsed for lack of stack, sorted.
     base_unchecked: Vec<String>,
     pub deleted: usize,
+    /// The merge base's facts and deployment boundary once [`DiffScope::check_base`]
+    /// scanned them: [`DiffScope::base_inventory`] reads them instead of checking the
+    /// merge base out and parsing it a second time. The facts carry the key files the
+    /// check attached, which the security inventory never reads.
+    base_scan: std::cell::OnceCell<(drift_core::RepoFacts, drift_mine::security::Boundaries)>,
 }
 
 impl DiffScope {
@@ -327,6 +332,8 @@ impl DiffScope {
             None,
             None,
         );
+        // Read while the checkout is there, for [`DiffScope::base_inventory`].
+        let boundaries = drift_mine::security::Boundaries::load(&base_root);
         drop(tree);
         let unchecked = drift_mine::unchecked::Unchecked::of(&facts);
         self.base_unchecked = unchecked.files.iter().cloned().collect();
@@ -343,6 +350,7 @@ impl DiffScope {
                 .map(|v| (v.id, format!("{}#{}", v.path, v.symbol)))
                 .collect(),
         );
+        let _ = self.base_scan.set((facts, boundaries));
         Ok(())
     }
 
@@ -471,6 +479,11 @@ impl DiffScope {
     /// its own fact cache ([`BaseTree`]); its compose files and `.drift/config.yaml`
     /// are read there, so a boundary the change moved is seen moving.
     pub fn base_inventory(&self, root: &Path) -> anyhow::Result<drift_mine::security::Inventory> {
+        // Scanned already by the check of the merge base: the same commit, read the same
+        // way, so the same facts and boundary.
+        if let Some((facts, boundaries)) = self.base_scan.get() {
+            return Ok(drift_mine::security::inventory_with(facts, boundaries.clone()));
+        }
         let prefix = git(root, &["rev-parse", "--show-prefix"])?.required("git rev-parse")?;
         let prefix = String::from_utf8_lossy(&prefix).trim_end().to_string();
         let tree = BaseTree::create(root, &self.merge_base)?;
@@ -697,6 +710,7 @@ fn parse(base: &str, merge_base: &str, status: &[u8], patch: &[u8]) -> DiffScope
         base_uncertain: BTreeSet::new(),
         base_unchecked: Vec::new(),
         deleted: 0,
+        base_scan: std::cell::OnceCell::new(),
     };
     let mut fields = status
         .split(|b| *b == 0)

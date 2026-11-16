@@ -3011,15 +3011,29 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             // run a binary from before the flag (which ignores the variable).
             let no_from_map = *no_from_map
                 || std::env::var("DRIFT_NO_FROM_MAP").is_ok_and(|v| !v.is_empty() && v != "0");
-            let from_map =
-                from_map_cli::for_init(root, &facts, &mut policy, python.on(), no_from_map);
+            // The practice map with units listed, built once for the proposals and the
+            // security summary below: the same facts and options either way (the policy
+            // saved between them changes conventions only, not the file kinds the options
+            // read), and a map of listed facts is the map of the facts.
+            let units_map = std::cell::OnceCell::new();
+            let units_map_of =
+                || units_map.get_or_init(|| practices::report_units_kept(root, &facts, None));
+            let from_map = from_map_cli::for_init_with(
+                &facts,
+                &mut policy,
+                python.on(),
+                no_from_map,
+                &units_map_of,
+            );
             policy.save(root)?;
+            // The inventory, read once for the summary and the baseline offered below.
+            let inv = security_inventory(cli, root, &facts);
             // The few security findings to look at first, from the inventory: facts, not
             // conventions, and nothing checks them ([`drift_mine::security_summary`]).
             {
-                let inv = security_inventory(cli, root, &facts);
-                let text = drift_mine::security_summary::render_first_run(&security_summary(
-                    root, &facts, &inv,
+                let text = drift_mine::security_summary::render_first_run(&security_summary_of(
+                    &inv,
+                    units_map_of(),
                 ));
                 if !text.is_empty() {
                     println!("\n{}", text.trim_end());
@@ -3131,7 +3145,6 @@ fn run(cli: &Cli) -> anyhow::Result<ExitCode> {
             let security_offer: Option<drift_mine::ratchet::Findings> =
                 match drift_mine::ratchet::load_baseline(root) {
                     Ok(None) => {
-                        let inv = security_inventory(cli, root, &facts);
                         baseline_findings(root, &facts, &inv)
                             .ok()
                             .filter(|f| !f.is_empty())
@@ -4686,9 +4699,18 @@ fn security_summary(
         ..practices::options(root, facts, drift_mine::practices::Scope::default())
     };
     let map = drift_mine::practices::practices(facts, &opts);
+    security_summary_of(inv, &map)
+}
+
+/// [`security_summary`] from the practice map with its units already built
+/// ([`practices::report_units_kept`] of the same facts is that map).
+fn security_summary_of(
+    inv: &drift_mine::security::Inventory,
+    map: &drift_mine::practices::PracticesReport,
+) -> drift_mine::security_summary::Summary {
     drift_mine::security_summary::summarize(
         inv,
-        &drift_mine::security_summary::Readings::from_practices(&map),
+        &drift_mine::security_summary::Readings::from_practices(map),
     )
 }
 
