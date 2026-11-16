@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 
 use drift_mine::check::Exemption;
 use drift_mine::check::Violation;
-use drift_mine::policy::{Convention, LOCK_FILE, Mode};
+use drift_mine::policy::{Convention, LOCK_FILE};
 use drift_mine::report::{AgentAt, agent_message, agent_unsure_message, exempt_message, sanitize};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -2035,7 +2035,11 @@ fn stop_conventions(
     // Wiring rules (experimental) need the whole repository, so they are judged here,
     // at the end of a turn, and only for the files that turn edited: a turn without
     // a relevant edit costs no scan.
-    let has_block = p.accepted().any(|c| c.mode == Mode::Block);
+    // Whether a rule may block as checked ([`drift_mine::check::effective_mode`], the one
+    // answer `drift check` gives), not as the file says: a small role advises.
+    let has_block = p
+        .accepted()
+        .any(|c| drift_mine::check::effective_mode(c) == "block");
     let wiring: Vec<_> = p.accepted().filter(|c| c.rule.is_wiring()).collect();
     let mut edited = if wiring.is_empty() {
         BTreeSet::new()

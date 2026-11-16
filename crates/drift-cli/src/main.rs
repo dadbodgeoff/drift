@@ -4358,11 +4358,11 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             println!("[{}] {} ({})", v.id, v.summary, v.evidence);
             match &v.import {
                 Some(hit) => println!("  at   {}:{} {}", v.path, v.line, hit.describe()),
-                None => {
-                    println!("  at   {}:{} {}", v.path, v.line, v.symbol);
-                    println!("  like {}", v.example);
-                }
+                None => println!("  at   {}:{} {}", v.path, v.line, v.symbol),
             }
+            // A layering violation has a file to copy too: one of its role that imports
+            // nothing it should not.
+            println!("  like {}", v.example);
             if let Some(w) = &v.wire {
                 println!("  fix  {}", w.describe(&v.symbol));
             }
@@ -4455,7 +4455,41 @@ fn print_report(r: &CheckReport, hidden: &BTreeSet<&str>, practice: &BTreeMap<&s
             println!("  {p}");
         }
     }
+    // What the accepted mined rules could not say, as the promoted practices' status
+    // lines say it: members not checked, rules gone stale, a mode that is not the file's.
+    // None of it changes the exit code by itself.
+    for s in &r.standing {
+        if s.not_checked > 0 {
+            println!(
+                "drift: [{}] {} of {} member(s) not checked: Drift could not read what decides the rule for them, and never reports what it cannot read ({} follow it)",
+                s.id, s.not_checked, s.members, s.holders
+            );
+            let mut why: Vec<(&String, &usize)> = s.not_checked_why.iter().collect();
+            why.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
+            for (reason, n) in why.iter().take(MAX_WHY_LISTED) {
+                println!("  why  {reason} ({n})");
+            }
+            if why.len() > MAX_WHY_LISTED {
+                println!(
+                    "  +{} more reasons: `drift check --format json` lists them all (`standing`)",
+                    why.len() - MAX_WHY_LISTED
+                );
+            }
+        }
+        if let Some(stale) = &s.stale {
+            println!(
+                "drift: [{}] mined rule is stale: {stale}, so it advises until a person looks: `drift review --advise {}` keeps it as advice, `drift review --reject {}` drops it",
+                s.id, s.id, s.id
+            );
+        }
+        if let Some(note) = &s.mode_note {
+            println!("drift: [{}] {note}", s.id);
+        }
+    }
 }
+
+/// Reasons a mined rule's members were not checked, listed before pointing to the JSON.
+const MAX_WHY_LISTED: usize = 3;
 
 /// Exempt members `drift check` lists in its text report before pointing to the JSON.
 const MAX_EXEMPT_LISTED: usize = 10;
@@ -4978,7 +5012,9 @@ fn review_interactive(
     let blocking = policy
         .conventions
         .iter()
-        .filter(|c| c.status == Status::Accepted && c.mode == Mode::Block)
+        .filter(|c| {
+            c.status == Status::Accepted && drift_mine::check::effective_mode(c) == "block"
+        })
         .count();
     if blocking > 0 {
         println!(
