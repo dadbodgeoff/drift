@@ -2,7 +2,7 @@
   "name": "@beacon/portal",
   "private": true,
   "dependencies": {
-    "next": "15.5.28",
+    "next": "15.5.29",
     "@beacon/core": "*"
   }
 }
